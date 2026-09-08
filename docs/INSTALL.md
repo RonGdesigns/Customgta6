@@ -32,9 +32,26 @@ version of ScriptHookV and ScriptHookVDotNet you install, it has to be the one
 built for the executable in that folder.
 
 This project's toolchain assumptions — SHVDN 3 v3.6 API, OpenIV, CodeWalker — grew
-up on **Legacy**, and that is the build it has been developed against. Nothing in
-the mission code is build-specific, so an Enhanced-capable hook should run it, but
-that has not been verified here.
+up on **Legacy**. Nothing in the mission code is build-specific, and an Enhanced
+setup has now been confirmed to satisfy every prerequisite:
+
+```
+ScriptHookV .Net Enhanced 3.9.0.6 (1.1.0.6)
+  Loading API from .\ScriptHookVDotNet2.dll
+  Loading API from .\ScriptHookVDotNet3.dll
+```
+
+That is **SHVDNE**, the Enhanced-build port of ScriptHookVDotNet, and its v3 API
+is what this mod is compiled against (3.6 or newer). The Enhanced equivalents of
+the other pieces: `RageOpenV.asi` in place of `OpenIV.asi`, and
+`GTA5_Enhanced.exe` in place of `GTA5.exe`.
+
+One caveat that only shows up at runtime: SHVDNE has its own version lineage, so
+if its `ScriptHookVDotNet3.dll` has drifted from the official 3.6 reference
+assembly this mod builds against, the failure is a `TypeLoadException` or
+`MissingMethodException` — and it lands in `ScriptHookVDotNet.log`, **not** in
+`Bloodlines.log`, because the script never gets far enough to open its own log.
+See "When Bloodlines.log never appears" below.
 
 ### Where to run these from
 
@@ -244,6 +261,23 @@ matter how many are written. Splitting into per-act assemblies would not change 
 and would add 70 assemblies to version-match. If you do want a mission in its own
 DLL, that is supported: drop it in `Bloodlines/missions/` and fill in the `assembly`
 and `class_name` columns for that mission in `missions.tsv`.
+
+### When Bloodlines.log never appears
+
+`scripts\Bloodlines\Bloodlines.log` is written on the first tick. If it does not
+exist after a Story Mode launch, the script never started, and the reason is in
+the game root's `ScriptHookVDotNet.log` rather than anywhere in this project:
+
+| In ScriptHookVDotNet.log | Means |
+|---|---|
+| no `Loading scripts from ...` line at all | SHVDN itself did not initialise — a game update almost certainly broke the hook |
+| `Loading scripts from ...` but no mention of `Bloodlines.dll` | the DLL is not in `scripts\`, or is named `.dll.off` |
+| `TypeLoadException` / `MissingMethodException` naming a GTA type | API drift between the SHVDN build installed and the 3.6 API this mod compiles against |
+| `BadImageFormatException` | wrong architecture or a corrupt copy — reinstall the DLL |
+| `Bloodlines.dll` loads, then an exception in `BloodlinesMain` | the mod started and failed on its own terms; that one *is* ours |
+
+The last row is the only one where reinstalling or rebuilding helps. The rest are
+the hosting layer, and no change to this repo fixes them.
 
 ## Staying banned-free
 
