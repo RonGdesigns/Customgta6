@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace Bloodlines.Core
 {
@@ -10,6 +11,13 @@ namespace Bloodlines.Core
     public static class Logger
     {
         private static readonly object Gate = new object();
+
+        // Written with a BOM on purpose. Without one, Windows PowerShell's `type`
+        // and Notepad read a UTF-8 file as ANSI, so a single em dash in a logged
+        // dialogue line turns the header into "Bloodlines a?? session" and every
+        // reader assumes the mod is corrupt. The BOM costs three bytes.
+        private static readonly Encoding LogEncoding = new UTF8Encoding(true);
+
         private static string _path = "Bloodlines.log";
         private static bool _verbose;
 
@@ -22,7 +30,8 @@ namespace Bloodlines.Core
                 try
                 {
                     File.WriteAllText(_path,
-                        "=== Los Santos: Bloodlines — session " + DateTime.Now.ToString("u") + " ===" + Environment.NewLine);
+                        "=== Los Santos: Bloodlines - session " + DateTime.Now.ToString("u") + " ===" + Environment.NewLine,
+                        LogEncoding);
                 }
                 catch (IOException)
                 {
@@ -52,7 +61,8 @@ namespace Bloodlines.Core
                 try
                 {
                     File.AppendAllText(_path,
-                        DateTime.Now.ToString("HH:mm:ss.fff") + " [" + level + "] " + message + Environment.NewLine);
+                        DateTime.Now.ToString("HH:mm:ss.fff") + " [" + level + "] " + message + Environment.NewLine,
+                        LogEncoding);
                 }
                 catch (IOException)
                 {

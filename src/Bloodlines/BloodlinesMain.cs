@@ -84,12 +84,40 @@ namespace Bloodlines
                 _missions.Update();
                 _menu.Update();
                 _survey.Update();
+                HandleControllerSwitch();
                 HandleAbortHold();
             }
             catch (Exception ex)
             {
                 Logger.Error("Tick failed", ex);
             }
+        }
+
+        /// <summary>
+        /// Step through the crew in order. The direct binds default to the numpad,
+        /// which a tenkeyless keyboard does not have; this needs one key and works
+        /// on any board.
+        /// </summary>
+        private void CycleCrew(int direction)
+        {
+            var count = Enum.GetValues(typeof(CrewSlot)).Length;
+            var next = (((int)_crew.ActiveSlot + direction) % count + count) % count;
+            _switching.TrySwitch((CrewSlot)next);
+        }
+
+        /// <summary>
+        /// The game's own character-select controls, routed to the crew. They are
+        /// already bound on a controller's character wheel, so a pad switches with
+        /// nothing configured; Michael/Franklin/Trevor map to Ice/Gohan/Guess in
+        /// roster order.
+        /// </summary>
+        private void HandleControllerSwitch()
+        {
+            if (!_config.ControllerSwitchEnabled || !_crew.IsDeployed) return;
+
+            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterMichael)) _switching.TrySwitch(CrewSlot.Ice);
+            else if (Game.IsControlJustPressed(GTA.Control.SelectCharacterFranklin)) _switching.TrySwitch(CrewSlot.Gohan);
+            else if (Game.IsControlJustPressed(GTA.Control.SelectCharacterTrevor)) _switching.TrySwitch(CrewSlot.Guess);
         }
 
         private void HandleAbortHold()
@@ -135,6 +163,8 @@ namespace Bloodlines
             if (key == _config.SwitchIceKey) { _switching.TrySwitch(CrewSlot.Ice); return true; }
             if (key == _config.SwitchGohanKey) { _switching.TrySwitch(CrewSlot.Gohan); return true; }
             if (key == _config.SwitchGuessKey) { _switching.TrySwitch(CrewSlot.Guess); return true; }
+            if (key == _config.SwitchNextKey) { CycleCrew(1); return true; }
+            if (key == _config.SwitchPrevKey) { CycleCrew(-1); return true; }
             if (key == _config.AbilityKey) { _abilities.Toggle(); return true; }
             if (key == _config.MissionStartKey) { StartMission(); return true; }
             if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }

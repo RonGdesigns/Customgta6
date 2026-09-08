@@ -44,7 +44,7 @@ M42	Red	set piece	Air-dropping a submarine from a Titan. Fake it: cargo ramp cut
 M43	Green	direct	Staging scene.
 M44	Yellow	fake	Underwater charges on rig pylons; the rig itself needs a prop or an existing platform.
 M45	Yellow	fake	Helipad drop in a storm onto a structure that has to exist first. Everything above deck is Green once it does.
-M46	Yellow	fake	Vault interior — MLO or a substitute interior.
+M46	Yellow	fake	Vault interior - MLO or a substitute interior.
 M47	Red	set piece	A collapsing, tilting rig. GTA V cannot deform a structure. Do it with a camera-shaken fade, swap to a pre-damaged version of the prop, and put the player in a BASE jump before the "collapse" resolves.
 M48	Green	direct	Highway blockade breakout.
 M49	Green	direct	Checkpoint ram with tower sniping.
@@ -52,7 +52,7 @@ M50	Yellow	fake	Archive interior needs an MLO; the sentry takedowns and the wipe
 M51	Green	direct	Transformer yard sabotage; the blackout is a scripted light change over Downtown.
 M52	Green	direct	Rooftop sniper shot on a scripted walk path, then a bike escape.
 M53	Green	direct	Subway tunnel ambush with mines and night vision.
-M54	Yellow	fake	Penthouse interior — MLO. The balcony roost and antenna are dressing.
+M54	Yellow	fake	Penthouse interior - MLO. The balcony roost and antenna are dressing.
 M55	Red	set piece	Three simultaneous penthouse breaches on a 300-second clock. This is the mission the whole switch system exists for, and it is worth building properly: three separate spawn sets, one shared timer, forced switching between them. Interiors can be substituted, the mechanic cannot.
 M56	Green	direct	Canal armour clash. The aqueduct is one of the best drivable spaces in the game.
 M57	Green	direct	Jet-ski anti-air run.
@@ -75,6 +75,6 @@ SM03	Green	direct	Street race under the freeway. Uses RaceCheckpointObjective.
 SM04	Green	direct	Counter-sniper duel in open terrain. Ideal Ice showcase, no interiors needed.
 SM05	Yellow	fake	Swamp kayak and dive; the buoy is a prop, the splice a hold-zone.
 SM06	Green	direct	Canyon fuel-tanker run under bike attack.
-SM07	Yellow	fake	Hotel suite interior — MLO or a substitute. The floor-by-floor fight is Green.
+SM07	Yellow	fake	Hotel suite interior - MLO or a substitute. The floor-by-floor fight is Green.
 SM08	Yellow	fake	Office tower interior; the incendiary burn is a particle-and-fade sequence.
 SM09	Green	direct	Impound theft, five-star pursuit, container delivery.

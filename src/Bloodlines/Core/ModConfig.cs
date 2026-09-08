@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Windows.Forms;
 using GTA;
 
@@ -11,9 +13,13 @@ namespace Bloodlines.Core
     {
         // Defaults follow the implementation toolkit's [Keybinds] block. NumPad also
         // keeps the switch off 1/2/3, which the game already uses for weapon slots.
+        // Tenkeyless keyboards have no numpad at all, which is why the cycle keys
+        // below exist as well: every board has [ and ].
         public Keys SwitchIceKey { get; private set; } = Keys.NumPad1;
         public Keys SwitchGohanKey { get; private set; } = Keys.NumPad2;
         public Keys SwitchGuessKey { get; private set; } = Keys.NumPad3;
+        public Keys SwitchNextKey { get; private set; } = Keys.OemCloseBrackets;
+        public Keys SwitchPrevKey { get; private set; } = Keys.OemOpenBrackets;
         public Keys AbilityKey { get; private set; } = Keys.Capital;
         public Keys MissionStartKey { get; private set; } = Keys.J;
         public Keys AbortKey { get; private set; } = Keys.Back;
@@ -31,6 +37,13 @@ namespace Bloodlines.Core
         /// character. The toolkit calls this the companion leash.
         /// </summary>
         public float CompanionLeashDistance { get; private set; } = 180f;
+        /// <summary>
+        /// Route the game's own character-select controls to the crew, so a
+        /// controller switches without any binding: they are already on the
+        /// character wheel. Michael/Franklin/Trevor map to Ice/Gohan/Guess.
+        /// </summary>
+        public bool ControllerSwitchEnabled { get; private set; } = true;
+
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
@@ -45,15 +58,18 @@ namespace Bloodlines.Core
             var config = new ModConfig();
             var settings = ScriptSettings.Load(path);
 
-            config.SwitchIceKey = settings.GetValue<Keys>("Keys", "SwitchIce", config.SwitchIceKey);
-            config.SwitchGohanKey = settings.GetValue<Keys>("Keys", "SwitchGohan", config.SwitchGohanKey);
-            config.SwitchGuessKey = settings.GetValue<Keys>("Keys", "SwitchGuess", config.SwitchGuessKey);
-            config.AbilityKey = settings.GetValue<Keys>("Keys", "Ability", config.AbilityKey);
-            config.MissionStartKey = settings.GetValue<Keys>("Keys", "MissionStart", config.MissionStartKey);
-            config.AbortKey = settings.GetValue<Keys>("Keys", "AbortMission", config.AbortKey);
-            config.DevCaptureKey = settings.GetValue<Keys>("Keys", "DevCapture", config.DevCaptureKey);
-            config.DeployCrewKey = settings.GetValue<Keys>("Keys", "DeployCrew", config.DeployCrewKey);
-            config.DevMenuKey = settings.GetValue<Keys>("Keys", "DevMenu", config.DevMenuKey);
+            config.SwitchIceKey = ReadKey(settings, "SwitchIce", config.SwitchIceKey);
+            config.SwitchGohanKey = ReadKey(settings, "SwitchGohan", config.SwitchGohanKey);
+            config.SwitchGuessKey = ReadKey(settings, "SwitchGuess", config.SwitchGuessKey);
+            config.SwitchNextKey = ReadKey(settings, "SwitchNext", config.SwitchNextKey);
+            config.SwitchPrevKey = ReadKey(settings, "SwitchPrev", config.SwitchPrevKey);
+            config.AbilityKey = ReadKey(settings, "Ability", config.AbilityKey);
+            config.MissionStartKey = ReadKey(settings, "MissionStart", config.MissionStartKey);
+            config.AbortKey = ReadKey(settings, "AbortMission", config.AbortKey);
+            config.DevCaptureKey = ReadKey(settings, "DevCapture", config.DevCaptureKey);
+            config.DeployCrewKey = ReadKey(settings, "DeployCrew", config.DeployCrewKey);
+            config.DevMenuKey = ReadKey(settings, "DevMenu", config.DevMenuKey);
+            config.ControllerSwitchEnabled = settings.GetValue<bool>("Keys", "ControllerSwitch", config.ControllerSwitchEnabled);
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);
@@ -69,6 +85,52 @@ namespace Bloodlines.Core
             // Writes back any key the ini was missing, so the file self-documents after first run.
             settings.Save();
             return config;
+        }
+
+        /// <summary>
+        /// Aliases for keys nobody spells the way the <see cref="Keys"/> enum does.
+        /// Someone rebinding to the bracket keys writes "[", not "OemOpenBrackets".
+        /// </summary>
+        private static readonly Dictionary<string, Keys> KeyAliases =
+            new Dictionary<string, Keys>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "[", Keys.OemOpenBrackets }, { "]", Keys.OemCloseBrackets },
+                { "\\", Keys.OemPipe }, { ";", Keys.OemSemicolon }, { "'", Keys.OemQuotes },
+                { ",", Keys.Oemcomma }, { ".", Keys.OemPeriod }, { "/", Keys.OemQuestion },
+                { "-", Keys.OemMinus }, { "=", Keys.Oemplus }, { "`", Keys.Oemtilde },
+                { "0", Keys.D0 }, { "1", Keys.D1 }, { "2", Keys.D2 }, { "3", Keys.D3 },
+                { "4", Keys.D4 }, { "5", Keys.D5 }, { "6", Keys.D6 }, { "7", Keys.D7 },
+                { "8", Keys.D8 }, { "9", Keys.D9 },
+                { "CapsLock", Keys.Capital }, { "Backspace", Keys.Back },
+                { "Esc", Keys.Escape }, { "Ctrl", Keys.ControlKey },
+                { "PageUp", Keys.PageUp }, { "PageDown", Keys.Next }, { "PgUp", Keys.PageUp },
+                { "PgDn", Keys.Next }, { "Ins", Keys.Insert }, { "Del", Keys.Delete },
+                { "Num1", Keys.NumPad1 }, { "Num2", Keys.NumPad2 }, { "Num3", Keys.NumPad3 },
+            };
+
+        /// <summary>
+        /// Parses a key name ourselves rather than through the type converter, which
+        /// only recognises its own localised display names -- "D1" and
+        /// "OemOpenBrackets" are perfectly good <see cref="Keys"/> values that it
+        /// rejects. A name we cannot parse is logged and the default kept, because a
+        /// typo in an ini should cost one binding, not the whole mod.
+        /// </summary>
+        private static Keys ReadKey(ScriptSettings settings, string name, Keys fallback)
+        {
+            var raw = settings.GetValue<string>("Keys", name, null);
+            if (string.IsNullOrWhiteSpace(raw)) return fallback;
+
+            raw = raw.Trim();
+            Keys alias;
+            if (KeyAliases.TryGetValue(raw, out alias)) return alias;
+
+            Keys parsed;
+            if (Enum.TryParse(raw, true, out parsed) && Enum.IsDefined(typeof(Keys), parsed))
+                return parsed;
+
+            Logger.Warn("Bloodlines.ini: [Keys] " + name + " = \"" + raw +
+                        "\" is not a key name; keeping " + fallback + ".");
+            return fallback;
         }
     }
 }

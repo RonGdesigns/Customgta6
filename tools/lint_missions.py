@@ -20,6 +20,7 @@ Checks:
 import argparse
 import csv
 import json
+import io
 import os
 import re
 import sys
@@ -71,6 +72,29 @@ def load_dump(name):
 def read_tsv(name):
     with open(os.path.join(REPO, 'data', name)) as handle:
         return list(csv.DictReader(handle, delimiter='\t'))
+
+
+def check_ascii(errors):
+    """Data files must be pure ASCII.
+
+    GTA V's text renderer is not dependable outside ASCII, and the log is read
+    back through tools that assume ANSI -- an em dash in a dialogue line shows up
+    as a box in a subtitle and as mojibake in the log. The PDF extractor is the
+    source of these: it emits typographic dashes and a section bullet that the
+    parser now folds, and this catches any that get past it.
+    """
+    for name in ('missions.tsv', 'dialogue.tsv', 'locations.tsv', 'anchors.tsv',
+                 'feasibility.tsv'):
+        path = os.path.join(REPO, 'data', name)
+        if not os.path.exists(path):
+            continue
+        with io.open(path, encoding='utf-8') as handle:
+            for number, line in enumerate(handle, 1):
+                bad = sorted({ch for ch in line if ord(ch) > 127})
+                if bad:
+                    errors.append('data/{}:{}: non-ASCII {}'.format(
+                        name, number,
+                        ', '.join('U+%04X (%s)' % (ord(ch), ch) for ch in bad)))
 
 
 def main():
@@ -198,6 +222,8 @@ def main():
     for mission_id in sorted(set(registered) - seen_ids):
         errors.append('MissionCatalog registers {} but no mission class declares that id'
                       .format(mission_id))
+
+    check_ascii(errors)
 
     print('\nErrors' if errors else '\nNo errors.')
     for error in errors:

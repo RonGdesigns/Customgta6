@@ -48,8 +48,30 @@ VECTOR = re.compile(r'Vector3\(\s*(-?[\d.]+)f?,\s*(-?[\d.]+)f?,\s*(-?[\d.]+)f?\s
 FOOTER = re.compile(r'^(GTA V: BLOODLINES|Page \d+ of \d+|•+$|=== PAGE)')
 
 
+# The bible's PDF uses a filled box as its section bullet, so any text that runs
+# past one has swallowed the start of the next section. It is also the only
+# reliable marker of that boundary in the extracted stream.
+SECTION_BULLET = '\u25a0'
+
+# GTA V's text renderer is not dependable outside ASCII: an em dash comes back as
+# a blank or a box in a subtitle. The typography is not worth a hole in the line.
+ASCII_FOLD = {
+    '\u2014': '-', '\u2013': '-', '\u2012': '-', '\u2212': '-',
+    '\u2018': "'", '\u2019': "'", '\u201a': "'",
+    '\u201c': '"', '\u201d': '"', '\u201e': '"',
+    '\u2026': '...', '\u00a0': ' ', '\u2022': '-', '\u00b7': '-',
+}
+
+
+def fold_ascii(value):
+    """Fold typographic characters to ASCII, then drop anything still non-ASCII."""
+    for source, target in ASCII_FOLD.items():
+        value = value.replace(source, target)
+    return ''.join(ch for ch in value if ord(ch) < 128)
+
+
 def clean(value):
-    return re.sub(r'\s+', ' ', value.replace('\t', ' ')).strip()
+    return fold_ascii(re.sub(r'\s+', ' ', value.replace('\t', ' ')).strip())
 
 
 def join_wrapped(parts):
@@ -89,7 +111,10 @@ def parse_missions(lines):
             spoken, trigger = join_wrapped(cue_body), ''
         else:
             spoken = join_wrapped(cue_body[:end + 1])
-            trigger = join_wrapped(cue_body[end + 1:])
+            # A cue that is the last in its section runs straight into the next
+            # section's heading, which the extractor cannot see as a break. The
+            # bullet is the break.
+            trigger = join_wrapped(cue_body[end + 1:]).split(SECTION_BULLET)[0]
         direction = ''
         bracket = re.match(r'^\s*\[(.+?)\]\s*(.*)$', spoken, re.S)
         if bracket:

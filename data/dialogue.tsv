@@ -7,22 +7,22 @@ M01_S2_05_ICE	M01	2	ICE	Lowering scope in shock	Wait... that voice. Devin?! Goha
 M01_S2_06_GUESS	M01	2	GUESS	Engine roaring through comms	Yo! Why am I hearing my high school graduation on my tactical radio?! Ice?! Gohan?!	Radio recognition
 M01_S3_07_ICE	M01	3	ICE	Frustrated, zip-lining down crane	Mateo hit the slipway! He is on the armored launch! We blew the window!	Zip-line drop
 M01_S3_08_GUESS	M01	3	GUESS	Tires screaming, passenger door kicked open	Get in! The entire port authority is rolling! Fifteen years and this is how we catch up?!	Gate smash extraction
-M01_S3_09_GOHAN	M01	3	GOHAN	Panting, slamming drive on dash	Download aborted at forty-eight percent! The core recorded our biometrics—all three of us!	Freeway getaway
+M01_S3_09_GOHAN	M01	3	GOHAN	Panting, slamming drive on dash	Download aborted at forty-eight percent! The core recorded our biometrics-all three of us!	Freeway getaway
 M02_S1_01_GOHAN	M02	1	GOHAN		Van is uploading at 5MB/s on Olympic Freeway. Less than three minutes before our faces hit federal wiretaps!	Freeway pursuit start
 M02_S1_02_GUESS	M02	1	GUESS		Satellite dome spotted on top of the black Rumpo! Ice, get ready with that EMP harness!	Target visual
 M02_S2_03_ICE	M02	2	ICE		Do not blow the engine block. We need that physical server intact or we never find out who hired Aegis.	Passenger aim
 M02_S2_04_GOHAN	M02	2	GOHAN		EMP dart locked! Discharging pulse now!	Van drivetrain kills
 M02_S2_05_ICE	M02	2	ICE	Kicking rear doors off hinges	Hands on your neck! Unplug that rack or I ventilate your chest!	Hard drive seizure
-M02_S2_06_GUESS	M02	2	GUESS		Aegis chopper overhead! Dive down the storm canal ramp—hold on!	Aqueduct escape
+M02_S2_06_GUESS	M02	2	GUESS		Aegis chopper overhead! Dive down the storm canal ramp-hold on!	Aqueduct escape
 M03_S1_01_GUESS	M03	1	GUESS		Junction switch tripped. Decoupling car four. Forty freight cars dead across Sinner Street. Police route sealed.	Train blockade
 M03_S1_02_ICE	M03	1	ICE		Moving into Murrieta depot. Gohan, get to the gantry crane controls.	Depot gate breach
-M03_S2_03_ICE	M03	2	ICE	Firing Combat MG in bursts	Catwalk left, two shooters with assault rifles—suppressing! Lower the hook, Gohan!	Firefight cover
+M03_S2_03_ICE	M03	2	ICE	Firing Combat MG in bursts	Catwalk left, two shooters with assault rifles-suppressing! Lower the hook, Gohan!	Firefight cover
 M03_S2_04_GOHAN	M03	2	GOHAN		Magnetic clamps engaged! Weapons container is airborne! Guess, back the hauler under the rig!	Crane hoist
 M03_S2_05_GUESS	M03	2	GUESS		Locked down! Floor it before these oil storage tanks turn into a Roman candle!	Hauler convoy return
 M04_S1_01_GOHAN	M04	1	GOHAN		Thermal pulse active. Level B3 has six bodyguards flanking Miller. Transformer breaker located.	Thermal scouting
 M04_S1_02_ICE	M04	1	ICE		Cut the power, Gohan. Once it goes pitch black, I take the ramp guards.	Breaker severed
 M04_S2_03_GUESS	M04	2	GUESS		Miller just rammed the barricade and dove down the subway entrance! We riding the third rail!	Subway tunnel plunge
-M04_S2_04_ICE	M04	2	ICE		Incoming passenger train on track two! Guess, dodge left— DODGE LEFT!	Subway train near-miss
+M04_S2_04_ICE	M04	2	ICE		Incoming passenger train on track two! Guess, dodge left- DODGE LEFT!	Subway train near-miss
 M04_S2_05_ICE	M04	2	ICE		Miller spun out against the support pillar. Drive secured. Miller won't be talking to Aegis again.	Drive recovery
 M05_S1_01_ICE	M05	1	ICE		High cliff perch established. Cave mouth illuminated by halogen work lamps. Guess, light the cove.	Cliff overwatch
 M05_S1_02_GUESS	M05	1	GUESS		Magnesium flares away! Cove is lit up like midday! Gohan, punch through the surf!	Flares deployed
@@ -39,7 +39,7 @@ M07_S1_01_GOHAN	M07	1	GOHAN		Third ladder rung on the north spar, Ice. Clamp rec
 M07_S1_02_ICE	M07	1	ICE		Receiver clamped. Pulling manifests... Gohan, what are these engines?	Tap mounted
 M07_S1_03_GOHAN	M07	1	GOHAN		Aegis is shipping two military turbine engines to Paleto. That's our target.	Manifest decrypt
 M07_S2_04_ICE	M07	2	ICE		Drone minigun spinning up! Chute away! Guess, catch me on Del Perro!	BASE jump
-M07_S2_05_GUESS	M07	2	GUESS		Drop zone clocked! Landing behind the spoiler—I won't stop!	Moving car catch
+M07_S2_05_GUESS	M07	2	GUESS		Drop zone clocked! Landing behind the spoiler-I won't stop!	Moving car catch
 M08_S1_01_GUESS	M08	1	GUESS		Seven hundred horsepower, bulletproof casings, all-fuel intake. Nothing in San Andreas catches us.	Crate inspection
 M08_S1_02_GOHAN	M08	1	GOHAN		Camera loop active for ninety seconds. Move on the roll-up door.	CCTV frozen
 M08_S2_03_GUESS	M08	2	GUESS		Crate one seated! Ice, armored technical coming up the boat ramp!	Forklift loading
@@ -68,7 +68,7 @@ M13_S1_01_ICE	M13	1	ICE		Charge three armed on barge hull. Guess, be ready on we
 M13_S1_02_GUESS	M13	1	GUESS		Idling in the Granger with lights off. Hit the clacker and get your ass over here!	Ramp idle
 M13_S1_03_ICE	M13	1	ICE		Charges blown! Basin is an inferno! Patrol boats burning at moorings!	Barge explosion
 M14_S1_01_GUESS	M14	1	GUESS		Radar pod bolted to wing pylon. Turbine firing up! Rolling down runway!	Runway taxi
-M14_S1_02_ICE	M14	1	ICE		SAM launcher tracking! Stay under fifty feet, Guess—hug the gully!	SAM warning
+M14_S1_02_ICE	M14	1	ICE		SAM launcher tracking! Stay under fifty feet, Guess-hug the gully!	SAM warning
 M14_S1_03_GUESS	M14	1	GUESS		Cleared the pass! Pod jammer secured in McKenzie hangar.	Safe touchdown
 M15_S1_01_GOHAN	M15	1	GOHAN		Splicing optical bypass. Harbor lock gates and radar feeds are under our thumb.	Fiber splice
 M15_S1_02_ICE	M15	1	ICE		Two security watchmen down the stairwell. Tranquilizers deployed. Area clear.	Silent takedown
@@ -82,7 +82,7 @@ M17_S1_03_ICE	M17	1	ICE		The sub is ready. Tomorrow night we hit Berth 44.	Missi
 M18_S1_01_ICE	M18	1	ICE		Tonight we hit Berth 44, take thirty tons of their gold, and finish what started.	Countdown speech
 M18_S1_02_GUESS	M18	1	GUESS		Cargobob fueled. Just cut that container loose and I will hoist it.	Hangar check
 M18_S1_03_GOHAN	M18	1	GOHAN		Kraken sub submerged in position. Moving to Berth 44.	Sub dive
-M19_S1_01_GOHAN	M19	1	GOHAN		Hull breached! Water flooding hold 3! Ballast floats clamped— she is rising!	Underwater breach
+M19_S1_01_GOHAN	M19	1	GOHAN		Hull breached! Water flooding hold 3! Ballast floats clamped- she is rising!	Underwater breach
 M19_S1_02_ICE	M19	1	ICE		Container surfacing! Guess, bring the Cargobob in now!	Surface radio
 M19_S1_03_GOHAN	M19	1	GOHAN		Depth charges dropping! Surfacing to the boarding launch!	Sub surface
 M20_S1_01_GUESS	M20	1	GUESS		Cable locked! Hoisting thirty tons of bullion! KEEP RPGS OFF MY ROTORS!	Heavy winch lift
@@ -96,7 +96,7 @@ M22_S1_02_ICE	M22	1	ICE	Looking south at black smoke column over mountains	Our C
 M22_S1_03_GOHAN	M22	1	GOHAN	Staring at laptop screen, jaw clenched	Servers, tools, clothes... everything we set up in Los Santos is ash. They declared us military combatants.	Gohan grief
 M22_S1_04_GUESS	M22	1	GUESS	Kicking sand, determined glare	They burned our city shop? Fine. They don't know who they dealing with out here in the dirt. Blaine County belongs to us now.	Guess fire
 M22_S1_05_ICE	M22	1	ICE	Racking bolt of assault rifle	Load the trucks. We set up at the radar base. When we return to Los Santos, we come back as an army.	Ice command
-M22_S1_06_GOHAN	M22	1	GOHAN		Act One is closed. Let's make these suits bleed.	Act I close ■ 5. ACT II: THE SQUEEZE (MISSIONS 23–48) Exiled to Blaine County, the trio wages asymmetrical paramilitary warfare from a Cold War radar bunker, pulling off mid-air plane boardings and deep-sea oil rig demolitions before fighting back south.
+M22_S1_06_GOHAN	M22	1	GOHAN		Act One is closed. Let's make these suits bleed.	Act I close
 M23_S1_01_ICE	M23	1	ICE		Breaching upper radar dome. Four cartel riflemen on walkway.	Bunker breach
 M23_S1_02_GUESS	M23	1	GUESS		Bunker doors secured! We got three underground bays for heavy rigs!	Base claim
 M23_S1_03_GOHAN	M23	1	GOHAN		Generator room online. We have our command center in the desert.	Power restored
@@ -107,11 +107,11 @@ M25_S1_01_ICE	M25	1	ICE		Deputies blocked the southern pass. Detonating fuel tan
 M25_S1_02_GUESS	M25	1	GUESS		I'm at the riverbed below! Jump to the sandbar, Ice!	River extraction
 M25_S1_03_ICE	M25	1	ICE		Hit the throttle, Guess. Sheriff department won't chase down this gorge.	River escape
 M26_S1_01_GUESS	M26	1	GUESS		Bandit on my six! Rolling inverted over Mount Chiliad!	Aerial dogfight
-M26_S1_02_GOHAN	M26	1	GOHAN		Spotter one splashed! Spotter two is diving for Grapeseed—kill him!	Air kill radio
+M26_S1_02_GOHAN	M26	1	GOHAN		Spotter one splashed! Spotter two is diving for Grapeseed-kill him!	Air kill radio
 M26_S1_03_GUESS	M26	1	GUESS		Both spotters down in the lake! Our Alamo stash remains a ghost.	Dogfight win
-M27_S1_01_GUESS	M27	1	GUESS	Shouting over roaring radial biplane engine and 160-knot gale	Airspeed one-six-five! I am right on his rudder! Ice, climb out on the top wing—JUMP!	Wing walk jump
+M27_S1_01_GUESS	M27	1	GUESS	Shouting over roaring radial biplane engine and 160-knot gale	Airspeed one-six-five! I am right on his rudder! Ice, climb out on the top wing-JUMP!	Wing walk jump
 M27_S1_02_ICE	M27	1	ICE	Breathing through oxygen mask	Holding mag-clamps! Hold her steady, Guess! Three feet lower... DROP ME!	Fuselage leap
-M27_S2_03_ICE	M27	2	ICE	Plasma torch hissing, hull metal ripping	Hatch blown! Cabin decompressing! Two Aegis bodyguards floating down the aisle in zero-G—neutralized!	Zero-G gunfight
+M27_S2_03_ICE	M27	2	ICE	Plasma torch hissing, hull metal ripping	Hatch blown! Cabin decompressing! Two Aegis bodyguards floating down the aisle in zero-G-neutralized!	Zero-G gunfight
 M27_S2_04_GOHAN	M27	2	GOHAN	Monitoring black box telemetry on ground	Ice! The pilot kicked the stick forward! The plane is in a terminal vertical dive toward the Pacific! Grab the ledger and GET OUT!	Dive warning
 M27_S2_05_ICE	M27	2	ICE	Kicking emergency door out into open sky	Ledger secured! Skydiving out at four thousand feet! Gohan, prep the sea pickup!	BASE jump
 M27_S2_06_GUESS	M27	2	GUESS	Diving plane alongside chute	Told you I'd put you on his roof! That's how we do it!	Aerial flyby
@@ -121,7 +121,7 @@ M28_S1_03_GOHAN	M28	1	GOHAN		Dish offline. Aegis drones are completely blind in 
 M29_S1_01_GUESS	M29	1	GUESS		Matched rail speed! Truck is on the flatbed! Ice, hit the junction!	Train jump
 M29_S1_02_ICE	M29	1	ICE		Tankers decoupled! Switching track points now!	Track switch
 M29_S1_03_GUESS	M29	1	GUESS		Fuel tankers safely routed to the bunker spur. We got power for months.	Fuel delivered
-M30_S1_01_GUESS	M30	1	GUESS		Shale is sliding beneath the tires! Rocket impact left—HANG ON!	Ridge descent
+M30_S1_01_GUESS	M30	1	GUESS		Shale is sliding beneath the tires! Rocket impact left-HANG ON!	Ridge descent
 M30_S1_02_GOHAN	M30	1	GOHAN		Tunnel entrance two hundred yards! Dive under the rock!	Tunnel refuge
 M30_S1_03_GUESS	M30	1	GUESS		Chopper lost us in the tunnel! Parts delivered intact!	Offroad victory
 M31_S1_01_ICE	M31	1	ICE		Claymores live on access gulley. Let them walk into the kill zone.	Minefield set
@@ -160,7 +160,7 @@ M41_S1_01_ICE	M41	1	ICE		General Bradley neutralized. Recovered his biometric se
 M41_S1_02_GOHAN	M41	1	GOHAN		Card grants root access to rig vault. Get off the mountain.	Lodge escape
 M41_S1_03_GUESS	M41	1	GUESS		Snowmobile pickup waiting at the trail head. We are clear.	Snowmobile egress
 M42_S1_01_GUESS	M42	1	GUESS		Cargo ramp open! Sub is airborne! Parachutes deployed!	Aerial airdrop
-M42_S1_02_GOHAN	M42	1	GOHAN		Splashdown confirmed! Ballast tanks flooding—diving for the rig.	Ocean splashdown
+M42_S1_02_GOHAN	M42	1	GOHAN		Splashdown confirmed! Ballast tanks flooding-diving for the rig.	Ocean splashdown
 M42_S1_03_ICE	M42	1	ICE		Gohan is in the water. Moving into flight position with the chopper.	Chopper ready
 M43_S1_01_ICE	M43	1	ICE		Tonight we break their fortress and take our five hundred million.	Final muster
 M43_S1_02_GUESS	M43	1	GUESS		Annihilator ready. When that rig burns, I'll be over the derrick.	Chopper spool
@@ -176,12 +176,12 @@ M46_S1_02_ICE	M46	1	ICE		Pack the bags! Gohan, set the seismic detonator timer!	
 M46_S1_03_GUESS	M46	1	GUESS		Derrick structure is failing! Get to the edge for the jump!	Jump alert
 M47_S1_01_GOHAN	M47	1	GOHAN		Pylons snapping! Superstructure going under! JUMP!	Rig collapse
 M47_S1_02_ICE	M47	1	ICE		Chutes away! Hit the water and swim for the gunboats!	Ocean jump
-M47_S1_03_GUESS	M47	1	GUESS		Picked up Ice and Gohan! Speedboats throttling up!	Boats mounted ■ 6. ACT III: SCORCHED EARTH (MISSIONS 49–70) Total urban warfare across Los Santos. The trio takes the fight to Aegis Tactical and the corrupt political machine, executing triple-skyscraper raids, coastal train assaults, and the climactic LSIA runway holdout.
+M47_S1_03_GUESS	M47	1	GUESS		Picked up Ice and Gohan! Speedboats throttling up!	Boats mounted
 M48_S1_01_GUESS	M48	1	GUESS		We got their money, we got their ledgers, and their rig is sunk! HEAD SOUTH!	Highway breach
 M48_S1_02_ICE	M48	1	ICE		Los Santos is right ahead. Time to end this war where it started.	Act II finale
 M48_S1_03_GOHAN	M48	1	GOHAN		Title card: Act III: Scorched Earth. We are going home.	Act II close
 M49_S1_01_GUESS	M49	1	GUESS	Tires screaming on wet asphalt, engine roaring	Chumash roadblock in sight! Concrete barriers and two armored APCs! Hold your breath, I'm hitting the seam!	Roadblock approach
-M49_S1_02_ICE	M49	1	ICE	Leaning out window with heavy thermal sniper	Spotlight towers one and two neutralized! Seam is clear, Guess—HIT IT!	Tower explosion
+M49_S1_02_ICE	M49	1	ICE	Leaning out window with heavy thermal sniper	Spotlight towers one and two neutralized! Seam is clear, Guess-HIT IT!	Tower explosion
 M49_S1_03_GOHAN	M49	1	GOHAN	Laptop typing rapidly	Local cell towers jammed! Police dispatch won't know the checkpoint fell for ninety seconds!	County line breach
 M50_S1_01_GOHAN	M50	1	GOHAN	Whispering through comms	Optical splice online. Vault sub-level has six automated turrets and four guards. Ice, take the left corridor.	Archive infiltration
 M50_S1_02_ICE	M50	1	ICE	Suppressed pistol double-tap	Corridor secured. Plant the wipe sequence, Gohan. We have three minutes before physical backup arrives.	Sentries silenced
@@ -212,7 +212,7 @@ M58_S1_01_ICE	M58	1	ICE		Perimeter breached! Heavy fire on the main villa!	Cul-d
 M58_S1_02_GOHAN	M58	1	GOHAN		Tear gas dispersed into HVAC! Cartel capos fleeing through rear patio!	Gas deployment
 M58_S1_03_GUESS	M58	1	GUESS		Cartel council eliminated! The Cifuentes syndicate is dead in Los Santos!	Compound cleared
 M59_S1_01_GOHAN	M59	1	GOHAN		Overriding state relay! Broadcasting the offshore ledgers on all public frequencies!	Broadcast override
-M59_S1_02_ICE	M59	1	ICE		Aegis helicopter attempting to deploy shooters on the 'W'! Sniper round away—pilot down!	Sign shootout
+M59_S1_02_ICE	M59	1	ICE		Aegis helicopter attempting to deploy shooters on the 'W'! Sniper round away-pilot down!	Sign shootout
 M59_S1_03_GOHAN	M59	1	GOHAN		Broadcast is locked on continuous loop. The whole world knows what Aegis did.	Media leak live
 M60_S1_01_ICE	M60	1	ICE	Deep, protective fury	They came to our neighborhood. They think they can burn Davis? Not while we breathe.	Street defense start
 M60_S1_02_GUESS	M60	1	GUESS		Roadblock set with burning muscle cars on Brouge Avenue! Bring them into the pocket! We played football right on this corner!	Brouge ambush
@@ -223,13 +223,13 @@ M60_S1_06_GUESS	M60	1	GUESS		Davis stands! Nobody burns our home block!	Victory 
 M61_S1_01_GOHAN	M61	1	GOHAN		Inside flooded bridge. Cutting server chassis with acoustic torch.	Flooded bridge dive
 M61_S1_02_ICE	M61	1	ICE		Aegis divers inbound on underwater scooters! Dropping depth grenades!	Underwater defense
 M61_S1_03_GOHAN	M61	1	GOHAN		Command server extracted! We have the exact access codes for Maze Bank Tower!	Server secured
-M62_S1_01_ICE	M62	1	ICE		On top of train car three! Flatbed has automated twin miniguns— taking them out with EMP grenades!	Train rooftop combat
+M62_S1_01_ICE	M62	1	ICE		On top of train car three! Flatbed has automated twin miniguns- taking them out with EMP grenades!	Train rooftop combat
 M62_S1_02_GOHAN	M62	1	GOHAN		Speedboat holding parallel sixty yards out! Jamming missile relay drones!	Coastal boat match
 M62_S1_03_GUESS	M62	1	GUESS		Dropping chopper sling directly between tunnel arches! Hook the cargo container, Ice!	Aerial hook in tunnel
 M63_S1_01_GUESS	M63	1	GUESS		Lobby barricade breached! Technical parked right at the security elevators!	Glass lobby breach
 M63_S1_02_ICE	M63	1	ICE		Contractor heavy gunner on mezzanine! Neutralized with grenade launcher!	Lobby shootout
 M63_S1_03_GOHAN	M63	1	GOHAN		Security core bypassed! Main freight elevator unlocked for the ascent!	Elevator override
-M64_S1_01_ICE	M64	1	ICE		Elevator cable severed above! Car falling down shaft—JUMP TO THE LANDING!	Falling car dodge
+M64_S1_01_ICE	M64	1	ICE		Elevator cable severed above! Car falling down shaft-JUMP TO THE LANDING!	Falling car dodge
 M64_S1_02_GOHAN	M64	1	GOHAN		Floors 70 to 80 cleared! Only executive security left on the penthouse level!	Stairwell push
 M64_S1_03_GUESS	M64	1	GUESS		Door blown open! We are on the executive floor!	Executive breach
 M65_S1_01_ENEMY	M65	1	VANCE		You boys think you won? You're street thugs from Davis! You can't beat the system!	Boardroom standoff
@@ -243,7 +243,7 @@ M67_S1_02_GUESS	M67	1	GUESS		Five hundred million dollars... we actually did it.
 M67_S1_03_ICE	M67	1	ICE		Not yet. Aegis launched their final surviving battalion to intercept us at the airport.	Airport alert
 M68_S1_01_GUESS	M68	1	GUESS		Eighteen wheels of steel rolling through the flood channel! Speed is eighty!	Convoy start
 M68_S1_02_ICE	M68	1	ICE		Aegis armored buggies dropping in from bridge ramps! Turret engaged!	Turret combat
-M68_S1_03_GOHAN	M68	1	GOHAN		Deploying magnetic trail mines! Bridge support blown—roadblock crushed!	Channel breakout ■ 7. NEXT STEPS & MASTER PRODUCTION IMPLEMENTATION GUIDE This section translates the 70-mission narrative and core engine into actionable, step-by-step developer tasks across five distinct implementation tracks. TRACK 1: COMPILING BLOODLINESCORE.DLL 1. Create a C# class library in Visual Studio targeting .NET Framework 4.8 . 2. Reference ScriptHookVDotNet3.dll and System.Windows.Forms . 3. Integrate BloodlinesSwitchManager.cs , BloodlinesAudioManager.cs , and BloodlinesCheckpointManager.cs into the assembly. 4. Build the solution and copy BloodlinesCore.dll into your Grand Theft Auto V/scripts/ directory. 5. Create the directory Grand Theft Auto V/scripts/Bloodlines/audio/ to hold generated WAV dialogue files.
+M68_S1_03_GOHAN	M68	1	GOHAN		Deploying magnetic trail mines! Bridge support blown-roadblock crushed!	Channel breakout
 M69_S1_01_GUESS	M69	1	GUESS		Runway 30L! Commercial 747 touching down right in front of us! SWERVING!	Jetliner dodge
 M69_S1_02_ICE	M69	1	ICE		Aegis barricade at the taxiway! Guess, ram the fuel bowser into their line!	Barricade smash
 M69_S1_03_GOHAN	M69	1	GOHAN		C-130 cargo ramp is open! Drive the rig straight up into the cargo hold!	Ramp boarding
@@ -258,7 +258,7 @@ SM01_S1_01_ICE	SM01	1	ICE	Low, dangerous growl	Sergei thought he could pocket tw
 SM01_S1_02_ICE	SM01	1	ICE	Kicking side door open, racking heavy shotgun	Two sentries at the forklift. Dead before they drop their coffee.	Breaching side entrance
 SM01_S2_03_ENEMY	SM01	2	SERGEI		Vance! Put the gun down! We can work something out, brother!	Sergei cornered in office
 SM01_S2_04_ICE	SM01	2	ICE		We aren't brothers, Sergei. And your credit just expired.	Shotgun execution
-SM01_S2_05_ICE	SM01	2	ICE		Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.	Securing ammunition ■ 3. ACT II SOLO MISSIONS: DESERT SURVIVAL & SELF-RELIANCE (SM04–SM06) Taking place during the Blaine County exile between Missions 28 and 36, these solitary missions establish resource dominance in the rugged badlands.
+SM01_S2_05_ICE	SM01	2	ICE		Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.	Securing ammunition
 SM02_S1_01_GOHAN	SM02	1	GOHAN	Whispering through comm headset	Lifeinvader auxiliary annex. Security is all outsourced rent-a-cops and automated laser sweeps.	Rooftop infiltration
 SM02_S1_02_GOHAN	SM02	1	GOHAN		Thermal pulse active. Two guards behind the server bay door. Stun gun primed... discharging.	Silent taser takedown
 SM02_S2_03_GOHAN	SM02	2	GOHAN	Keystrokes clicking rapidly	Root terminal cracked. Splicing zero-day worm into the core routing table. City surveillance is blind to our license plates.	Terminal exploit
@@ -277,9 +277,9 @@ SM05_S2_03_GOHAN	SM05	2	GOHAN		Signal locked. Every military flight plan leaving
 SM06_S1_01_GUESS	SM06	1	GUESS	V8 diesel roaring, chassis shuddering	Tanker full of high-octane aviation fuel. One stray bullet in the rear tank and I am a fireball in the canyon.	Canyon drive start
 SM06_S1_02_GUESS	SM06	1	GUESS		Cartel dirt bikes dropping down the ridge! Trying to shoot the fuel cap!	Bikes flanking
 SM06_S2_03_GUESS	SM06	2	GUESS	Flooring pedal, swerving into lead bike	Not today, boys! Take the scenic dive into the river below!	Clipping hostile bike
-SM06_S2_04_GUESS	SM06	2	GUESS		Slid into McKenzie airfield on two wheels! Tanker intact. The biplanes are fueled for the rig strike.	Arriving at hangar ■ 4. ACT III SOLO MISSIONS: PERSONAL RECKONINGS & EXIT STRATEGY (SM07–SM09) Taking place during the urban war between Missions 52 and 62, each brother settles his personal demons and secures clean escape documents before the final siege.
+SM06_S2_04_GUESS	SM06	2	GUESS		Slid into McKenzie airfield on two wheels! Tanker intact. The biplanes are fueled for the rig strike.	Arriving at hangar
 SM07_S1_01_ICE	SM07	1	ICE	Cold, venomous tone	Fifteen years ago Sterling got my whole squad ambushed in Kandahar for a five-hundred-thousand-dollar kickback. Tonight I settle the ledger.	Elevator ascent
-SM07_S1_02_ICE	SM07	1	ICE	Breaching suite doors with suppressed assault rifle	Four executive bodyguards in the foyer—neutralized.	Suite shootout
+SM07_S1_02_ICE	SM07	1	ICE	Breaching suite doors with suppressed assault rifle	Four executive bodyguards in the foyer-neutralized.	Suite shootout
 SM07_S2_03_ENEMY	SM07	2	STERLING	Cowering behind marble desk	Vance! You're a ghost! That was fifteen years ago in the desert!	Sterling cornered
 SM07_S2_04_ICE	SM07	2	ICE		I didn't forget a single name on those dog tags, Sterling. Look at me.	Execution moment
 SM07_S2_05_ICE	SM07	2	ICE	Walking out into rain	Debt settled. The past is buried. Now we finish Aegis in Los Santos.	Hotel exit
