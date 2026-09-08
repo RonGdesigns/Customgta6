@@ -54,7 +54,13 @@ namespace Bloodlines.Missions.Campaign
             _jetTrack = Ctx.Locations.Position("M27.JetTrack");
             _seaPickup = Ctx.Locations.Position("M27.SeaPickup");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _formUp + new Vector3(0f, -60f, 0f), 250f)) return false;
+            // On the McKenzie apron. The climb to eight thousand feet is the player's
+            // to fly — deploying at altitude drops the crew out of the sky.
+            var apron = Ctx.Locations.Position("M26.DusterPad");
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, apron, Ctx.Locations.Heading("M26.DusterPad")))
+            {
+                return false;
+            }
 
             ApplyBibleSetting();
 
@@ -78,7 +84,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The match is real flying: hold the band and the transfer becomes possible.
             yield return new MissionStage("Match the Shamal",
-                    new ShadowTargetObjective("Hold station above the Shamal — inside 60 metres.",
+                    new ShadowTargetObjective("Climb to the Shamal and hold station inside 60 metres.",
                         () => _shamal, 60f, 12, "The Shamal outran the stunt plane.", 12f))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartJet())
@@ -151,10 +157,12 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnStuntPlane()
         {
-            var model = new Model("mallard");
+            var model = new Model("stunt");
             if (!GameUtils.RequestModel(model)) return;
 
-            _stuntPlane = Track(World.CreateVehicle(model, _formUp + new Vector3(0f, -80f, 0f), 250f));
+            _stuntPlane = Track(World.CreateVehicle(model,
+                Ctx.Locations.Position("M26.DusterPad") + new Vector3(20f, 0f, 0f),
+                Ctx.Locations.Heading("M26.DusterPad")));
             model.MarkAsNoLongerNeeded();
             if (_stuntPlane == null || !_stuntPlane.Exists()) return;
 

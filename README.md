@@ -30,6 +30,7 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Save state — `savegame.json`: progress, economy, safehouses, fleet upgrades | working |
 | Fleet upgrades applied at runtime (turbine Granger, reinforced Kraken) | working |
 | Packaging — `tools/package.py` builds an install-ready tree | working |
+| Static checks — mission linter, coordinate audit, stage validation, all in CI | working |
 | OpenIV DLC asset pack (handling metadata, interiors) | scaffolded, untested, no interiors yet |
 | QA harness (bible Track 4) | working — stage warp, checkpoint commit/restore, forced switch |
 | **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |

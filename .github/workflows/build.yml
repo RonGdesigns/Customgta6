@@ -20,3 +20,17 @@ jobs:
       # and no game install are needed to catch API breakage.
       - name: Build
         run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
+
+      # The string literals a mission is held together by — location keys, cue ids,
+      # model names — compile fine and fail silently in game. These catch them.
+      - name: Lint missions
+        run: python3 tools/lint_missions.py
+
+      - name: Audit coordinates
+        run: python3 tools/validate_locations.py
+
+      - name: Check generated data is current
+        run: |
+          python3 tools/render_campaign_doc.py
+          python3 tools/render_feasibility_doc.py
+          git diff --exit-code docs/CAMPAIGN.md docs/FEASIBILITY.md

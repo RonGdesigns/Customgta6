@@ -41,7 +41,13 @@ namespace Bloodlines.Missions.Campaign
             _deck = Ctx.Locations.Position("M20.DeckGunners");
             _climbOut = Ctx.Locations.Position("M20.ClimbOut");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _hover + new Vector3(30f, 30f, -30f), 180f)) return false;
+            // Start on the ground at the crew's own staging hangar from M18: a
+            // deployment over open water drops three people into the harbour.
+            var apron = Ctx.Locations.Position("M18.SaltHangar");
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, apron, Ctx.Locations.Heading("M18.SaltHangar")))
+            {
+                return false;
+            }
 
             ApplyBibleSetting();
             Game.Player.Character.Weapons.Give(WeaponHash.MG, 400, false, true);
@@ -107,7 +113,9 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("cargobob");
             if (!GameUtils.RequestModel(model)) return;
 
-            _cargobob = Track(World.CreateVehicle(model, _hover + new Vector3(25f, 25f, -25f), 180f));
+            _cargobob = Track(World.CreateVehicle(model,
+                Ctx.Locations.Position("M18.SaltHangar") + new Vector3(18f, 0f, 0f),
+                Ctx.Locations.Heading("M18.SaltHangar")));
             model.MarkAsNoLongerNeeded();
             if (_cargobob == null || !_cargobob.Exists()) return;
 

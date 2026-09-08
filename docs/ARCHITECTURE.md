@@ -90,6 +90,23 @@ spawns, the other two do not exist for the duration, and `SwitchController` refu
 with the character's own line rather than silently doing nothing. A solo mission
 that left the crew standing around would undercut the entire reason these exist.
 
+## What is checked without the game
+
+Nothing here has been played, so the checks that do not need the game carry more
+weight than usual:
+
+| Check | Catches |
+|---|---|
+| `dotnet build --warnaserror` | types, signatures, unused results |
+| `tools/lint_missions.py` | unknown location keys, unknown or misattributed dialogue cues, model names that are not real vehicles or peds, missions not registered in the catalog, deployments onto air or water, unrecognised scenarios, and dialogue coverage per mission |
+| `tools/validate_locations.py` | coordinates in the wrong district or below sea level |
+| `ComposedMission.Validate` | at runtime, a stage that could never finish — one built only from passive objectives |
+
+The linter's model check is the valuable one. `new Model("mallard")` compiles, spawns
+nothing, and turns the mission's first objective into "the vehicle is gone" — which
+reads as a mission bug rather than a typo. Vehicle and ped names are checked against
+public data dumps fetched at run time and cached under `build/`.
+
 ## Coordinates and their provenance
 
 Every coordinate carries a status, because the difference between them matters more

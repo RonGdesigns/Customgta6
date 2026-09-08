@@ -38,8 +38,10 @@ namespace Bloodlines.Missions.Campaign
             _breakwater = Ctx.Locations.Position("M21.Breakwater");
             _ridge = Ctx.Locations.Position("M21.RidgeCross");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, _spawn + new Vector3(6f, 0f, 0f),
-                    Ctx.Locations.Heading("M21.LaunchSpawn")))
+            // On the pier, not in the water: a deployment onto a water coordinate
+            // starts the mission with everyone swimming.
+            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, Ctx.Locations.Position("M12.PierWatch"),
+                    Ctx.Locations.Heading("M12.PierWatch")))
             {
                 return false;
             }

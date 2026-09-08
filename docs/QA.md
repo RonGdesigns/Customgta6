@@ -22,6 +22,24 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 
 | 13 | **Dev menu** | `F8` with `[Dev] Enabled = True` | Menu opens, arrows navigate, Enter starts a mission from any point, Backspace closes, and the player cannot fire while it is open |
 
+## Before you launch: the static checks
+
+Three things run without the game and should be clean before any play session —
+they are also wired into CI:
+
+```bash
+python3 tools/lint_missions.py       # location keys, cue ids, model names, registration
+python3 tools/validate_locations.py  # every coordinate against real zone boundaries
+dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
+```
+
+The linter exists because a mission is held together by string literals that all
+compile perfectly and then fail silently: a typo'd model spawns nothing, a wrong cue
+id logs a warning nobody reads, a bad location key puts a marker at the map origin.
+It has already caught a plane model that does not exist (`mallard`; the Mallard's
+model is `stunt`) which would have made M27 unfinishable, and four missions that
+deployed the crew over water or, in one case, seven hundred metres up.
+
 ## What to log
 
 `Bloodlines.log` is written next to the inis. Set `[Dev] VerboseLogging = True`

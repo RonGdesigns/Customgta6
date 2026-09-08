@@ -98,7 +98,7 @@ M19.Surface	1060.00	-3310.00	0.00	0	water	estimate	Terminal
 M20.HoverPoint	1050.00	-3330.00	35.00	180	air	estimate	Terminal
 M20.DeckGunners	1035.00	-3312.00	12.00	0	land	estimate	Terminal
 M20.ClimbOut	1240.00	-3420.00	80.00	20	air	estimate	Pacific Ocean
-M21.LaunchSpawn	1150.00	-3380.00	0.00	20	water	estimate	Terminal
+M21.LaunchSpawn	1132.00	-3202.00	0.00	20	water	estimate	Terminal
 M21.Breakwater	1320.00	-3520.00	0.00	20	water	estimate	Pacific Ocean
 M21.RidgeCross	900.00	1200.00	260.00	0	air	estimate	Galileo Park
 M22.AlamoDrop	715.40	4180.90	30.50	0	water	bible	Alamo Sea

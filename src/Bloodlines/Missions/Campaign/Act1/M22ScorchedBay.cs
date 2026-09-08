@@ -36,7 +36,12 @@ namespace Bloodlines.Missions.Campaign
             _drop = Ctx.Locations.Position("M22.AlamoDrop");
             _beach = Ctx.Locations.Position("M22.Beach");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _drop + new Vector3(-60f, -60f, 60f), 45f)) return false;
+            // On the shore. Deploying sixty metres above the Alamo drops the crew
+            // into it.
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _beach, Ctx.Locations.Heading("M22.Beach")))
+            {
+                return false;
+            }
 
             ApplyBibleSetting();
             SpawnLift();
@@ -120,7 +125,8 @@ namespace Bloodlines.Missions.Campaign
             var containerModel = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(heliModel)) return;
 
-            _cargobob = Track(World.CreateVehicle(heliModel, _drop + new Vector3(-70f, -70f, 55f), 45f));
+            _cargobob = Track(World.CreateVehicle(heliModel, _beach + new Vector3(25f, 15f, 0f),
+                Ctx.Locations.Heading("M22.Beach")));
             heliModel.MarkAsNoLongerNeeded();
             if (_cargobob == null || !_cargobob.Exists()) return;
 

@@ -41,6 +41,8 @@ namespace Bloodlines.Missions
                 return false;
             }
 
+            if (!Validate()) return false;
+
             EnterStage(0);
             return true;
         }
@@ -77,6 +79,38 @@ namespace Bloodlines.Missions
 
             Advance();
             EnterStage(Stage);
+        }
+
+        /// <summary>
+        /// Catches the stage that can never finish: one made only of passive
+        /// objectives, which can fail but never complete. That shape is invisible to
+        /// the compiler and only shows up as a mission hanging at a stage, so it is
+        /// worth failing loudly at start instead.
+        /// </summary>
+        private bool Validate()
+        {
+            bool valid = true;
+
+            for (int i = 0; i < _stages.Count; i++)
+            {
+                var stage = _stages[i];
+
+                if (stage.Objectives.Count == 0)
+                {
+                    Logger.Error(Id + " stage " + i + " (" + stage.Name + ") has no objectives.");
+                    valid = false;
+                    continue;
+                }
+
+                if (stage.Objectives.All(objective => objective.IsPassive))
+                {
+                    Logger.Error(Id + " stage " + i + " (" + stage.Name +
+                                 ") has only passive objectives and could never finish.");
+                    valid = false;
+                }
+            }
+
+            return valid;
         }
 
         private MissionStage CurrentStageOrNull()
