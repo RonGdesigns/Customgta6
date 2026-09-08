@@ -190,6 +190,13 @@ missions and sixty-seven unfinished ones — so the routine parts are a library:
 | `AimAtObjective` | hold a weapon on a target — sniper set-ups, EMP locks |
 | `TimerObjective` | a countdown the stage runs under |
 | `RaceCheckpointObjective` | checkpoints and laps |
+| `SubdueTargetsObjective` | non-lethal takedowns count, for stun-gun stealth |
+| `PursueTargetObjective` | run a target down; a grace period, not a hair trigger |
+| `DestroyVehicleObjective` | wreck a specific vehicle |
+| `SpeedFloorObjective` | hold a speed or the chase closes — escorts and convoys |
+| `ShadowTargetObjective` | stay with a moving target without crowding it |
+| `AvoidDetectionObjective` | do not be seen; uses the engine's own perception check |
+| `MultiHoldObjective` | several sites, work at each, player picks the order |
 
 A `ComposedMission` implements two methods — `Setup()` spawns the world,
 `BuildStages()` returns the mission:
