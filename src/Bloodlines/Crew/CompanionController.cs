@@ -87,7 +87,14 @@ namespace Bloodlines.Crew
             if (companion == null || !companion.Exists()) return;
 
             var state = Decide(slot, companion, leader);
-            if (state != StateOf(slot))
+
+            // A slot with nothing recorded has never been applied. StateOf() reports
+            // Follow for it as a convenience, and taking that at face value was a
+            // crash: a first tick that decides Follow would match the phantom state,
+            // skip SetState, and then read _stateSince for a key never written.
+            // Deploying the crew on foot hit this every time.
+            CompanionState recorded;
+            if (!_states.TryGetValue(slot, out recorded) || state != recorded)
             {
                 SetState(slot, state);
                 Apply(slot, state, companion, leader);
@@ -101,7 +108,7 @@ namespace Bloodlines.Crew
                     MaintainVehicle(slot, companion, leader);
                     break;
                 case CompanionState.Follow:
-                    if (Game.GameTime - _stateSince[slot] > 8000) Apply(slot, state, companion, leader);
+                    if (StateAge(slot) > 8000) Apply(slot, state, companion, leader);
                     break;
             }
         }
@@ -198,7 +205,7 @@ namespace Bloodlines.Crew
 
             // Retry, then warp — an EnterVehicle task that fails silently is the exact
             // failure this state machine exists to prevent.
-            if (Game.GameTime - _stateSince[slot] < VehicleTaskTimeoutMs) return;
+            if (StateAge(slot) < VehicleTaskTimeoutMs) return;
 
             var seat = FreeSeat(vehicle, companion);
             if (seat == VehicleSeat.None) return;
@@ -237,6 +244,17 @@ namespace Bloodlines.Crew
             }
 
             return VehicleSeat.None;
+        }
+
+        /// <summary>
+        /// Milliseconds since this slot's state was last set. A slot with nothing
+        /// recorded reads as infinitely old, so every caller re-applies rather than
+        /// indexing a key that is not there.
+        /// </summary>
+        private int StateAge(CrewSlot slot)
+        {
+            int since;
+            return _stateSince.TryGetValue(slot, out since) ? Game.GameTime - since : int.MaxValue;
         }
 
         private void SetState(CrewSlot slot, CompanionState state)

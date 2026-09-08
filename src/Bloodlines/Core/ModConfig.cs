@@ -44,6 +44,13 @@ namespace Bloodlines.Core
         /// </summary>
         public bool ControllerSwitchEnabled { get; private set; } = true;
 
+        /// <summary>
+        /// Take the vanilla character wheel's controls over while the crew is
+        /// deployed. Left alone, the wheel would swap the player to Michael,
+        /// Franklin or Trevor and strand every ped this mod is tracking.
+        /// </summary>
+        public bool SuppressVanillaSwitch { get; private set; } = true;
+
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
@@ -70,6 +77,7 @@ namespace Bloodlines.Core
             config.DeployCrewKey = ReadKey(settings, "DeployCrew", config.DeployCrewKey);
             config.DevMenuKey = ReadKey(settings, "DevMenu", config.DevMenuKey);
             config.ControllerSwitchEnabled = settings.GetValue<bool>("Keys", "ControllerSwitch", config.ControllerSwitchEnabled);
+            config.SuppressVanillaSwitch = settings.GetValue<bool>("Keys", "SuppressVanillaSwitch", config.SuppressVanillaSwitch);
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);

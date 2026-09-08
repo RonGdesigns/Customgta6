@@ -21,6 +21,14 @@ namespace Bloodlines.Core
         private static string _path = "Bloodlines.log";
         private static bool _verbose;
 
+        // A fault inside OnTick repeats at the frame rate. The first run of this mod
+        // produced ~100,000 identical stack traces in about ninety seconds, which
+        // buries the one line before it that says what was actually happening. An
+        // error identical to the last one is counted instead of written, and the
+        // total is flushed when something else happens or the log closes.
+        private static string _lastError;
+        private static int _repeatCount;
+
         public static void Configure(string path, bool verbose)
         {
             _path = path;
@@ -46,7 +54,28 @@ namespace Bloodlines.Core
 
         public static void Error(string message, Exception ex = null)
         {
-            Write("ERROR", ex == null ? message : message + " :: " + ex);
+            var text = ex == null ? message : message + " :: " + ex;
+            lock (Gate)
+            {
+                if (text == _lastError)
+                {
+                    _repeatCount++;
+                    return;
+                }
+                FlushRepeats();
+                _lastError = text;
+            }
+            Write("ERROR", text);
+        }
+
+        /// <summary>Report and clear any suppressed repeat run. Caller holds the gate.</summary>
+        private static void FlushRepeats()
+        {
+            if (_repeatCount == 0) return;
+            var count = _repeatCount;
+            _repeatCount = 0;
+            _lastError = null;
+            WriteLocked("ERROR", "(the previous error repeated " + count + " more time(s))");
         }
 
         public static void Debug(string message)
@@ -57,6 +86,14 @@ namespace Bloodlines.Core
         private static void Write(string level, string message)
         {
             lock (Gate)
+            {
+                if (level != "ERROR") FlushRepeats();
+                WriteLocked(level, message);
+            }
+        }
+
+        private static void WriteLocked(string level, string message)
+        {
             {
                 try
                 {

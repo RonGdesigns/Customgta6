@@ -157,6 +157,22 @@ Bloodlines uses a lot of keys, and so do trainers. These are the likely clashes:
 | `F11` | survey capture | a few map/teleport mods |
 | `Insert` / `Delete` | checkpoint commit / restore | Enhanced Native Trainer variants |
 
+### No numpad
+
+Tenkeyless keyboards have no `Numpad 1/2/3`, so the switch has two other routes,
+both on by default:
+
+- **`]` and `[`** step forward and back through the crew. One key, on every board.
+- **A controller works with nothing configured.** The game's own character wheel
+  is reused rather than replaced: hold it (d-pad down) and pick with the same
+  stick direction you would use for Michael, Franklin or Trevor — they map to
+  Ice, Gohan and Guess in roster order. Holding the wheel and tapping d-pad
+  left/right steps through the crew instead.
+
+  While the crew is deployed the vanilla wheel is taken over, not shared: left
+  live it would swap you to Michael and strand every ped the mod is tracking.
+  `SuppressVanillaSwitch = False` gives it back if you want it.
+
 Every one is a line in `scripts\Bloodlines\Bloodlines.ini`. If you run a trainer,
 a set that usually stays clear:
 
@@ -200,6 +216,8 @@ your setup back. `docs/PLAYTEST.md` assumes you have done this.
 | Key | Action |
 |---|---|
 | `Numpad 1` / `2` / `3` | switch to Ice / Gohan / Guess |
+| `]` / `[` | step forward / back through the crew — no numpad needed |
+| **controller** | the character wheel, as the game already does it: hold it (d-pad down) and pick, or hold and tap d-pad left/right |
 | `Caps Lock` | activate the current character's ability (toggle) |
 | `F10` | deploy or stand down the crew in free roam |
 | `J` | start the next unfinished scripted mission |

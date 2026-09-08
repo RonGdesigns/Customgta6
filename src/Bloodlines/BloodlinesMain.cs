@@ -75,21 +75,31 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            // Each subsystem is stepped separately. Wrapping the whole tick in one
+            // try/catch meant a fault in the first line stopped every line after it:
+            // a crew-controller bug took missions, dialogue and the dev menu with it,
+            // and the mod looked frozen rather than broken. A failing subsystem now
+            // costs only itself.
+            Step("crew", _crew.Update);
+            Step("abilities", _abilities.Update);
+            Step("garage", _garage.Update);
+            Step("dialogue", _dialogue.Update);
+            Step("missions", _missions.Update);
+            Step("menu", _menu.Update);
+            Step("survey", _survey.Update);
+            Step("controller switch", HandleControllerSwitch);
+            Step("abort hold", HandleAbortHold);
+        }
+
+        private static void Step(string name, Action step)
+        {
             try
             {
-                _crew.Update();
-                _abilities.Update();
-                _garage.Update();
-                _dialogue.Update();
-                _missions.Update();
-                _menu.Update();
-                _survey.Update();
-                HandleControllerSwitch();
-                HandleAbortHold();
+                step();
             }
             catch (Exception ex)
             {
-                Logger.Error("Tick failed", ex);
+                Logger.Error("Tick failed in " + name, ex);
             }
         }
 
@@ -106,18 +116,39 @@ namespace Bloodlines
         }
 
         /// <summary>
-        /// The game's own character-select controls, routed to the crew. They are
-        /// already bound on a controller's character wheel, so a pad switches with
-        /// nothing configured; Michael/Franklin/Trevor map to Ice/Gohan/Guess in
-        /// roster order.
+        /// Switching on a controller, using the gesture the game already has.
+        ///
+        /// GTA's own trio switch is: hold the character wheel (D-pad down on a pad,
+        /// Left Alt on a keyboard), then pick a character. Both halves of that are
+        /// reused here rather than invented -- SelectCharacterMichael/Franklin/Trevor
+        /// are the wheel's own selection controls, already bound on every pad, and
+        /// they map to Ice/Gohan/Guess in roster order. Holding the wheel and tapping
+        /// left or right steps through the crew, for anyone who does not want to
+        /// remember which brother is in which slot.
+        ///
+        /// The vanilla wheel is taken over rather than shared: left live it would
+        /// swap the player to Michael and strand every ped this mod is tracking.
         /// </summary>
         private void HandleControllerSwitch()
         {
             if (!_config.ControllerSwitchEnabled || !_crew.IsDeployed) return;
 
-            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterMichael)) _switching.TrySwitch(CrewSlot.Ice);
-            else if (Game.IsControlJustPressed(GTA.Control.SelectCharacterFranklin)) _switching.TrySwitch(CrewSlot.Gohan);
-            else if (Game.IsControlJustPressed(GTA.Control.SelectCharacterTrevor)) _switching.TrySwitch(CrewSlot.Guess);
+            if (_config.SuppressVanillaSwitch)
+            {
+                Game.DisableControlThisFrame(GTA.Control.CharacterWheel);
+                Game.DisableControlThisFrame(GTA.Control.SelectCharacterMichael);
+                Game.DisableControlThisFrame(GTA.Control.SelectCharacterFranklin);
+                Game.DisableControlThisFrame(GTA.Control.SelectCharacterTrevor);
+                Game.DisableControlThisFrame(GTA.Control.SelectCharacterMultiplayer);
+            }
+
+            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterMichael)) { _switching.TrySwitch(CrewSlot.Ice); return; }
+            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterFranklin)) { _switching.TrySwitch(CrewSlot.Gohan); return; }
+            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterTrevor)) { _switching.TrySwitch(CrewSlot.Guess); return; }
+
+            if (!Game.IsControlPressed(GTA.Control.CharacterWheel)) return;
+            if (Game.IsControlJustPressed(GTA.Control.ScriptPadRight)) CycleCrew(1);
+            else if (Game.IsControlJustPressed(GTA.Control.ScriptPadLeft)) CycleCrew(-1);
         }
 
         private void HandleAbortHold()
