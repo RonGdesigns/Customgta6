@@ -21,12 +21,18 @@ REM
 REM  Usage:  install-bloodlines.bat "C:\Program Files\Rockstar Games\Grand Theft Auto V Enhanced"
 REM ---------------------------------------------------------------------------
 
+REM Keep the window open when this is launched by double-click instead of from a
+REM terminal -- otherwise the output flashes past and closes. %cmdcmdline% holds
+REM this script's own name only in the double-click case.
+set "PAUSE_AT_END="
+echo(%cmdcmdline% | find /i "%~nx0" >nul && set "PAUSE_AT_END=1"
+
 set "GAME=%~1"
 if "%GAME%"=="" set "GAME=%BLOODLINES_GTA_PATH%"
 if "%GAME%"=="" (
   echo Usage: install-bloodlines.bat "path\to\Grand Theft Auto V"
   echo    or set BLOODLINES_GTA_PATH once and just run this file.
-  exit /b 1
+  goto :bail
 )
 
 REM Strip a trailing backslash so "C:\path\" does not become "C:\path\\GTA5.exe".
@@ -42,7 +48,7 @@ if not defined BUILD (
   echo.
   echo     That is not a GTA V install root. The .exe files it does hold:
   dir /b "!GAME!\*.exe" 2>nul
-  exit /b 1
+  goto :bail
 )
 
 echo.
@@ -57,7 +63,7 @@ if not exist "%SRC%\Bloodlines.dll" (
   echo.
   echo [X] build\deploy\scripts\Bloodlines.dll not found.
   echo     Run this first, from the repo root:  python tools\package.py
-  exit /b 1
+  goto :bail
 )
 
 echo.
@@ -109,4 +115,11 @@ for %%F in (Bloodlines.ini Bloodlines.Locations.ini) do (
 echo.
 echo Done. Launch in STORY MODE only.
 echo Turn on the dev menu: scripts\Bloodlines\Bloodlines.ini  -^>  [Dev] Enabled = True
+if defined PAUSE_AT_END pause
 endlocal
+exit /b 0
+
+:bail
+if defined PAUSE_AT_END pause
+endlocal
+exit /b 1

@@ -11,6 +11,12 @@ REM  Usage:  check-setup.bat "C:\Program Files\Rockstar Games\Grand Theft Auto V
 REM          check-setup.bat                (scans the usual install locations)
 REM ---------------------------------------------------------------------------
 
+REM Keep the window open when this is launched by double-click instead of from a
+REM terminal -- otherwise the output flashes past and closes. %cmdcmdline% holds
+REM this script's own name only in the double-click case.
+set "PAUSE_AT_END="
+echo(%cmdcmdline% | find /i "%~nx0" >nul && set "PAUSE_AT_END=1"
+
 if not "%~1"=="" (
   call :report "%~1"
   goto :done
@@ -91,4 +97,5 @@ exit /b 0
 :done
 echo.
 echo Read-only scan complete. Nothing was changed.
+if defined PAUSE_AT_END pause
 endlocal

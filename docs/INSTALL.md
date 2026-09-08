@@ -36,6 +36,24 @@ up on **Legacy**, and that is the build it has been developed against. Nothing i
 the mission code is build-specific, so an Enhanced-capable hook should run it, but
 that has not been verified here.
 
+### Where to run these from
+
+Everything below runs from the **repo folder**, not the game folder:
+
+```
+C:\Users\<you>\Desktop\My work\Customgta6
+```
+
+Open a terminal there: in File Explorer, navigate to that folder, then either
+**Shift + right-click in the empty space → "Open PowerShell window here" / "Open
+in Terminal"**, or click the address bar, type `powershell`, and press Enter.
+
+`check-setup.bat` and `install-bloodlines.bat` also work by double-clicking —
+they hold the window open when launched that way, so the output does not flash
+past. Double-clicked, `check-setup.bat` scans the usual install locations and
+`install-bloodlines.bat` uses `BLOODLINES_GTA_PATH` if you have set it, and
+otherwise tells you the path it needs.
+
 Before installing anything, find out what you actually have:
 
 ```bat
