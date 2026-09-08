@@ -111,6 +111,11 @@ namespace Bloodlines.Missions
                 { "M20", () => new M20SkyHook() },
                 { "M21", () => new M21OpenWater() },
                 { "M22", () => new M22ScorchedBay() },
+                { "M23", () => new M23GhostInTheSage() },
+                { "M24", () => new M24LiquidGold() },
+                { "M25", () => new M25BountyHuntersCanyon() },
+                { "M26", () => new M26AlamoScramble() },
+                { "M27", () => new M27FlightRisk() },
                 { "SM01", () => new SM01LeadAndKevlar() },
                 { "SM02", () => new SM02ZeroDayInjection() },
                 { "SM03", () => new SM03MidnightDrift() }
