@@ -10,7 +10,7 @@
 | **.NET Framework 4.8** runtime | what SHVDN 3 targets | Windows Update, or Microsoft |
 | **OpenIV** | editing/adding game archives (custom peds, vehicles) | openiv.com |
 | **CodeWalker** | interiors (MLO), navmesh, cover nodes | github.com/dexyfex/CodeWalker |
-| Visual Studio 2022 or the .NET SDK | building this repo | optional if you use `dotnet build` |
+| Visual Studio 2022 or the .NET SDK | building this repo | optional — `prebuilt/Bloodlines.dll` ships built, and `tools/build_roslyn.py` compiles with Build Tools alone |
 
 A Rockstar Store copy is fine. Nothing here needs Steam or a specific storefront.
 
@@ -104,7 +104,8 @@ copy you mod.
    (<https://dotnet.microsoft.com/download>), and is only worth installing if you
    are going to change the C#. Visual Studio users: build `Bloodlines.sln` in
    Release/x64, then run `package.py` with no flags — a local build always wins
-   over the prebuilt DLL.
+   over the prebuilt DLL. If you have Build Tools but no SDK, `python
+   tools/build_roslyn.py` compiles without one.
 4. Copy the contents of `build/deploy/scripts/` into `<GTA V>/scripts/`. That is the
    whole install — DLL, config, and the campaign data the mod cannot run without.
 5. Optional: generate voice lines and fold them in:
@@ -238,7 +239,7 @@ rewinds a player who didn't ask for a QA build:
 | `F8` | open the developer menu — missions, stages, crew, world, dialogue, save state |
 | `Page Up` / `Page Down` | warp the running mission forward / back one stage |
 | `Insert` | commit a checkpoint |
-| `Delete` | restore the last checkpoint |
+| `Delete` | restore only supported mission checkpoints; current missions require a full retry |
 | `F11` | capture coordinates to `Bloodlines.Captures.ini` |
 
 `F9` reloads all SHVDN scripts without restarting the game — that one is SHVDN's own
@@ -288,7 +289,7 @@ the game root's `ScriptHookVDotNet.log` rather than anywhere in this project:
 
 | In ScriptHookVDotNet.log | Means |
 |---|---|
-| no `Loading scripts from ...` line at all | SHVDN itself did not initialise — a game update almost certainly broke the hook |
+| no `Loading scripts from ...` line at all | SHVDN itself did not initialize — a game update almost certainly broke the hook |
 | `Loading scripts from ...` but no mention of `Bloodlines.dll` | the DLL is not in `scripts\`, or is named `.dll.off` |
 | `TypeLoadException` / `MissingMethodException` naming a GTA type | API drift between the SHVDN build installed and the 3.6 API this mod compiles against |
 | `BadImageFormatException` | wrong architecture or a corrupt copy — reinstall the DLL |
@@ -319,3 +320,11 @@ Also worth knowing:
 - Do not redistribute Rockstar assets. Ship scripts and your own content only.
 - Back up your `GTA5.exe`, your `update.rpf`, and your save folder before you start.
   OpenIV's mods folder (`mods/`) exists precisely so you never edit originals.
+
+
+### Survey controls
+
+F8 > Survey selects a destination and creates a yellow GPS route. F7 teleports to
+the current spot; F11 captures on foot; End skips and Home goes back. Rebind F7 with
+`[Keys] SurveyTeleport`. Captures in Bloodlines.Surveyed.ini are loaded automatically.
+Close GTA before replacing the DLL, and preserve the existing INIs and savegame.

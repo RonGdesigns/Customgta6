@@ -25,6 +25,7 @@ namespace Bloodlines
         private readonly DialogueDirector _dialogue;
         private readonly CheckpointManager _checkpoints;
         private readonly MissionManager _missions;
+        private readonly DeathController _death;
         private readonly FleetGarage _garage;
         private readonly DevMenu _menu;
         private readonly SurveyMode _survey;
@@ -40,18 +41,21 @@ namespace Bloodlines
 
             _config = ModConfig.Load(Path.Combine(root, "Bloodlines.ini"));
             Logger.Configure(Path.Combine(root, "Bloodlines.log"), _config.VerboseLogging);
-            Logger.Info("Los Santos: Bloodlines loading.");
+            Logger.Info("Los Santos: Bloodlines loading. Build " + typeof(BloodlinesMain).Assembly.ManifestModule.ModuleVersionId);
 
             string dataDirectory = Path.Combine(root, "data");
-            _locations = LocationBook.Load(dataDirectory, Path.Combine(root, "Bloodlines.Locations.ini"));
-            _survey = new SurveyMode(_locations, Path.Combine(root, "Bloodlines.Surveyed.ini"));
             _data = CampaignData.Load(dataDirectory);
+            _locations = LocationBook.Load(dataDirectory, Path.Combine(root, "Bloodlines.Locations.ini"),
+                Path.Combine(root, "Bloodlines.Surveyed.ini"), _data);
+            _survey = new SurveyMode(_locations, Path.Combine(root, "Bloodlines.Surveyed.ini"),
+                _config.DevCaptureKey.ToString(), _config.SurveyTeleportKey.ToString());
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
 
             _crew = new CrewRoster(_config);
             _switching = new SwitchController(_crew);
             _abilities = new AbilityController(_config, _crew);
+            _switching.BeforeSwitch = _abilities.Stop;
             _dialogue = new DialogueDirector(_data, root);
             _checkpoints = new CheckpointManager(_crew);
             _garage = new FleetGarage(_state);
@@ -59,8 +63,9 @@ namespace Bloodlines
             var context = new MissionContext(_config, _locations, _data, _crew, _switching,
                 _abilities, _dialogue, _checkpoints, _state);
             _missions = new MissionManager(context, _state, _catalog);
+            _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
-                _state, _dialogue, _data, _survey);
+                _state, _dialogue, _data, _survey, _death);
 
             Interval = 0;
             Tick += OnTick;
@@ -80,6 +85,11 @@ namespace Bloodlines
             // a crew-controller bug took missions, dialogue and the dev menu with it,
             // and the mod looked frozen rather than broken. A failing subsystem now
             // costs only itself.
+            // Death runs first, and blocks the rest of the tick while it does. A
+            // corpse must not be fed to the companion AI or ticked through a
+            // mission objective for the frames it takes to stand back up.
+            Step("death", _death.Update);
+            if (_death.IsHandling) return;
             Step("crew", _crew.Update);
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
@@ -165,6 +175,7 @@ namespace Bloodlines
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
+            if (_death.IsHandling) return;
             try
             {
                 // The menu takes keys first while it is open, so its navigation never
@@ -201,6 +212,7 @@ namespace Bloodlines
             if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }
             if (key == _config.AbortKey && _abortHeldSince == 0) { _abortHeldSince = Game.GameTime; return true; }
             if (key == _config.DevCaptureKey && _survey.IsActive) { _survey.Capture(); return true; }
+            if (key == _config.SurveyTeleportKey && _survey.IsActive) { _survey.TeleportToCurrent(); return true; }
             return false;
         }
 
@@ -259,6 +271,11 @@ namespace Bloodlines
 
         private void ToggleDeployment()
         {
+            if (_survey.IsActive)
+            {
+                GameUtils.Subtitle("~y~Stop the survey before deploying the crew.", 3000);
+                return;
+            }
             if (_missions.IsRunning)
             {
                 GameUtils.Subtitle("~r~Not during a mission.", 2000);
@@ -290,31 +307,29 @@ namespace Bloodlines
             if (_crew.IsDeployed && player != null && player.Exists())
             {
                 _state.RecordPosition(_crew.ActiveSlot, player.Position);
-                _state.Save();
+                Step("save position", _state.Save);
             }
 
-            _abilities.Stop();
-            _dialogue.Clear();
-            _garage.Reset();
-            _crew.Dismiss();
+            Step("stop ability", _abilities.Stop);
+            Step("stop switching", _switching.Cancel);
+            Step("clear dialogue", _dialogue.Clear);
+            Step("reset garage", _garage.Reset);
+            Step("dismiss crew", _crew.Dismiss);
+            Step("release recovery", _death.Cancel);
             GameUtils.Notify("~y~Crew stood down.");
         }
 
         private void OnAborted(object sender, EventArgs e)
         {
-            try
-            {
-                Logger.Info("Script aborting — tearing down.");
-                _missions.Shutdown();
-                _abilities.Stop();
-                _dialogue.Clear();
-                _crew.Dismiss();
-                Game.TimeScale = 1.0f;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Teardown failed", ex);
-            }
+            Logger.Info("Script aborting - tearing down.");
+            Step("stop survey", _survey.Stop);
+            Step("stop switching", _switching.Cancel);
+            Step("mission shutdown", _missions.Shutdown);
+            Step("stop ability", _abilities.Stop);
+            Step("clear dialogue", _dialogue.Clear);
+            Step("dismiss crew", _crew.Dismiss);
+            Step("release recovery", _death.Cancel);
+            Step("restore time", () => Game.TimeScale = 1f);
         }
     }
 }

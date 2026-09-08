@@ -46,6 +46,8 @@ namespace Bloodlines.Missions.Objectives
 
         public virtual void Enter(MissionContext context)
         {
+            Status = ObjectiveStatus.Active;
+            FailReason = null;
         }
 
         public abstract void Update(MissionContext context);

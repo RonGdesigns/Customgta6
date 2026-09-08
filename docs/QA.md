@@ -6,14 +6,17 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 
 | # | Audit phase | How to run it | Pass criteria |
 |---|---|---|---|
-| 1 | **Model hashes** | `F10` to deploy the crew in free roam | All three peds render as `g_m_y_famca_01`, `g_m_y_famdnf_01`, `g_m_y_ballaeast_01` with no texture corruption, each with the right blip colour |
-| 2 | **Audio pipeline** | Generate M01's lines (`tools/generate_voice.py --mission M01`), drop them in `scripts/Bloodlines/audio/`, start M01 | WAVs play cleanly, subtitles carry the speaker's colour (Ice `~b~`, Gohan `~g~`, Guess `~o~`), and lines never overlap |
+| 1 | **Model hashes** | `F10` to deploy the crew in free roam | All three peds render as `g_m_y_famca_01`, `g_m_y_famdnf_01`, `g_m_y_ballaeast_01` with no texture corruption, each with the right blip color |
+| 2 | **Audio pipeline** | Generate M01's lines (`tools/generate_voice.py --mission M01`), drop them in `scripts/Bloodlines/audio/`, start M01 | WAVs play cleanly, subtitles carry the speaker's color (Ice `~b~`, Gohan `~g~`, Guess `~o~`), and lines never overlap |
 | 3 | **Sky-cam switch** | `Numpad 1/2/3` during a deployment | Camera lifts and descends into the target ped without hitching or clipping; the ped you left keeps its weapons and starts fighting |
 | 4 | **Companion leash** | Drive >180m from the crew | Companions reposition on the active character rather than pathfinding across the map; the leash distance is `CompanionLeashDistance` |
-| 5 | **Checkpoint engine** | `Insert` to commit, then die or press `Delete` on M01 stage 2 | Positions, health, armor and wanted level restore; wrecked vehicles within 220m are purged; the mission resumes at the committed stage |
+| 5 | **Checkpoint guard** | Insert then Delete in a current mission | A clear full-restart message; no false restore of destroyed vehicles or stale objectives |
+| 5b | **Death recovery** | Die as each brother, including with an active ability | Visible screen, normal time, live controllable player, mission fails once and can be retried from the beginning |
+| 5c | **Arrest** | Let police arrest a deployed brother | Recovery clears the arrest; no permanent loss of controls |
+| 5d | **Death handed back** | Stand the crew down (`F10`), then die as your own story character | Vanilla Wasted screen and hospital respawn, exactly as without the mod. If dying does nothing, `ReleaseSuppression` did not run and that is a blocker |
 | 6 | **Story character** | `F10` to deploy, `F10` again to stand down | The character you were playing before deployment comes back — same ped, same position, not a gang model |
 | 7 | **Solo lock** | Start SM01, press `Numpad 2` | The switch is refused with a subtitle; only Ice is on the map |
-| 8 | **Coordinate survey** | dev menu → Survey, then `F11` at each beat | The survey teleports you to each estimate in turn; `F11` captures where you stand, `End` skips, `Home` goes back. It writes `Bloodlines.Surveyed.ini` after every capture — rename it over `Bloodlines.Locations.ini` when done |
+| 8 | **Survey** | F8 > Survey; drive the yellow GPS route or F7 teleport; F11 capture on foot | Marker visible at any distance; saved coordinate survives reload and affects M01 spawning; End skips, Home returns |
 
 | 9 | **Save state** | Finish M01, alt-F4, relaunch | `savegame.json` lists M01 in `completedMissions`, `currentMissionId` has moved on, and `J` offers the next mission rather than M01 again |
 | 10 | **Prerequisites** | Press `J` on a fresh save | M01 comes first; SM01 is not offered until M03 is complete |
@@ -38,7 +41,7 @@ compile perfectly and then fail silently: a typo'd model spawns nothing, a wrong
 id logs a warning nobody reads, a bad location key puts a marker at the map origin.
 It has already caught a plane model that does not exist (`mallard`; the Mallard's
 model is `stunt`) which would have made M27 unfinishable, and four missions that
-deployed the crew over water or, in one case, seven hundred metres up.
+deployed the crew over water or, in one case, seven hundred meters up.
 
 ## What to log
 
@@ -51,3 +54,9 @@ which is what makes a bug report reproducible.
 Every coordinate outside the bible's Track 2 index is an estimate. Audit 8 is
 therefore not optional before judging any mission's pacing: a marker in the wrong
 place reads as bad mission design when it is really bad surveying.
+
+## Runtime regression checks
+
+`python tools/run_regression_tests.py` runs source-level checks with GTA stand-ins.
+Test normal companion door animations with a stopped four-door car, distinct seats,
+combat response to player attackers, and delayed fallback for failed entry in game.

@@ -37,6 +37,9 @@ namespace Bloodlines.Missions
 
         public string FailReason { get; private set; }
 
+        // Opt in only when the mission rebuilds entities, vehicles and objective state.
+        public virtual bool SupportsCheckpointRestore => false;
+
         protected int Stage { get; private set; }
 
         /// <summary>Stage index, for the checkpoint manager and the QA harness.</summary>

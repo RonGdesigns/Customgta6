@@ -26,6 +26,9 @@ namespace Bloodlines.Crew
 
     public sealed class CrewRoster
     {
+        /// <summary>Armor every protagonist spawns and revives with.</summary>
+        private const int StartingArmor = 50;
+
         private readonly ModConfig _config;
         private readonly Dictionary<CrewSlot, Ped> _peds = new Dictionary<CrewSlot, Ped>();
         private readonly Dictionary<CrewSlot, Blip> _blips = new Dictionary<CrewSlot, Blip>();
@@ -35,6 +38,8 @@ namespace Bloodlines.Crew
         private bool _groupsReady;
         private Ped _storyPed;
         private Vector3 _storyPedPosition;
+        private float _storyPedHeading;
+        public PedPlacement? RecoveryOrigin => _storyPed == null ? (PedPlacement?)null : new PedPlacement(_storyPedPosition, _storyPedHeading);
 
         public CrewRoster(ModConfig config)
         {
@@ -66,6 +71,14 @@ namespace Bloodlines.Crew
 
         /// <summary>True while only one character is deployed (a solo mission).</summary>
         public bool IsSolo { get; private set; }
+
+        /// <summary>
+        /// Where this deployment started, or null when nothing is deployed. The death
+        /// controller regroups here when a mission has no checkpoint to fall back on:
+        /// it is a spot the game has already accepted three peds standing at, which no
+        /// hand-written respawn coordinate can promise.
+        /// </summary>
+        public PedPlacement? DeployOrigin { get; private set; }
 
         public Ped PedFor(CrewSlot slot)
         {
@@ -145,6 +158,7 @@ namespace Bloodlines.Crew
             ActiveSlot = slot;
             IsDeployed = true;
             IsSolo = true;
+            DeployOrigin = new PedPlacement(position, heading);
 
             StashStoryCharacter();
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, ped, true, true);
@@ -196,6 +210,7 @@ namespace Bloodlines.Crew
             ActiveSlot = startAs;
             IsDeployed = true;
             IsSolo = false;
+            DeployOrigin = placements[startAs];
 
             StashStoryCharacter();
 
@@ -229,7 +244,7 @@ namespace Bloodlines.Crew
             ped.DiesOnLowHealth = false;
             ped.MaxHealth = 300;
             ped.Health = 300;
-            ped.Armor = 50;
+            ped.Armor = StartingArmor;
             ped.Accuracy = 55;
             ped.CanSwitchWeapons = true;
 
@@ -262,7 +277,7 @@ namespace Bloodlines.Crew
                 if (ped == null) continue;
 
                 // Force a fresh decision rather than leaving a stale task in place.
-                _companions.Forget(protagonist.Slot);
+                _companions.Refresh(protagonist.Slot);
                 _companions.Update(protagonist.Slot, ped, player);
             }
         }
@@ -333,14 +348,86 @@ namespace Bloodlines.Crew
             }
         }
 
+        /// <summary>
+        /// Brings the whole crew back from a death, and puts the player back on the
+        /// active ped. Returns false only when there is nothing left to revive, which
+        /// is the one case the death controller cannot recover from.
+        ///
+        /// RESURRECT_PED is what actually undoes death; assigning health to a corpse
+        /// does nothing, which is why a checkpoint restore alone was never going to be
+        /// enough. Reinstalling the player on the ped afterwards is not optional
+        /// either: the engine detaches the player from a ped it has declared dead, and
+        /// a resurrected ped nobody is driving is just an NPC standing in a fade.
+        /// </summary>
+        public bool ReviveAll()
+        {
+            if (!IsDeployed) return false;
+
+            var active = PedFor(ActiveSlot);
+            if (active == null) return false;
+
+            foreach (var protagonist in Protagonist.All)
+            {
+                var ped = PedFor(protagonist.Slot);
+                if (ped == null) continue;
+
+                if (ped.IsDead) Function.Call(Hash.RESURRECT_PED, ped);
+
+                // A busted recovery arrives here alive but in handcuffs. Resurrect
+                // does nothing for that, and a cuffed player cannot draw a weapon,
+                // so the restraint is lifted explicitly.
+                Function.Call(Hash.UNCUFF_PED, ped);
+                Function.Call(Hash.SET_ENABLE_HANDCUFFS, ped, false);
+
+                ped.Task.ClearAllImmediately();
+                ped.ClearBloodDamage();
+                ped.ClearLastWeaponDamage();
+                ped.Health = ped.MaxHealth;
+                ped.Armor = StartingArmor;
+                ped.IsInvincible = false;
+                ped.IsPersistent = true;
+                ped.BlockPermanentEvents = true;
+                ped.RelationshipGroup = _crewGroup;
+            }
+
+            Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, active, true, true);
+            Game.Player.IsInvincible = false;
+
+            RefreshCompanionBlips();
+            AssignCompanionAI();
+            Logger.Info("Crew revived; player back on " + Active.DisplayName + ".");
+            return active.Exists() && !active.IsDead && Game.Player.Character.Handle == active.Handle;
+        }
+
+        /// <summary>
+        /// Stands the whole crew back up at one point — the death controller's
+        /// fallback when the running mission has no checkpoint, and its only move in
+        /// free roam. Uses the same spawn offsets a deployment does, so the three of
+        /// them never come back inside one another.
+        /// </summary>
+        public void RegroupAt(Vector3 position, float heading)
+        {
+            foreach (var protagonist in Protagonist.All)
+            {
+                var ped = PedFor(protagonist.Slot);
+                if (ped == null) continue;
+
+                ped.Task.ClearAllImmediately();
+                ped.Position = position + OffsetFor(protagonist.Slot);
+                ped.Heading = heading;
+            }
+
+            AssignCompanionAI();
+            Logger.Info("Crew regrouped at " + position + ".");
+        }
+
         private void RespawnCompanion(Protagonist protagonist)
         {
             var player = PedFor(ActiveSlot);
             if (player == null) return;
 
             Logger.Warn(protagonist.DisplayName + " went down; respawning as companion.");
-            GameUtils.SafeDelete(PedFor(protagonist.Slot));
-            _peds.Remove(protagonist.Slot);
+            var previous = PedFor(protagonist.Slot);
 
             var model = protagonist.Model;
             if (!GameUtils.RequestModel(model)) return;
@@ -351,6 +438,7 @@ namespace Bloodlines.Crew
 
             ConfigurePed(ped, protagonist);
             _peds[protagonist.Slot] = ped;
+            GameUtils.SafeDelete(previous);
             RefreshCompanionBlips();
             AssignCompanionAI();
             GameUtils.Notify("~o~" + protagonist.DisplayName + "~s~ patched up and back on your six.");
@@ -375,6 +463,7 @@ namespace Bloodlines.Crew
 
             _storyPed = current;
             _storyPedPosition = current.Position;
+            _storyPedHeading = current.Heading;
             _storyPed.IsPersistent = true;
             _storyPed.IsInvincible = true;
             _storyPed.IsVisible = false;
@@ -382,6 +471,13 @@ namespace Bloodlines.Crew
             _storyPed.BlockPermanentEvents = true;
             _storyPed.IsPositionFrozen = true;
             Logger.Info("Story character stashed at " + _storyPedPosition + ".");
+        }
+
+        public void ReturnToStoryOrigin()
+        {
+            var player = Game.Player.Character;
+            if (_storyPed != null && _storyPed.Exists() && player != null && player.Exists())
+                player.Position = _storyPedPosition;
         }
 
         private void RestoreStoryCharacter()
@@ -392,7 +488,7 @@ namespace Bloodlines.Crew
                 return;
             }
 
-            var handOverPoint = Game.Player.Character != null && Game.Player.Character.Exists()
+            var handOverPoint = Game.Player.Character != null && Game.Player.Character.Exists() && !Game.Player.Character.IsDead
                 ? Game.Player.Character.Position
                 : _storyPedPosition;
 
@@ -438,6 +534,7 @@ namespace Bloodlines.Crew
             _peds.Clear();
             IsDeployed = false;
             IsSolo = false;
+            DeployOrigin = null;
         }
     }
 }

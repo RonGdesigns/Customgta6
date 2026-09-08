@@ -41,7 +41,7 @@ namespace Bloodlines.Core
                         "=== Los Santos: Bloodlines - session " + DateTime.Now.ToString("u") + " ===" + Environment.NewLine,
                         LogEncoding);
                 }
-                catch (IOException)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
                     // A locked log file is never worth taking the game down for.
                 }
@@ -101,7 +101,7 @@ namespace Bloodlines.Core
                         DateTime.Now.ToString("HH:mm:ss.fff") + " [" + level + "] " + message + Environment.NewLine,
                         LogEncoding);
                 }
-                catch (IOException)
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
                 {
                 }
             }

@@ -26,12 +26,22 @@ compile-time-only reference. On Linux it cross-compiles via
 an SDK that is not on PATH.
 
 **After changing C#, refresh the committed binary** or a machine without the SDK
-installs a stale one:
+installs a stale one — and then reinstall it, or the game keeps running the old
+one no matter what the repo says:
 
 ```bash
 dotnet build src/Bloodlines/Bloodlines.csproj -c Release
 cp src/Bloodlines/bin/Release/Bloodlines.dll prebuilt/Bloodlines.dll
+python3 tools/package.py    # then copy build/deploy/scripts/ over <GTA V>/scripts/
 ```
+
+**No .NET SDK, but Visual Studio Build Tools installed?** `python3
+tools/build_roslyn.py` compiles the same sources against the same pinned
+references straight through Roslyn's `csc`, fetching them into `build/refs/`. The
+build is deterministic, so `cmp` between `prebuilt/Bloodlines.dll` and the DLL in
+`<GTA V>/scripts/` is a real staleness check rather than a guess. A stale install
+is the single most expensive failure on this project: every symptom you then chase
+belongs to a build that is no longer in the repo.
 
 ## Checks that must pass before pushing
 
@@ -54,6 +64,7 @@ BloodlinesMain (GTA.Script)   entry point, key handling, per-subsystem tick
 DevTools       (GTA.Script)   QA harness, only with [Dev] Enabled = True
   ^ the ONLY two Script subclasses, on purpose
 CrewRoster / SwitchController / CompanionController   the three brothers
+DeathController the player going down; the engine cannot restart a custom ped
 MissionManager -> MissionCatalog -> Mission / ComposedMission
   ComposedMission = stages of Objectives (18 kinds, in Missions/Objectives/)
 CampaignData    loads data/*.tsv at runtime
@@ -65,6 +76,15 @@ classes the dispatcher constructs on demand, so only the running mission ticks.
 Per-act assemblies would not change that and would add 70 assemblies to
 version-match. External mission packs are still supported through the `assembly`
 and `class_name` columns of `missions.tsv`.
+
+**Death is ours, not the engine's.** GTA's restart machine is written around
+Michael, Franklin and Trevor. Hand it a ped that `CHANGE_PLAYER_PED` installed and
+it fades out, finds no story character to restart into, and never fades back in —
+a black screen that reads as a crash. `DeathController` pauses the engine's
+restart for as long as the crew is deployed and runs the sequence itself, and
+**hands it back on stand-down and on teardown**. Leave that release out and the
+player's game is one where dying does nothing. Busted goes through the same path,
+for the same reason: pausing the restart stops an arrest resolving too.
 
 **Passive objectives.** `Objective.IsPassive` marks fail-only objectives
 (Protect, Timer, SpeedFloor, AvoidDetection, AltitudeCeiling). They never
@@ -106,3 +126,21 @@ voice lines.
 
 Read `docs/PLAYTEST.md` before a play session and `docs/INSTALL.md` for install,
 the Legacy/Enhanced split, and what to do when `Bloodlines.log` never appears.
+
+
+## Recovery and survey contracts
+
+Current missions have SupportsCheckpointRestore=false: a death fails the mission
+and regroups at the real pre-deployment position. Do not claim checkpoint recovery
+until vehicles, entities, active character and private mission state can be rebuilt.
+DeathController is frame-driven; gameplay must not tick while IsHandling is true.
+Critical teardown steps must remain independently protected.
+
+Survey destinations create a yellow GPS route; F7 explicitly teleports and F11 saves
+on-foot captures. Bloodlines.Surveyed.ini loads automatically and overrides M01's
+anchor-derived defaults. Mission and survey coordinates must share LocationBook.
+Keep the raw DevTools capture from competing with the survey's capture key/HUD.
+Companions reserve separate seats and attempt normal nearby entry before fallback.
+
+Run `python tools/run_regression_tests.py` on Windows as well as the build/lint checks.
+These source-level tests use GTA stand-ins and cannot establish live native behavior.

@@ -150,23 +150,35 @@ all three crew within 50m. Three stars.
 
 ### Then break it on purpose
 
-- `Insert` at stage 2, then die → does `Delete` restore you at stage 2 with the
-  wreckage purged?
-- Blow up the T20 in stage 2 → should fail with "The getaway car is wrecked."
-- Hold `Backspace` mid-mission → clean abort, no leftover peds or blips in the world.
+- Die at each M01 stage, with an ability active and with/without a destroyed T20.
+  Recovery should return a living controllable character to the pre-deployment area,
+  fail the mission once, and let you retry from the beginning. Current missions do
+  not support a complete checkpoint restore; Delete explains that restriction.
+- Test arrest, death during a character switch, and repeated free-roam deaths.
+- Stand down and die as the story character: vanilla recovery must work again.
+- Abort/reload: no frozen or invincible player, stuck fade, or slowed time.
+- Near a stopped four-door car, both companions should walk to separate doors and
+  enter normally. Drive off only after watching the entry sequence. Test a blocked
+  door and a companion more than 60m away to exercise the fallback.
+- Fight a hostile who attacks the player: companions should actively engage. Nearby
+  neutral pedestrians must not be attacked simply because they are nearby.
 
----
+## 4. Survey with GPS or teleport
 
-## 4. Survey while you are there (15 min)
+End the mission first. Open F8 > Survey > Survey M01 only. A yellow destination blip
+and GPS route mark the next location. Drive there, or press F7 (SurveyTeleport) to
+warp. If collision fails to load within four seconds, the warp returns you to your
+previous position. Air/water/roof locations still require care and in-game inspection.
 
-`F8` → Survey → "Survey M01 only". It teleports you to each estimate in turn; walk
-to where the beat actually belongs and press `F11`. `End` skips, `Home` goes back.
+Exit the vehicle, stand on the intended surface and press F11. The named capture is
+saved and the route advances. End skips; Home returns to the previous point. Open
+the Survey menu to stop. Captures in Bloodlines.Surveyed.ini load automatically after
+a restart and take precedence over M01 anchors; no rename is needed. Verify by
+capturing a point, reloading, then starting the relevant mission.
 
-It writes `scripts/Bloodlines/Bloodlines.Surveyed.ini` after every capture. Send me
-that file — it is the single most valuable artefact of the session, because it
-converts nine guesses into real positions and tells me how far off my estimates run.
+Game archives do not establish which surface a narrative beat intends. Do not mark
+an estimate verified solely because its district or asset name exists in the files.
 
----
 
 ## 5. Reporting back
 

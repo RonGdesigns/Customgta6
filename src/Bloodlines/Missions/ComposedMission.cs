@@ -155,6 +155,8 @@ namespace Bloodlines.Missions
         protected override void OnStageEntered(int stage)
         {
             if (_stages == null) return;
+            _stages = BuildStages().ToList();
+            if (!Validate()) throw new System.InvalidOperationException("Invalid rebuilt stages for " + Id);
             EnterStage(stage);
         }
     }

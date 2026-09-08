@@ -15,6 +15,7 @@ Outputs (tab-separated, one header row, no quoting — tabs are stripped from va
     data/campaign_registry.json  the same mission list as JSON, for external tooling
 """
 
+import io
 import json
 import os
 import re
@@ -22,6 +23,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from pdf_text import extract  # noqa: E402
+
+# Every generated file in this repo is committed with CRLF, because they were
+# all first written on Windows. Writing them with the platform default instead
+# turns one regeneration on Linux into a whole-file diff on every line, which
+# hides the handful of rows that actually changed. Pinning it makes the output
+# the same artifact wherever the tool runs.
+CRLF = '\r\n'
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, 'data')
@@ -334,7 +342,7 @@ def write_registry(path, missions, anchors):
             entry['focusHero'] = mission['owner'].title()
         entries.append(entry)
 
-    with open(path, 'w') as handle:
+    with io.open(path, 'w', encoding='utf-8', newline=CRLF) as handle:
         json.dump({'missions': entries}, handle, indent=2)
         handle.write('\n')
     print('wrote {} ({} entries)'.format(os.path.relpath(path, REPO), len(entries)))
@@ -342,7 +350,7 @@ def write_registry(path, missions, anchors):
 
 def write_tsv(path, columns, rows):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w') as handle:
+    with io.open(path, 'w', encoding='utf-8', newline=CRLF) as handle:
         handle.write('\t'.join(columns) + '\n')
         for row in rows:
             handle.write('\t'.join(str(row[column]) for column in columns) + '\n')
@@ -357,7 +365,7 @@ def main():
     seen = set()
 
     for source in sys.argv[1:]:
-        text = extract(source) if source.lower().endswith('.pdf') else open(source).read()
+        text = extract(source) if source.lower().endswith('.pdf') else io.open(source, encoding='utf-8').read()
         missions, cues = parse_missions(text.splitlines())
         windows = parse_solo_windows(text)
 

@@ -20,6 +20,7 @@ namespace Bloodlines.Abilities
         private readonly Dictionary<CrewSlot, Ability> _abilities;
 
         private Ability _running;
+        private Ped _owner;
         private float _meter = 1f;
         private int _lastTick;
 
@@ -62,7 +63,9 @@ namespace Bloodlines.Abilities
             if (!_abilities.TryGetValue(_crew.ActiveSlot, out var ability)) return;
 
             _running = ability;
-            ability.Activate(player);
+            _owner = player;
+            try { ability.Activate(player); }
+            catch { Stop(); throw; }
             GameUtils.Subtitle("~y~" + ability.Name, 2000);
             Logger.Debug("Ability up: " + ability.Name);
         }
@@ -84,7 +87,8 @@ namespace Bloodlines.Abilities
 
             if (_running != null)
             {
-                if (player == null || !player.Exists() || player.IsDead)
+                if (!_crew.IsDeployed || player == null || !player.Exists() || player.IsDead ||
+                    _owner == null || !_owner.Exists() || player.Handle != _owner.Handle)
                 {
                     Stop();
                 }
@@ -116,7 +120,7 @@ namespace Bloodlines.Abilities
             var player = Game.Player.Character;
             try
             {
-                _running.Deactivate(player);
+                _running.Deactivate(_owner != null && _owner.Exists() ? _owner : player);
             }
             catch (System.Exception ex)
             {
@@ -125,8 +129,9 @@ namespace Bloodlines.Abilities
             finally
             {
                 // Belt and braces: a stuck time scale ruins the whole session.
-                Function.Call(Hash.SET_TIME_SCALE, 1.0f);
                 _running = null;
+                _owner = null;
+                Function.Call(Hash.SET_TIME_SCALE, 1.0f);
             }
         }
 

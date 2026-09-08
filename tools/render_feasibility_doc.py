@@ -4,7 +4,15 @@
 """
 
 import csv
+import io
 import os
+
+# Every generated file in this repo is committed with CRLF, because they were
+# all first written on Windows. Writing them with the platform default instead
+# turns one regeneration on Linux into a whole-file diff on every line, which
+# hides the handful of rows that actually changed. Pinning it makes the output
+# the same artifact wherever the tool runs.
+CRLF = '\r\n'
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(REPO, 'docs', 'FEASIBILITY.md')
@@ -61,7 +69,7 @@ not, no amount of remaining missions will fix it.
 
 
 def read(path):
-    with open(path) as handle:
+    with io.open(path, encoding='utf-8') as handle:
         return list(csv.DictReader(handle, delimiter='\t'))
 
 
@@ -88,11 +96,11 @@ def main():
 
     out.append('---\n')
     out.append('Generated from `data/feasibility.tsv` by `tools/render_feasibility_doc.py`. '
-               'The tiers are judgement calls made from the bible text, not from testing — '
+               'The tiers are judgment calls made from the bible text, not from testing — '
                'revise them as missions are actually built, and treat a Green that turns out '
                'Yellow as information about the next twenty missions, not just this one.')
 
-    with open(OUT, 'w') as handle:
+    with io.open(OUT, 'w', encoding='utf-8', newline=CRLF) as handle:
         handle.write('\n'.join(out) + '\n')
     print('wrote docs/FEASIBILITY.md ({} missions)'.format(len(tiers)))
 

@@ -85,7 +85,7 @@ namespace Bloodlines.Missions.Campaign
             // The match is real flying: hold the band and the transfer becomes possible.
             yield return new MissionStage("Match the Shamal",
                     new ShadowTargetObjective("Climb to the Shamal and hold station inside 60 metres.",
-                        () => _shamal, 60f, 12, "The Shamal outran the stunt plane.", 12f))
+                        () => _shamal, 60f, 12, "The Shamal outran the stunt plane.", 12f, acquireSeconds: 240))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartJet())
                 .OnExit(context => BoardTheJet());
@@ -121,11 +121,13 @@ namespace Bloodlines.Missions.Campaign
             GameUtils.FadeOut(900);
             Script.Wait(950);
 
-            Ctx.Switching.TrySwitch(CrewSlot.Ice);
+            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && !Ctx.Switching.TrySwitch(CrewSlot.Ice))
+                throw new System.InvalidOperationException("Could not switch to Ice for the transfer.");
 
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             if (ice != null && ice.Exists())
             {
+                ice.Weapons.Give(WeaponHash.Parachute, 1, false, true);
                 ice.Task.ClearAllImmediately();
                 Function.Call(Hash.SET_PED_INTO_VEHICLE, ice, _shamal, -2);
             }
@@ -249,6 +251,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _bodyguards.Clear();
+            GameUtils.FadeIn(500);
         }
     }
 

@@ -62,18 +62,18 @@ namespace Bloodlines.Missions.Campaign
         protected override bool OnStart()
         {
             // Track 2 of the omnibus bible — surveyed positions, used verbatim.
-            _roost = Ctx.Data.Anchor("Ice: Roost 4", Ctx.Locations.Position("M01.CraneNest"));
-            _bilge = Ctx.Data.Anchor("Gohan: Bilge Hatch", Ctx.Locations.Position("M01.LowerDeckLedger"));
-            _bayFloor = Ctx.Data.Anchor("Guess: Bay 2", Ctx.Locations.Position("M01.PrototypeCar"));
-            _slipway = Ctx.Data.Anchor("Mateo: Escape Boat", Ctx.Locations.Position("M01.LaunchEscape"));
+            _roost = Ctx.Locations.Position("M01.CraneNest");
+            _bilge = Ctx.Locations.Position("M01.LowerDeckLedger");
+            _bayFloor = Ctx.Locations.Position("M01.PrototypeCar");
+            _slipway = Ctx.Locations.Position("M01.LaunchEscape");
 
             // Three separate operations: nobody follows anybody until the collision.
             Ctx.Crew.CompanionsHoldPosition = true;
 
             var placements = new Dictionary<CrewSlot, PedPlacement>
             {
-                { CrewSlot.Ice, new PedPlacement(_roost, Ctx.Data.AnchorHeading("Ice: Roost 4", 180.5f)) },
-                { CrewSlot.Gohan, new PedPlacement(_bilge, Ctx.Data.AnchorHeading("Gohan: Bilge Hatch", 270f)) },
+                { CrewSlot.Ice, new PedPlacement(_roost, Ctx.Locations.Heading("M01.CraneNest")) },
+                { CrewSlot.Gohan, new PedPlacement(_bilge, Ctx.Locations.Heading("M01.LowerDeckLedger")) },
                 { CrewSlot.Guess, new PedPlacement(_bayFloor + new Vector3(2f, 0f, 0f), 90f) }
             };
 
@@ -325,8 +325,8 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("g_m_m_mexboss_01");
             if (!GameUtils.RequestModel(model)) return;
 
-            var stateroom = _bilge + new Vector3(0f, 6f, 6f);
-            _mateo = Track(World.CreatePed(model, stateroom, 90f));
+            var stateroom = Ctx.Locations.Position("M01.CapoSpawn");
+            _mateo = Track(World.CreatePed(model, stateroom, Ctx.Locations.Heading("M01.CapoSpawn")));
             model.MarkAsNoLongerNeeded();
             if (_mateo == null || !_mateo.Exists()) return;
 
@@ -349,7 +349,7 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
 
             _prototype = Track(World.CreateVehicle(model, _bayFloor,
-                Ctx.Data.AnchorHeading("Guess: Bay 2", 90f)));
+                Ctx.Locations.Heading("M01.PrototypeCar")));
             model.MarkAsNoLongerNeeded();
             if (_prototype == null || !_prototype.Exists()) return;
 
@@ -370,7 +370,7 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
 
             _launch = Track(World.CreateVehicle(model, _slipway,
-                Ctx.Data.AnchorHeading("Mateo: Escape Boat", 225f)));
+                Ctx.Locations.Heading("M01.LaunchEscape")));
             model.MarkAsNoLongerNeeded();
             if (_launch == null || !_launch.Exists()) return;
 

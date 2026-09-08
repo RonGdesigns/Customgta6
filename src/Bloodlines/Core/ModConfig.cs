@@ -26,6 +26,7 @@ namespace Bloodlines.Core
         public Keys DevCaptureKey { get; private set; } = Keys.F11;
         public Keys DeployCrewKey { get; private set; } = Keys.F10;
         public Keys DevMenuKey { get; private set; } = Keys.F8;
+        public Keys SurveyTeleportKey { get; private set; } = Keys.F7;
 
         /// <summary>Companions are damage-capped rather than invincible; 0 disables the cap.</summary>
         public int CompanionHealthFloor { get; private set; } = 150;
@@ -50,6 +51,25 @@ namespace Bloodlines.Core
         /// Franklin or Trevor and strand every ped this mod is tracking.
         /// </summary>
         public bool SuppressVanillaSwitch { get; private set; } = true;
+
+        /// <summary>
+        /// Handle the player's death instead of the engine, for as long as the crew is
+        /// deployed. Turning this off restores the vanilla path, which on a ped
+        /// installed by CHANGE_PLAYER_PED fades out and never comes back; the switch
+        /// exists so a bad interaction with another mod can be isolated, not because
+        /// off is a reasonable way to play.
+        /// </summary>
+        public bool DeathHandlingEnabled { get; private set; } = true;
+
+        /// <summary>Come back at the running mission's last checkpoint rather than the deployment point.</summary>
+        public bool RestoreCheckpointOnDeath { get; private set; } = true;
+
+        public int DeathFadeOutMs { get; private set; } = 800;
+
+        /// <summary>How long the screen stays black — the beat that reads as a death rather than a stutter.</summary>
+        public int DeathHoldMs { get; private set; } = 1500;
+
+        public int DeathFadeInMs { get; private set; } = 1200;
 
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
@@ -76,12 +96,22 @@ namespace Bloodlines.Core
             config.DevCaptureKey = ReadKey(settings, "DevCapture", config.DevCaptureKey);
             config.DeployCrewKey = ReadKey(settings, "DeployCrew", config.DeployCrewKey);
             config.DevMenuKey = ReadKey(settings, "DevMenu", config.DevMenuKey);
+            config.SurveyTeleportKey = ReadKey(settings, "SurveyTeleport", config.SurveyTeleportKey);
             config.ControllerSwitchEnabled = settings.GetValue<bool>("Keys", "ControllerSwitch", config.ControllerSwitchEnabled);
             config.SuppressVanillaSwitch = settings.GetValue<bool>("Keys", "SuppressVanillaSwitch", config.SuppressVanillaSwitch);
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);
             config.CompanionLeashDistance = settings.GetValue<float>("Crew", "CompanionLeashDistance", config.CompanionLeashDistance);
+
+            config.DeathHandlingEnabled = settings.GetValue<bool>("Death", "Enabled", config.DeathHandlingEnabled);
+            config.RestoreCheckpointOnDeath = settings.GetValue<bool>("Death", "RestoreCheckpoint", config.RestoreCheckpointOnDeath);
+            config.DeathFadeOutMs = settings.GetValue<int>("Death", "FadeOutMs", config.DeathFadeOutMs);
+            config.DeathFadeOutMs = Math.Max(0, Math.Min(3000, config.DeathFadeOutMs));
+            config.DeathHoldMs = settings.GetValue<int>("Death", "HoldMs", config.DeathHoldMs);
+            config.DeathHoldMs = Math.Max(0, Math.Min(5000, config.DeathHoldMs));
+            config.DeathFadeInMs = settings.GetValue<int>("Death", "FadeInMs", config.DeathFadeInMs);
+            config.DeathFadeInMs = Math.Max(0, Math.Min(3000, config.DeathFadeInMs));
 
             config.AbilitiesEnabled = settings.GetValue<bool>("Abilities", "Enabled", config.AbilitiesEnabled);
             config.AbilityDuration = settings.GetValue<float>("Abilities", "DurationSeconds", config.AbilityDuration);

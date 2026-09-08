@@ -76,61 +76,55 @@ namespace Bloodlines.Missions.Objectives
         private readonly float _minDistance;
         private readonly int _holdSeconds;
         private readonly string _failMessage;
-
-        private int _startedAt;
-        private int _outOfBandSince;
+        private readonly int _acquireSeconds;
+        private int _enteredAt;
+        private int _inBandSince = -1;
+        private int _outOfBandSince = -1;
+        private bool _acquired;
 
         public ShadowTargetObjective(string label, Func<Entity> target, float maxDistance,
-            int holdSeconds, string failMessage, float minDistance = 0f)
-            : base(label)
+            int holdSeconds, string failMessage, float minDistance = 0f, int acquireSeconds = 0) : base(label)
         {
-            _target = target;
-            _maxDistance = maxDistance;
-            _minDistance = minDistance;
-            _holdSeconds = holdSeconds;
-            _failMessage = failMessage;
+            _target = target; _maxDistance = maxDistance; _holdSeconds = holdSeconds;
+            _failMessage = failMessage; _minDistance = minDistance; _acquireSeconds = acquireSeconds;
         }
-
         public override void Enter(MissionContext context)
         {
-            _startedAt = Game.GameTime;
+            base.Enter(context);
+            _enteredAt = Game.GameTime;
+            _inBandSince = _outOfBandSince = -1;
+            _acquired = false;
         }
-
         public override void Update(MissionContext context)
         {
             var target = _target();
-            if (target == null || !target.Exists())
-            {
-                Complete();
-                return;
-            }
-
+            if (target == null || !target.Exists()) { Fail("The target is gone."); return; }
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
-
             float distance = player.Position.DistanceTo(target.Position);
-            bool tooFar = distance > _maxDistance;
-            bool tooClose = _minDistance > 0f && distance < _minDistance;
-
-            int held = (Game.GameTime - _startedAt) / 1000;
-            if (held >= _holdSeconds && !tooFar)
+            bool inBand = IsOwnerActive(context) && distance <= _maxDistance && distance >= _minDistance;
+            int now = Game.GameTime;
+            if (inBand)
             {
-                Complete();
+                _acquired = true;
+                _outOfBandSince = -1;
+                if (_inBandSince < 0) _inBandSince = now;
+                int held = (now - _inBandSince) / 1000;
+                if (held >= _holdSeconds) Complete();
+                else GameUtils.Subtitle("~g~Holding~s~ - " + (_holdSeconds - held) + "s", 400);
                 return;
             }
-
-            string state = tooFar ? "~r~too far" : tooClose ? "~y~too close" : "~g~holding";
-            GameUtils.Subtitle(state + "~s~ · " + (int)distance + "m · " +
-                               Math.Max(0, _holdSeconds - held) + "s", 400);
-
-            if (!tooFar && !tooClose)
+            _inBandSince = -1;
+            if (!_acquired && _acquireSeconds > 0)
             {
-                _outOfBandSince = 0;
+                int left = _acquireSeconds - (now - _enteredAt) / 1000;
+                if (left <= 0) Fail(_failMessage);
+                else GameUtils.Subtitle("~y~Approach target~s~ - " + (int)distance + "m, " + left + "s", 400);
                 return;
             }
-
-            if (_outOfBandSince == 0) _outOfBandSince = Game.GameTime;
-            if ((Game.GameTime - _outOfBandSince) / 1000 >= 8) Fail(_failMessage);
+            if (_outOfBandSince < 0) _outOfBandSince = now;
+            if (now - _outOfBandSince >= 8000) Fail(_failMessage);
+            else GameUtils.Subtitle("~y~Return to formation~s~ - " + (int)distance + "m", 400);
         }
     }
 

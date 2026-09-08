@@ -38,12 +38,14 @@ namespace Bloodlines.Core
         private readonly DialogueDirector _dialogue;
         private readonly CampaignData _data;
         private readonly SurveyMode _survey;
+        private readonly DeathController _death;
 
         private readonly Stack<Page> _stack = new Stack<Page>();
 
         public DevMenu(ModConfig config, CrewRoster crew, SwitchController switching,
             AbilityController abilities, MissionManager missions, MissionCatalog catalog,
-            CampaignState state, DialogueDirector dialogue, CampaignData data, SurveyMode survey)
+            CampaignState state, DialogueDirector dialogue, CampaignData data, SurveyMode survey,
+            DeathController death)
         {
             _config = config;
             _crew = crew;
@@ -55,6 +57,7 @@ namespace Bloodlines.Core
             _dialogue = dialogue;
             _data = data;
             _survey = survey;
+            _death = death;
         }
 
         public bool IsOpen { get; private set; }
@@ -253,6 +256,22 @@ namespace Bloodlines.Core
                 player.Armor = 100;
             });
 
+            // The only reliable way to exercise the respawn path on demand. Getting
+            // yourself shot to test it is neither quick nor repeatable, and the bug
+            // this proves absent — the black screen that never lifts — is the kind
+            // you only find by dying on purpose, at a moment you chose.
+            page.Add("Kill me (test respawn)", () => _death.DeathCount + " so far", () =>
+            {
+                if (!_crew.IsDeployed)
+                {
+                    GameUtils.Subtitle("~r~Deploy the crew first — death handling is only armed then.", 3000);
+                    return;
+                }
+
+                Toggle();
+                Game.Player.Character.Kill();
+            });
+
             page.Add("Refill ability meter", () => Math.Round(_abilities.Meter * 100) + "%",
                 () => _abilities.Refill());
             page.Add("Toggle ability", () => _abilities.IsActive ? "on" : "off", () => _abilities.Toggle());
@@ -358,12 +377,19 @@ namespace Bloodlines.Core
 
         private Page BuildSurvey()
         {
-            var page = new Page("Survey — Enter starts, then capture with the capture key");
+            var page = new Page("Survey - GPS routes and optional teleport");
+            page.Add("Teleport to current survey spot", () => _config.SurveyTeleportKey.ToString(), () =>
+            {
+                _survey.TeleportToCurrent();
+                Toggle();
+            });
+            page.Add("Capture current survey spot", () => _config.DevCaptureKey.ToString(), () => _survey.Capture());
+            page.Add("Next survey spot", () => "End", () => _survey.Skip());
+            page.Add("Previous survey spot", () => "Home", () => _survey.Previous());
 
             page.Add("Survey everything", () => _survey.IsActive ? "running" : "", () =>
             {
-                _survey.Start();
-                Toggle();
+                StartSurvey(null);
             });
 
             foreach (var mission in _catalog.Playable)
@@ -371,13 +397,26 @@ namespace Bloodlines.Core
                 var captured = mission;
                 page.Add("Survey " + captured.Id + " only", () => "", () =>
                 {
-                    _survey.Start(captured.Id);
-                    Toggle();
+                    StartSurvey(captured.Id);
                 });
             }
 
             page.Add("Stop and write the ini", () => "", () => _survey.Stop());
             return page;
+        }
+
+        private void StartSurvey(string missionId)
+        {
+            if (_missions.IsRunning)
+            {
+                GameUtils.Subtitle("~y~Abort the current mission before surveying.", 3500);
+                return;
+            }
+            _abilities.Stop();
+            _switching.Cancel();
+            if (_crew.IsDeployed) _crew.Dismiss();
+            _survey.Start(missionId);
+            Toggle();
         }
 
         // ---------- actions ----------
@@ -389,11 +428,10 @@ namespace Bloodlines.Core
 
             // The bible's surveyed anchor for the prologue, otherwise the mission's own
             // estimated start from the locations file.
-            if (_data.TryAnchor("Ice: Roost 4", out var anchor, out float heading) && mission.Id == "M01")
+            if (mission.Id == "M01")
             {
-                Game.Player.Character.Position = anchor;
-                Game.Player.Character.Heading = heading;
-                GameUtils.Subtitle("~g~Warped to " + mission.Id + " start.", 2500);
+                GameUtils.Subtitle("~y~Use Survey M01 to mark or teleport to the actual mission locations.", 4000);
+
                 Toggle();
             }
             else

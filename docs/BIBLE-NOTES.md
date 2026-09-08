@@ -17,7 +17,7 @@ data or the docs:
 | **Guess** | Ron Ortiz | The Wheelman — hotfoot | `g_m_y_ballaeast_01` |
 
 M62's prose in the omnibus used "Jules" and "Malik" for Gohan and Guess — leftovers
-from an earlier draft. `tools/parse_bible.py` normalises those to the current names
+from an earlier draft. `tools/parse_bible.py` normalizes those to the current names
 during extraction (see `NAME_ALIASES`), so the data files, the campaign doc and the
 voice pack all carry one cast. If a future revision introduces a genuine rename,
 change that table rather than the generated files.
@@ -67,7 +67,7 @@ change that table rather than the generated files.
    `campaign_registry.json` is still generated, from the same pass, for tooling that
    wants it. `savegame.json` *is* JSON as specified — that one needed nesting, so the
    mod carries a small purpose-built reader (`Core/Json.cs`).
-3. **Guess's subtitle colour is orange, not red.** The toolkit's audit lists
+3. **Guess's subtitle color is orange, not red.** The toolkit's audit lists
    `~r~ ~b~ ~g~`; red is reserved here for antagonists (Mateo, Sergei, Sterling,
    Vance), so all three protagonists stay visually distinct from the people shooting
    at them.
@@ -91,7 +91,7 @@ cannot do, fake exactly that, and leave everything the player touches real.
 
 ## Open questions
 
-1. **Act III's header sits above M48.** M48 is labelled "Act II Finale" in its own
+1. **Act III's header sits above M48.** M48 is labeled "Act II Finale" in its own
    header, so the code splits acts by number (I: 1–22, II: 23–48, III: 49–70), which
    matches both bibles' stated ranges.
 3. **Two different scores.** M11 says Berth 44 holds "$3B in cartel bearer bonds and

@@ -51,6 +51,11 @@ namespace Bloodlines.Missions
         public bool Start(MissionDefinition definition)
         {
             if (definition == null) return false;
+            if (SurveyMode.IsSurveyRunning)
+            {
+                GameUtils.Subtitle("~y~Stop the survey before starting a mission.", 3000);
+                return false;
+            }
 
             if (IsRunning)
             {
@@ -72,6 +77,7 @@ namespace Bloodlines.Missions
                 return false;
             }
 
+            _context.Abilities.Stop();
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
 
@@ -152,8 +158,32 @@ namespace Bloodlines.Missions
         public void RestoreCheckpoint()
         {
             if (!IsRunning) return;
+            if (!_current.SupportsCheckpointRestore)
+            {
+                GameUtils.Subtitle("~y~This mission needs a full restart. Hold Backspace, then retry.", 4000);
+                return;
+            }
             int stage = _context.Checkpoints.Restore(_current.Id);
             if (stage >= 0) _current.JumpToStage(stage);
+        }
+
+        /// <summary>
+        /// Death handling: resume the running mission from its last checkpoint. False
+        /// means there was nothing to resume from — no mission, or no checkpoint for
+        /// the one running — and the caller has to decide what happens instead.
+        /// Unlike <see cref="RestoreCheckpoint"/> this says nothing to the player when
+        /// it misses, because the caller is about to.
+        /// </summary>
+        public bool TryRestoreCheckpoint()
+        {
+            if (!IsRunning || !_current.SupportsCheckpointRestore) return false;
+            if (!_context.Checkpoints.HasCheckpointFor(_current.Id)) return false;
+
+            int stage = _context.Checkpoints.Restore(_current.Id);
+            if (stage < 0) return false;
+
+            _current.JumpToStage(stage);
+            return true;
         }
 
         /// <summary>QA harness: step the running mission forward or back a stage.</summary>

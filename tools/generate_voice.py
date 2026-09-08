@@ -21,6 +21,7 @@ voices you actually cast; put the replacements in tools/voices.json.
 
 import argparse
 import csv
+import io
 import json
 import os
 import sys
@@ -45,7 +46,7 @@ API = 'https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=pcm_
 def load_voices():
     voices = dict(DEFAULT_VOICES)
     if os.path.exists(VOICES_OVERRIDE):
-        with open(VOICES_OVERRIDE) as handle:
+        with io.open(VOICES_OVERRIDE, encoding='utf-8') as handle:
             voices.update(json.load(handle))
         print('using voice overrides from tools/voices.json')
     return voices
@@ -64,14 +65,14 @@ def wav_header(pcm_bytes, sample_rate=44100, channels=1, bits=16):
 def audio_dirs():
     """Mission id -> its audio bank folder, e.g. M01 -> audio/Act1/M01."""
     banks = {}
-    with open(MISSIONS) as handle:
+    with io.open(MISSIONS, encoding='utf-8') as handle:
         for row in csv.DictReader(handle, delimiter='\t'):
             banks[row['id']] = row.get('audio_dir', '')
     return banks
 
 
 def rows(mission_filter):
-    with open(DIALOGUE) as handle:
+    with io.open(DIALOGUE, encoding='utf-8') as handle:
         for row in csv.DictReader(handle, delimiter='\t'):
             if mission_filter and row['mission'].upper() != mission_filter.upper():
                 continue

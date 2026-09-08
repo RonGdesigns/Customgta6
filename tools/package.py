@@ -13,10 +13,18 @@ files for OpenIV to import, never as a modified game archive.
 """
 
 import argparse
+import io
 import os
 import shutil
 import subprocess
 import sys
+
+# Every generated file in this repo is committed with CRLF, because they were
+# all first written on Windows. Writing them with the platform default instead
+# turns one regeneration on Linux into a whole-file diff on every line, which
+# hides the handful of rows that actually changed. Pinning it makes the output
+# the same artifact wherever the tool runs.
+CRLF = '\r\n'
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT = os.path.join(REPO, 'src', 'Bloodlines', 'Bloodlines.csproj')
@@ -111,7 +119,7 @@ def main():
 
     # Mission packs from external assemblies are dropped in here; the registry's
     # assembly column names them.
-    with open(os.path.join(missions, 'README.txt'), 'w') as handle:
+    with io.open(os.path.join(missions, 'README.txt'), 'w', encoding='utf-8', newline=CRLF) as handle:
         handle.write('Drop external mission-pack DLLs here and name them in the\n'
                      'assembly column of data/missions.tsv. Missions built into\n'
                      'Bloodlines.dll need nothing in this folder.\n')

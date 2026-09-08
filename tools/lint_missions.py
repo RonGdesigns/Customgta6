@@ -26,6 +26,20 @@ import re
 import sys
 import urllib.request
 
+
+def read_text(path):
+    """Read a file as UTF-8, whatever the OS thinks the default is.
+
+    Bare open() takes its encoding from the locale, which on a US Windows install
+    is cp1252. Every file this tool reads -- the model dumps, the TSVs and the
+    mission sources -- is UTF-8, so on Windows the linter died on the first curly
+    quote in a Rockstar model dump before it checked a single mission. A check
+    that only runs on one machine is not a check.
+    """
+    with io.open(path, encoding='utf-8') as handle:
+        return handle.read()
+
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MISSIONS_DIR = os.path.join(REPO, 'src', 'Bloodlines', 'Missions', 'Campaign')
 CACHE_DIR = os.path.join(REPO, 'build')
@@ -65,12 +79,12 @@ def load_dump(name):
         with open(path, 'wb') as handle:
             handle.write(data)
 
-    with open(path) as handle:
+    with io.open(path, encoding='utf-8') as handle:
         return {entry['Name'].lower() for entry in json.load(handle) if entry.get('Name')}
 
 
 def read_tsv(name):
-    with open(os.path.join(REPO, 'data', name)) as handle:
+    with io.open(os.path.join(REPO, 'data', name), encoding='utf-8') as handle:
         return list(csv.DictReader(handle, delimiter='\t'))
 
 
@@ -119,15 +133,14 @@ def main():
         peds = load_dump('peds')
         models = vehicles | peds
     except OSError as error:
-        print('WARNING: could not fetch model reference data ({}); skipping model checks'
-              .format(error))
-        models = None
+        print('ERROR: model reference data unavailable ({}); validation incomplete'.format(error))
+        return 1
 
     errors, warnings, coverage = [], [], []
 
     # A mission class nobody registered is invisible; a registration with no class
     # does not compile, so only the first direction needs checking here.
-    catalog = open(os.path.join(REPO, 'src', 'Bloodlines', 'Missions', 'MissionCatalog.cs')).read()
+    catalog = read_text(os.path.join(REPO, 'src', 'Bloodlines', 'Missions', 'MissionCatalog.cs'))
     registered = {mission_id: type_name for mission_id, type_name in REGISTERED.findall(catalog)}
     seen_ids = set()
 
@@ -137,7 +150,7 @@ def main():
                 continue
 
             path = os.path.join(base, name)
-            source = open(path).read()
+            source = read_text(path)
             relative = os.path.relpath(path, REPO)
 
             mission_id = MISSION_ID.search(source)

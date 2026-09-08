@@ -37,6 +37,7 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            if (SurveyMode.OwnsCaptureKey) return;
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 
@@ -50,6 +51,7 @@ namespace Bloodlines
         {
             if (e.KeyCode != _config.DevCaptureKey) return;
 
+            if (SurveyMode.OwnsCaptureKey) return;
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 

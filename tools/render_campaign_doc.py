@@ -7,8 +7,16 @@ letting a hand-maintained table drift away from the bible.
 """
 
 import csv
+import io
 import os
 import re
+
+# Every generated file in this repo is committed with CRLF, because they were
+# all first written on Windows. Writing them with the platform default instead
+# turns one regeneration on Linux into a whole-file diff on every line, which
+# hides the handful of rows that actually changed. Pinning it makes the output
+# the same artifact wherever the tool runs.
+CRLF = '\r\n'
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MISSIONS = os.path.join(REPO, 'data', 'missions.tsv')
@@ -36,7 +44,7 @@ ACTS = [
 
 
 def read(path):
-    with open(path) as handle:
+    with io.open(path, encoding='utf-8') as handle:
         return list(csv.DictReader(handle, delimiter='\t'))
 
 
@@ -94,7 +102,7 @@ def main():
             '- **written** — setting, objective, beats and dialogue are in the data files and '
             'load at runtime; no mission script yet.', '']
 
-    with open(OUT, 'w') as handle:
+    with io.open(OUT, 'w', encoding='utf-8', newline=CRLF) as handle:
         handle.write('\n'.join(out))
     print('wrote docs/CAMPAIGN.md ({} missions)'.format(len(missions)))
 

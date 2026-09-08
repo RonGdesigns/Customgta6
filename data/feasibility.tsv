@@ -1,14 +1,14 @@
 id	tier	technique	note
 M01	Green	direct	Ped/vehicle spawns, firefight, scripted escape. Built.
 M02	Green	direct	Freeway intercept on live traffic AI. Built.
-M03	Yellow	fake	Uncoupling a 40-car freight train is not exposed to script. Freeze a train at a junction and blip it as "blockade"; the depot raid and hauler defence are Green.
+M03	Yellow	fake	Uncoupling a 40-car freight train is not exposed to script. Freeze a train at a junction and blip it as "blockade"; the depot raid and hauler defense are Green.
 M04	Green	direct	Garage firefight plus subway pursuit. Trains on the line are a hazard, not a system.
 M05	Yellow	fake	Sea-cave interior needs an MLO or a substitute (existing Paleto cave). Cliff sniping, flare drops and the boat chase are Green.
 M06	Green	direct	Depot breach, alley hold, reverse extraction. Interior is an MLO or a walled-off exterior yard.
 M07	Yellow	fake	Climbing a mast has no animation set; use a ladder-and-teleport with a camera cut. Drone is a Buzzard at altitude. BASE jump is Green.
 M08	Green	direct	Forklift is drivable; crate load is a hold-zone objective plus a prop attach.
 M09	Yellow	fake	Landing skids on a moving truck roof is unreliable physics. Slow the convoy to a stop off-camera, or attach the heli to the truck for the beat.
-M10	Green	direct	Escort with a speed floor, RPG from the bed, PIT manoeuvres. The campaign's best Green set piece.
+M10	Green	direct	Escort with a speed floor, RPG from the bed, PIT maneuvers. The campaign's best Green set piece.
 M11	Green	direct	Static workshop scene; dyno is a UI meter over a frozen vehicle.
 M12	Yellow	fake	ROV drone: use a submersible with a locked camera, or a camera-only "drone mode" with no vehicle at all.
 M13	Green	direct	Limpet charges on boats, then detonate. Straight explosive work.
@@ -54,11 +54,11 @@ M52	Green	direct	Rooftop sniper shot on a scripted walk path, then a bike escape
 M53	Green	direct	Subway tunnel ambush with mines and night vision.
 M54	Yellow	fake	Penthouse interior - MLO. The balcony roost and antenna are dressing.
 M55	Red	set piece	Three simultaneous penthouse breaches on a 300-second clock. This is the mission the whole switch system exists for, and it is worth building properly: three separate spawn sets, one shared timer, forced switching between them. Interiors can be substituted, the mechanic cannot.
-M56	Green	direct	Canal armour clash. The aqueduct is one of the best drivable spaces in the game.
+M56	Green	direct	Canal armor clash. The aqueduct is one of the best drivable spaces in the game.
 M57	Green	direct	Jet-ski anti-air run.
 M58	Green	direct	Compound assault in Mirror Park.
 M59	Green	direct	Radio-mast climb and broadcast, with sniper cover on the Vinewood sign.
-M60	Green	direct	Neighbourhood defence in waves. Reuses SurviveWavesObjective wholesale.
+M60	Green	direct	Neighborhood defense in waves. Reuses SurviveWavesObjective wholesale.
 M61	Yellow	fake	Flooded gunship interior needs a wreck prop; the underwater fight is Green.
 M62	Red	set piece	Train, boat and helicopter converging with a sling-load pickup. Build it as three scripted lanes with forced switches; the container hook is an attach, not a physics winch.
 M63	Green	direct	Lobby breach by ramming. Maze Bank's ground floor is enterable.

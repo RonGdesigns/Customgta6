@@ -19,9 +19,10 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Mod bootstrap, config, logging | working |
 | Campaign data pipeline — bible PDFs → TSV → runtime | working, 79 missions / 292 cues / 6 surveyed anchors |
 | Crew roster — spawn, companion AI, blips, respawn, story-character restore | working |
+| Death and busted — the engine cannot restart a `CHANGE_PLAYER_PED` ped, so the mod does it | working |
 | Dynamic 3-way switch (bible §3) | working, rewritten off the bible's draft |
 | Abilities — Overwatch Focus / Thermal Pulse / Slipstream Reflex | working, shared meter |
-| Dialogue director (bible's AudioManager) | working — speaker-coloured subtitles, WAV playback when present |
+| Dialogue director (bible's AudioManager) | working — speaker-colored subtitles, WAV playback when present |
 | Checkpoints (bible's CheckpointManager) | working — stage, positions, health, wreck purge |
 | Mission framework — stage machine, tracked entities, pass/fail | working |
 | Objective library — 18 reusable objectives, missions as composition | working |
@@ -87,7 +88,7 @@ the PDFs under `docs/bibles/`, not in code. The pipeline is:
 
 ```
 docs/bibles/omnibus_v2.pdf + solo_missions_v1.pdf
-        │  tools/parse_bible.py   (merges every bible, normalises the cast names)
+        │  tools/parse_bible.py   (merges every bible, normalizes the cast names)
         ▼
 data/missions.tsv · data/dialogue.tsv · data/anchors.tsv
         │  copied to scripts/Bloodlines/data/
@@ -150,3 +151,17 @@ tools/                bible parser, campaign doc renderer, voice generator, pack
 docs/                 install, toolchain, architecture, campaign, feasibility, playtest, QA, bible notes
 docs/bibles/          the source bibles and their extracted text
 ```
+
+
+## Recovery and survey validation update
+
+Death/arrest recovery now runs as a bounded state machine with independent cleanup.
+Current missions fail and can be retried from the beginning after death; complete
+world checkpoint restoration is not implemented and is explicitly guarded.
+The survey marks a yellow GPS route, offers F7 teleport, and saves F11 captures for
+automatic reload. End skips and Home returns. M01 spawns use the surveyed positions.
+Companions respond to attackers and use animated entry with separate seat reservations
+for nearby cars. Catch-up warps remain a delayed/distance fallback.
+
+Validation: build with warnings as errors, mission/location checks, and
+`python tools/run_regression_tests.py`. Live Story Mode validation is still required.

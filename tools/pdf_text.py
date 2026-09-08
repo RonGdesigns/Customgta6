@@ -8,10 +8,18 @@ parse step has to keep working on any machine that can run python3.
 Usage:  python3 tools/pdf_text.py <bible.pdf> <out.txt>
 """
 
+import io
 import re
 import sys
 import zlib
 
+
+# Every generated file in this repo is committed with CRLF, because they were
+# all first written on Windows. Writing them with the platform default instead
+# turns one regeneration on Linux into a whole-file diff on every line, which
+# hides the handful of rows that actually changed. Pinning it makes the output
+# the same artifact wherever the tool runs.
+CRLF = '\r\n'
 
 def _decompress(body):
     if body is None:
@@ -189,5 +197,5 @@ def extract(path):
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         raise SystemExit(__doc__)
-    open(sys.argv[2], 'w').write(extract(sys.argv[1]))
+    io.open(sys.argv[2], 'w', encoding='utf-8', newline=CRLF).write(extract(sys.argv[1]))
     print('wrote', sys.argv[2])

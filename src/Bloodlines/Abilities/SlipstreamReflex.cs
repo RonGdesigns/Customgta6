@@ -11,6 +11,9 @@ namespace Bloodlines.Abilities
     /// </summary>
     public sealed class SlipstreamReflex : Ability
     {
+        private Vehicle _vehicle;
+        private bool _tiresCouldBurst;
+
         public override CrewSlot Slot => CrewSlot.Guess;
         public override string Name => "Slipstream Reflex";
 
@@ -22,8 +25,14 @@ namespace Bloodlines.Abilities
 
         public override void Update(Ped player)
         {
-            var vehicle = player.CurrentVehicle;
+            var vehicle = player?.CurrentVehicle;
+            if (_vehicle != null && (vehicle == null || vehicle.Handle != _vehicle.Handle)) RestoreVehicle();
             if (vehicle == null || !vehicle.Exists()) return;
+            if (_vehicle == null)
+            {
+                _vehicle = vehicle;
+                _tiresCouldBurst = vehicle.CanTiresBurst;
+            }
 
             // Per-frame handling cheats: dropped the moment the ability ends.
             Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, vehicle, 1.35f);
@@ -36,12 +45,17 @@ namespace Bloodlines.Abilities
             Function.Call(Hash.SET_TIME_SCALE, 1.0f);
             Function.Call(Hash.ANIMPOSTFX_STOP, "RaceTurbo");
 
-            var vehicle = player.CurrentVehicle;
-            if (vehicle != null && vehicle.Exists())
+            RestoreVehicle();
+        }
+
+        private void RestoreVehicle()
+        {
+            if (_vehicle != null && _vehicle.Exists())
             {
-                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, vehicle, 1.0f);
-                vehicle.CanTiresBurst = true;
+                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, _vehicle, 1.0f);
+                _vehicle.CanTiresBurst = _tiresCouldBurst;
             }
+            _vehicle = null;
         }
     }
 }

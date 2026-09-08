@@ -52,7 +52,7 @@ namespace Bloodlines.Core
 
         public int Count => _locations.Count;
 
-        public static LocationBook Load(string dataDirectory, string overridesPath)
+        public static LocationBook Load(string dataDirectory, string overridesPath, string surveyedPath = null, CampaignData data = null)
         {
             var book = new LocationBook();
 
@@ -74,15 +74,26 @@ namespace Bloodlines.Core
 
             // Per-install overrides win: someone who has surveyed a position should not
             // lose it to a data-file update.
+            book.ApplyOverrides(overridesPath, false);
+            book.ApplyMissionAnchors(data);
+            if (surveyedPath != null && File.Exists(surveyedPath)) book.ApplyOverrides(surveyedPath, true);
+
+            Logger.Info("Loaded " + book._locations.Count + " campaign locations (" +
+                        CountOf(book, LocationStatus.Estimate) + " still estimates).");
+            return book;
+        }
+
+        private void ApplyOverrides(string overridesPath, bool surveyed)
+        {
             var settings = ScriptSettings.Load(overridesPath);
-            foreach (var location in book._locations.Values)
+            foreach (var location in _locations.Values)
             {
                 float x = settings.GetValue<float>("Positions", location.Key + ".X", location.Position.X);
                 float y = settings.GetValue<float>("Positions", location.Key + ".Y", location.Position.Y);
                 float z = settings.GetValue<float>("Positions", location.Key + ".Z", location.Position.Z);
                 var overridden = new Vector3(x, y, z);
 
-                if (overridden != location.Position)
+                if (overridden != location.Position || (surveyed && settings.GetValue<string>("Positions", location.Key + ".X", null) != null))
                 {
                     location.Position = overridden;
                     location.Status = LocationStatus.Surveyed;
@@ -96,9 +107,37 @@ namespace Bloodlines.Core
                 }
             }
 
-            Logger.Info("Loaded " + book._locations.Count + " campaign locations (" +
-                        CountOf(book, LocationStatus.Estimate) + " still estimates).");
-            return book;
+        }
+
+        private void ApplyMissionAnchors(CampaignData data)
+        {
+            if (data == null) return;
+            var keys = new Dictionary<string, string>
+            {
+                { "M01.CraneNest", "Ice: Roost 4" },
+                { "M01.LowerDeckLedger", "Gohan: Bilge Hatch" },
+                { "M01.PrototypeCar", "Guess: Bay 2" },
+                { "M01.LaunchEscape", "Mateo: Escape Boat" }
+            };
+            foreach (var pair in keys)
+            {
+                var location = Get(pair.Key);
+                if (location == null || location.Status == LocationStatus.Surveyed) continue;
+                if (!data.TryAnchor(pair.Value, out var position, out var heading)) continue;
+                location.Position = position;
+                location.Heading = heading;
+                location.Status = LocationStatus.Bible;
+            }
+            // The original M01 spawner placed Mateo six metres above the bilge.
+            // Give that actual point a survey key rather than ignoring CapoSpawn.
+            var capo = Get("M01.CapoSpawn");
+            var bilge = Get("M01.LowerDeckLedger");
+            if (capo != null && bilge != null && capo.Status != LocationStatus.Surveyed)
+            {
+                capo.Position = bilge.Position + new Vector3(0f, 6f, 6f);
+                capo.Heading = 90f;
+                capo.Status = LocationStatus.Bible;
+            }
         }
 
         private static int CountOf(LocationBook book, LocationStatus status)

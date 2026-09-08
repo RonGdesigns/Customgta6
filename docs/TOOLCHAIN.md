@@ -42,7 +42,7 @@ python3 tools/render_campaign_doc.py
 python3 tools/generate_voice.py --mission M01 --dry-run
 ```
 
-Pass every bible in one invocation — the parser merges them, normalises the cast
+Pass every bible in one invocation — the parser merges them, normalizes the cast
 names, and warns if any of the 70 main slots came back empty.
 
 ## Order of work that actually converges

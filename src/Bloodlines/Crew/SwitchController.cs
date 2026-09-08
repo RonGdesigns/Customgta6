@@ -35,6 +35,13 @@ namespace Bloodlines.Crew
         public string LockReason { get; set; }
 
         public bool IsSwitching { get; private set; }
+        public System.Action BeforeSwitch { get; set; }
+
+        public void Cancel()
+        {
+            if (Function.Call<bool>(Hash.IS_PLAYER_SWITCH_IN_PROGRESS)) Function.Call(Hash.STOP_PLAYER_SWITCH);
+            IsSwitching = false;
+        }
 
         public void SetLocked(string reason)
         {
@@ -79,17 +86,16 @@ namespace Bloodlines.Crew
                 return false;
             }
 
-            if (currentPed.IsDead)
+            if (currentPed == null || !currentPed.Exists() || currentPed.IsDead)
             {
                 GameUtils.Subtitle("~r~Can't switch while you're going down.", 2500);
                 return false;
             }
 
-            Execute(currentPed, targetPed, target);
-            return true;
+            return Execute(currentPed, targetPed, target);
         }
 
-        private void Execute(Ped currentPed, Ped targetPed, CrewSlot target)
+        private bool Execute(Ped currentPed, Ped targetPed, CrewSlot target)
         {
             IsSwitching = true;
             _lastSwitchTime = Game.GameTime;
@@ -97,6 +103,7 @@ namespace Bloodlines.Crew
 
             try
             {
+                BeforeSwitch?.Invoke();
                 Logger.Info("Switching to " + protagonist.DisplayName + ".");
 
                 // Keep the ped we are leaving alive and useful rather than letting the
@@ -119,25 +126,30 @@ namespace Bloodlines.Crew
                     guard++;
                 }
 
+                if (!currentPed.Exists() || currentPed.IsDead || !targetPed.Exists() || targetPed.IsDead) return false;
                 Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, targetPed, true, true);
+                if (Game.Player.Character.Handle != targetPed.Handle) return false;
 
                 _crew.SetActive(target);
 
-                // The ped just relinquished holds its ground and engages instead of
-                // standing idle in the middle of a firefight.
-                currentPed.Task.ClearAll();
-                currentPed.Task.FightAgainstHatedTargets(200f);
-
                 GameUtils.Subtitle("~b~" + protagonist.DisplayName + "~s~ — " + protagonist.Role, 3000);
                 GameUtils.PlayFrontendSound("Object_Dropped_Remote", "GTAO_Magnate_Gra_Soundset");
+                for (int i = 0; i < 80 && Function.Call<bool>(Hash.IS_PLAYER_SWITCH_IN_PROGRESS); i++)
+                {
+                    if (!targetPed.Exists() || targetPed.IsDead) return false;
+                    Script.Wait(50);
+                }
+                return true;
             }
             catch (System.Exception ex)
             {
                 Logger.Error("Character switch failed", ex);
+                return false;
             }
             finally
             {
-                IsSwitching = false;
+                try { Cancel(); }
+                finally { IsSwitching = false; }
             }
         }
     }

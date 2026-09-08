@@ -28,6 +28,17 @@ namespace Bloodlines.Missions
 
         public bool HasCheckpoint => _snapshot != null;
 
+        /// <summary>
+        /// Is there a checkpoint belonging to this mission? The death controller has
+        /// to know before it tries, because <see cref="Restore"/> announces a miss to
+        /// the player and "no checkpoint for this mission" on top of MISSION FAILED
+        /// reads as two separate things going wrong.
+        /// </summary>
+        public bool HasCheckpointFor(string missionId)
+        {
+            return _snapshot != null && _snapshot.MissionId == missionId;
+        }
+
         public string CheckpointLabel => _snapshot == null
             ? "none"
             : _snapshot.MissionId + " stage " + _snapshot.Stage;
