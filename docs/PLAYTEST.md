@@ -15,14 +15,29 @@ survey. Stop when you have findings; do not push through a broken build.
 
 ## 0. Before you launch (5 min)
 
-```bash
-python3 tools/lint_missions.py       # must print "No errors."
-python3 tools/validate_locations.py  # must print "0 flagged"
-DOTNET=$(which dotnet) python3 tools/package.py --build --clean
+```bat
+python tools\lint_missions.py        :: must print "No errors."
+python tools\validate_locations.py   :: must print "0 flagged"
+python tools\package.py --clean      :: no .NET SDK needed; add --build only if you have one
 ```
 
-Copy `build/deploy/scripts/` over `<GTA V>/scripts/`. Then in
-`scripts/Bloodlines/Bloodlines.ini`:
+Confirm the game folder before touching it — read-only:
+
+```bat
+tools\windows\check-setup.bat "C:\Program Files\Rockstar Games\Grand Theft Auto V Enhanced"
+```
+
+It must report a build, `ScriptHookV: yes`, `ScriptHookVDotNet.asi: yes` and
+`SHVDN v3 API: yes`. If any of those say NO, stop — nothing below can work, and
+the hook has to match the build (Legacy vs Enhanced) it sits next to.
+
+Then install and set up the config:
+
+```bat
+tools\windows\install-bloodlines.bat "C:\Program Files\Rockstar Games\Grand Theft Auto V Enhanced"
+```
+
+In `scripts\Bloodlines\Bloodlines.ini`:
 
 ```ini
 [Dev]

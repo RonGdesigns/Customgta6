@@ -4,8 +4,8 @@ Produces build/deploy/, which mirrors the game root. Copy its contents over your
 Grand Theft Auto V folder and the mod is installed — no hand-placing of files, no
 guessing which ini goes where.
 
-    dotnet build src/Bloodlines/Bloodlines.csproj -c Release
-    python3 tools/package.py                       # or --build to do both
+    python3 tools/package.py                       # uses prebuilt/Bloodlines.dll
+    python3 tools/package.py --build               # rebuilds first (needs the SDK)
     python3 tools/package.py --audio build/audio   # include a generated voice pack
 
 Nothing Rockstar owns is touched: the DLC asset pack folder is staged as loose
@@ -21,6 +21,7 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT = os.path.join(REPO, 'src', 'Bloodlines', 'Bloodlines.csproj')
 BINARY = os.path.join(REPO, 'src', 'Bloodlines', 'bin', 'Release', 'Bloodlines.dll')
+PREBUILT = os.path.join(REPO, 'prebuilt', 'Bloodlines.dll')
 DEPLOY = os.path.join(REPO, 'build', 'deploy')
 
 DATA_FILES = ['missions.tsv', 'dialogue.tsv', 'anchors.tsv', 'locations.tsv',
@@ -33,13 +34,28 @@ def build():
     # that is not on PATH.
     dotnet = os.environ.get('DOTNET') or shutil.which('dotnet')
     if not dotnet:
-        raise SystemExit('dotnet not found on PATH — build the project first, or set DOTNET.')
+        raise SystemExit('dotnet not found on PATH — install the .NET SDK, set DOTNET, or\n'
+                         'drop --build to use the committed prebuilt/Bloodlines.dll.')
 
     print('building Release...')
     result = subprocess.run([dotnet, 'build', PROJECT, '-c', 'Release', '--nologo', '-v', 'q'],
                             cwd=REPO)
     if result.returncode != 0:
         raise SystemExit('build failed')
+
+
+def resolve_binary():
+    """A local build wins; the committed prebuilt DLL is the no-SDK fallback.
+
+    Installing a 900 MB SDK to play a mod is a bad trade, so prebuilt/ exists —
+    but a developer who has just built must never ship a stale binary by
+    accident, which is why the build output is checked first.
+    """
+    if os.path.exists(BINARY):
+        return BINARY, 'local build'
+    if os.path.exists(PREBUILT):
+        return PREBUILT, 'prebuilt (no .NET SDK needed)'
+    raise SystemExit('Bloodlines.dll not found — run with --build, or build the project first.')
 
 
 def copy_into(source, target_dir, name=None):
@@ -52,7 +68,8 @@ def copy_into(source, target_dir, name=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--build', action='store_true', help='run dotnet build first')
+    parser.add_argument('--build', action='store_true',
+                        help='run dotnet build first (needs the .NET SDK)')
     parser.add_argument('--audio', help='a generated audio bank to fold into the package')
     parser.add_argument('--clean', action='store_true', help='wipe build/deploy first')
     args = parser.parse_args()
@@ -60,8 +77,8 @@ def main():
     if args.build:
         build()
 
-    if not os.path.exists(BINARY):
-        raise SystemExit('Bloodlines.dll not found — run with --build, or build the project first.')
+    binary, origin = resolve_binary()
+    print('using Bloodlines.dll: {}'.format(origin))
 
     if args.clean and os.path.exists(DEPLOY):
         shutil.rmtree(DEPLOY)
@@ -75,7 +92,7 @@ def main():
     for folder in (scripts, root, data, audio, missions):
         os.makedirs(folder, exist_ok=True)
 
-    copy_into(BINARY, scripts)
+    copy_into(binary, scripts)
 
     for name in DATA_FILES:
         source = os.path.join(REPO, 'data', name)

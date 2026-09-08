@@ -14,13 +14,38 @@
 
 A Rockstar Store copy is fine. Nothing here needs Steam or a specific storefront.
 
-### Legacy vs Enhanced
+### Legacy vs Enhanced — check this first
 
-Rockstar's 2025 "Enhanced" release is a separate build from the original, now
-listed as "Legacy". The modding stack — ScriptHookV, SHVDN, OpenIV, CodeWalker,
-and the decade of mods this project borrows technique from — grew up on **Legacy**,
-and that is what this project targets. Check your Rockstar Launcher library for
-which builds you own before installing anything.
+Rockstar's 2025 **Enhanced** release is a separate product from the original, now
+listed as **Legacy**. They install to different folders and ship different
+executables:
+
+| Build | Default folder | Executable |
+|---|---|---|
+| Legacy | `...\Rockstar Games\Grand Theft Auto V` | `GTA5.exe` |
+| Enhanced | `...\Rockstar Games\Grand Theft Auto V Enhanced` | `GTA5_Enhanced.exe` |
+
+**The script hook is build-specific and the two are not interchangeable.** A
+Legacy `ScriptHookV.dll` dropped next to `GTA5_Enhanced.exe` does not load, fails
+silently, and takes every .NET script with it — including this one. Whatever
+version of ScriptHookV and ScriptHookVDotNet you install, it has to be the one
+built for the executable in that folder.
+
+This project's toolchain assumptions — SHVDN 3 v3.6 API, OpenIV, CodeWalker — grew
+up on **Legacy**, and that is the build it has been developed against. Nothing in
+the mission code is build-specific, so an Enhanced-capable hook should run it, but
+that has not been verified here.
+
+Before installing anything, find out what you actually have:
+
+```bat
+tools\windows\check-setup.bat
+```
+
+Read-only. With no argument it scans the usual install locations; give it a path
+to inspect one folder. It reports the build, which hook DLLs are present, what is
+in `scripts\`, and whether `ScriptHookV.log` exists — that log is the ground
+truth for "has a script hook ever actually run here."
 
 Either way: **every game update breaks ScriptHookV** until Alexander Blade ships an
 update. That is normal, and it is the main reason to disable auto-updates on the
@@ -28,17 +53,23 @@ copy you mod.
 
 ## Install order
 
-1. Install ScriptHookV: copy `ScriptHookV.dll` and `dinput8.dll` next to `GTA5.exe`.
+1. Install ScriptHookV **for your build**: copy `ScriptHookV.dll` and `dinput8.dll`
+   next to the executable (`GTA5.exe` on Legacy, `GTA5_Enhanced.exe` on Enhanced).
 2. Install ScriptHookVDotNet: copy `ScriptHookVDotNet.asi`, `ScriptHookVDotNet2.dll`
-   and `ScriptHookVDotNet3.dll` next to `GTA5.exe`. Create a `scripts/` folder there
-   if it doesn't exist.
-3. Build and package in one step:
+   and `ScriptHookVDotNet3.dll` into the same folder. Create a `scripts/` folder
+   there if it doesn't exist. The `.asi` is the part that actually loads .NET
+   scripts — the `.dll`s alone do nothing.
+3. Package the mod:
    ```bash
-   python3 tools/package.py --build
+   python tools/package.py
    ```
-   That produces `build/deploy/`, laid out exactly as it installs. (Visual Studio
-   users: build `Bloodlines.sln` in Release/x64, then run `tools/package.py` without
-   `--build`.)
+   That produces `build/deploy/`, laid out exactly as it installs, using the
+   committed `prebuilt/Bloodlines.dll`. **No .NET SDK required.** Add `--build` to
+   compile from source instead — that needs the SDK
+   (<https://dotnet.microsoft.com/download>), and is only worth installing if you
+   are going to change the C#. Visual Studio users: build `Bloodlines.sln` in
+   Release/x64, then run `package.py` with no flags — a local build always wins
+   over the prebuilt DLL.
 4. Copy the contents of `build/deploy/scripts/` into `<GTA V>/scripts/`. That is the
    whole install — DLL, config, and the campaign data the mod cannot run without.
 5. Optional: generate voice lines and fold them in:
@@ -67,11 +98,12 @@ folder — so an OpenIV-based toggle keeps working untouched. The optional asset
 `dinput8.dll`, `ScriptHookV.dll` or the `scripts` folder disables Bloodlines with
 the rest. Do not build a second safety mechanism; use the one you have.
 
-Three helpers in `tools/windows/`, none of which have been run on Windows —
-read them before trusting them:
+Four helpers in `tools/windows/`. They are lightly tested on Windows — read them
+before trusting them:
 
 | Script | Does |
 |---|---|
+| `check-setup.bat ["<GTA V path>"]` | **Read-only.** Reports the build (Legacy/Enhanced), which hook DLLs are present, what is in `scripts\`, and whether a script hook has ever run there. Run this first when anything is unclear. |
 | `install-bloodlines.bat "<GTA V path>"` | Copies the built DLL and campaign data in. Re-runnable: your `Bloodlines.ini`, surveyed coordinates and `savegame.json` are never overwritten once they exist. |
 | `bloodlines-toggle.bat "<GTA V path>"` | Renames `Bloodlines.dll` on/off, for A/B testing against your other scripts. Not an Online-safety tool. |
 | `playtest-isolate.bat "<GTA V path>"` | Parks every other script into `scripts\_parked` so a playtest is unambiguous; run again with `restore` to put them back. |

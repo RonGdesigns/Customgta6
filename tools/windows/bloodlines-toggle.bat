@@ -14,6 +14,7 @@ REM ---------------------------------------------------------------------------
 set "GAME=%~1"
 if "%GAME%"=="" set "GAME=%BLOODLINES_GTA_PATH%"
 if "%GAME%"=="" (echo Usage: bloodlines-toggle.bat "path\to\Grand Theft Auto V" & exit /b 1)
+if "%GAME:~-1%"=="\" set "GAME=%GAME:~0,-1%"
 
 if exist "%GAME%\scripts\Bloodlines.dll" (
   ren "%GAME%\scripts\Bloodlines.dll" "Bloodlines.dll.off"

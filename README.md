@@ -67,12 +67,14 @@ thing this repo cannot do for you.
 ## Quick start
 
 ```bash
-python3 tools/package.py --build
+python3 tools/package.py            # add --build to compile from source (needs the .NET SDK)
 ```
 
-That builds Release and lays out `build/deploy/` exactly as it installs. Copy
-`build/deploy/scripts/` into your GTA V `scripts/` folder — that is the whole
-install. Full steps, including ScriptHookV itself, in `docs/INSTALL.md`.
+That lays out `build/deploy/` exactly as it installs, using the committed
+`prebuilt/Bloodlines.dll` — no .NET SDK needed to play. Copy
+`build/deploy/scripts/` into your GTA V `scripts/` folder, or on Windows run
+`tools\windows\install-bloodlines.bat "<GTA V path>"` to do it. Full steps,
+including ScriptHookV itself and the Legacy/Enhanced split, in `docs/INSTALL.md`.
 
 Default keys (the toolkit's binds): `Numpad 1/2/3` switch character, `Caps Lock`
 ability, `F10` deploy the crew in free roam, `J` start the next mission, hold
