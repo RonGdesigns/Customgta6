@@ -102,6 +102,11 @@ namespace Bloodlines.Missions
                 { "M11", () => new M11IroncladDyno() },
                 { "M12", () => new M12BlackTideRecon() },
                 { "M13", () => new M13SmugglersCut() },
+                { "M14", () => new M14AirspaceBlackout() },
+                { "M15", () => new M15Crawlspace() },
+                { "M16", () => new M16TheHeavyLift() },
+                { "M17", () => new M17SubZeroPayload() },
+                { "M18", () => new M18TheStagingLine() },
                 { "SM01", () => new SM01LeadAndKevlar() },
                 { "SM02", () => new SM02ZeroDayInjection() },
                 { "SM03", () => new SM03MidnightDrift() }

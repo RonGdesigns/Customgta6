@@ -70,3 +70,23 @@ M13.BargeOne	-1000.00	-1500.00	0.50	0	water	estimate	La Puerta
 M13.BargeTwo	-960.00	-1520.00	0.50	0	water	estimate	La Puerta
 M13.BargeThree	-920.00	-1540.00	0.50	0	water	estimate	La Puerta
 M13.CanalSlipway	-900.00	-1450.00	4.00	20	land	estimate	La Puerta
+M14.OverwatchRidge	1640.00	3180.00	48.00	30	land	estimate	Grand Senora Desert
+M14.HangarDoor	1720.00	3260.00	41.00	120	land	estimate	Grand Senora Desert
+M14.PlaneSpawn	1740.00	3280.00	41.00	120	land	estimate	Grand Senora Desert
+M14.McKenzieHangar	2120.00	4780.00	41.00	160	land	estimate	Grapeseed
+M15.AdminEntry	1150.00	-3050.00	5.00	180	land	estimate	Terminal
+M15.MaintenanceVault	1162.00	-3068.00	5.00	180	land	estimate	Terminal
+M15.FiberSplice	1170.00	-3080.00	5.00	180	land	estimate	Terminal
+M15.Exit	1120.00	-3020.00	5.00	0	land	estimate	Terminal
+M16.DepotFence	-2180.00	3180.00	32.00	60	land	estimate	Fort Zancudo
+M16.Helipad	-2130.00	3240.00	32.00	60	land	estimate	Fort Zancudo
+M16.CargobobSpawn	-2120.00	3250.00	32.00	60	land	estimate	Fort Zancudo
+M16.CanyonRun	-785.30	4420.10	155.80	90	air	bible	Raton Canyon
+M16.TerminalDrop	1030.00	-3060.00	5.00	180	land	estimate	Terminal
+M17.DrySlip	200.00	-2800.00	5.00	90	land	estimate	Elysian Island
+M17.WeldOne	204.00	-2806.00	5.00	0	land	estimate	Elysian Island
+M17.WeldTwo	210.00	-2812.00	5.00	0	land	estimate	Elysian Island
+M17.WeldThree	216.00	-2806.00	5.00	0	land	estimate	Elysian Island
+M18.ChannelMark	1080.00	-3320.00	0.00	180	water	estimate	Terminal
+M18.SaltHangar	960.00	-3200.00	5.00	90	land	estimate	Terminal
+M18.HaulerMark	1000.00	-3160.00	5.00	90	land	estimate	Terminal

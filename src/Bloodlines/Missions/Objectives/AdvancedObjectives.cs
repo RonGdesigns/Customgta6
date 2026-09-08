@@ -133,6 +133,92 @@ namespace Bloodlines.Missions.Objectives
     }
 
     /// <summary>
+    /// Fly under a ceiling. Climb above it and the SAM sites get a lock — the desert
+    /// missions are built on hugging the terrain, and an altitude limit is a more
+    /// honest expression of that than an invisible wall.
+    /// </summary>
+    public sealed class AltitudeCeilingObjective : Objective
+    {
+        private readonly float _ceiling;
+        private readonly int _graceSeconds;
+        private readonly string _failMessage;
+
+        private int _highSince;
+
+        public AltitudeCeilingObjective(string label, float ceiling, string failMessage, int graceSeconds = 6)
+            : base(label)
+        {
+            _ceiling = ceiling;
+            _failMessage = failMessage;
+            _graceSeconds = graceSeconds;
+        }
+
+        public override void Update(MissionContext context)
+        {
+            var player = Game.Player.Character;
+            var vehicle = player?.CurrentVehicle;
+            if (vehicle == null || !vehicle.Exists())
+            {
+                _highSince = 0;
+                return;
+            }
+
+            float height = vehicle.HeightAboveGround;
+            if (height <= _ceiling)
+            {
+                _highSince = 0;
+                GameUtils.Subtitle("~s~" + (int)height + " ft above terrain", 400);
+                return;
+            }
+
+            if (_highSince == 0) _highSince = Game.GameTime;
+
+            int held = (Game.GameTime - _highSince) / 1000;
+            GameUtils.Subtitle("~r~SAM LOCK~s~ — get below " + (int)_ceiling + "  (" +
+                               Math.Max(0, _graceSeconds - held) + ")", 400);
+
+            if (held >= _graceSeconds) Fail(_failMessage);
+        }
+    }
+
+    /// <summary>
+    /// Put a specific vehicle somewhere — staging, deliveries, drop-offs. Unlike
+    /// reaching a zone, what matters is where the vehicle ends up, so a character can
+    /// park it and switch away without losing the objective.
+    /// </summary>
+    public sealed class DeliverVehicleObjective : Objective
+    {
+        private readonly Func<Vehicle> _vehicle;
+        private readonly Func<Vector3> _destination;
+        private readonly float _radius;
+
+        public DeliverVehicleObjective(string label, Func<Vehicle> vehicle, Func<Vector3> destination,
+            float radius = 12f)
+            : base(label)
+        {
+            _vehicle = vehicle;
+            _destination = destination;
+            _radius = radius;
+        }
+
+        public override void Update(MissionContext context)
+        {
+            var vehicle = _vehicle();
+            var destination = _destination();
+
+            GameUtils.DrawObjectiveMarker(destination, Color.FromArgb(120, 232, 168, 56), _radius * 0.5f);
+
+            if (vehicle == null || !vehicle.Exists())
+            {
+                Fail("The vehicle is gone.");
+                return;
+            }
+
+            if (GameUtils.IsWithinFlat(vehicle.Position, destination, _radius)) Complete();
+        }
+    }
+
+    /// <summary>
     /// Do not be seen. Fails if a guard has line of sight on the player for longer
     /// than the tolerance — the mechanic the infiltration missions need, and the one
     /// that makes Thermal Pulse worth carrying.

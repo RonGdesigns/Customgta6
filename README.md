@@ -22,7 +22,7 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Dialogue director (bible's AudioManager) | working — speaker-coloured subtitles, WAV playback when present |
 | Checkpoints (bible's CheckpointManager) | working — stage, positions, health, wreck purge |
 | Mission framework — stage machine, tracked entities, pass/fail | working |
-| Objective library — 16 reusable objectives, missions as composition | working |
+| Objective library — 18 reusable objectives, missions as composition | working |
 | Companion AI — explicit state machine incl. vehicle boarding | working |
 | Mission dispatcher — registry-driven, prerequisites, external mission packs | working |
 | Save state — `savegame.json`: progress, economy, safehouses, fleet upgrades | working |
@@ -43,11 +43,16 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | **M11 "Ironclad Dyno"** | playable — the quiet one: a dyno hold and three men talking |
 | **M12 "Black Tide Recon"** | playable — stealth recon, detection is the fail state |
 | **M13 "Smuggler's Cut"** | playable — three limpet charges, one detonation |
+| **M14 "Airspace Blackout"** | playable — plane theft under a SAM ceiling |
+| **M15 "Crawlspace"** | playable — non-lethal infiltration, alarm is the fail state |
+| **M16 "The Heavy Lift"** | playable — Zancudo on M09's stolen transponder |
+| **M17 "Sub-Zero Payload"** | playable — the second quiet one: outfitting the Kraken |
+| **M18 "The Staging Line"** | playable — three deliveries, one per character |
 | **SM01 "Lead & Kevlar"** | playable — Ice solo, no crew, switch locked |
 | **SM02 "Zero-Day Injection"** | playable — Gohan solo, non-lethal stealth |
 | **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
 | Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
-| M14–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
+| M19–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has

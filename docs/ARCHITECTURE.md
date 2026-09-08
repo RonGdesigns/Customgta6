@@ -197,6 +197,8 @@ missions and sixty-seven unfinished ones — so the routine parts are a library:
 | `ShadowTargetObjective` | stay with a moving target without crowding it |
 | `AvoidDetectionObjective` | do not be seen; uses the engine's own perception check |
 | `MultiHoldObjective` | several sites, work at each, player picks the order |
+| `AltitudeCeilingObjective` | fly under a ceiling or the SAMs get a lock |
+| `DeliverVehicleObjective` | get a specific vehicle somewhere; survives switching away |
 
 A `ComposedMission` implements two methods — `Setup()` spawns the world,
 `BuildStages()` returns the mission:
