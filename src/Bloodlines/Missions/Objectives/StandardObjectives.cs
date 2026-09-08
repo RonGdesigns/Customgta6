@@ -249,6 +249,98 @@ namespace Bloodlines.Missions.Objectives
         }
     }
 
+    /// <summary>
+    /// Run someone down. Completes when the target is dead or their vehicle is
+    /// finished; fails if they stay out of range long enough to have genuinely
+    /// escaped. The grace period matters — a chase where one corner ends the mission
+    /// is a checkpoint reload, not a chase.
+    /// </summary>
+    public sealed class PursueTargetObjective : Objective
+    {
+        private readonly Func<Ped> _target;
+        private readonly float _loseDistance;
+        private readonly int _graceSeconds;
+        private readonly string _failMessage;
+
+        private int _outOfRangeSince;
+
+        public PursueTargetObjective(string label, Func<Ped> target, string failMessage,
+            float loseDistance = 260f, int graceSeconds = 10)
+            : base(label)
+        {
+            _target = target;
+            _failMessage = failMessage;
+            _loseDistance = loseDistance;
+            _graceSeconds = graceSeconds;
+        }
+
+        public override void Update(MissionContext context)
+        {
+            var target = _target();
+            if (target == null || !target.Exists())
+            {
+                Complete();
+                return;
+            }
+
+            if (target.IsDead)
+            {
+                Complete();
+                return;
+            }
+
+            var vehicle = target.CurrentVehicle;
+            if (vehicle != null && vehicle.Exists() && !vehicle.IsDriveable)
+            {
+                Complete();
+                return;
+            }
+
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists()) return;
+
+            float distance = player.Position.DistanceTo(target.Position);
+            GameUtils.Subtitle("~s~Distance: ~y~" + (int)distance + "m", 400);
+
+            if (distance <= _loseDistance)
+            {
+                _outOfRangeSince = 0;
+                return;
+            }
+
+            if (_outOfRangeSince == 0)
+            {
+                _outOfRangeSince = Game.GameTime;
+                return;
+            }
+
+            if ((Game.GameTime - _outOfRangeSince) / 1000 >= _graceSeconds) Fail(_failMessage);
+        }
+    }
+
+    /// <summary>Wreck a specific vehicle.</summary>
+    public sealed class DestroyVehicleObjective : Objective
+    {
+        private readonly Func<Vehicle> _vehicle;
+
+        public DestroyVehicleObjective(string label, Func<Vehicle> vehicle) : base(label)
+        {
+            _vehicle = vehicle;
+        }
+
+        public override void Update(MissionContext context)
+        {
+            var vehicle = _vehicle();
+            if (vehicle == null || !vehicle.Exists() || vehicle.IsDead || !vehicle.IsDriveable)
+            {
+                Complete();
+                return;
+            }
+
+            GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), 1.5f);
+        }
+    }
+
     /// <summary>Keep something alive. Passive — pair it with the objective that has the work.</summary>
     public sealed class ProtectObjective : Objective
     {

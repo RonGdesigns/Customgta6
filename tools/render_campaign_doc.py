@@ -16,7 +16,8 @@ DIALOGUE = os.path.join(REPO, 'data', 'dialogue.tsv')
 OUT = os.path.join(REPO, 'docs', 'CAMPAIGN.md')
 
 # Missions with a Mission class wired into MissionCatalog.Scripted.
-PLAYABLE = {'M01', 'M02', 'M03', 'SM01', 'SM02', 'SM03'}
+PLAYABLE = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08',
+            'SM01', 'SM02', 'SM03'}
 
 ACTS = [
     (1, 22, 'Act I — The Bleeding Trail',

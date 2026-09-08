@@ -92,6 +92,11 @@ namespace Bloodlines.Missions
                 { "M01", () => new M01GhostInTheDockyard() },
                 { "M02", () => new M02LooseStrands() },
                 { "M03", () => new M03CypressFoundry() },
+                { "M04", () => new M04SeveredWire() },
+                { "M05", () => new M05TidalLock() },
+                { "M06", () => new M06CleanSweep() },
+                { "M07", () => new M07WiretapWaltz() },
+                { "M08", () => new M08SupplyAndSever() },
                 { "SM01", () => new SM01LeadAndKevlar() },
                 { "SM02", () => new SM02ZeroDayInjection() },
                 { "SM03", () => new SM03MidnightDrift() }

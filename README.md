@@ -33,11 +33,16 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |
 | **M02 "Loose Strands"** | playable — freeway intercept under a hard upload clock |
 | **M03 "Cypress Foundry"** | playable — first three-character joint operation |
+| **M04 "Severed Wire"** | playable — garage hit into a pursuit |
+| **M05 "Tidal Lock"** | playable — Act I finale, cliff overwatch into a boat chase |
+| **M06 "Clean Sweep"** | playable — thermite burn under a three-wave SWAT siege |
+| **M07 "Wiretap Waltz"** | playable — mast tap, drone, parachute to a moving pickup |
+| **M08 "Supply & Sever"** | playable — the turbine engines the fleet is built on |
 | **SM01 "Lead & Kevlar"** | playable — Ice solo, no crew, switch locked |
 | **SM02 "Zero-Day Injection"** | playable — Gohan solo, non-lethal stealth |
 | **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
 | Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
-| M04–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
+| M09–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has

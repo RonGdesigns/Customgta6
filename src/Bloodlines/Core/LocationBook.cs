@@ -49,6 +49,41 @@ namespace Bloodlines.Core
             { "M03.CraneControls",    new Vector3(1305.0f, -2020.0f, 45.0f) },
             { "M03.HaulerSpawn",      new Vector3(1276.0f, -1988.0f, 45.0f) },
 
+            // --- Mission 04: Severed Wire (Pillbox garage / Textile City, APPROX) ---
+            { "M04.GarageEntry",      new Vector3(233.0f, -800.0f, 30.0f)   },
+            { "M04.Breaker",          new Vector3(220.0f, -815.0f, -50.0f)  },
+            { "M04.RampGuards",       new Vector3(240.0f, -805.0f, -50.0f)  },
+            { "M04.ChaseCar",         new Vector3(250.0f, -790.0f, 30.0f)   },
+            { "M04.TextileCrash",     new Vector3(80.0f, -1080.0f, 29.0f)   },
+
+            // --- Mission 05: Tidal Lock (Palomino Highlands shoreline, APPROX) ---
+            { "M05.CliffPerch",       new Vector3(2360.0f, -840.0f, 42.0f)  },
+            { "M05.CoveAir",          new Vector3(2450.0f, -960.0f, 60.0f)  },
+            { "M05.GrottoMouth",      new Vector3(2480.0f, -1000.0f, 1.0f)  },
+            { "M05.Sandbar",          new Vector3(2560.0f, -1120.0f, 0.0f)  },
+            { "M05.DinghySpawn",      new Vector3(2420.0f, -1040.0f, 0.0f)  },
+
+            // --- Mission 06: Clean Sweep (Vespucci canals LSPD depot, APPROX) ---
+            { "M06.Culvert",          new Vector3(-1180.0f, -1350.0f, 4.0f) },
+            { "M06.Feeder",           new Vector3(-1160.0f, -1330.0f, 4.0f) },
+            { "M06.SallyPort",        new Vector3(-1140.0f, -1300.0f, 5.0f) },
+            { "M06.ServerRacks",      new Vector3(-1128.0f, -1290.0f, 5.0f) },
+            { "M06.AlleyHold",        new Vector3(-1150.0f, -1275.0f, 5.0f) },
+            { "M06.GrangerSpawn",     new Vector3(-1168.0f, -1262.0f, 5.0f) },
+
+            // --- Mission 07: Wiretap Waltz (Rockford Hills mast, APPROX) ---
+            { "M07.GarageRoof",       new Vector3(-720.0f, -60.0f, 55.0f)   },
+            { "M07.MastTop",          new Vector3(-724.0f, -64.0f, 56.5f)   },
+            { "M07.LandingZone",      new Vector3(-1030.0f, -430.0f, 36.0f) },
+
+            // --- Mission 08: Supply & Sever (Elysian Island warehouse, APPROX) ---
+            { "M08.WarehouseGate",    new Vector3(240.0f, -2900.0f, 6.0f)   },
+            { "M08.CameraRoom",       new Vector3(252.0f, -2916.0f, 6.0f)   },
+            { "M08.CratePadOne",      new Vector3(268.0f, -2930.0f, 6.0f)   },
+            { "M08.CratePadTwo",      new Vector3(276.0f, -2930.0f, 6.0f)   },
+            { "M08.HaulerSpawn",      new Vector3(258.0f, -2944.0f, 6.0f)   },
+            { "M08.Connector",        new Vector3(90.0f, -2620.0f, 6.0f)    },
+
             // --- Solo SM02: Zero-Day Injection (Lifeinvader annex, Rockford, APPROX) ---
             { "SM02.RoofAccess",      new Vector3(-1078.0f, -250.0f, 44.0f) },
             { "SM02.ServerBay",       new Vector3(-1085.0f, -262.0f, 44.0f) },
@@ -77,6 +112,11 @@ namespace Bloodlines.Core
             { "M03.HaulerSpawn", 180f },
             { "SM02.RoofAccess", 210f },
             { "SM03.StartLine", 60f },
+            { "M04.ChaseCar", 250f },
+            { "M05.CliffPerch", 135f },
+            { "M06.GrangerSpawn", 90f },
+            { "M07.GarageRoof", 0f },
+            { "M08.HaulerSpawn", 270f },
             { "Base.CypressFlats", 175f }
         };
 
