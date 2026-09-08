@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Campaign;
@@ -96,8 +98,10 @@ namespace Bloodlines.Missions
         private readonly List<MissionDefinition> _solo = new List<MissionDefinition>();
         private readonly List<MissionDefinition> _order = new List<MissionDefinition>();
 
-        public MissionCatalog(CampaignData data)
+        public MissionCatalog(CampaignData data, string missionAssemblyDirectory = null)
         {
+            _missionAssemblyDirectory = missionAssemblyDirectory;
+
             for (int number = 1; number <= 70; number++)
             {
                 var info = data.MainMission(number) ?? new MissionInfo
@@ -127,10 +131,69 @@ namespace Bloodlines.Missions
                         _order.Count(m => m.IsPlayable) + " playable.");
         }
 
-        private static MissionDefinition Build(MissionInfo info)
+        private readonly string _missionAssemblyDirectory;
+
+        private MissionDefinition Build(MissionInfo info)
         {
-            Scripted.TryGetValue(info.Id, out var factory);
-            return new MissionDefinition(info, factory);
+            // Missions built into this mod resolve by id; a registry row that names a
+            // class resolves by reflection instead, which is how a mission pack can be
+            // added without touching the core assembly.
+            if (Scripted.TryGetValue(info.Id, out var factory))
+            {
+                return new MissionDefinition(info, factory);
+            }
+
+            var external = ResolveExternal(info);
+            return new MissionDefinition(info, external);
+        }
+
+        private Func<Mission> ResolveExternal(MissionInfo info)
+        {
+            if (string.IsNullOrEmpty(info.ClassName)) return null;
+
+            try
+            {
+                Assembly assembly;
+                if (string.IsNullOrEmpty(info.Assembly))
+                {
+                    assembly = typeof(MissionCatalog).Assembly;
+                }
+                else
+                {
+                    string path = Path.Combine(_missionAssemblyDirectory ?? string.Empty, info.Assembly);
+                    if (!File.Exists(path))
+                    {
+                        Logger.Error(info.Id + ": assembly not found at " + path);
+                        return null;
+                    }
+
+                    assembly = Assembly.LoadFrom(path);
+                }
+
+                var type = assembly.GetType(info.ClassName, false, true);
+                if (type == null)
+                {
+                    Logger.Error(info.Id + ": type " + info.ClassName + " not found in " +
+                                 assembly.GetName().Name);
+                    return null;
+                }
+
+                if (!typeof(Mission).IsAssignableFrom(type))
+                {
+                    Logger.Error(info.Id + ": " + info.ClassName + " does not derive from Mission.");
+                    return null;
+                }
+
+                Logger.Info(info.Id + " dispatches to " + type.FullName + " in " +
+                            assembly.GetName().Name + ".");
+                return () => (Mission)Activator.CreateInstance(type);
+            }
+            catch (Exception ex)
+            {
+                // A broken mission pack must never stop the rest of the campaign loading.
+                Logger.Error("Could not resolve " + info.Id + " from the registry", ex);
+                return null;
+            }
         }
 
         public IReadOnlyList<MissionDefinition> All => _order;

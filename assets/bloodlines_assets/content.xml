@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Bloodlines DLC asset pack — contents.
+
+  dataFiles register the metadata; changeSets decide when it is mounted. The map
+  entries are commented out until the safehouse interiors exist — a changeSet that
+  references a missing .rpf stops the whole pack from mounting.
+-->
+<CDataFileMgr__ContentsOfDataFileXml>
+  <disabledFiles />
+  <includedXmlFiles />
+  <includedDataFiles />
+  <dataFiles>
+    <Item>
+      <filename>dlc_bloodlines_assets:/common/data/handling.meta</filename>
+      <fileType>HANDLING_FILE</fileType>
+      <overlay value="true" />
+      <disabled value="true" />
+      <persistent value="false" />
+    </Item>
+    <!--
+    <Item>
+      <filename>dlc_bloodlines_assets:/dlc_map/bloodlines_interiors.rpf</filename>
+      <fileType>RPF_FILE</fileType>
+      <overlay value="false" />
+      <disabled value="true" />
+      <persistent value="true" />
+    </Item>
+    -->
+  </dataFiles>
+  <contentChangeSets>
+    <Item>
+      <changeSetName>bloodlines_assets_AUTOGEN</changeSetName>
+      <filesToInvalidate />
+      <filesToDisable />
+      <filesToEnable>
+        <Item>dlc_bloodlines_assets:/common/data/handling.meta</Item>
+      </filesToEnable>
+      <executionConditions />
+    </Item>
+    <Item>
+      <changeSetName>bloodlines_assets_MAP</changeSetName>
+      <mapChangeSetData />
+      <filesToInvalidate />
+      <filesToDisable />
+      <filesToEnable />
+      <executionConditions />
+    </Item>
+  </contentChangeSets>
+  <patchFiles />
+</CDataFileMgr__ContentsOfDataFileXml>

@@ -30,6 +30,7 @@ import urllib.request
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIALOGUE = os.path.join(REPO, 'data', 'dialogue.tsv')
+MISSIONS = os.path.join(REPO, 'data', 'missions.tsv')
 VOICES_OVERRIDE = os.path.join(REPO, 'tools', 'voices.json')
 
 DEFAULT_VOICES = {
@@ -60,6 +61,15 @@ def wav_header(pcm_bytes, sample_rate=44100, channels=1, bits=16):
             b'data' + struct.pack('<I', len(pcm_bytes)))
 
 
+def audio_dirs():
+    """Mission id -> its audio bank folder, e.g. M01 -> audio/Act1/M01."""
+    banks = {}
+    with open(MISSIONS) as handle:
+        for row in csv.DictReader(handle, delimiter='\t'):
+            banks[row['id']] = row.get('audio_dir', '')
+    return banks
+
+
 def rows(mission_filter):
     with open(DIALOGUE) as handle:
         for row in csv.DictReader(handle, delimiter='\t'):
@@ -72,7 +82,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--out', default=os.path.join(REPO, 'build', 'audio'),
-                        help='output directory (default: build/audio)')
+                        help='audio bank root (default: build/audio)')
+    parser.add_argument('--flat', action='store_true',
+                        help='write every cue into one folder instead of the partitioned bank')
     parser.add_argument('--mission', help='only this mission, e.g. M01')
     parser.add_argument('--force', action='store_true', help='regenerate files that already exist')
     parser.add_argument('--dry-run', action='store_true', help='list what would be generated')
@@ -87,6 +99,7 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     voices = load_voices()
+    banks = {} if args.flat else audio_dirs()
 
     key = os.environ.get('ELEVENLABS_API_KEY')
     if not key and not args.dry_run:
@@ -94,7 +107,12 @@ def main():
 
     generated = skipped = failed = 0
     for row in queue:
-        target = os.path.join(args.out, row['cue_id'] + '.wav')
+        # The bank is partitioned per act and mission so no folder holds hundreds of
+        # files; DialogueDirector resolves the same layout at runtime.
+        bank = banks.get(row['mission'], '')
+        folder = os.path.join(args.out, *bank.split('/')[1:]) if bank.startswith('audio/') else args.out
+        os.makedirs(folder, exist_ok=True)
+        target = os.path.join(folder, row['cue_id'] + '.wav')
         if os.path.exists(target) and not args.force:
             skipped += 1
             continue

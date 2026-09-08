@@ -21,6 +21,20 @@ namespace Bloodlines.Core
         /// <summary>Main-campaign mission number this solo slots in after; 0 for main missions.</summary>
         public int InsertAfter { get; set; }
 
+        /// <summary>"Trio" or "Solo" — the dispatcher's play type.</summary>
+        public string Type { get; set; }
+
+        /// <summary>Mission id that must be complete before this one unlocks; empty for M01.</summary>
+        public string Prerequisite { get; set; }
+
+        /// <summary>Audio bank for this mission's cues, e.g. "audio/Act1/M01".</summary>
+        public string AudioDirectory { get; set; }
+
+        /// <summary>Optional external assembly + type name for a mission built outside this mod.</summary>
+        public string Assembly { get; set; }
+
+        public string ClassName { get; set; }
+
         public bool IsSolo => string.Equals(Kind, "solo", StringComparison.OrdinalIgnoreCase);
         public string Title { get; set; }
         public string Act { get; set; }
@@ -85,6 +99,11 @@ namespace Bloodlines.Core
                     Kind = string.IsNullOrEmpty(row.Text("kind")) ? "main" : row.Text("kind"),
                     Owner = row.Text("owner"),
                     InsertAfter = row.Int("insert_after"),
+                    Type = row.Text("type"),
+                    Prerequisite = row.Text("prerequisite"),
+                    AudioDirectory = row.Text("audio_dir"),
+                    Assembly = row.Text("assembly"),
+                    ClassName = row.Text("class_name"),
                     Title = row.Text("title"),
                     Act = row.Text("act"),
                     Location = row.Text("location"),

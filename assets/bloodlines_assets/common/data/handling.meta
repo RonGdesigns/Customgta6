@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Bloodlines handling overrides.
+
+  Three vehicles the campaign leans on. Each block overrides the stock handling of
+  an existing vehicle, so no custom model is required: the turbine Granger from
+  M11, the armoured half-track from M34/M56, and the Tropic gunboats from M40.
+
+  UNTESTED — these are starting values, not tuned ones. Tune them in game against
+  the missions that use them; a Granger that outruns its own chase sequence is as
+  broken as one that cannot keep up.
+
+  The mod also applies the turbine profile at runtime (see FleetGarage.cs) once
+  grangerTurbineInstalled is set in savegame.json, so the campaign's fleet upgrade
+  works with or without this pack installed.
+-->
+<CHandlingDataMgr>
+  <HandlingData>
+
+    <!-- M11 "Ironclad Dyno": 700-HP military turbine in an up-armoured Granger. -->
+    <Item type="CHandlingData">
+      <handlingName>GRANGER</handlingName>
+      <fMass value="2600.000000" />
+      <fInitialDragCoeff value="6.400000" />
+      <fPercentSubmerged value="85.000000" />
+      <vecCentreOfMassOffset x="0.000000" y="0.000000" z="-0.150000" />
+      <vecInertiaMultiplier x="1.200000" y="1.400000" z="1.500000" />
+      <fDriveBiasFront value="0.400000" />
+      <nInitialDriveGears value="7" />
+      <fInitialDriveForce value="0.340000" />
+      <fDriveInertia value="1.050000" />
+      <fClutchChangeRateScaleUpShift value="3.000000" />
+      <fClutchChangeRateScaleDownShift value="3.000000" />
+      <fInitialDriveMaxFlatVel value="185.000000" />
+      <fBrakeForce value="1.100000" />
+      <fHandBrakeForce value="0.800000" />
+      <fSteeringLock value="38.000000" />
+      <fTractionCurveMax value="2.350000" />
+      <fTractionCurveMin value="2.050000" />
+      <fSuspensionForce value="2.400000" />
+      <fSuspensionCompDamp value="1.400000" />
+      <fSuspensionReboundDamp value="1.800000" />
+      <fCollisionDamageMult value="0.400000" />
+      <fWeaponDamageMult value="0.300000" />
+      <fEngineDamageMult value="0.500000" />
+      <fPetrolTankVolume value="90.000000" />
+      <strModelFlags>440010</strModelFlags>
+      <strHandlingFlags>0</strHandlingFlags>
+      <strDamageFlags>0</strDamageFlags>
+      <AIHandling>AVERAGE</AIHandling>
+    </Item>
+
+    <!-- M34 / M56: the crew's armoured half-track, standing in on the Insurgent. -->
+    <Item type="CHandlingData">
+      <handlingName>INSURGENT</handlingName>
+      <fMass value="7800.000000" />
+      <fInitialDragCoeff value="9.500000" />
+      <fPercentSubmerged value="80.000000" />
+      <vecCentreOfMassOffset x="0.000000" y="0.000000" z="-0.250000" />
+      <vecInertiaMultiplier x="1.600000" y="1.900000" z="2.000000" />
+      <fDriveBiasFront value="0.350000" />
+      <nInitialDriveGears value="5" />
+      <fInitialDriveForce value="0.240000" />
+      <fInitialDriveMaxFlatVel value="130.000000" />
+      <fBrakeForce value="0.900000" />
+      <fSteeringLock value="34.000000" />
+      <fTractionCurveMax value="2.100000" />
+      <fTractionCurveMin value="1.950000" />
+      <fSuspensionForce value="3.000000" />
+      <fCollisionDamageMult value="0.180000" />
+      <fWeaponDamageMult value="0.150000" />
+      <fEngineDamageMult value="0.300000" />
+      <fPetrolTankVolume value="130.000000" />
+      <AIHandling>AVERAGE</AIHandling>
+    </Item>
+
+    <!-- M40 "The Phantom Rigging": ram-prowed, plated Tropic strike boats. -->
+    <Item type="CHandlingData">
+      <handlingName>TROPIC</handlingName>
+      <fMass value="2200.000000" />
+      <fInitialDragCoeff value="3.600000" />
+      <fPercentSubmerged value="75.000000" />
+      <fInitialDriveForce value="0.290000" />
+      <fInitialDriveMaxFlatVel value="145.000000" />
+      <fCollisionDamageMult value="0.150000" />
+      <fWeaponDamageMult value="0.200000" />
+      <fEngineDamageMult value="0.400000" />
+      <AIHandling>BOAT</AIHandling>
+    </Item>
+
+  </HandlingData>
+</CHandlingDataMgr>

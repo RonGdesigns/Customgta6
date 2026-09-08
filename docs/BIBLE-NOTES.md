@@ -43,14 +43,30 @@ change that table rather than the generated files.
 
 ## Deliberate deviations from the toolkit
 
-1. **One assembly, not three.** The toolkit stages `BloodlinesCore.dll` plus a
-   `Bloodlines_M01.dll` per mission. This ships a single `Bloodlines.dll`: SHVDN
-   loads every assembly in `scripts/`, and a per-mission DLL means 70 assemblies
-   that each have to be rebuilt and version-matched against the core. Missions are
-   classes in one assembly instead, registered in `MissionCatalog`.
+1. **One assembly, not five.** The toolkit and the scaling plan stage
+   `BloodlinesCore.dll`, `BloodlinesLauncher.dll` and a DLL per act. This ships a
+   single `Bloodlines.dll`.
+
+   The problem those plans are solving is real: SHVDN instantiates and ticks every
+   class deriving from `Script` in `scripts/` **and its subfolders**, so 79 mission
+   scripts would mean 79 tickers. But splitting into assemblies does not fix that —
+   SHVDN would still find and tick every `Script` subclass in every one of those
+   DLLs. What fixes it is missions not being `Script` subclasses at all: they are
+   ordinary classes the dispatcher constructs on demand, so exactly one mission
+   ticks, and it costs 70 assemblies of version-matching less.
+
+   The extensibility the plan wants is supported anyway: fill in `assembly` and
+   `class_name` for a mission in `missions.tsv` and the dispatcher loads it from
+   `scripts/Bloodlines/missions/` by reflection.
 2. **Config lives in `scripts/Bloodlines/`,** not a loose `BloodlinesConfig.ini` in
    `scripts/`. Same keys, same meanings, but the mod keeps its files together —
-   including the data folder and the log.
+   including the data folder, the save and the log.
+
+   The registry is `missions.tsv` rather than `campaign_registry.json` for the same
+   reason as the other data files: no JSON reader ships with .NET Framework 4.8.
+   `campaign_registry.json` is still generated, from the same pass, for tooling that
+   wants it. `savegame.json` *is* JSON as specified — that one needed nesting, so the
+   mod carries a small purpose-built reader (`Core/Json.cs`).
 3. **Guess's subtitle colour is orange, not red.** The toolkit's audit lists
    `~r~ ~b~ ~g~`; red is reserved here for antagonists (Mateo, Sergei, Sterling,
    Vance), so all three protagonists stay visually distinct from the people shooting

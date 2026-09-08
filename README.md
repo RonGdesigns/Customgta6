@@ -21,7 +21,12 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Abilities — Overwatch Focus / Thermal Pulse / Slipstream Reflex | working, shared meter |
 | Dialogue director (bible's AudioManager) | working — speaker-coloured subtitles, WAV playback when present |
 | Checkpoints (bible's CheckpointManager) | working — stage, positions, health, wreck purge |
-| Mission framework — stage machine, tracked entities, pass/fail, progress | working |
+| Mission framework — stage machine, tracked entities, pass/fail | working |
+| Mission dispatcher — registry-driven, prerequisites, external mission packs | working |
+| Save state — `savegame.json`: progress, economy, safehouses, fleet upgrades | working |
+| Fleet upgrades applied at runtime (turbine Granger, reinforced Kraken) | working |
+| Packaging — `tools/package.py` builds an install-ready tree | working |
+| OpenIV DLC asset pack (handling metadata, interiors) | scaffolded, untested, no interiors yet |
 | QA harness (bible Track 4) | working — stage warp, checkpoint commit/restore, forced switch |
 | **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |
 | **M02 "Loose Strands"** | playable, approximate coordinates |
@@ -36,11 +41,12 @@ thing this repo cannot do for you.
 ## Quick start
 
 ```bash
-dotnet build src/Bloodlines/Bloodlines.csproj -c Release
+python3 tools/package.py --build
 ```
 
-Then `docs/INSTALL.md`: ScriptHookV + ScriptHookVDotNet in your GTA V folder,
-`Bloodlines.dll` into `scripts/`, and `config/` + `data/` into `scripts/Bloodlines/`.
+That builds Release and lays out `build/deploy/` exactly as it installs. Copy
+`build/deploy/scripts/` into your GTA V `scripts/` folder — that is the whole
+install. Full steps, including ScriptHookV itself, in `docs/INSTALL.md`.
 
 Default keys (the toolkit's binds): `Numpad 1/2/3` switch character, `Caps Lock`
 ability, `F10` deploy the crew in free roam, `J` start the next mission, hold
@@ -100,9 +106,10 @@ src/Bloodlines/       the mod
   Abilities/          three abilities + the shared meter
   Missions/           framework, catalog, checkpoints, progress
   Missions/Campaign/  the mission scripts themselves
-data/                 generated campaign data (missions, dialogue, anchors)
+data/                 generated campaign data (missions, dialogue, anchors, registry)
+assets/               OpenIV DLC pack source — handling metadata, interiors to come
 config/               ini templates that ship to scripts/Bloodlines/
-tools/                bible parser, campaign doc renderer, voice batch generator
+tools/                bible parser, campaign doc renderer, voice generator, packager
 docs/                 install, toolchain, architecture, campaign, QA protocol, bible notes
 docs/bibles/          the source bibles and their extracted text
 ```

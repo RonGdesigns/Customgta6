@@ -25,7 +25,8 @@ namespace Bloodlines
         private readonly DialogueDirector _dialogue;
         private readonly CheckpointManager _checkpoints;
         private readonly MissionManager _missions;
-        private readonly CampaignProgress _progress;
+        private readonly FleetGarage _garage;
+        private readonly CampaignState _state;
 
         private int _abortHeldSince;
 
@@ -39,19 +40,21 @@ namespace Bloodlines
             Logger.Info("Los Santos: Bloodlines loading.");
 
             var locations = LocationBook.Load(Path.Combine(root, "Bloodlines.Locations.ini"));
-            _data = CampaignData.Load(Path.Combine(root, "data"));
-            _catalog = new MissionCatalog(_data);
-            _progress = CampaignProgress.Load(Path.Combine(root, "Bloodlines.Progress.ini"), _catalog);
+            string dataDirectory = Path.Combine(root, "data");
+            _data = CampaignData.Load(dataDirectory);
+            _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
+            _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
 
             _crew = new CrewRoster(_config);
             _switching = new SwitchController(_crew);
             _abilities = new AbilityController(_config, _crew);
-            _dialogue = new DialogueDirector(_data, Path.Combine(root, "audio"));
+            _dialogue = new DialogueDirector(_data, root);
             _checkpoints = new CheckpointManager(_crew);
+            _garage = new FleetGarage(_state);
 
             var context = new MissionContext(_config, locations, _data, _crew, _switching,
-                _abilities, _dialogue, _checkpoints);
-            _missions = new MissionManager(context, _progress, _catalog);
+                _abilities, _dialogue, _checkpoints, _state);
+            _missions = new MissionManager(context, _state, _catalog);
 
             Interval = 0;
             Tick += OnTick;
@@ -59,7 +62,7 @@ namespace Bloodlines
             KeyUp += OnKeyUp;
             Aborted += OnAborted;
 
-            Logger.Info("Ready. " + _progress.CompletedCount + "/" + _catalog.All.Count +
+            Logger.Info("Ready. " + _state.CompletedCount + "/" + _catalog.All.Count +
                         " complete. Deploy crew with " + _config.DeployCrewKey +
                         ", start a mission with " + _config.MissionStartKey + ".");
         }
@@ -70,6 +73,7 @@ namespace Bloodlines
             {
                 _crew.Update();
                 _abilities.Update();
+                _garage.Update();
                 _dialogue.Update();
                 _missions.Update();
                 HandleAbortHold();
@@ -150,7 +154,7 @@ namespace Bloodlines
                 return;
             }
 
-            var next = _progress.NextPlayable();
+            var next = _state.NextPlayable(_catalog);
             if (next == null)
             {
                 GameUtils.Notify("~y~No scripted missions available.");
@@ -196,8 +200,17 @@ namespace Bloodlines
 
         private void StandDown()
         {
+            // The save's last-known-location is what lets a session resume in place.
+            var player = Game.Player.Character;
+            if (_crew.IsDeployed && player != null && player.Exists())
+            {
+                _state.RecordPosition(_crew.ActiveSlot, player.Position);
+                _state.Save();
+            }
+
             _abilities.Stop();
             _dialogue.Clear();
+            _garage.Reset();
             _crew.Dismiss();
             GameUtils.Notify("~y~Crew stood down.");
         }

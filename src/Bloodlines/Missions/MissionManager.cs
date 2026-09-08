@@ -10,16 +10,16 @@ namespace Bloodlines.Missions
     public sealed class MissionManager
     {
         private readonly MissionContext _context;
-        private readonly CampaignProgress _progress;
+        private readonly CampaignState _state;
         private readonly MissionCatalog _catalog;
 
         private Mission _current;
         private MissionDefinition _currentDefinition;
 
-        public MissionManager(MissionContext context, CampaignProgress progress, MissionCatalog catalog)
+        public MissionManager(MissionContext context, CampaignState state, MissionCatalog catalog)
         {
             _context = context;
-            _progress = progress;
+            _state = state;
             _catalog = catalog;
         }
 
@@ -38,6 +38,13 @@ namespace Bloodlines.Missions
             if (IsRunning)
             {
                 GameUtils.Subtitle("~r~A mission is already running. Hold Backspace to abort.", 3000);
+                return false;
+            }
+
+            if (!_state.PrerequisiteMet(definition))
+            {
+                GameUtils.Notify("~y~" + definition.Id + "~s~ needs " + definition.Info.Prerequisite +
+                                 " finished first.");
                 return false;
             }
 
@@ -66,7 +73,7 @@ namespace Bloodlines.Missions
 
         public bool StartNext()
         {
-            return Start(_progress.NextPlayable());
+            return Start(_state.NextPlayable(_catalog));
         }
 
         public void Retry()
@@ -96,10 +103,10 @@ namespace Bloodlines.Missions
             switch (_current.Status)
             {
                 case MissionStatus.Passed:
-                    _progress.MarkComplete(_currentDefinition.Id);
+                    _state.MarkComplete(_currentDefinition.Id, _catalog);
                     GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
                     GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
-                                       _progress.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
+                                       _state.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
                     break;
 
                 case MissionStatus.Failed:

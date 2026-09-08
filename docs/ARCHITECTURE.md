@@ -14,7 +14,8 @@ BloodlinesMain (Script)
   ├─ LocationBook       estimated coordinates, ini-backed
   ├─ CampaignData       the bible as data: 70 missions, 255 cues, 6 surveyed anchors
   ├─ MissionCatalog     the 70 slots, built from CampaignData; factories mark playable ones
-  ├─ CampaignProgress   70 flags in their own ini, never in the game's save
+  ├─ CampaignState      savegame.json: progress, economy, safehouses, fleet upgrades
+  ├─ FleetGarage        applies unlocked vehicle upgrades to the crew's own rides
   ├─ CrewRoster         the three peds: spawn, companion AI, blips, respawn
   ├─ SwitchController   the 3-way switch
   ├─ AbilityController  one shared meter, three abilities
@@ -23,7 +24,8 @@ BloodlinesMain (Script)
   └─ MissionManager     one running mission, pass/fail, progress
 ```
 
-Per tick, in order: crew upkeep → abilities → dialogue → mission → abort-hold check. Nothing
+Per tick, in order: crew upkeep → abilities → fleet upgrades → dialogue → mission →
+abort-hold check. Nothing
 in that chain blocks except deliberately scripted transitions (a fade, a switch
 camera), which are safe because SHVDN runs each script on its own fiber and
 `Script.Wait` yields rather than stalling the game.
@@ -64,6 +66,7 @@ startup:
 | `data/missions.tsv` | 79 | `MissionCatalog` — titles, act, setting, HUD objective, synopsis, and for solo missions their owner and insertion point |
 | `data/dialogue.tsv` | 292 | `DialogueDirector` — cue id, speaker, stage direction, line, trigger |
 | `data/anchors.tsv` | 6 | missions, via `CampaignData.Anchor` — the bible's surveyed coordinates |
+| `data/campaign_registry.json` | 79 | nothing at runtime — the same registry in JSON, generated in the same pass, for external tooling |
 
 TSV rather than JSON because .NET Framework 4.8 has no built-in JSON reader, and a
 script mod that drags a serializer DLL along has to version-match it against every
@@ -85,6 +88,41 @@ spawns, the other two do not exist for the duration, and `SwitchController` refu
 with the character's own line rather than silently doing nothing. A solo mission
 that left the crew standing around would undercut the entire reason these exist.
 
+## Dispatching a mission
+
+`missions.tsv` is the registry the dispatcher reads. Beyond the bible's own fields it
+carries four that decide how a mission runs:
+
+| Column | Effect |
+|---|---|
+| `type` | `Trio` or `Solo` — solo missions deploy one character and lock the switch |
+| `prerequisite` | the mission that must be complete first; `J` never offers a mission out of order |
+| `audio_dir` | that mission's audio bank, e.g. `audio/Act1/M01` |
+| `assembly` + `class_name` | optional — dispatch this mission from an external DLL |
+
+Missions built into the mod resolve by id from `MissionCatalog.Scripted`. A row that
+names a class resolves by reflection instead, loading the assembly from
+`scripts/Bloodlines/missions/`, which is how a mission pack can be added without
+touching the core. A broken pack logs and is skipped; it never stops the rest of the
+campaign from loading.
+
+Only the running mission is constructed and ticked. That is the actual answer to
+"79 scripts will overload the script thread": the mission classes are not SHVDN
+`Script` subclasses at all, so the engine never sees them.
+
+## Save state
+
+`savegame.json` holds what has to survive between sessions: completed missions, the
+current mission and act, where the crew was last, the economy (cash, gold dredged
+from the Alamo, offshore escrow), which safehouses are open and which fleet upgrades
+are installed. Missions read and write it through `Ctx.State`.
+
+It is written next to the mod, never into the game's own save — a mod that writes to
+a story save can cost someone a playthrough. Writes go to a temporary file and are
+then moved into place, so a crash mid-write cannot leave a half-written save; an
+unreadable save is copied aside as `.corrupt` and the campaign continues from
+defaults rather than silently overwriting whatever went wrong.
+
 ## Dialogue
 
 `DialogueDirector` plays a cue by its bible id — `Say("M01_S2_05_ICE")` — as a
@@ -98,6 +136,9 @@ it if that file exists. Three deliberate properties:
   firefight is how scripted dialogue becomes unreadable.
 - **Speaker colours match blip colours.** Ice is blue, Gohan green, Guess orange in
   the subtitles, on the map, and in the ability HUD.
+- **The audio bank is partitioned** per act and mission (`audio/Act1/M01/…`), resolved
+  from the registry's `audio_dir`, with a flat `audio/<CUE>.wav` fallback for quick
+  tests. 292 files in one folder is a directory lookup nobody needs mid-chase.
 
 ## Checkpoints
 

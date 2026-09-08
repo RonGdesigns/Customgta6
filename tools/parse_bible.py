@@ -12,8 +12,10 @@ Outputs (tab-separated, one header row, no quoting — tabs are stripped from va
                         weather, hud, synopsis
     data/dialogue.tsv   cue_id, mission, stage, speaker, direction, line, trigger
     data/anchors.tsv    key, description, entity, x, y, z, heading
+    data/campaign_registry.json  the same mission list as JSON, for external tooling
 """
 
+import json
 import os
 import re
 import sys
@@ -241,6 +243,78 @@ def parse_anchors(text):
     return anchors
 
 
+def act_folder(mission):
+    """Audio bank each mission's cues belong to."""
+    if mission['kind'] == 'solo':
+        return 'Solo'
+    number = mission['number']
+    return 'Act1' if number <= 22 else 'Act2' if number <= 48 else 'Act3'
+
+
+def decorate(missions):
+    """Adds the dispatcher fields: play type, prerequisite and audio bank.
+
+    A main mission is gated on the one before it; a solo mission is gated on the
+    mission its act's window follows, which is what the expansion specifies.
+    """
+    main = [m for m in missions if m['kind'] == 'main']
+    for mission in missions:
+        mission['type'] = 'Solo' if mission['kind'] == 'solo' else 'Trio'
+        mission['audio_dir'] = 'audio/{}/{}'.format(act_folder(mission), mission['id'])
+        # class_name/assembly stay empty for missions built into the mod; fill them in
+        # to dispatch a mission from an external assembly instead.
+        mission.setdefault('class_name', '')
+        mission.setdefault('assembly', '')
+
+        if mission['kind'] == 'solo':
+            mission['prerequisite'] = ('M%02d' % int(mission['insert_after'])
+                                       if mission['insert_after'] else '')
+        else:
+            index = main.index(mission)
+            mission['prerequisite'] = main[index - 1]['id'] if index > 0 else ''
+    return missions
+
+
+def write_registry(path, missions, anchors):
+    """campaign_registry.json — the same data as missions.tsv, for external tooling.
+
+    The mod reads the TSV at runtime (no JSON reader in .NET Framework 4.8 without
+    dragging in a serializer), so this is generated from the same pass to keep the
+    two from drifting.
+    """
+    anchor_by_mission = {}
+    for anchor in anchors:
+        # "Ice: Roost 4" is M01's player start; only the prologue has surveyed points.
+        if anchor['key'].startswith('Ice:'):
+            anchor_by_mission['M01'] = anchor
+
+    entries = []
+    for mission in missions:
+        anchor = anchor_by_mission.get(mission['id'])
+        entry = {
+            'id': mission['id'],
+            'title': mission['title'],
+            'act': int(mission['act'].replace('Act', '').strip().split()[0].replace('I' * 3, '3')
+                       .replace('I' * 2, '2').replace('I', '1')) if mission['act'] else 0,
+            'type': mission['type'],
+            'assembly': mission['assembly'],
+            'className': mission['class_name'],
+            'prerequisiteId': mission['prerequisite'] or None,
+            'startingCoords': ({'x': float(anchor['x']), 'y': float(anchor['y']),
+                                'z': float(anchor['z']), 'heading': float(anchor['heading'])}
+                               if anchor else None),
+            'audioDirectory': mission['audio_dir'],
+        }
+        if mission['type'] == 'Solo':
+            entry['focusHero'] = mission['owner'].title()
+        entries.append(entry)
+
+    with open(path, 'w') as handle:
+        json.dump({'missions': entries}, handle, indent=2)
+        handle.write('\n')
+    print('wrote {} ({} entries)'.format(os.path.relpath(path, REPO), len(entries)))
+
+
 def write_tsv(path, columns, rows):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as handle:
@@ -276,15 +350,18 @@ def main():
         print('{}: {} missions, {} cues'.format(os.path.basename(source), len(missions), len(cues)))
 
     all_missions.sort(key=lambda mission: (mission['kind'] == 'solo', mission['number']))
+    decorate(all_missions)
 
     write_tsv(os.path.join(DATA, 'missions.tsv'),
-              ['id', 'number', 'kind', 'owner', 'insert_after', 'title', 'act', 'location',
+              ['id', 'number', 'kind', 'type', 'owner', 'insert_after', 'prerequisite',
+               'audio_dir', 'assembly', 'class_name', 'title', 'act', 'location',
                'time', 'weather', 'hud', 'synopsis'],
               all_missions)
     write_tsv(os.path.join(DATA, 'dialogue.tsv'),
               ['cue_id', 'mission', 'stage', 'speaker', 'direction', 'line', 'trigger'], all_cues)
     write_tsv(os.path.join(DATA, 'anchors.tsv'),
               ['key', 'description', 'entity', 'x', 'y', 'z', 'heading'], all_anchors)
+    write_registry(os.path.join(DATA, 'campaign_registry.json'), all_missions, all_anchors)
 
     main_numbers = {m['number'] for m in all_missions if m['kind'] == 'main'}
     missing = [n for n in range(1, 71) if n not in main_numbers]

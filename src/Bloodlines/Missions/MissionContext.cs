@@ -9,7 +9,7 @@ namespace Bloodlines.Missions
     {
         public MissionContext(ModConfig config, LocationBook locations, CampaignData data,
             CrewRoster crew, SwitchController switching, AbilityController abilities,
-            DialogueDirector dialogue, CheckpointManager checkpoints)
+            DialogueDirector dialogue, CheckpointManager checkpoints, CampaignState state)
         {
             Config = config;
             Locations = locations;
@@ -19,6 +19,7 @@ namespace Bloodlines.Missions
             Abilities = abilities;
             Dialogue = dialogue;
             Checkpoints = checkpoints;
+            State = state;
         }
 
         public ModConfig Config { get; }
@@ -29,5 +30,8 @@ namespace Bloodlines.Missions
         public AbilityController Abilities { get; }
         public DialogueDirector Dialogue { get; }
         public CheckpointManager Checkpoints { get; }
+
+        /// <summary>Campaign save state: progress, economy, safehouses, fleet upgrades.</summary>
+        public CampaignState State { get; }
     }
 }

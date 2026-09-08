@@ -15,6 +15,11 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 7 | **Solo lock** | Start SM01, press `Numpad 2` | The switch is refused with a subtitle; only Ice is on the map |
 | 8 | **Coordinate survey** | `F11` at each mission beat | Captured positions land in `Bloodlines.Captures.ini` and match the geometry the mission assumes |
 
+| 9 | **Save state** | Finish M01, alt-F4, relaunch | `savegame.json` lists M01 in `completedMissions`, `currentMissionId` has moved on, and `J` offers the next mission rather than M01 again |
+| 10 | **Prerequisites** | Press `J` on a fresh save | M01 comes first; SM01 is not offered until M03 is complete |
+| 11 | **Fleet upgrade** | Set `grangerTurbineInstalled` true in `savegame.json`, get into a Granger | The turbine notification fires once, the vehicle pulls noticeably harder, and re-entering does not re-apply it |
+| 12 | **Audio partitioning** | Put a cue in `audio/Act1/M01/` and another in flat `audio/` | Both play; the partitioned one wins when both exist |
+
 ## What to log
 
 `Bloodlines.log` is written next to the inis. Set `[Dev] VerboseLogging = True`

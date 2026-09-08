@@ -26,18 +26,39 @@ namespace Bloodlines.Core
         private const int MsPerCharacter = 55;
 
         private readonly CampaignData _data;
-        private readonly string _audioDirectory;
+        private readonly string _root;
         private readonly Queue<DialogueCue> _queue = new Queue<DialogueCue>();
 
         private SoundPlayer _player;
         private DialogueCue _speaking;
         private int _speakingUntil;
 
-        public DialogueDirector(CampaignData data, string audioDirectory)
+        public DialogueDirector(CampaignData data, string bloodlinesRoot)
         {
             _data = data;
-            _audioDirectory = audioDirectory;
-            Directory.CreateDirectory(audioDirectory);
+            _root = bloodlinesRoot;
+            Directory.CreateDirectory(Path.Combine(bloodlinesRoot, "audio"));
+        }
+
+        /// <summary>
+        /// Where a cue's WAV lives. The audio bank is partitioned per act and mission
+        /// (audio/Act1/M01/M01_S1_01_ICE.wav) so no directory ends up holding hundreds
+        /// of files; a flat audio/ folder still works as a fallback for quick tests.
+        /// </summary>
+        private string ResolveAudioPath(DialogueCue cue)
+        {
+            var info = _data.Mission(cue.MissionId);
+            string fileName = cue.CueId + ".wav";
+
+            if (info != null && !string.IsNullOrEmpty(info.AudioDirectory))
+            {
+                string partitioned = Path.Combine(_root, info.AudioDirectory.Replace('/', Path.DirectorySeparatorChar),
+                    fileName);
+                if (File.Exists(partitioned)) return partitioned;
+            }
+
+            string flat = Path.Combine(_root, "audio", fileName);
+            return File.Exists(flat) ? flat : null;
         }
 
         public bool IsSpeaking => _speaking != null;
@@ -127,8 +148,8 @@ namespace Bloodlines.Core
 
         private void PlayAudio(DialogueCue cue)
         {
-            string path = Path.Combine(_audioDirectory, cue.CueId + ".wav");
-            if (!File.Exists(path)) return;
+            string path = ResolveAudioPath(cue);
+            if (path == null) return;
 
             try
             {

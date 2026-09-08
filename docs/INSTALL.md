@@ -32,22 +32,25 @@ copy you mod.
 2. Install ScriptHookVDotNet: copy `ScriptHookVDotNet.asi`, `ScriptHookVDotNet2.dll`
    and `ScriptHookVDotNet3.dll` next to `GTA5.exe`. Create a `scripts/` folder there
    if it doesn't exist.
-3. Build this repo:
+3. Build and package in one step:
    ```bash
-   dotnet build src/Bloodlines/Bloodlines.csproj -c Release
+   python3 tools/package.py --build
    ```
-   (or open `Bloodlines.sln` in Visual Studio and build Release/x64).
-4. Copy `src/Bloodlines/bin/Release/Bloodlines.dll` into `<GTA V>/scripts/`.
-5. Copy the `config/` files into `<GTA V>/scripts/Bloodlines/` — the mod creates
-   that folder and writes defaults on first run if you skip this, but the shipped
-   inis are commented.
-6. Copy the `data/` folder into `<GTA V>/scripts/Bloodlines/data/`. **This one is not
-   optional**: without it there are no mission titles, no objectives and no dialogue,
-   and the mod will say so on screen. It carries all 70 main missions, the 9 solo
-   missions and 292 dialogue cues.
-7. Optional: put generated voice lines in `<GTA V>/scripts/Bloodlines/audio/` as
-   `<CUE_ID>.wav` (see `tools/generate_voice.py`). The campaign plays fine without them.
-8. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
+   That produces `build/deploy/`, laid out exactly as it installs. (Visual Studio
+   users: build `Bloodlines.sln` in Release/x64, then run `tools/package.py` without
+   `--build`.)
+4. Copy the contents of `build/deploy/scripts/` into `<GTA V>/scripts/`. That is the
+   whole install — DLL, config, and the campaign data the mod cannot run without.
+5. Optional: generate voice lines and fold them in:
+   ```bash
+   export ELEVENLABS_API_KEY=...
+   python3 tools/generate_voice.py --out build/audio
+   python3 tools/package.py --audio build/audio
+   ```
+   The campaign plays fine with no audio — every line is written to read as a subtitle.
+6. Optional: import `build/deploy/_openiv_import/bloodlines_assets` with OpenIV for
+   the custom handling pack. See `assets/README.md`.
+7. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
    it is the first place to look when something doesn't happen.
 
 ## Controls
@@ -61,7 +64,9 @@ copy you mod.
 | hold `Backspace` | abort the running mission, or stand the crew down |
 | `F11` | dev: capture the current coordinates (needs `[Dev] Enabled = True`) |
 
-All of them are remappable in `Bloodlines.ini`.
+All of them are remappable in `Bloodlines.ini`. `J` always starts the next mission
+whose prerequisite is satisfied, which is how the solo missions arrive in the right
+place in the campaign.
 
 ### QA harness
 
@@ -82,15 +87,37 @@ binding, not this mod's.
 
 ```
 Grand Theft Auto V/
-  ScriptHookV.dll, dinput8.dll, ScriptHookVDotNet.asi, ScriptHookVDotNet3.dll
-  scripts/
-    Bloodlines.dll
-    Bloodlines/
-      Bloodlines.ini, Bloodlines.Locations.ini, Bloodlines.Progress.ini
-      Bloodlines.log
-      data/     missions.tsv, dialogue.tsv, anchors.tsv
-      audio/    <CUE_ID>.wav  (optional)
+├── ScriptHookV.dll, dinput8.dll
+├── ScriptHookVDotNet.asi, ScriptHookVDotNet3.dll
+├── mods/update/x64/dlcpacks/
+│   └── bloodlines_assets/dlc.rpf      built with OpenIV from assets/ (optional)
+└── scripts/
+    ├── Bloodlines.dll                 the mod
+    └── Bloodlines/
+        ├── Bloodlines.ini             keybinds, crew, abilities, dev flags
+        ├── Bloodlines.Locations.ini   coordinates (survey these with F11)
+        ├── Bloodlines.log             written every session
+        ├── data/
+        │   ├── missions.tsv           79 missions — the runtime registry
+        │   ├── dialogue.tsv           292 cues
+        │   ├── anchors.tsv            the bible's surveyed coordinates
+        │   ├── campaign_registry.json the same registry for external tooling
+        │   └── savegame.json          progress, economy, safehouses, fleet
+        ├── audio/
+        │   ├── Act1/M01/M01_S1_01_ICE.wav ...
+        │   ├── Act2/, Act3/, Solo/
+        │   └── (a flat audio/<CUE>.wav also works for quick tests)
+        └── missions/                  external mission-pack DLLs, if you add any
 ```
+
+**Why one DLL and not one per act:** ScriptHookVDotNet instantiates and ticks every
+class deriving from `Script` in `scripts/` *and its subfolders*. This mod has exactly
+two such classes — the entry point and the dev tools — and missions are ordinary
+classes the dispatcher constructs on demand, so only the running mission ticks no
+matter how many are written. Splitting into per-act assemblies would not change that,
+and would add 70 assemblies to version-match. If you do want a mission in its own
+DLL, that is supported: drop it in `Bloodlines/missions/` and fill in the `assembly`
+and `class_name` columns for that mission in `missions.tsv`.
 
 ## Staying banned-free
 

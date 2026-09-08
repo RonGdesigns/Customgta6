@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Bloodlines DLC asset pack — mount descriptor.
+
+  This pack is data-only: handling and vehicle metadata plus map data for the
+  safehouse interiors. It contains no Rockstar files and overwrites none; it is
+  mounted from mods/update/x64/dlcpacks/ so the base game stays untouched.
+
+  UNTESTED: this is a template written from the standard dlcpack layout. Verify it
+  loads (a pack that fails to mount is silent — check for the interiors appearing,
+  not for an error) before building content on top of it.
+-->
+<SSetupData>
+  <deviceName>dlc_bloodlines_assets</deviceName>
+  <datFile>content.xml</datFile>
+  <timeStamp>2026/01/01 00:00:00</timeStamp>
+  <nameHash>bloodlines_assets</nameHash>
+  <contentChangeSets />
+  <contentChangeSetGroups>
+    <Item>
+      <NameHash>GROUP_STARTUP</NameHash>
+      <ContentChangeSets>
+        <Item>bloodlines_assets_AUTOGEN</Item>
+      </ContentChangeSets>
+    </Item>
+    <Item>
+      <NameHash>GROUP_MAP</NameHash>
+      <ContentChangeSets>
+        <Item>bloodlines_assets_MAP</Item>
+      </ContentChangeSets>
+    </Item>
+  </contentChangeSetGroups>
+  <startupScript />
+  <scriptCallstackSize value="0" />
+  <type>EXTRACONTENT_COMPAT_PACK</type>
+  <order value="150" />
+  <minorOrder value="0" />
+  <isLevelPack value="false" />
+  <dependencyPackHash />
+  <requiredVersion />
+  <subPackCount value="0" />
+</SSetupData>
