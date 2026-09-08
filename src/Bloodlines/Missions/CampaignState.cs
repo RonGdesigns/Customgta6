@@ -42,6 +42,7 @@ namespace Bloodlines.Missions
         // --- unlocks ---
         public Dictionary<string, bool> Safehouses { get; } = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
+            { "cypressFoundry", false },
             { "canalLogisticsLoft", true },
             { "littleSeoulStudio", true },
             { "burroHeightsChopShop", true },
@@ -54,7 +55,8 @@ namespace Bloodlines.Missions
         {
             { "grangerTurbineInstalled", false },
             { "halfTrackAcquired", false },
-            { "krakenSubmarineReinforced", false }
+            { "krakenSubmarineReinforced", false },
+            { "racingTransmissionInstalled", false }
         };
 
         public int CompletedCount => Completed.Count;

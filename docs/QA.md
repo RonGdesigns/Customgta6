@@ -20,6 +20,8 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 11 | **Fleet upgrade** | Set `grangerTurbineInstalled` true in `savegame.json`, get into a Granger | The turbine notification fires once, the vehicle pulls noticeably harder, and re-entering does not re-apply it |
 | 12 | **Audio partitioning** | Put a cue in `audio/Act1/M01/` and another in flat `audio/` | Both play; the partitioned one wins when both exist |
 
+| 13 | **Dev menu** | `F8` with `[Dev] Enabled = True` | Menu opens, arrows navigate, Enter starts a mission from any point, Backspace closes, and the player cannot fire while it is open |
+
 ## What to log
 
 `Bloodlines.log` is written next to the inis. Set `[Dev] VerboseLogging = True`

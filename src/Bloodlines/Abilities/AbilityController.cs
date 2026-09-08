@@ -67,6 +67,12 @@ namespace Bloodlines.Abilities
             Logger.Debug("Ability up: " + ability.Name);
         }
 
+        /// <summary>Dev menu: top the shared meter back up.</summary>
+        public void Refill()
+        {
+            _meter = 1f;
+        }
+
         public void Update()
         {
             int now = Game.GameTime;

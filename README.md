@@ -31,9 +31,13 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | OpenIV DLC asset pack (handling metadata, interiors) | scaffolded, untested, no interiors yet |
 | QA harness (bible Track 4) | working — stage warp, checkpoint commit/restore, forced switch |
 | **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |
-| **M02 "Loose Strands"** | playable, approximate coordinates |
-| **SM01 "Lead & Kevlar"** | playable — first of the 9 solo missions, no crew, switch locked |
-| M03–M70, SM02–SM09 | written and loaded as data; no mission scripts yet |
+| **M02 "Loose Strands"** | playable — freeway intercept under a hard upload clock |
+| **M03 "Cypress Foundry"** | playable — first three-character joint operation |
+| **SM01 "Lead & Kevlar"** | playable — Ice solo, no crew, switch locked |
+| **SM02 "Zero-Day Injection"** | playable — Gohan solo, non-lethal stealth |
+| **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
+| Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
+| M04–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has

@@ -26,6 +26,7 @@ namespace Bloodlines
         private readonly CheckpointManager _checkpoints;
         private readonly MissionManager _missions;
         private readonly FleetGarage _garage;
+        private readonly DevMenu _menu;
         private readonly CampaignState _state;
 
         private int _abortHeldSince;
@@ -55,6 +56,8 @@ namespace Bloodlines
             var context = new MissionContext(_config, locations, _data, _crew, _switching,
                 _abilities, _dialogue, _checkpoints, _state);
             _missions = new MissionManager(context, _state, _catalog);
+            _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
+                _state, _dialogue, _data);
 
             Interval = 0;
             Tick += OnTick;
@@ -76,6 +79,7 @@ namespace Bloodlines
                 _garage.Update();
                 _dialogue.Update();
                 _missions.Update();
+                _menu.Update();
                 HandleAbortHold();
             }
             catch (Exception ex)
@@ -100,6 +104,19 @@ namespace Bloodlines
         {
             try
             {
+                // The menu takes keys first while it is open, so its navigation never
+                // doubles as a gameplay bind.
+                if (_config.DevToolsEnabled)
+                {
+                    if (e.KeyCode == _config.DevMenuKey)
+                    {
+                        _menu.Toggle();
+                        return;
+                    }
+
+                    if (_menu.HandleKey(e.KeyCode)) return;
+                }
+
                 if (HandleGameplayKey(e.KeyCode)) return;
                 if (_config.DevToolsEnabled) HandleQaKey(e.KeyCode);
             }

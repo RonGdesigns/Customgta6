@@ -19,6 +19,7 @@ namespace Bloodlines.Core
         public Keys AbortKey { get; private set; } = Keys.Back;
         public Keys DevCaptureKey { get; private set; } = Keys.F11;
         public Keys DeployCrewKey { get; private set; } = Keys.F10;
+        public Keys DevMenuKey { get; private set; } = Keys.F8;
 
         /// <summary>Companions are damage-capped rather than invincible; 0 disables the cap.</summary>
         public int CompanionHealthFloor { get; private set; } = 150;
@@ -52,6 +53,7 @@ namespace Bloodlines.Core
             config.AbortKey = settings.GetValue<Keys>("Keys", "AbortMission", config.AbortKey);
             config.DevCaptureKey = settings.GetValue<Keys>("Keys", "DevCapture", config.DevCaptureKey);
             config.DeployCrewKey = settings.GetValue<Keys>("Keys", "DeployCrew", config.DeployCrewKey);
+            config.DevMenuKey = settings.GetValue<Keys>("Keys", "DevMenu", config.DevMenuKey);
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);

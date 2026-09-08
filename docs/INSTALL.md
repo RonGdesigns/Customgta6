@@ -75,6 +75,7 @@ rewinds a player who didn't ask for a QA build:
 
 | Key | Action |
 |---|---|
+| `F8` | open the developer menu — missions, stages, crew, world, dialogue, save state |
 | `Page Up` / `Page Down` | warp the running mission forward / back one stage |
 | `Insert` | commit a checkpoint |
 | `Delete` | restore the last checkpoint |

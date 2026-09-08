@@ -135,6 +135,36 @@ namespace Bloodlines.Missions.Objectives
         }
     }
 
+    /// <summary>
+    /// Put a set of guards down without requiring them dead. A stun gun does not kill,
+    /// so a stealth mission scored on kills would be unfinishable as written.
+    /// </summary>
+    public sealed class SubdueTargetsObjective : Objective
+    {
+        private readonly Func<IEnumerable<Ped>> _targets;
+
+        public SubdueTargetsObjective(string label, Func<IEnumerable<Ped>> targets) : base(label)
+        {
+            _targets = targets;
+        }
+
+        public override void Update(MissionContext context)
+        {
+            var standing = _targets()
+                .Where(ped => ped != null && ped.Exists() && ped.IsAlive
+                              && !ped.IsRagdoll && !ped.IsCuffed && !ped.IsBeingStunned)
+                .ToList();
+
+            if (standing.Count == 0)
+            {
+                Complete();
+                return;
+            }
+
+            GameUtils.Subtitle("~s~Guards standing: ~r~" + standing.Count, 500);
+        }
+    }
+
     /// <summary>Hold out against spawned waves. The spawner owns placement and models.</summary>
     public sealed class SurviveWavesObjective : Objective
     {

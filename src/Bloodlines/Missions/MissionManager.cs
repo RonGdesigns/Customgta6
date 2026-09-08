@@ -25,6 +25,23 @@ namespace Bloodlines.Missions
 
         public MissionCatalog Catalog => _catalog;
 
+        /// <summary>Stage of the running mission, or -1. Used by the dev menu.</summary>
+        public int CurrentStage => _current?.CurrentStage ?? -1;
+
+        /// <summary>Dev menu: finish the running mission as a pass.</summary>
+        public void ForcePass()
+        {
+            if (!IsRunning) return;
+            _current.Pass();
+        }
+
+        /// <summary>Dev menu: finish the running mission as a failure.</summary>
+        public void ForceFail(string reason)
+        {
+            if (!IsRunning) return;
+            _current.Fail(reason);
+        }
+
         public bool IsRunning => _current != null && _current.Status == MissionStatus.Running;
 
         public string CurrentTitle => _currentDefinition?.Title;

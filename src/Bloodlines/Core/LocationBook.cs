@@ -43,6 +43,25 @@ namespace Bloodlines.Core
             { "M02.InterceptStart",   new Vector3(102.0f, -1810.0f, 27.0f)  },
             { "M02.CanalEscape",      new Vector3(285.0f, -1900.0f, 24.0f)  },
 
+            // --- Mission 03: Cypress Foundry (Davis rail spur / Murrieta Oil Fields, APPROX) ---
+            { "M03.RailJunction",     new Vector3(180.0f, -1900.0f, 24.0f)  },
+            { "M03.DepotGate",        new Vector3(1290.0f, -2000.0f, 45.0f) },
+            { "M03.CraneControls",    new Vector3(1305.0f, -2020.0f, 45.0f) },
+            { "M03.HaulerSpawn",      new Vector3(1276.0f, -1988.0f, 45.0f) },
+
+            // --- Solo SM02: Zero-Day Injection (Lifeinvader annex, Rockford, APPROX) ---
+            { "SM02.RoofAccess",      new Vector3(-1078.0f, -250.0f, 44.0f) },
+            { "SM02.ServerBay",       new Vector3(-1085.0f, -262.0f, 44.0f) },
+            { "SM02.Terminal",        new Vector3(-1090.0f, -268.0f, 44.0f) },
+            { "SM02.Exit",            new Vector3(-1060.0f, -240.0f, 37.0f) },
+
+            // --- Solo SM03: Midnight Drift (Olympic Freeway basin circuit, APPROX) ---
+            { "SM03.StartLine",       new Vector3(560.0f, -1690.0f, 28.0f)  },
+            { "SM03.Checkpoint1",     new Vector3(700.0f, -1790.0f, 27.0f)  },
+            { "SM03.Checkpoint2",     new Vector3(760.0f, -1590.0f, 28.0f)  },
+            { "SM03.Checkpoint3",     new Vector3(620.0f, -1520.0f, 28.0f)  },
+            { "SM03.Checkpoint4",     new Vector3(540.0f, -1610.0f, 28.0f)  },
+
             // --- Crew safehouse: Cypress Flats industrial shop (Part I base, APPROX) ---
             { "Base.CypressFlats",    new Vector3(866.0f, -2110.0f, 30.5f)  }
         };
@@ -54,6 +73,10 @@ namespace Bloodlines.Core
             { "M01.PrototypeCar", 270f },
             { "M02.InterceptStart", 60f },
             { "SM01.WarehouseGate", 340f },
+            { "M03.RailJunction", 90f },
+            { "M03.HaulerSpawn", 180f },
+            { "SM02.RoofAccess", 210f },
+            { "SM03.StartLine", 60f },
             { "Base.CypressFlats", 175f }
         };
 

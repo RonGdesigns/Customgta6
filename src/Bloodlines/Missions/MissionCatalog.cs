@@ -91,7 +91,10 @@ namespace Bloodlines.Missions
             {
                 { "M01", () => new M01GhostInTheDockyard() },
                 { "M02", () => new M02LooseStrands() },
-                { "SM01", () => new SM01LeadAndKevlar() }
+                { "M03", () => new M03CypressFoundry() },
+                { "SM01", () => new SM01LeadAndKevlar() },
+                { "SM02", () => new SM02ZeroDayInjection() },
+                { "SM03", () => new SM03MidnightDrift() }
             };
 
         private readonly List<MissionDefinition> _main = new List<MissionDefinition>();
