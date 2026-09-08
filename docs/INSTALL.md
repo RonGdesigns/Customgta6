@@ -53,6 +53,81 @@ copy you mod.
 7. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
    it is the first place to look when something doesn't happen.
 
+## Installing into an existing modded setup
+
+If you already run a modded GTA V with a batch file that toggles mods on and off,
+Bloodlines slots in beside it rather than replacing anything.
+
+**What it touches:** `scripts\Bloodlines.dll` and `scripts\Bloodlines\`. That is
+all. It writes no `.rpf`, edits no game archive, and does not go near your `mods\`
+folder — so an OpenIV-based toggle keeps working untouched. The optional asset pack
+(`assets/`) is the only part that involves `mods\`, and it is not needed to play.
+
+**Your Online-safety batch file still governs everything.** Whatever it does to
+`dinput8.dll`, `ScriptHookV.dll` or the `scripts` folder disables Bloodlines with
+the rest. Do not build a second safety mechanism; use the one you have.
+
+Three helpers in `tools/windows/`, none of which have been run on Windows —
+read them before trusting them:
+
+| Script | Does |
+|---|---|
+| `install-bloodlines.bat "<GTA V path>"` | Copies the built DLL and campaign data in. Re-runnable: your `Bloodlines.ini`, surveyed coordinates and `savegame.json` are never overwritten once they exist. |
+| `bloodlines-toggle.bat "<GTA V path>"` | Renames `Bloodlines.dll` on/off, for A/B testing against your other scripts. Not an Online-safety tool. |
+| `playtest-isolate.bat "<GTA V path>"` | Parks every other script into `scripts\_parked` so a playtest is unambiguous; run again with `restore` to put them back. |
+
+Set `BLOODLINES_GTA_PATH` once and you can run all three with no argument.
+
+### Key collisions — read this before the first launch
+
+Bloodlines uses a lot of keys, and so do trainers. These are the likely clashes:
+
+| Our key | Default use | Commonly also |
+|---|---|---|
+| `F8` | dev menu | **Menyoo** opens on F8 |
+| `NumPad 1/2/3` | switch character | **Simple Trainer** navigates on the numpad |
+| `Caps Lock` | special ability | some ability and sprint mods |
+| `F11` | survey capture | a few map/teleport mods |
+| `Insert` / `Delete` | checkpoint commit / restore | Enhanced Native Trainer variants |
+
+Every one is a line in `scripts\Bloodlines\Bloodlines.ini`. If you run a trainer,
+a set that usually stays clear:
+
+```ini
+[Keys]
+SwitchIce = D1
+SwitchGohan = D2
+SwitchGuess = D3
+Ability = Q
+DevMenu = F7
+MissionStart = J
+DeployCrew = F10
+DevCapture = F11
+```
+
+(`D1`/`D2`/`D3` are the number row. They collide with weapon slots in a firefight,
+which is why the numpad is the default when nothing else wants it.)
+
+### For the first playtest, run alone
+
+Park the other scripts (`playtest-isolate.bat`). With a trainer and a handful of
+script mods loaded, any bug could belong to any of them — and several will be
+fighting over the same keys, the same wanted level, or the same weather. Load
+ScriptHookV, ScriptHookVDotNet and Bloodlines only, get a clean baseline, then put
+your setup back. `docs/PLAYTEST.md` assumes you have done this.
+
+### Things that will fight the mod
+
+- **Trainers that lock weather or time.** Missions set both from the bible
+  (`ApplyBibleSetting`); a trainer holding "always sunny" wins, and M01 stops being
+  a night mission.
+- **Anything that spawns or clears peds on a timer.** Mission peds are marked
+  persistent, but a cleanup script can still delete them mid-mission.
+- **Other mods using `CHANGE_PLAYER_PED`** — character swap mods especially. Two
+  systems fighting over which ped is the player will not end well.
+- **Wanted-level modifiers.** M16 suppresses the wanted ceiling and restores it on
+  cleanup; a trainer holding "never wanted" makes several missions trivial.
+
 ## Controls
 
 | Key | Action |
