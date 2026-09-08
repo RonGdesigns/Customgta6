@@ -101,6 +101,9 @@ When a new revision of the bible arrives, drop it in `docs/bibles/`, re-run
 `tools/parse_bible.py` and `tools/render_campaign_doc.py`, and rebuild. No C#
 changes are needed for new or rewritten missions — only for new mission *scripts*.
 
+`docs/PLAYTEST.md` is the script for the first session at the machine — what to test,
+in what order, and what "wrong" looks like at each stage.
+
 `docs/BIBLE-NOTES.md` records where the bibles disagree and the open questions the
 code had to answer to move forward. `docs/FEASIBILITY.md` tiers all 79 missions
 Green/Yellow/Red by how hard each is to make reliable in the engine, with the faking
@@ -142,6 +145,6 @@ data/                 generated campaign data (missions, dialogue, anchors, regi
 assets/               OpenIV DLC pack source — handling metadata, interiors to come
 config/               ini templates that ship to scripts/Bloodlines/
 tools/                bible parser, campaign doc renderer, voice generator, packager
-docs/                 install, toolchain, architecture, campaign, feasibility, QA, bible notes
+docs/                 install, toolchain, architecture, campaign, feasibility, playtest, QA, bible notes
 docs/bibles/          the source bibles and their extracted text
 ```
