@@ -36,6 +36,14 @@ namespace Bloodlines.Missions.Objectives
 
         public bool IsFinished => Status != ObjectiveStatus.Active;
 
+        /// <summary>
+        /// A passive objective can only fail, never complete — keeping something alive,
+        /// not being seen, a countdown running underneath the work. Stages ignore them
+        /// when deciding whether they are finished, because a stage that waits for
+        /// "did not lose the car yet" to turn green waits forever.
+        /// </summary>
+        public virtual bool IsPassive => false;
+
         public virtual void Enter(MissionContext context)
         {
         }

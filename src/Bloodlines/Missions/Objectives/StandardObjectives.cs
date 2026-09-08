@@ -344,6 +344,8 @@ namespace Bloodlines.Missions.Objectives
     /// <summary>Keep something alive. Passive — pair it with the objective that has the work.</summary>
     public sealed class ProtectObjective : Objective
     {
+        public override bool IsPassive => true;
+
         private readonly Func<Entity> _entity;
         private readonly string _failMessage;
         private readonly float _healthFloor;
@@ -465,6 +467,8 @@ namespace Bloodlines.Missions.Objectives
     /// </summary>
     public sealed class TimerObjective : Objective
     {
+        public override bool IsPassive => true;
+
         private readonly int _seconds;
         private readonly string _failMessage;
         private readonly bool _showClock;

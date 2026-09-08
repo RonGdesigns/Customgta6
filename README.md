@@ -14,6 +14,7 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 
 | Layer | State |
 |---|---|
+| **Act I complete** — all 22 missions playable end to end | working |
 | Mod bootstrap, config, logging | working |
 | Campaign data pipeline — bible PDFs → TSV → runtime | working, 79 missions / 292 cues / 6 surveyed anchors |
 | Crew roster — spawn, companion AI, blips, respawn, story-character restore | working |
@@ -48,11 +49,12 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | **M16 "The Heavy Lift"** | playable — Zancudo on M09's stolen transponder |
 | **M17 "Sub-Zero Payload"** | playable — the second quiet one: outfitting the Kraken |
 | **M18 "The Staging Line"** | playable — three deliveries, one per character |
+| **M19–M22 The Port Heist** | playable — four-part arc: breach, airlift, escort, and the strike that ends Act I |
 | **SM01 "Lead & Kevlar"** | playable — Ice solo, no crew, switch locked |
 | **SM02 "Zero-Day Injection"** | playable — Gohan solo, non-lethal stealth |
 | **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
 | Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
-| M19–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
+| M23–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has

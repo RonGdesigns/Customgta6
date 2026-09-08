@@ -17,6 +17,8 @@ namespace Bloodlines.Missions.Objectives
     /// </summary>
     public sealed class SpeedFloorObjective : Objective
     {
+        public override bool IsPassive => true;
+
         private readonly float _floorMph;
         private readonly int _graceSeconds;
         private readonly string _failMessage;
@@ -139,6 +141,8 @@ namespace Bloodlines.Missions.Objectives
     /// </summary>
     public sealed class AltitudeCeilingObjective : Objective
     {
+        public override bool IsPassive => true;
+
         private readonly float _ceiling;
         private readonly int _graceSeconds;
         private readonly string _failMessage;
@@ -225,6 +229,8 @@ namespace Bloodlines.Missions.Objectives
     /// </summary>
     public sealed class AvoidDetectionObjective : Objective
     {
+        public override bool IsPassive => true;
+
         private readonly Func<IEnumerable<Ped>> _watchers;
         private readonly float _sightRange;
         private readonly int _toleranceSeconds;

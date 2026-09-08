@@ -76,9 +76,25 @@ namespace Bloodlines.Missions.Objectives
 
         // --- state ---
 
-        public bool IsComplete => RequireAll
-            ? Objectives.All(objective => objective.Status == ObjectiveStatus.Complete)
-            : Objectives.Any(objective => objective.Status == ObjectiveStatus.Complete);
+        /// <summary>
+        /// Scoring objectives only. Passive ones — protect this, do not be seen, hold
+        /// this speed — can fail the stage but never finish it, so a stage that
+        /// contained nothing else would never end.
+        /// </summary>
+        private IEnumerable<Objective> Scoring => Objectives.Where(objective => !objective.IsPassive);
+
+        public bool IsComplete
+        {
+            get
+            {
+                var scoring = Scoring.ToList();
+                if (scoring.Count == 0) return false;
+
+                return RequireAll
+                    ? scoring.All(objective => objective.Status == ObjectiveStatus.Complete)
+                    : scoring.Any(objective => objective.Status == ObjectiveStatus.Complete);
+            }
+        }
 
         public Objective FirstFailure =>
             Objectives.FirstOrDefault(objective => objective.Status == ObjectiveStatus.Failed);

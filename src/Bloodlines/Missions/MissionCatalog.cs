@@ -107,6 +107,10 @@ namespace Bloodlines.Missions
                 { "M16", () => new M16TheHeavyLift() },
                 { "M17", () => new M17SubZeroPayload() },
                 { "M18", () => new M18TheStagingLine() },
+                { "M19", () => new M19UnderwaterBreach() },
+                { "M20", () => new M20SkyHook() },
+                { "M21", () => new M21OpenWater() },
+                { "M22", () => new M22ScorchedBay() },
                 { "SM01", () => new SM01LeadAndKevlar() },
                 { "SM02", () => new SM02ZeroDayInjection() },
                 { "SM03", () => new SM03MidnightDrift() }

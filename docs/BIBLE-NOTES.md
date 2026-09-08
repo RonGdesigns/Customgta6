@@ -76,6 +76,19 @@ change that table rather than the generated files.
    while people talk. `DialogueDirector` queues instead, so the firefight continues
    underneath the conversation.
 
+## How the Red-tier set pieces were actually faked
+
+The first one is built, so the technique is no longer theoretical. M20's thirty-ton
+container airlift attaches the container to the Cargobob and drops the aircraft's
+engine power to 55%, rather than slinging a weighted load the physics would have to
+solve. Everything the player does — the hover, the suppression, the climb-out — is
+real; the only faked part is the one the engine cannot do. M22's cruise-missile
+strike on the foundry is a fade, two detonations at the foundry's real coordinates
+and a smoke column, because what has to land is the loss, not the ordnance.
+
+That is the pattern for the six Reds still ahead: find the one thing the engine
+cannot do, fake exactly that, and leave everything the player touches real.
+
 ## Open questions
 
 1. **Act III's header sits above M48.** M48 is labelled "Act II Finale" in its own
