@@ -56,6 +56,7 @@ call :flag "%G%\ScriptHookVDotNet2.dll"   "SHVDN v2 API         "
 call :flag "%G%\ScriptHookVDotNet3.dll"   "SHVDN v3 API         "
 call :flag "%G%\dinput8.dll"              "dinput8 ASI loader   "
 call :flag "%G%\OpenIV.asi"               "OpenIV.asi           "
+call :flag "%G%\RageOpenV.asi"            "RageOpenV.asi        "
 call :flag "%G%\version.dll"              "version.dll          "
 call :flag "%G%\scripts"                  "scripts\ folder      "
 call :flag "%G%\mods"                     "mods\ folder         "
@@ -74,6 +75,20 @@ if exist "%G%\scripts" (
 ) else (
   echo  ^(no scripts folder^)
 )
+
+REM Two states that look fine in a listing and are not.
+if exist "%G%\scripts\Bloodlines.dll" if exist "%G%\scripts\Bloodlines.dll.off" (
+  echo.
+  echo  [!] Both Bloodlines.dll and Bloodlines.dll.off are present. Only the .dll
+  echo      loads, so this is harmless -- but the .off is a leftover from
+  echo      bloodlines-toggle.bat and should be deleted to avoid confusion.
+)
+if exist "%G%\scripts\_parked" (
+  echo.
+  echo  --- scripts\_parked ^(set aside by playtest-isolate.bat^) ---
+  dir /b "!G!\scripts\_parked" 2>nul || echo  ^(empty -- safe to delete^)
+  echo  Restore with:  playtest-isolate.bat "<path>" restore
+)
 echo.
 echo  --- ScriptHookV log ---
 if exist "%G%\ScriptHookV.log" (
@@ -84,6 +99,12 @@ if exist "%G%\ScriptHookV.log" (
 )
 if exist "%G%\ScriptHookVDotNet.log" (
   for %%F in ("!G!\ScriptHookVDotNet.log") do echo  ScriptHookVDotNet.log: %%~tF   %%~zF bytes
+  echo  --- its first lines ^(the version banner^) ---
+  set /a LINE=0
+  for /f "usebackq delims=" %%L in ("!G!\ScriptHookVDotNet.log") do (
+    set /a LINE+=1
+    if !LINE! leq 4 echo    %%L
+  )
 )
 if exist "%G%\Bloodlines.log" (
   for %%F in ("!G!\Bloodlines.log") do echo  Bloodlines.log: %%~tF   %%~zF bytes
