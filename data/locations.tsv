@@ -1,0 +1,54 @@
+key	x	y	z	heading	kind	status	district_hint
+M01.CraneNest	1082.0	-3175.0	40.0	210	land	estimate	Terminal Island Dry-Docks
+M01.YachtDeck	1017.0	-3182.0	6.0	0	land	estimate	Terminal Island Dry-Docks
+M01.LowerDeckLedger	1010.0	-3196.0	5.0	0	land	estimate	Terminal Island Dry-Docks
+M01.WarehouseBay	1057.0	-3202.0	6.0	90	land	estimate	Terminal Island Dry-Docks
+M01.PrototypeCar	1053.0	-3205.0	5.9	270	land	estimate	Terminal Island Dry-Docks
+M01.CapoSpawn	1019.0	-3184.0	6.0	0	land	estimate	Terminal Island Dry-Docks
+M01.LaunchEscape	1140.0	-3320.0	0.0	0	water	estimate	Terminal Island Dry-Docks
+M01.RegroupPoint	1073.0	-3160.0	5.9	0	land	estimate	Terminal Island Dry-Docks
+M01.ExitPoint	720.50	-2400.10	15.20	0	land	bible	Terminal Island Dry-Docks
+SM01.WarehouseGate	1035.0	-3100.0	5.9	340	land	estimate	Terminal Island Warehouse 4
+SM01.SergeiOffice	1046.0	-3080.0	5.9	0	land	estimate	Terminal Island Warehouse 4
+SM01.CrateLoad	1028.0	-3096.0	5.9	0	land	estimate	Terminal Island Warehouse 4
+M02.InterceptStart	102.0	-1810.0	27.0	60	land	estimate	East Los Santos / Olympic Fwy
+M02.CanalEscape	285.0	-1900.0	24.0	0	land	estimate	East Los Santos / Olympic Fwy
+M03.RailJunction	180.0	-1900.0	24.0	90	land	estimate	Davis
+M03.DepotGate	1270.00	-1940.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fields
+M03.CraneControls	1286.00	-1956.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fields
+M03.HaulerSpawn	1254.00	-1928.00	40.00	180	land	estimate	Cypress Flats / Murrieta Fields
+M04.GarageEntry	233.0	-800.0	30.0	0	land	estimate	Pillbox Hill / Textile City
+M04.Breaker	220.0	-815.0	-50.0	0	underground	estimate	Pillbox Hill / Textile City
+M04.RampGuards	240.0	-805.0	-50.0	0	underground	estimate	Pillbox Hill / Textile City
+M04.ChaseCar	250.0	-790.0	30.0	250	land	estimate	Pillbox Hill / Textile City
+M04.TextileCrash	80.0	-1080.0	29.0	0	land	estimate	Pillbox Hill / Textile City
+M05.CliffPerch	2360.0	-840.0	42.0	135	land	estimate	Palomino Highlands Shoreline
+M05.CoveAir	2450.0	-960.0	60.0	0	air	estimate	Palomino Highlands Shoreline
+M05.GrottoMouth	2480.0	-1000.0	1.0	0	water	estimate	Palomino Highlands Shoreline
+M05.Sandbar	2560.0	-1120.0	0.0	0	water	estimate	Palomino Highlands Shoreline
+M05.DinghySpawn	2420.0	-1040.0	0.0	0	water	estimate	Palomino Highlands Shoreline
+M06.Culvert	-1180.0	-1350.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.Feeder	-1160.0	-1330.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.SallyPort	-1140.0	-1300.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.ServerRacks	-1128.0	-1290.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.AlleyHold	-1150.0	-1275.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.GrangerSpawn	-1168.0	-1262.0	5.0	90	land	estimate	Vespucci Canals LSPD Depot
+M07.GarageRoof	-720.0	-60.0	55.0	0	land	estimate	Rockford Hills / Pillbox
+M07.MastTop	-724.0	-64.0	56.5	0	land	estimate	Rockford Hills / Pillbox
+M07.LandingZone	-1030.0	-430.0	36.0	0	land	estimate	Rockford Hills / Pillbox
+M08.WarehouseGate	240.0	-2900.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.CameraRoom	252.0	-2916.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.CratePadOne	268.0	-2930.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.CratePadTwo	276.0	-2930.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.HaulerSpawn	258.0	-2944.0	6.0	270	land	estimate	Port of Los Santos Elysian Island
+M08.Connector	90.0	-2620.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+SM02.RoofAccess	-1078.0	-250.0	44.0	210	land	estimate	Lifeinvader Data Annex / Rockford
+SM02.ServerBay	-1085.0	-262.0	44.0	0	land	estimate	Lifeinvader Data Annex / Rockford
+SM02.Terminal	-1090.0	-268.0	44.0	0	land	estimate	Lifeinvader Data Annex / Rockford
+SM02.Exit	-1060.0	-240.0	37.0	0	land	estimate	Lifeinvader Data Annex / Rockford
+SM03.StartLine	560.0	-1690.0	28.0	60	land	estimate	Olympic Fwy Industrial Basin
+SM03.Checkpoint1	700.0	-1790.0	27.0	0	land	estimate	Olympic Fwy Industrial Basin
+SM03.Checkpoint2	760.0	-1590.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
+SM03.Checkpoint3	620.0	-1520.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
+SM03.Checkpoint4	540.0	-1610.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
+Base.CypressFlats	866.0	-2110.0	30.5	175	land	estimate	

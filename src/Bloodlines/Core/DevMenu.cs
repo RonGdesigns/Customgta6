@@ -37,12 +37,13 @@ namespace Bloodlines.Core
         private readonly CampaignState _state;
         private readonly DialogueDirector _dialogue;
         private readonly CampaignData _data;
+        private readonly SurveyMode _survey;
 
         private readonly Stack<Page> _stack = new Stack<Page>();
 
         public DevMenu(ModConfig config, CrewRoster crew, SwitchController switching,
             AbilityController abilities, MissionManager missions, MissionCatalog catalog,
-            CampaignState state, DialogueDirector dialogue, CampaignData data)
+            CampaignState state, DialogueDirector dialogue, CampaignData data, SurveyMode survey)
         {
             _config = config;
             _crew = crew;
@@ -53,6 +54,7 @@ namespace Bloodlines.Core
             _state = state;
             _dialogue = dialogue;
             _data = data;
+            _survey = survey;
         }
 
         public bool IsOpen { get; private set; }
@@ -155,6 +157,8 @@ namespace Bloodlines.Core
                 () => _stack.Push(BuildDialogue()));
             page.Add("Campaign save", () => _state.CompletedCount + "/" + _catalog.All.Count,
                 () => _stack.Push(BuildSave()));
+            page.Add("Survey coordinates", () => _survey.IsActive ? "running" : "",
+                () => _stack.Push(BuildSurvey()));
             return page;
         }
 
@@ -349,6 +353,30 @@ namespace Bloodlines.Core
                 GameUtils.Subtitle("~r~Campaign progress reset.", 3000);
             });
             page.Add("Save now", () => "", () => _state.Save());
+            return page;
+        }
+
+        private Page BuildSurvey()
+        {
+            var page = new Page("Survey — Enter starts, then capture with the capture key");
+
+            page.Add("Survey everything", () => _survey.IsActive ? "running" : "", () =>
+            {
+                _survey.Start();
+                Toggle();
+            });
+
+            foreach (var mission in _catalog.Playable)
+            {
+                var captured = mission;
+                page.Add("Survey " + captured.Id + " only", () => "", () =>
+                {
+                    _survey.Start(captured.Id);
+                    Toggle();
+                });
+            }
+
+            page.Add("Stop and write the ini", () => "", () => _survey.Stop());
             return page;
         }
 

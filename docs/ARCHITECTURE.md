@@ -11,7 +11,8 @@ ruins a session if it leaks.
 ```
 BloodlinesMain (Script)
   ├─ ModConfig          ini-backed, every key has a working default
-  ├─ LocationBook       estimated coordinates, ini-backed
+  ├─ LocationBook       coordinates from data/locations.tsv, ini-overridable
+  ├─ SurveyMode         guided in-game survey that turns estimates into real positions
   ├─ CampaignData       the bible as data: 70 missions, 255 cues, 6 surveyed anchors
   ├─ MissionCatalog     the 70 slots, built from CampaignData; factories mark playable ones
   ├─ CampaignState      savegame.json: progress, economy, safehouses, fleet upgrades
@@ -66,6 +67,7 @@ startup:
 | `data/missions.tsv` | 79 | `MissionCatalog` — titles, act, setting, HUD objective, synopsis, and for solo missions their owner and insertion point |
 | `data/dialogue.tsv` | 292 | `DialogueDirector` — cue id, speaker, stage direction, line, trigger |
 | `data/anchors.tsv` | 6 | missions, via `CampaignData.Anchor` — the bible's surveyed coordinates |
+| `data/locations.tsv` | 53 | `LocationBook` — every mission coordinate, with its provenance |
 | `data/campaign_registry.json` | 79 | nothing at runtime — the same registry in JSON, generated in the same pass, for external tooling |
 
 TSV rather than JSON because .NET Framework 4.8 has no built-in JSON reader, and a
@@ -87,6 +89,24 @@ What makes them different in code is `CrewRoster.DeploySolo(slot, …)`: one cha
 spawns, the other two do not exist for the duration, and `SwitchController` refuses
 with the character's own line rather than silently doing nothing. A solo mission
 that left the crew standing around would undercut the entire reason these exist.
+
+## Coordinates and their provenance
+
+Every coordinate carries a status, because the difference between them matters more
+than the numbers: `bible` came from the omnibus Track 2 index or the toolkit,
+`surveyed` was captured in game, `zone-centre` was moved into the right district by
+the audit tool, and `estimate` is a hand-placed guess.
+
+`tools/validate_locations.py` checks all of them against the game's real zone
+boundaries — fetched from a public data dump at run time, never committed, since it
+derives from Rockstar's own files. It catches the class of error that is invisible in
+code review: a warehouse in the ocean, a rooftop below sea level, a "Rockford Hills"
+position that is actually in Vespucci. It cannot check accuracy, only district; a
+coordinate can pass the audit and still be inside a wall.
+
+The rest is `SurveyMode`, which exists because the survey is otherwise the kind of
+chore that never gets done: it teleports you to each estimate in turn, captures where
+you actually stand, and writes the ini after every capture.
 
 ## Dispatching a mission
 

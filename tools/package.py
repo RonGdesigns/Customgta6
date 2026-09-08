@@ -23,7 +23,8 @@ PROJECT = os.path.join(REPO, 'src', 'Bloodlines', 'Bloodlines.csproj')
 BINARY = os.path.join(REPO, 'src', 'Bloodlines', 'bin', 'Release', 'Bloodlines.dll')
 DEPLOY = os.path.join(REPO, 'build', 'deploy')
 
-DATA_FILES = ['missions.tsv', 'dialogue.tsv', 'anchors.tsv', 'campaign_registry.json']
+DATA_FILES = ['missions.tsv', 'dialogue.tsv', 'anchors.tsv', 'locations.tsv',
+              'campaign_registry.json']
 CONFIG_FILES = ['Bloodlines.ini', 'Bloodlines.Locations.ini']
 
 

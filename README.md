@@ -93,10 +93,14 @@ technique for every Red.
 
 ## Coordinates
 
-The bible's Track 2 index gives six surveyed positions, and M01 uses them verbatim.
-Everything else in `config/Bloodlines.Locations.ini` is an estimate: it puts a beat
-in the right district without pretending to be measured. Set `[Dev] Enabled = True`,
-stand on the real spot, press `F11`, and paste the captured block into the file.
+All 53 live in `data/locations.tsv` with their provenance attached — `bible`,
+`surveyed`, `zone-centre` or `estimate`. `tools/validate_locations.py` checks every
+one against the game's real zone boundaries and writes `docs/LOCATION-AUDIT.md`;
+that catches wrong-district and below-sea-level errors but cannot check accuracy.
+
+For accuracy there is no substitute for standing on the spot. The dev menu's Survey
+mode walks the list, teleports you to each estimate, captures where you stand on
+`F11`, and writes `Bloodlines.Surveyed.ini` as it goes.
 
 ## Voice
 

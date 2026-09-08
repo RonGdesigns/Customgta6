@@ -1,158 +1,156 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using GTA;
 using GTA.Math;
 
 namespace Bloodlines.Core
 {
+    /// <summary>Where a coordinate came from, and therefore how much to trust it.</summary>
+    public enum LocationStatus
+    {
+        /// <summary>Hand-placed guess. Right district at best; survey before judging a mission.</summary>
+        Estimate,
+
+        /// <summary>Moved to the centre of the correct district by the audit tool.</summary>
+        ZoneCentre,
+
+        /// <summary>Captured in game with the dev tools.</summary>
+        Surveyed,
+
+        /// <summary>From the bible's own coordinate index, or the implementation toolkit.</summary>
+        Bible
+    }
+
+    public sealed class MissionLocation
+    {
+        public string Key { get; set; }
+        public Vector3 Position { get; set; }
+        public float Heading { get; set; }
+        public string Kind { get; set; }
+        public LocationStatus Status { get; set; }
+        public string DistrictHint { get; set; }
+    }
+
     /// <summary>
-    /// Every world coordinate the campaign uses lives here, loaded from
-    /// Bloodlines.Locations.ini so mission scripts never hard-code a position.
+    /// Every world coordinate the campaign uses, loaded from data/locations.tsv and
+    /// overridable per install from Bloodlines.Locations.ini.
     ///
-    /// The built-in values are APPROXIMATE. They put you in the right district
-    /// (the Port of Los Santos / Terminal, standing in for the bible's "Terminal
-    /// Island") but they are not surveyed against geometry. Fly to the real spot
-    /// in game, press the dev capture key (F11 by default) and paste the logged
-    /// line into the ini — that is the intended authoring loop, and it is why the
-    /// defaults are marked rather than pretended-precise.
+    /// The data file carries each coordinate's provenance, because that is the thing
+    /// that actually matters here: a handful come from the bible's surveyed index,
+    /// the rest are estimates placed in roughly the right district and verified only
+    /// as far as `tools/validate_locations.py` can check them — which is district, not
+    /// accuracy. Survey them in game (dev menu → Survey) and their status changes to
+    /// Surveyed as they are captured.
     /// </summary>
     public sealed class LocationBook
     {
-        private readonly Dictionary<string, Vector3> _positions = new Dictionary<string, Vector3>();
-        private readonly Dictionary<string, float> _headings = new Dictionary<string, float>();
+        private readonly Dictionary<string, MissionLocation> _locations =
+            new Dictionary<string, MissionLocation>(StringComparer.OrdinalIgnoreCase);
 
-        private static readonly Dictionary<string, Vector3> Defaults = new Dictionary<string, Vector3>
-        {
-            // --- Mission 01: Ghost in the Dockyard (Port of LS / Terminal, APPROX) ---
-            { "M01.CraneNest",        new Vector3(1082.0f, -3175.0f, 40.0f) },
-            { "M01.YachtDeck",        new Vector3(1017.0f, -3182.0f, 6.0f)  },
-            { "M01.LowerDeckLedger",  new Vector3(1010.0f, -3196.0f, 5.0f)  },
-            { "M01.WarehouseBay",     new Vector3(1057.0f, -3202.0f, 6.0f)  },
-            { "M01.PrototypeCar",     new Vector3(1053.0f, -3205.0f, 5.9f)  },
-            { "M01.CapoSpawn",        new Vector3(1019.0f, -3184.0f, 6.0f)  },
-            { "M01.LaunchEscape",     new Vector3(1140.0f, -3320.0f, 0.0f)  },
-            { "M01.RegroupPoint",     new Vector3(1073.0f, -3160.0f, 5.9f)  },
-            // Toolkit-authored safe zone: the Cypress drainage tunnel run-out.
-            { "M01.ExitPoint",        new Vector3(720.50f, -2400.10f, 15.20f) },
+        public IEnumerable<MissionLocation> All => _locations.Values;
 
-            // --- Solo mission SM01: Lead & Kevlar (Terminal Island warehouse 4, APPROX) ---
-            { "SM01.WarehouseGate",   new Vector3(1035.0f, -3100.0f, 5.9f)  },
-            { "SM01.SergeiOffice",    new Vector3(1046.0f, -3080.0f, 5.9f)  },
-            { "SM01.CrateLoad",       new Vector3(1028.0f, -3096.0f, 5.9f)  },
+        public int Count => _locations.Count;
 
-            // --- Mission 02: Loose Strands (Olympic Freeway corridor, APPROX) ---
-            { "M02.InterceptStart",   new Vector3(102.0f, -1810.0f, 27.0f)  },
-            { "M02.CanalEscape",      new Vector3(285.0f, -1900.0f, 24.0f)  },
-
-            // --- Mission 03: Cypress Foundry (Davis rail spur / Murrieta Oil Fields, APPROX) ---
-            { "M03.RailJunction",     new Vector3(180.0f, -1900.0f, 24.0f)  },
-            { "M03.DepotGate",        new Vector3(1290.0f, -2000.0f, 45.0f) },
-            { "M03.CraneControls",    new Vector3(1305.0f, -2020.0f, 45.0f) },
-            { "M03.HaulerSpawn",      new Vector3(1276.0f, -1988.0f, 45.0f) },
-
-            // --- Mission 04: Severed Wire (Pillbox garage / Textile City, APPROX) ---
-            { "M04.GarageEntry",      new Vector3(233.0f, -800.0f, 30.0f)   },
-            { "M04.Breaker",          new Vector3(220.0f, -815.0f, -50.0f)  },
-            { "M04.RampGuards",       new Vector3(240.0f, -805.0f, -50.0f)  },
-            { "M04.ChaseCar",         new Vector3(250.0f, -790.0f, 30.0f)   },
-            { "M04.TextileCrash",     new Vector3(80.0f, -1080.0f, 29.0f)   },
-
-            // --- Mission 05: Tidal Lock (Palomino Highlands shoreline, APPROX) ---
-            { "M05.CliffPerch",       new Vector3(2360.0f, -840.0f, 42.0f)  },
-            { "M05.CoveAir",          new Vector3(2450.0f, -960.0f, 60.0f)  },
-            { "M05.GrottoMouth",      new Vector3(2480.0f, -1000.0f, 1.0f)  },
-            { "M05.Sandbar",          new Vector3(2560.0f, -1120.0f, 0.0f)  },
-            { "M05.DinghySpawn",      new Vector3(2420.0f, -1040.0f, 0.0f)  },
-
-            // --- Mission 06: Clean Sweep (Vespucci canals LSPD depot, APPROX) ---
-            { "M06.Culvert",          new Vector3(-1180.0f, -1350.0f, 4.0f) },
-            { "M06.Feeder",           new Vector3(-1160.0f, -1330.0f, 4.0f) },
-            { "M06.SallyPort",        new Vector3(-1140.0f, -1300.0f, 5.0f) },
-            { "M06.ServerRacks",      new Vector3(-1128.0f, -1290.0f, 5.0f) },
-            { "M06.AlleyHold",        new Vector3(-1150.0f, -1275.0f, 5.0f) },
-            { "M06.GrangerSpawn",     new Vector3(-1168.0f, -1262.0f, 5.0f) },
-
-            // --- Mission 07: Wiretap Waltz (Rockford Hills mast, APPROX) ---
-            { "M07.GarageRoof",       new Vector3(-720.0f, -60.0f, 55.0f)   },
-            { "M07.MastTop",          new Vector3(-724.0f, -64.0f, 56.5f)   },
-            { "M07.LandingZone",      new Vector3(-1030.0f, -430.0f, 36.0f) },
-
-            // --- Mission 08: Supply & Sever (Elysian Island warehouse, APPROX) ---
-            { "M08.WarehouseGate",    new Vector3(240.0f, -2900.0f, 6.0f)   },
-            { "M08.CameraRoom",       new Vector3(252.0f, -2916.0f, 6.0f)   },
-            { "M08.CratePadOne",      new Vector3(268.0f, -2930.0f, 6.0f)   },
-            { "M08.CratePadTwo",      new Vector3(276.0f, -2930.0f, 6.0f)   },
-            { "M08.HaulerSpawn",      new Vector3(258.0f, -2944.0f, 6.0f)   },
-            { "M08.Connector",        new Vector3(90.0f, -2620.0f, 6.0f)    },
-
-            // --- Solo SM02: Zero-Day Injection (Lifeinvader annex, Rockford, APPROX) ---
-            { "SM02.RoofAccess",      new Vector3(-1078.0f, -250.0f, 44.0f) },
-            { "SM02.ServerBay",       new Vector3(-1085.0f, -262.0f, 44.0f) },
-            { "SM02.Terminal",        new Vector3(-1090.0f, -268.0f, 44.0f) },
-            { "SM02.Exit",            new Vector3(-1060.0f, -240.0f, 37.0f) },
-
-            // --- Solo SM03: Midnight Drift (Olympic Freeway basin circuit, APPROX) ---
-            { "SM03.StartLine",       new Vector3(560.0f, -1690.0f, 28.0f)  },
-            { "SM03.Checkpoint1",     new Vector3(700.0f, -1790.0f, 27.0f)  },
-            { "SM03.Checkpoint2",     new Vector3(760.0f, -1590.0f, 28.0f)  },
-            { "SM03.Checkpoint3",     new Vector3(620.0f, -1520.0f, 28.0f)  },
-            { "SM03.Checkpoint4",     new Vector3(540.0f, -1610.0f, 28.0f)  },
-
-            // --- Crew safehouse: Cypress Flats industrial shop (Part I base, APPROX) ---
-            { "Base.CypressFlats",    new Vector3(866.0f, -2110.0f, 30.5f)  }
-        };
-
-        private static readonly Dictionary<string, float> DefaultHeadings = new Dictionary<string, float>
-        {
-            { "M01.CraneNest", 210f },
-            { "M01.WarehouseBay", 90f },
-            { "M01.PrototypeCar", 270f },
-            { "M02.InterceptStart", 60f },
-            { "SM01.WarehouseGate", 340f },
-            { "M03.RailJunction", 90f },
-            { "M03.HaulerSpawn", 180f },
-            { "SM02.RoofAccess", 210f },
-            { "SM03.StartLine", 60f },
-            { "M04.ChaseCar", 250f },
-            { "M05.CliffPerch", 135f },
-            { "M06.GrangerSpawn", 90f },
-            { "M07.GarageRoof", 0f },
-            { "M08.HaulerSpawn", 270f },
-            { "Base.CypressFlats", 175f }
-        };
-
-        public static LocationBook Load(string path)
+        public static LocationBook Load(string dataDirectory, string overridesPath)
         {
             var book = new LocationBook();
-            var settings = ScriptSettings.Load(path);
 
-            foreach (var pair in Defaults)
+            foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "locations.tsv")).Rows)
             {
-                float x = settings.GetValue<float>("Positions", pair.Key + ".X", pair.Value.X);
-                float y = settings.GetValue<float>("Positions", pair.Key + ".Y", pair.Value.Y);
-                float z = settings.GetValue<float>("Positions", pair.Key + ".Z", pair.Value.Z);
-                book._positions[pair.Key] = new Vector3(x, y, z);
+                string key = row.Text("key");
+                if (string.IsNullOrEmpty(key)) continue;
+
+                book._locations[key] = new MissionLocation
+                {
+                    Key = key,
+                    Position = new Vector3(row.Float("x"), row.Float("y"), row.Float("z")),
+                    Heading = row.Float("heading"),
+                    Kind = string.IsNullOrEmpty(row.Text("kind")) ? "land" : row.Text("kind"),
+                    Status = ParseStatus(row.Text("status")),
+                    DistrictHint = row.Text("district_hint")
+                };
             }
 
-            foreach (var pair in DefaultHeadings)
+            // Per-install overrides win: someone who has surveyed a position should not
+            // lose it to a data-file update.
+            var settings = ScriptSettings.Load(overridesPath);
+            foreach (var location in book._locations.Values)
             {
-                book._headings[pair.Key] = settings.GetValue<float>("Headings", pair.Key, pair.Value);
+                float x = settings.GetValue<float>("Positions", location.Key + ".X", location.Position.X);
+                float y = settings.GetValue<float>("Positions", location.Key + ".Y", location.Position.Y);
+                float z = settings.GetValue<float>("Positions", location.Key + ".Z", location.Position.Z);
+                var overridden = new Vector3(x, y, z);
+
+                if (overridden != location.Position)
+                {
+                    location.Position = overridden;
+                    location.Status = LocationStatus.Surveyed;
+                }
+
+                float heading = settings.GetValue<float>("Headings", location.Key, location.Heading);
+                if (Math.Abs(heading - location.Heading) > 0.01f)
+                {
+                    location.Heading = heading;
+                    location.Status = LocationStatus.Surveyed;
+                }
             }
 
-            settings.Save();
-            Logger.Info("Loaded " + book._positions.Count + " campaign locations from " + path);
+            Logger.Info("Loaded " + book._locations.Count + " campaign locations (" +
+                        CountOf(book, LocationStatus.Estimate) + " still estimates).");
             return book;
+        }
+
+        private static int CountOf(LocationBook book, LocationStatus status)
+        {
+            int count = 0;
+            foreach (var location in book._locations.Values)
+            {
+                if (location.Status == status) count++;
+            }
+            return count;
+        }
+
+        private static LocationStatus ParseStatus(string value)
+        {
+            switch ((value ?? "").ToLowerInvariant())
+            {
+                case "bible": return LocationStatus.Bible;
+                case "surveyed": return LocationStatus.Surveyed;
+                case "zone-centre":
+                case "zone-center": return LocationStatus.ZoneCentre;
+                default: return LocationStatus.Estimate;
+            }
+        }
+
+        public MissionLocation Get(string key)
+        {
+            return _locations.TryGetValue(key, out var location) ? location : null;
         }
 
         public Vector3 Position(string key)
         {
-            if (_positions.TryGetValue(key, out var value)) return value;
+            var location = Get(key);
+            if (location != null) return location.Position;
+
             Logger.Error("Unknown location key requested: " + key);
             return Vector3.Zero;
         }
 
         public float Heading(string key)
         {
-            return _headings.TryGetValue(key, out var value) ? value : 0f;
+            return Get(key)?.Heading ?? 0f;
+        }
+
+        /// <summary>Records a surveyed position at runtime — the dev menu's survey mode.</summary>
+        public void Record(string key, Vector3 position, float heading)
+        {
+            var location = Get(key);
+            if (location == null) return;
+
+            location.Position = position;
+            location.Heading = heading;
+            location.Status = LocationStatus.Surveyed;
         }
     }
 }

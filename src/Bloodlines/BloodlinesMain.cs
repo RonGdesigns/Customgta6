@@ -27,6 +27,8 @@ namespace Bloodlines
         private readonly MissionManager _missions;
         private readonly FleetGarage _garage;
         private readonly DevMenu _menu;
+        private readonly SurveyMode _survey;
+        private readonly LocationBook _locations;
         private readonly CampaignState _state;
 
         private int _abortHeldSince;
@@ -40,8 +42,9 @@ namespace Bloodlines
             Logger.Configure(Path.Combine(root, "Bloodlines.log"), _config.VerboseLogging);
             Logger.Info("Los Santos: Bloodlines loading.");
 
-            var locations = LocationBook.Load(Path.Combine(root, "Bloodlines.Locations.ini"));
             string dataDirectory = Path.Combine(root, "data");
+            _locations = LocationBook.Load(dataDirectory, Path.Combine(root, "Bloodlines.Locations.ini"));
+            _survey = new SurveyMode(_locations, Path.Combine(root, "Bloodlines.Surveyed.ini"));
             _data = CampaignData.Load(dataDirectory);
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
@@ -53,11 +56,11 @@ namespace Bloodlines
             _checkpoints = new CheckpointManager(_crew);
             _garage = new FleetGarage(_state);
 
-            var context = new MissionContext(_config, locations, _data, _crew, _switching,
+            var context = new MissionContext(_config, _locations, _data, _crew, _switching,
                 _abilities, _dialogue, _checkpoints, _state);
             _missions = new MissionManager(context, _state, _catalog);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
-                _state, _dialogue, _data);
+                _state, _dialogue, _data, _survey);
 
             Interval = 0;
             Tick += OnTick;
@@ -80,6 +83,7 @@ namespace Bloodlines
                 _dialogue.Update();
                 _missions.Update();
                 _menu.Update();
+                _survey.Update();
                 HandleAbortHold();
             }
             catch (Exception ex)
@@ -135,6 +139,7 @@ namespace Bloodlines
             if (key == _config.MissionStartKey) { StartMission(); return true; }
             if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }
             if (key == _config.AbortKey && _abortHeldSince == 0) { _abortHeldSince = Game.GameTime; return true; }
+            if (key == _config.DevCaptureKey && _survey.IsActive) { _survey.Capture(); return true; }
             return false;
         }
 
@@ -153,6 +158,8 @@ namespace Bloodlines
                 case Keys.PageDown: _missions.WarpStage(-1); break;
                 case Keys.Insert: _missions.CommitCheckpoint(); break;
                 case Keys.Delete: _missions.RestoreCheckpoint(); break;
+                case Keys.End: _survey.Skip(); break;
+                case Keys.Home: _survey.Previous(); break;
             }
         }
 

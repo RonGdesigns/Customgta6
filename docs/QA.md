@@ -13,7 +13,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 5 | **Checkpoint engine** | `Insert` to commit, then die or press `Delete` on M01 stage 2 | Positions, health, armor and wanted level restore; wrecked vehicles within 220m are purged; the mission resumes at the committed stage |
 | 6 | **Story character** | `F10` to deploy, `F10` again to stand down | The character you were playing before deployment comes back — same ped, same position, not a gang model |
 | 7 | **Solo lock** | Start SM01, press `Numpad 2` | The switch is refused with a subtitle; only Ice is on the map |
-| 8 | **Coordinate survey** | `F11` at each mission beat | Captured positions land in `Bloodlines.Captures.ini` and match the geometry the mission assumes |
+| 8 | **Coordinate survey** | dev menu → Survey, then `F11` at each beat | The survey teleports you to each estimate in turn; `F11` captures where you stand, `End` skips, `Home` goes back. It writes `Bloodlines.Surveyed.ini` after every capture — rename it over `Bloodlines.Locations.ini` when done |
 
 | 9 | **Save state** | Finish M01, alt-F4, relaunch | `savegame.json` lists M01 in `completedMissions`, `currentMissionId` has moved on, and `J` offers the next mission rather than M01 again |
 | 10 | **Prerequisites** | Press `J` on a fresh save | M01 comes first; SM01 is not offered until M03 is complete |
