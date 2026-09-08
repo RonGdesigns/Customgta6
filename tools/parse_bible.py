@@ -5,10 +5,11 @@ objectives and every line of dialogue. Rather than retyping any of that into C#,
 this parses it into tab-separated data under data/, which BloodlinesCore reads on
 load. Re-run it whenever a new revision of the bible arrives:
 
-    python3 tools/parse_bible.py docs/bibles/omnibus_v2.pdf
+    python3 tools/parse_bible.py docs/bibles/omnibus_v2.pdf docs/bibles/solo_missions_v1.pdf
 
 Outputs (tab-separated, one header row, no quoting — tabs are stripped from values):
-    data/missions.tsv   number, id, title, act, location, time, weather, hud, synopsis
+    data/missions.tsv   id, number, kind, owner, insert_after, title, act, location, time,
+                        weather, hud, synopsis
     data/dialogue.tsv   cue_id, mission, stage, speaker, direction, line, trigger
     data/anchors.tsv    key, description, entity, x, y, z, heading
 """
@@ -23,8 +24,24 @@ from pdf_text import extract  # noqa: E402
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(REPO, 'data')
 
-MISSION_HEADER = re.compile(r'^M(\d{2}):\s*[""\'"]?(.+?)[""\'"]?$')
-CUE_ID = re.compile(r'^(M\d{2})_S(\d+)_(\d+)_([A-Z]+)$')
+MISSION_HEADER = re.compile(r'^(SM|M)(\d{2}):\s*[""\'"]?(.+?)[""\'"]?$')
+CUE_ID = re.compile(r'^((?:SM|M)\d{2})_S(\d+)_(\d+)_([A-Z ]+)$')
+SOLO_OWNER = re.compile(r'^(ICE|GOHAN|GUESS)\b', re.I)
+SOLO_WINDOW = re.compile(r'[Bb]etween [Mm]issions?\s+(\d+)\s+and\s+(\d+)')
+
+# The cast was renamed during writing and one mission's prose kept the old names.
+# Normalising here rather than in the mission scripts keeps the data honest for
+# every consumer — the campaign doc, the voice generator and the mod alike.
+NAME_ALIASES = [
+    (re.compile(r'\bJules\b'), 'Gohan'),
+    (re.compile(r'\bMalik\b'), 'Guess'),
+]
+
+
+def canonical_names(value):
+    for pattern, replacement in NAME_ALIASES:
+        value = pattern.sub(replacement, value)
+    return value
 VECTOR = re.compile(r'Vector3\(\s*(-?[\d.]+)f?,\s*(-?[\d.]+)f?,\s*(-?[\d.]+)f?\s*\)')
 FOOTER = re.compile(r'^(GTA V: BLOODLINES|Page \d+ of \d+|•+$|=== PAGE)')
 
@@ -58,6 +75,7 @@ def parse_missions(lines):
     missions, cues = [], []
     current, mode, cue = None, None, None
     body, cue_body = [], []
+    pending_header = None
 
     def flush_cue():
         if not cue or not cue_body:
@@ -77,7 +95,8 @@ def parse_missions(lines):
         cues.append({
             'cue_id': cue['id'], 'mission': cue['mission'], 'stage': cue['stage'],
             'speaker': cue['speaker'], 'direction': clean(direction),
-            'line': clean(spoken).strip("'").strip(), 'trigger': clean(trigger),
+            'line': canonical_names(clean(spoken).strip("'").strip()),
+            'trigger': canonical_names(clean(trigger)),
         })
 
     def flush_mission():
@@ -89,8 +108,8 @@ def parse_missions(lines):
                     if not line.startswith('HUD:')
                     and 'STAGE MECHANICS' not in line
                     and line not in ('CUE ID', 'SPEAKER', 'DIALOGUE LINE', 'TRIGGER EVENT')]
-        current['hud'] = clean(hud)
-        current['synopsis'] = clean(join_wrapped(synopsis))
+        current['hud'] = canonical_names(clean(hud))
+        current['synopsis'] = canonical_names(clean(join_wrapped(synopsis)))
         missions.append(current)
 
     for raw in lines:
@@ -99,13 +118,36 @@ def parse_missions(lines):
             continue
 
         header = MISSION_HEADER.match(line)
+        if header and line.count('(') > line.count(')'):
+            # A long solo header wraps: SM08: "BURNER PROTOCOL" (GOHAN (DEVIN / MERCER))
+            pending_header = line
+            continue
+        if pending_header:
+            line = clean(pending_header + ' ' + line)
+            pending_header = None
+            header = MISSION_HEADER.match(line)
         if header:
             flush_cue()
             flush_mission()
             cue, cue_body, body = None, [], []
-            current = {'number': int(header.group(1)), 'id': 'M' + header.group(1),
-                       'title': clean(header.group(2)).strip('"'), 'act': '', 'location': '',
-                       'time': '', 'weather': '', 'hud': '', 'synopsis': ''}
+            prefix, number, title = header.group(1), header.group(2), header.group(3)
+
+            # Solo headers carry their owner: SM01: "LEAD & KEVLAR" (ICE (DARIUS VANCE))
+            owner = ''
+            paren = re.search(r'\(([^()]*(?:\([^()]*\))?[^()]*)\)\s*$', title)
+            if paren:
+                inner = paren.group(1)
+                title = title[:paren.start()].strip()
+                match = SOLO_OWNER.match(inner.strip())
+                if match:
+                    owner = match.group(1).upper()
+
+            current = {'number': int(number), 'id': prefix + number,
+                       'kind': 'solo' if prefix == 'SM' else 'main',
+                       'owner': owner,
+                       'title': canonical_names(clean(title).strip('"')),
+                       'act': '', 'location': '', 'time': '', 'weather': '',
+                       'hud': '', 'synopsis': '', 'insert_after': ''}
             mode = 'meta'
             continue
 
@@ -117,12 +159,26 @@ def parse_missions(lines):
             parts = [clean(part) for part in line.split('•')]
             if len(parts) >= 2 and parts[0].upper().startswith('ACT'):
                 current['act'] = parts[0]
+                if len(parts) > 1 and parts[1].upper().endswith('SOLO'):
+                    match = SOLO_OWNER.match(parts[1])
+                    if match and not current['owner']:
+                        current['owner'] = match.group(1).upper()
+                    parts = [parts[0]] + parts[2:]
                 current['location'] = parts[1] if len(parts) > 1 else ''
                 current['time'] = parts[2] if len(parts) > 2 else ''
                 current['weather'] = ' / '.join(parts[3:]) if len(parts) > 3 else ''
-                mode = 'body'
+                mode = 'meta-tail'
                 continue
             mode = 'body'
+
+        if mode == 'meta-tail':
+            # A wrapped weather description ("Interior" / "Darkness") lands on its own
+            # short line before the stage-mechanics header.
+            mode = 'body'
+            if (len(line) < 30 and not line.upper().startswith(('HUD:', 'SOLO STAGE', 'STAGE MECHANICS'))
+                    and not CUE_ID.match(line)):
+                current['weather'] = clean(current['weather'] + ' ' + line)
+                continue
 
         cue_header = CUE_ID.match(line)
         if cue_header:
@@ -147,6 +203,19 @@ def parse_missions(lines):
     flush_cue()
     flush_mission()
     return missions, cues
+
+
+def parse_solo_windows(text):
+    """Where the solo missions slot into the main campaign.
+
+    The expansion states one window per act ("Taking place between Missions 03 and
+    08"), which is what lets the catalog interleave solos with the 70 in the order
+    they are meant to be played.
+    """
+    windows = {}
+    for act, match in zip(['ACT I', 'ACT II', 'ACT III'], SOLO_WINDOW.finditer(text)):
+        windows[act] = int(match.group(1))
+    return windows
 
 
 def parse_anchors(text):
@@ -182,25 +251,43 @@ def write_tsv(path, columns, rows):
 
 
 def main():
-    if len(sys.argv) != 2:
+    if len(sys.argv) < 2:
         raise SystemExit(__doc__)
 
-    source = sys.argv[1]
-    text = extract(source) if source.lower().endswith('.pdf') else open(source).read()
+    all_missions, all_cues, all_anchors = [], [], []
+    seen = set()
 
-    missions, cues = parse_missions(text.splitlines())
-    anchors = parse_anchors(text)
+    for source in sys.argv[1:]:
+        text = extract(source) if source.lower().endswith('.pdf') else open(source).read()
+        missions, cues = parse_missions(text.splitlines())
+        windows = parse_solo_windows(text)
 
-    missions.sort(key=lambda mission: mission['number'])
+        for mission in missions:
+            if mission['kind'] == 'solo':
+                mission['insert_after'] = windows.get(mission['act'].upper(), '')
+            if mission['id'] in seen:
+                print('skipping duplicate {} from {}'.format(mission['id'], os.path.basename(source)))
+                continue
+            seen.add(mission['id'])
+            all_missions.append(mission)
+
+        all_cues.extend(cues)
+        all_anchors.extend(parse_anchors(text))
+        print('{}: {} missions, {} cues'.format(os.path.basename(source), len(missions), len(cues)))
+
+    all_missions.sort(key=lambda mission: (mission['kind'] == 'solo', mission['number']))
+
     write_tsv(os.path.join(DATA, 'missions.tsv'),
-              ['number', 'id', 'title', 'act', 'location', 'time', 'weather', 'hud', 'synopsis'],
-              missions)
+              ['id', 'number', 'kind', 'owner', 'insert_after', 'title', 'act', 'location',
+               'time', 'weather', 'hud', 'synopsis'],
+              all_missions)
     write_tsv(os.path.join(DATA, 'dialogue.tsv'),
-              ['cue_id', 'mission', 'stage', 'speaker', 'direction', 'line', 'trigger'], cues)
+              ['cue_id', 'mission', 'stage', 'speaker', 'direction', 'line', 'trigger'], all_cues)
     write_tsv(os.path.join(DATA, 'anchors.tsv'),
-              ['key', 'description', 'entity', 'x', 'y', 'z', 'heading'], anchors)
+              ['key', 'description', 'entity', 'x', 'y', 'z', 'heading'], all_anchors)
 
-    missing = [n for n in range(1, 71) if n not in {m['number'] for m in missions}]
+    main_numbers = {m['number'] for m in all_missions if m['kind'] == 'main'}
+    missing = [n for n in range(1, 71) if n not in main_numbers]
     if missing:
         print('WARNING: no block found for mission(s): ' +
               ', '.join('M%02d' % n for n in missing))

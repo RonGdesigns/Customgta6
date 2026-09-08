@@ -55,6 +55,9 @@ namespace Bloodlines.Crew
         /// </summary>
         public bool CompanionsHoldPosition { get; set; }
 
+        /// <summary>True while only one character is deployed (a solo mission).</summary>
+        public bool IsSolo { get; private set; }
+
         public Ped PedFor(CrewSlot slot)
         {
             return _peds.TryGetValue(slot, out var ped) && ped != null && ped.Exists() ? ped : null;
@@ -104,6 +107,44 @@ namespace Bloodlines.Crew
         }
 
         /// <summary>
+        /// Puts one character on the map alone — the nine solo missions, where the
+        /// other two are not just idle but absent from the fiction entirely.
+        /// </summary>
+        public bool DeploySolo(CrewSlot slot, Vector3 position, float heading)
+        {
+            EnsureRelationshipGroups();
+            Dismiss();
+
+            var protagonist = Protagonist.Of(slot);
+            var model = protagonist.Model;
+            if (!GameUtils.RequestModel(model))
+            {
+                Logger.Error("Could not stream " + protagonist.DisplayName + " for a solo deployment.");
+                return false;
+            }
+
+            var ped = World.CreatePed(model, position, heading);
+            model.MarkAsNoLongerNeeded();
+            if (ped == null || !ped.Exists())
+            {
+                Logger.Error("CreatePed returned nothing for " + protagonist.DisplayName + ".");
+                return false;
+            }
+
+            ConfigurePed(ped, protagonist);
+            _peds[slot] = ped;
+            ActiveSlot = slot;
+            IsDeployed = true;
+            IsSolo = true;
+
+            StashStoryCharacter();
+            Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, ped, true, true);
+
+            Logger.Info("Solo deployment: " + protagonist.DisplayName + " at " + position + ".");
+            return true;
+        }
+
+        /// <summary>
         /// Puts each character down at their own start point — the split-approach
         /// deployment the opening mission is built on.
         /// </summary>
@@ -145,6 +186,7 @@ namespace Bloodlines.Crew
 
             ActiveSlot = startAs;
             IsDeployed = true;
+            IsSolo = false;
 
             StashStoryCharacter();
 
@@ -282,7 +324,7 @@ namespace Bloodlines.Crew
                 if (ped.IsInCombat || CompanionsHoldPosition) continue;
 
                 var player = PedFor(ActiveSlot);
-                if (player != null && ped.Position.DistanceTo(player.Position) > 90f)
+                if (player != null && ped.Position.DistanceTo(player.Position) > _config.CompanionLeashDistance)
                 {
                     // Companions that fall too far behind teleport back rather than
                     // pathfinding across half of Los Santos and desyncing the mission.
@@ -395,6 +437,7 @@ namespace Bloodlines.Crew
 
             _peds.Clear();
             IsDeployed = false;
+            IsSolo = false;
         }
     }
 }

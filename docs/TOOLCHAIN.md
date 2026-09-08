@@ -37,15 +37,19 @@ dependency-free Python 3 — no pip install, no venv — because a content pipel
 breaks when a machine changes is a pipeline nobody re-runs.
 
 ```bash
-python3 tools/parse_bible.py docs/bibles/omnibus_v2.pdf
+python3 tools/parse_bible.py docs/bibles/omnibus_v2.pdf docs/bibles/solo_missions_v1.pdf
 python3 tools/render_campaign_doc.py
 python3 tools/generate_voice.py --mission M01 --dry-run
 ```
 
+Pass every bible in one invocation — the parser merges them, normalises the cast
+names, and warns if any of the 70 main slots came back empty.
+
 ## Order of work that actually converges
 
-1. **Vertical slice.** One mission, played until it is fun. (M01 and M02 are drafted;
-   neither has been tuned in game.)
+1. **Vertical slice.** One mission, played until it is fun. (M01, M02 and the solo
+   mission SM01 are drafted; none has been tuned in game. `docs/QA.md` is the audit
+   protocol to run when you do.)
 2. **Framework hardening.** Checkpoints, mid-mission saves, replay, mission fail
    flows — cheaper to fix at mission 1 than at mission 20.
 3. **Interiors.** MLOs gate several bible missions (evidence depot, penthouses, the

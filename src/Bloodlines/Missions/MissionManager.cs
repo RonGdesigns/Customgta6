@@ -96,10 +96,10 @@ namespace Bloodlines.Missions
             switch (_current.Status)
             {
                 case MissionStatus.Passed:
-                    _progress.MarkComplete(_currentDefinition.Number);
+                    _progress.MarkComplete(_currentDefinition.Id);
                     GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
                     GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
-                                       _progress.CompletedCount + "/70.", 6000);
+                                       _progress.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
                     break;
 
                 case MissionStatus.Failed:

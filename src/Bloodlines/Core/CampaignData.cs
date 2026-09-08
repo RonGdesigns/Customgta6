@@ -11,6 +11,17 @@ namespace Bloodlines.Core
     {
         public int Number { get; set; }
         public string Id { get; set; }
+
+        /// <summary>"main" for the 70-mission campaign, "solo" for the SM expansion.</summary>
+        public string Kind { get; set; }
+
+        /// <summary>ICE / GOHAN / GUESS for a solo mission; empty for the main campaign.</summary>
+        public string Owner { get; set; }
+
+        /// <summary>Main-campaign mission number this solo slots in after; 0 for main missions.</summary>
+        public int InsertAfter { get; set; }
+
+        public bool IsSolo => string.Equals(Kind, "solo", StringComparison.OrdinalIgnoreCase);
         public string Title { get; set; }
         public string Act { get; set; }
         public string Location { get; set; }
@@ -53,7 +64,8 @@ namespace Bloodlines.Core
     /// </summary>
     public sealed class CampaignData
     {
-        private readonly Dictionary<int, MissionInfo> _missions = new Dictionary<int, MissionInfo>();
+        private readonly Dictionary<string, MissionInfo> _missions =
+            new Dictionary<string, MissionInfo>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, DialogueCue> _cues = new Dictionary<string, DialogueCue>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Vector3> _anchors = new Dictionary<string, Vector3>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, float> _anchorHeadings = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
@@ -70,6 +82,9 @@ namespace Bloodlines.Core
                 {
                     Number = row.Int("number"),
                     Id = row.Text("id"),
+                    Kind = string.IsNullOrEmpty(row.Text("kind")) ? "main" : row.Text("kind"),
+                    Owner = row.Text("owner"),
+                    InsertAfter = row.Int("insert_after"),
                     Title = row.Text("title"),
                     Act = row.Text("act"),
                     Location = row.Text("location"),
@@ -78,7 +93,7 @@ namespace Bloodlines.Core
                     Hud = row.Text("hud"),
                     Synopsis = row.Text("synopsis")
                 };
-                if (info.Number >= 1 && info.Number <= 70) data._missions[info.Number] = info;
+                if (!string.IsNullOrEmpty(info.Id)) data._missions[info.Id] = info;
             }
 
             foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "dialogue.tsv")).Rows)
@@ -114,12 +129,22 @@ namespace Bloodlines.Core
             return data;
         }
 
-        public MissionInfo Mission(int number)
+        /// <summary>Looks a mission up by its bible id — "M07", "SM03".</summary>
+        public MissionInfo Mission(string id)
         {
-            return _missions.TryGetValue(number, out var info) ? info : null;
+            return id != null && _missions.TryGetValue(id, out var info) ? info : null;
         }
 
-        public IEnumerable<MissionInfo> Missions => _missions.Values.OrderBy(m => m.Number);
+        public MissionInfo MainMission(int number)
+        {
+            return Mission("M" + number.ToString("00"));
+        }
+
+        public IEnumerable<MissionInfo> Missions =>
+            _missions.Values.OrderBy(m => m.IsSolo).ThenBy(m => m.Number);
+
+        public IEnumerable<MissionInfo> SoloMissions =>
+            _missions.Values.Where(m => m.IsSolo).OrderBy(m => m.Number);
 
         public DialogueCue Cue(string cueId)
         {

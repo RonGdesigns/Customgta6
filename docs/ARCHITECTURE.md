@@ -61,8 +61,8 @@ startup:
 
 | File | Rows | Used by |
 |---|---|---|
-| `data/missions.tsv` | 70 | `MissionCatalog` — titles, act, setting, HUD objective, synopsis |
-| `data/dialogue.tsv` | 255 | `DialogueDirector` — cue id, speaker, stage direction, line, trigger |
+| `data/missions.tsv` | 79 | `MissionCatalog` — titles, act, setting, HUD objective, synopsis, and for solo missions their owner and insertion point |
+| `data/dialogue.tsv` | 292 | `DialogueDirector` — cue id, speaker, stage direction, line, trigger |
 | `data/anchors.tsv` | 6 | missions, via `CampaignData.Anchor` — the bible's surveyed coordinates |
 
 TSV rather than JSON because .NET Framework 4.8 has no built-in JSON reader, and a
@@ -72,6 +72,18 @@ a complete parse.
 
 The practical consequence: a bible revision is `tools/parse_bible.py` plus a rebuild
 of the data files. Rewriting M34's objective, or all 70 titles, touches no code.
+
+## Solo missions
+
+The expansion adds nine single-character missions (SM01–SM09, three per character).
+They are not a separate mode: `MissionCatalog` interleaves them into campaign order
+at the windows the expansion gives (Act I after M03, Act II after M28, Act III after
+M52), so "start the next mission" plays them where they belong.
+
+What makes them different in code is `CrewRoster.DeploySolo(slot, …)`: one character
+spawns, the other two do not exist for the duration, and `SwitchController` refuses
+with the character's own line rather than silently doing nothing. A solo mission
+that left the crew standing around would undercut the entire reason these exist.
 
 ## Dialogue
 

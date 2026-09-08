@@ -1,0 +1,409 @@
+
+PRODUCTION ACTION PLAN & DEVELOPER IMPLEMENTATION KIT
+GTA V: BLOODLINES — IMPLEMENTATION TOOLKIT
+Complete Executable C# Source for Mission 01, Voice Batch Automation, Directory Staging & Testing Protocol
+■
+1. DEVELOPMENT SEQUENCE OVERVIEW
+THE FOUR PRODUCTION ACTION STEPS
+Moving from the design bible into active gameplay follows a strict chronological deployment sequence:
+Action Step 1:
+ Staging GTA V root mod directories, installing Script Hook V .NET, and compiling
+BloodlinesCore.dll
+.
+Action Step 2:
+ Executing the Python ElevenLabs batch synthesis script to generate all voice lines for the prologue.
+Action Step 3:
+ Compiling and deploying the complete
+Bloodlines_M01.cs
+ mission assembly (Vertical Slice).
+Action Step 4:
+ In-engine live testing, coordinate verification, companion AI tethering audit, and checkpoint validation.
+■
+2. ACTION STEP 1: DIRECTORY STAGING & CONFIGURATION
+GTA V MOD DIRECTORY TREE
+Grand Theft Auto V/
+├── ScriptHookV.dll
+├── ScriptHookVDotNet.asi
+├── ScriptHookVDotNet3.dll
+├── scripts/
+│   ├── BloodlinesCore.dll              <-- Shared runtime engine (compiled from Section 3)
+│   ├── Bloodlines_M01.dll              <-- Mission 01 executable assembly
+│   ├── BloodlinesConfig.ini            <-- Campaign configuration settings
+│   └── Bloodlines/
+│       └── audio/                      <-- Staged 44.1kHz 16-bit Mono WAV files
+│           ├── M01_S1_01_ICE.wav
+│           ├── M01_S1_02_GOHAN.wav
+│           ├── M01_S1_03_GUESS.wav
+│           └── ...
+BLOODLINESCONFIG.INI SPECIFICATION
+[General]
+DebugMode = true
+StartingMission = 1
+EnableCompanionProtection = true
+CompanionLeashDistance = 180.0
+[Audio]
+VoiceDirectory = scripts/Bloodlines/audio/
+Volume = 1.0
+DisplaySubtitles = true
+SubtitleDurationMultiplier = 1.0
+[Keybinds]
+ReloadScripts = F9
+SwitchToIce = NumPad1
+SwitchToGohan = NumPad2
+SwitchToGuess = NumPad3
+TriggerSpecialAbility = Capital
+SaveCheckpointDebug = Insert
+RestoreCheckpointDebug = Delete
+•
+•
+•
+•
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 1 of 8
+
+■
+3. ACTION STEP 2: PYTHON ELEVENLABS BATCH SYNTHESIS ENGINE
+AUTOMATED VOICE INGESTION SCRIPT (BATCH_SYNTHESIZE_PROLOGUE.PY)
+This standalone script iterates through the scripted dialogue lines for Mission 01, applies character-calibrated stability/similarity parameters, and outputs
+standard
+.wav
+ files ready for the audio dispatcher:
+import os
+import requests
+API_KEY = os.getenv("ELEVENLABS_API_KEY", "YOUR_ELEVENLABS_API_KEY")
+TARGET_DIR = os.path.join("scripts", "Bloodlines", "audio")
+os.makedirs(TARGET_DIR, exist_ok=True)
+# Character Voice Profiles
+VOICE_MAP = {
+    "ICE": {
+        "voice_id": "EXAVITQu4vr4xnSDxMaL",  # Deep, resonant baritone
+        "stability": 0.65,
+        "similarity_boost": 0.85
+    },
+    "GOHAN": {
+        "voice_id": "ErXwobaYiN019PkySvjV",  # Crisp technical tenor
+        "stability": 0.50,
+        "similarity_boost": 0.80
+    },
+    "GUESS": {
+        "voice_id": "VR6AewLTigWG4xSOukaG",  # High-energy street inflection
+        "stability": 0.45,
+        "similarity_boost": 0.75
+    }
+}
+PROLOGUE_LINES = [
+    ("M01_S1_01_ICE", "ICE", "Roost 4 confirmed. Two sentries on the upper deck. Target Mateo is in the stateroom
+sipping cognac. Moving into position."),
+    ("M01_S1_02_GOHAN", "GOHAN", "Secondary bilge hatch corroded. Clamping RF jammer onto the hull sensor... grid is
+blind. Going inside."),
+    ("M01_S1_03_GUESS", "GUESS", "Warehouse bay two is sweet. Biometric lock bypassed with physical tumblers. Pop... and
+we are in."),
+    ("M01_S2_04_GOHAN", "GOHAN", "Alarm tripped! Stateroom safe is half-cloned! I got three shooters flanking the
+gangway!"),
+    ("M01_S2_05_ICE", "ICE", "Wait... that voice. Devin?! Gohan?! What the hell are you doing on that boat?!"),
+    ("M01_S2_06_GUESS", "GUESS", "Yo! Why am I hearing my high school graduation on my tactical radio?! Ice?! Gohan?!"),
+    ("M01_S3_07_ICE", "ICE", "Mateo hit the slipway! He is on the armored launch! We blew the window!"),
+    ("M01_S3_08_GUESS", "GUESS", "Get in! The entire port authority is rolling! Fifteen years and this is how we catch
+up?!"),
+    ("M01_S3_09_GOHAN", "GOHAN", "Download aborted at forty-eight percent! The core recorded our biometrics—all three of
+us!")
+]
+def synthesize_prologue():
+    for cue_id, speaker, text in PROLOGUE_LINES:
+        profile = VOICE_MAP[speaker]
+        out_path = os.path.join(TARGET_DIR, f"{cue_id}.wav")
+        if os.path.exists(out_path):
+            print(f"Skipping existing: {cue_id}.wav")
+            continue
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{profile['voice_id']}"
+        headers = {"xi-api-key": API_KEY, "Content-Type": "application/json"}
+        payload = {
+            "text": text,
+            "model_id": "eleven_monolingual_v1",
+            "voice_settings": {"stability": profile["stability"], "similarity_boost": profile["similarity_boost"]}
+        }
+        res = requests.post(url, json=payload, headers=headers)
+        if res.status_code == 200:
+            with open(out_path, "wb") as f:
+                f.write(res.content)
+            print(f"Synthesized successfully: {cue_id}.wav")
+        else:
+            print(f"Failed {cue_id}: {res.status_code} - {res.text}")
+if __name__ == "__main__":
+    synthesize_prologue()
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 2 of 8
+
+■
+4. ACTION STEP 3: COMPLETE EXECUTABLE C# MISSION SCRIPT
+(BLOODLINES_M01.CS)
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 3 of 8
+
+VERTICAL SLICE MISSION ASSEMBLY (SCRIPTS/BLOODLINES_M01.CS)
+This standalone Script Hook V .NET script controls Mission 01. It handles coordinate instantiation, AI relationship group hostility, real-time stage
+progression, dialogue triggers, checkpoint commits, and the Terminal Island bridge pursuit:
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 4 of 8
+
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+using GTA;
+using GTA.Math;
+using GTA.Native;
+public class Bloodlines_M01 : Script
+{
+    private enum MissionStage
+    {
+        NotStarted,
+        Stage1_Infiltration,
+        Stage2_FirefightAlarm,
+        Stage3_ExtractionBreakout,
+        Stage4_FreewayEscape,
+        Completed,
+        Failed
+    }
+    private MissionStage currentStage = MissionStage.NotStarted;
+    // Prologue RAGE World Coordinates
+    private static readonly Vector3 PosIceRoost = new Vector3(978.25f, -2988.42f, 42.15f);
+    private static readonly Vector3 PosGohanBilge = new Vector3(962.11f, -3035.80f, -0.45f);
+    private static readonly Vector3 PosGuessBay = new Vector3(1015.60f, -3002.15f, 5.90f);
+    private static readonly Vector3 PosMateoBoat = new Vector3(920.45f, -3085.12f, 0.20f);
+    private static readonly Vector3 PosSafeZone = new Vector3(720.50f, -2400.10f, 15.20f);
+    private Vehicle getawayCar;
+    private Vehicle mateoBoat;
+    private Ped mateoPed;
+    private List<Ped> cartelGuards = new List<Ped>();
+    private Blip escapeBlip;
+    private int missionTimer = 0;
+    private bool stageTriggerA = false;
+    private bool stageTriggerB = false;
+    public Bloodlines_M01()
+    {
+        Tick += OnTick;
+        KeyUp += OnKeyUp;
+        Interval = 100; // 10 ticks per second
+    }
+    private void StartMission01()
+    {
+        Screen.FadeOut(800);
+        Script.Wait(850);
+        // 1. Initialize protagonists through BloodlinesCore
+        BloodlinesSwitchManager.InitializeProtagonists(PosIceRoost, PosGohanBilge, PosGuessBay);
+        // 2. Spawn Mission Entities
+        Model t20Model = new Model(VehicleHash.T20);
+        t20Model.Request(2000);
+        if (t20Model.IsLoaded)
+        {
+            getawayCar = World.CreateVehicle(t20Model, PosGuessBay, 90f);
+            getawayCar.CustomPrimaryColor = Color.Black;
+            getawayCar.IsPersistent = true;
+        }
+        Model dinghyModel = new Model(VehicleHash.Tropic);
+        dinghyModel.Request(2000);
+        if (dinghyModel.IsLoaded)
+        {
+            mateoBoat = World.CreateVehicle(dinghyModel, PosMateoBoat, 225f);
+            mateoBoat.IsPersistent = true;
+        }
+        // Spawn Cartel Guards
+        SpawnCartelGuards();
+        currentStage = MissionStage.Stage1_Infiltration;
+        missionTimer = Game.GameTime;
+        Screen.FadeIn(800);
+        // Play Initial Voice Cue
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 5 of 8
+
+        BloodlinesAudioManager.PlayDialogue("M01_S1_01_ICE", "Ice", "Roost 4 confirmed. Two sentries on upper deck.
+Moving into position.", 4000);
+    }
+    private void SpawnCartelGuards()
+    {
+        Model guardModel = new Model(PedHash.G_M_Y_MexGoon_01);
+        guardModel.Request(2000);
+        if (!guardModel.IsLoaded) return;
+        int cartelRelGroup = World.AddRelationshipGroup("CARTEL_GUARD");
+        World.SetRelationshipBetweenGroups(Relationship.Hate, cartelRelGroup, Game.Player.Character.RelationshipGroup);
+        Vector3[] guardSpawns = new Vector3[]
+        {
+            new Vector3(968f, -3015f, 12f),
+            new Vector3(960f, -3020f, 12f),
+            new Vector3(980f, -3025f, 6f),
+            new Vector3(995f, -3010f, 6f)
+        };
+        foreach (var pos in guardSpawns)
+        {
+            Ped guard = World.CreatePed(guardModel, pos);
+            guard.RelationshipGroup = cartelRelGroup;
+            guard.Weapons.Give(WeaponHash.AssaultRifle, 200, true, true);
+            cartelGuards.Add(guard);
+        }
+    }
+    private void OnTick(object sender, EventArgs e)
+    {
+        if (currentStage == MissionStage.NotStarted || currentStage == MissionStage.Completed) return;
+        // Check Failure Conditions
+        if (Game.Player.Character.IsDead || (getawayCar != null && !getawayCar.IsDriveable))
+        {
+            TriggerFailure("Getaway vehicle destroyed or operative neutralized.");
+            return;
+        }
+        switch (currentStage)
+        {
+            case MissionStage.Stage1_Infiltration:
+                if (Game.GameTime - missionTimer > 8000 && !stageTriggerA)
+                {
+                    stageTriggerA = true;
+                    BloodlinesAudioManager.PlayDialogue("M01_S1_02_GOHAN", "Gohan", "Secondary bilge hatch corroded.
+Clamping RF jammer... grid is blind.", 4000);
+                }
+                if (Game.GameTime - missionTimer > 15000 && !stageTriggerB)
+                {
+                    stageTriggerB = true;
+                    BloodlinesAudioManager.PlayDialogue("M01_S1_03_GUESS", "Guess", "Warehouse bay two is sweet.
+Biometric lock bypassed. Pop... we are in.", 4000);
+                    Script.Wait(4000);
+                    TransitionToStage2();
+                }
+                break;
+            case MissionStage.Stage2_FirefightAlarm:
+                // Check if all initial guards are suppressed
+                int aliveGuards = cartelGuards.FindAll(p => p.IsAlive).Count;
+                if (aliveGuards <= 1)
+                {
+                    TransitionToStage3();
+                }
+                break;
+            case MissionStage.Stage3_ExtractionBreakout:
+                // Check distance between player and getaway vehicle
+                if (Game.Player.Character.Position.DistanceTo(getawayCar.Position) < 8f)
+                {
+                    TransitionToStage4();
+                }
+                break;
+            case MissionStage.Stage4_FreewayEscape:
+                if (Game.Player.Character.Position.DistanceTo(PosSafeZone) < 30f)
+                {
+                    TriggerSuccess();
+                }
+                break;
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 6 of 8
+
+        }
+    }
+    private void TransitionToStage2()
+    {
+        currentStage = MissionStage.Stage2_FirefightAlarm;
+        BloodlinesCheckpointManager.CommitCheckpoint(1, 2, PosGuessBay, 90f, "T20");
+        BloodlinesAudioManager.PlayDialogue("M01_S2_04_GOHAN", "Gohan", "Alarm tripped! Safe is half-cloned! Shooters on
+gangway!", 3500);
+        Script.Wait(3500);
+        BloodlinesAudioManager.PlayDialogue("M01_S2_05_ICE", "Ice", "Wait... Devin?! Gohan?! What the hell are you doing
+on that boat?!", 3500);
+        Script.Wait(3500);
+        BloodlinesAudioManager.PlayDialogue("M01_S2_06_GUESS", "Guess", "Yo! Why am I hearing my high school graduation
+on tac comms?! Ice?! Devin?!", 3500);
+        // Alert Guards to attack Gohan and Ice
+        foreach (var g in cartelGuards)
+        {
+            if (g.IsAlive) g.Task.FightAgainst(Game.Player.Character);
+        }
+    }
+    private void TransitionToStage3()
+    {
+        currentStage = MissionStage.Stage3_ExtractionBreakout;
+        BloodlinesAudioManager.PlayDialogue("M01_S3_07_ICE", "Ice", "Mateo hit the slipway! He is on the launch! We blew
+the window!", 3500);
+        Script.Wait(3500);
+        BloodlinesAudioManager.PlayDialogue("M01_S3_08_GUESS", "Guess", "Get in! Port authority is rolling! Fifteen
+years and this is how we catch up?!", 3500);
+        // Switch to Guess driving the getaway car
+        BloodlinesSwitchManager.SwitchHero(BloodlinesSwitchManager.HeroID.Guess);
+        Game.Player.Character.SetIntoVehicle(getawayCar, VehicleSeat.Driver);
+        // Set companions into passenger seats
+        if (BloodlinesSwitchManager.IcePed != null) BloodlinesSwitchManager.IcePed.SetIntoVehicle(getawayCar,
+VehicleSeat.Passenger);
+        if (BloodlinesSwitchManager.GohanPed != null) BloodlinesSwitchManager.GohanPed.SetIntoVehicle(getawayCar,
+VehicleSeat.RightRear);
+    }
+    private void TransitionToStage4()
+    {
+        currentStage = MissionStage.Stage4_FreewayEscape;
+        BloodlinesAudioManager.PlayDialogue("M01_S3_09_GOHAN", "Gohan", "Download aborted at 48%! The core recorded our
+biometrics—all three of us!", 4000);
+        escapeBlip = World.CreateBlip(PosSafeZone);
+        escapeBlip.Color = BlipColor.Yellow;
+        escapeBlip.ShowRoute = true;
+        BloodlinesAudioManager.ShowSubtitle("~y~EVADE CHASE UNITS AND REACH CYPRESS DRAINAGE TUNNEL~s~", 5000);
+        // Set Wanted Level to 3 Stars
+        Game.Player.WantedLevel = 3;
+    }
+    private void TriggerSuccess()
+    {
+        currentStage = MissionStage.Completed;
+        Game.Player.WantedLevel = 0;
+        if (escapeBlip != null && escapeBlip.Exists()) escapeBlip.Delete();
+        Screen.FadeOut(1000);
+        Script.Wait(1200);
+        BloodlinesAudioManager.ShowSubtitle("~g~MISSION PASSED: GHOST IN THE DOCKYARD~s~", 5000);
+        Screen.FadeIn(1000);
+    }
+    private void TriggerFailure(string reason)
+    {
+        currentStage = MissionStage.Failed;
+        BloodlinesAudioManager.ShowSubtitle($"~r~MISSION FAILED:~s~ {reason}", 5000);
+        Script.Wait(3000);
+        BloodlinesCheckpointManager.RestoreLatestCheckpoint(ref getawayCar);
+        currentStage = MissionStage.Stage2_FirefightAlarm;
+    }
+    private void OnKeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.F11 && currentStage == MissionStage.NotStarted)
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 7 of 8
+
+        {
+            StartMission01();
+        }
+    }
+}
+■
+5. ACTION STEP 4: VERIFICATION, QUALITY ASSURANCE & DEPLOYMENT CHECKLIST
+LIVE IN-ENGINE QA AUDIT PROTOCOL
+AUDIT PHASE
+TEST PARAMETER
+PASS VERIFICATION CRITERIA
+1. Model Hashes
+Spawn verification for Ice, Gohan, and Guess.
+Peds render correctly with
+FamCA_01
+,
+FamDNF_01
+, and
+BallaEast_01
+ without texture corruptions.
+2. Audio Pipeline
+ElevenLabs Mono WAV stream playback.
+Audio plays cleanly from
+scripts/Bloodlines/audio/
+with matching subtitle color codes (~r~, ~b~, ~g~).
+3. Sky-Cam Switch
+Native
+START_PLAYER_SWITCH
+ execution.
+Camera zooms into the sky and descends smoothly into the
+target ped without frame hitching or camera clipping.
+4. Companion Leash
+Distance tethering test (>180m separation).
+Unselected companions automatically warp into empty
+vehicle seats or reposition to street sidewalks.
+5. Checkpoint Engine
+Forced player death on Stage 3.
+Screen fades out, orphan peds/wreckage delete, and fresh
+T20 spawns with player at 100% armor.
+GTA V: BLOODLINES — DEVELOPER IMPLEMENTATION TOOLKIT & VERTICAL SLICE
+Page 8 of 8

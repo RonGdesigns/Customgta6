@@ -14,7 +14,8 @@ namespace Bloodlines.Missions
     {
         private readonly string _path;
         private readonly MissionCatalog _catalog;
-        private readonly HashSet<int> _completed = new HashSet<int>();
+        private readonly HashSet<string> _completed =
+            new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
 
         private CampaignProgress(string path, MissionCatalog catalog)
         {
@@ -31,28 +32,32 @@ namespace Bloodlines.Missions
             {
                 if (settings.GetValue<bool>("Completed", definition.Id, false))
                 {
-                    progress._completed.Add(definition.Number);
+                    progress._completed.Add(definition.Id);
                 }
             }
 
-            Logger.Info("Campaign progress loaded: " + progress._completed.Count + "/70 complete.");
+            Logger.Info("Campaign progress loaded: " + progress._completed.Count + "/" +
+                        catalog.All.Count + " complete.");
             return progress;
         }
 
-        public bool IsComplete(int number) => _completed.Contains(number);
+        public bool IsComplete(string id) => _completed.Contains(id);
 
         public int CompletedCount => _completed.Count;
 
-        /// <summary>Lowest-numbered mission that is playable and not yet finished.</summary>
+        /// <summary>
+        /// The next playable mission in campaign order — solo missions included at
+        /// the point the expansion slots them into the main line.
+        /// </summary>
         public MissionDefinition NextPlayable()
         {
-            return _catalog.Playable.FirstOrDefault(m => !IsComplete(m.Number))
+            return _catalog.Playable.FirstOrDefault(m => !IsComplete(m.Id))
                    ?? _catalog.Playable.FirstOrDefault();
         }
 
-        public void MarkComplete(int number)
+        public void MarkComplete(string id)
         {
-            if (!_completed.Add(number)) return;
+            if (!_completed.Add(id)) return;
             Save();
         }
 
@@ -67,7 +72,7 @@ namespace Bloodlines.Missions
             var settings = ScriptSettings.Load(_path);
             foreach (var definition in _catalog.All)
             {
-                settings.SetValue("Completed", definition.Id, IsComplete(definition.Number));
+                settings.SetValue("Completed", definition.Id, IsComplete(definition.Id));
             }
             settings.Save();
             Logger.Debug("Campaign progress saved to " + _path);

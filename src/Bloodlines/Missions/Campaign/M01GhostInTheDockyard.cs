@@ -26,6 +26,16 @@ namespace Bloodlines.Missions.Campaign
 
         private static readonly string[] CartelGoons = { "g_m_y_mexgoon_01", "g_m_y_mexgoon_02", "g_m_y_mexgang_01" };
 
+        // Guard posts from the implementation toolkit's M01 listing — authored
+        // against the dockyard geometry, unlike a ring around the regroup point.
+        private static readonly Vector3[] GuardPosts =
+        {
+            new Vector3(968f, -3015f, 12f),
+            new Vector3(960f, -3020f, 12f),
+            new Vector3(980f, -3025f, 6f),
+            new Vector3(995f, -3010f, 6f)
+        };
+
         private readonly List<Ped> _guards = new List<Ped>();
 
         private Ped _mateo;
@@ -92,6 +102,13 @@ namespace Bloodlines.Missions.Campaign
             }
 
             if (Stage >= 1) CheckCrewWipe();
+
+            // The toolkit makes the getaway car a hard failure condition once the
+            // crew is committed to it — there is no second way off the island.
+            if (Stage >= 2 && (_prototype == null || !_prototype.Exists() || !_prototype.IsDriveable))
+            {
+                Fail("The getaway car is wrecked.");
+            }
         }
 
         // ---------- Stage 0 (bible S1): three approaches ----------
@@ -270,7 +287,7 @@ namespace Bloodlines.Missions.Campaign
             Say("M01_S3_08_GUESS");
             Objective("Smash the gates. Get the crew out in the prototype.");
             SetObjectiveBlip(Ctx.Locations.Position("M01.ExitPoint"), "Exfil");
-            Game.Player.WantedLevel = 2;
+            Game.Player.WantedLevel = 3;
             Advance();
         }
 
@@ -338,6 +355,7 @@ namespace Bloodlines.Missions.Campaign
 
             _prototype.IsPersistent = true;
             _prototype.IsEngineRunning = false;
+            _prototype.Mods.CustomPrimaryColor = System.Drawing.Color.Black;
             _prototype.LockStatus = VehicleLockStatus.Unlocked;
 
             var blip = Track(_prototype.AddBlip());
@@ -374,13 +392,23 @@ namespace Bloodlines.Missions.Campaign
                 var model = new Model(CartelGoons[i % CartelGoons.Length]);
                 if (!GameUtils.RequestModel(model)) continue;
 
-                float angle = i * (360f / count);
-                var offset = new Vector3(
-                    (float)System.Math.Cos(angle * System.Math.PI / 180f) * 28f,
-                    (float)System.Math.Sin(angle * System.Math.PI / 180f) * 28f,
-                    0f);
+                // The first four take the toolkit's posts; the rest fill in around the
+                // regroup point so the wave still surrounds the crew.
+                Vector3 position;
+                if (i < GuardPosts.Length)
+                {
+                    position = GuardPosts[i];
+                }
+                else
+                {
+                    float angle = i * (360f / count);
+                    position = around + new Vector3(
+                        (float)System.Math.Cos(angle * System.Math.PI / 180f) * 28f,
+                        (float)System.Math.Sin(angle * System.Math.PI / 180f) * 28f,
+                        0f);
+                }
 
-                var guard = World.CreatePed(model, around + offset, 0f);
+                var guard = World.CreatePed(model, position, 0f);
                 model.MarkAsNoLongerNeeded();
                 if (guard == null || !guard.Exists()) continue;
 

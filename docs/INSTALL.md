@@ -43,7 +43,8 @@ copy you mod.
    inis are commented.
 6. Copy the `data/` folder into `<GTA V>/scripts/Bloodlines/data/`. **This one is not
    optional**: without it there are no mission titles, no objectives and no dialogue,
-   and the mod will say so on screen.
+   and the mod will say so on screen. It carries all 70 main missions, the 9 solo
+   missions and 292 dialogue cues.
 7. Optional: put generated voice lines in `<GTA V>/scripts/Bloodlines/audio/` as
    `<CUE_ID>.wav` (see `tools/generate_voice.py`). The campaign plays fine without them.
 8. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
@@ -53,8 +54,8 @@ copy you mod.
 
 | Key | Action |
 |---|---|
-| `1` / `2` / `3` | switch to Ice / Gohan / Guess |
-| `Q` | activate the current character's ability (toggle) |
+| `Numpad 1` / `2` / `3` | switch to Ice / Gohan / Guess |
+| `Caps Lock` | activate the current character's ability (toggle) |
 | `F10` | deploy or stand down the crew in free roam |
 | `J` | start the next unfinished scripted mission |
 | hold `Backspace` | abort the running mission, or stand the crew down |
@@ -69,8 +70,6 @@ rewinds a player who didn't ask for a QA build:
 
 | Key | Action |
 |---|---|
-| `Numpad 1/2/3` | force a switch to Ice / Gohan / Guess |
-| `Caps Lock` | trigger the active character's ability |
 | `Page Up` / `Page Down` | warp the running mission forward / back one stage |
 | `Insert` | commit a checkpoint |
 | `Delete` | restore the last checkpoint |

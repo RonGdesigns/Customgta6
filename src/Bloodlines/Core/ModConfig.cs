@@ -9,10 +9,12 @@ namespace Bloodlines.Core
     /// </summary>
     public sealed class ModConfig
     {
-        public Keys SwitchIceKey { get; private set; } = Keys.D1;
-        public Keys SwitchGohanKey { get; private set; } = Keys.D2;
-        public Keys SwitchGuessKey { get; private set; } = Keys.D3;
-        public Keys AbilityKey { get; private set; } = Keys.Q;
+        // Defaults follow the implementation toolkit's [Keybinds] block. NumPad also
+        // keeps the switch off 1/2/3, which the game already uses for weapon slots.
+        public Keys SwitchIceKey { get; private set; } = Keys.NumPad1;
+        public Keys SwitchGohanKey { get; private set; } = Keys.NumPad2;
+        public Keys SwitchGuessKey { get; private set; } = Keys.NumPad3;
+        public Keys AbilityKey { get; private set; } = Keys.Capital;
         public Keys MissionStartKey { get; private set; } = Keys.J;
         public Keys AbortKey { get; private set; } = Keys.Back;
         public Keys DevCaptureKey { get; private set; } = Keys.F11;
@@ -22,6 +24,12 @@ namespace Bloodlines.Core
         public int CompanionHealthFloor { get; private set; } = 150;
 
         public bool CompanionsRespawnOnDeath { get; private set; } = true;
+
+        /// <summary>
+        /// Metres a companion may fall behind before it is repositioned on the active
+        /// character. The toolkit calls this the companion leash.
+        /// </summary>
+        public float CompanionLeashDistance { get; private set; } = 180f;
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
@@ -47,6 +55,7 @@ namespace Bloodlines.Core
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);
+            config.CompanionLeashDistance = settings.GetValue<float>("Crew", "CompanionLeashDistance", config.CompanionLeashDistance);
 
             config.AbilitiesEnabled = settings.GetValue<bool>("Abilities", "Enabled", config.AbilitiesEnabled);
             config.AbilityDuration = settings.GetValue<float>("Abilities", "DurationSeconds", config.AbilityDuration);

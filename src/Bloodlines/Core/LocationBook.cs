@@ -31,7 +31,13 @@ namespace Bloodlines.Core
             { "M01.CapoSpawn",        new Vector3(1019.0f, -3184.0f, 6.0f)  },
             { "M01.LaunchEscape",     new Vector3(1140.0f, -3320.0f, 0.0f)  },
             { "M01.RegroupPoint",     new Vector3(1073.0f, -3160.0f, 5.9f)  },
-            { "M01.ExitPoint",        new Vector3(1180.0f, -2990.0f, 5.9f)  },
+            // Toolkit-authored safe zone: the Cypress drainage tunnel run-out.
+            { "M01.ExitPoint",        new Vector3(720.50f, -2400.10f, 15.20f) },
+
+            // --- Solo mission SM01: Lead & Kevlar (Terminal Island warehouse 4, APPROX) ---
+            { "SM01.WarehouseGate",   new Vector3(1035.0f, -3100.0f, 5.9f)  },
+            { "SM01.SergeiOffice",    new Vector3(1046.0f, -3080.0f, 5.9f)  },
+            { "SM01.CrateLoad",       new Vector3(1028.0f, -3096.0f, 5.9f)  },
 
             // --- Mission 02: Loose Strands (Olympic Freeway corridor, APPROX) ---
             { "M02.InterceptStart",   new Vector3(102.0f, -1810.0f, 27.0f)  },
@@ -47,6 +53,7 @@ namespace Bloodlines.Core
             { "M01.WarehouseBay", 90f },
             { "M01.PrototypeCar", 270f },
             { "M02.InterceptStart", 60f },
+            { "SM01.WarehouseGate", 340f },
             { "Base.CypressFlats", 175f }
         };
 

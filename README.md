@@ -15,7 +15,7 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Layer | State |
 |---|---|
 | Mod bootstrap, config, logging | working |
-| Campaign data pipeline — bible PDF → TSV → runtime | working, 70 missions / 255 cues / 6 surveyed anchors |
+| Campaign data pipeline — bible PDFs → TSV → runtime | working, 79 missions / 292 cues / 6 surveyed anchors |
 | Crew roster — spawn, companion AI, blips, respawn, story-character restore | working |
 | Dynamic 3-way switch (bible §3) | working, rewritten off the bible's draft |
 | Abilities — Overwatch Focus / Thermal Pulse / Slipstream Reflex | working, shared meter |
@@ -25,7 +25,8 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | QA harness (bible Track 4) | working — stage warp, checkpoint commit/restore, forced switch |
 | **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |
 | **M02 "Loose Strands"** | playable, approximate coordinates |
-| M03–M70 | written and loaded as data; no mission scripts yet |
+| **SM01 "Lead & Kevlar"** | playable — first of the 9 solo missions, no crew, switch locked |
+| M03–M70, SM02–SM09 | written and loaded as data; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has
@@ -41,8 +42,9 @@ dotnet build src/Bloodlines/Bloodlines.csproj -c Release
 Then `docs/INSTALL.md`: ScriptHookV + ScriptHookVDotNet in your GTA V folder,
 `Bloodlines.dll` into `scripts/`, and `config/` + `data/` into `scripts/Bloodlines/`.
 
-Default keys: `1` `2` `3` switch character, `Q` ability, `F10` deploy the crew in
-free roam, `J` start the next mission, hold `Backspace` to abort.
+Default keys (the toolkit's binds): `Numpad 1/2/3` switch character, `Caps Lock`
+ability, `F10` deploy the crew in free roam, `J` start the next mission, hold
+`Backspace` to abort.
 
 ## The bible is the source of record
 
@@ -50,14 +52,18 @@ Mission titles, settings, objectives, synopses and every line of dialogue live i
 the PDFs under `docs/bibles/`, not in code. The pipeline is:
 
 ```
-docs/bibles/omnibus_v2.pdf
-        │  tools/parse_bible.py
+docs/bibles/omnibus_v2.pdf + solo_missions_v1.pdf
+        │  tools/parse_bible.py   (merges every bible, normalises the cast names)
         ▼
 data/missions.tsv · data/dialogue.tsv · data/anchors.tsv
         │  copied to scripts/Bloodlines/data/
         ▼
 CampaignData → MissionCatalog, DialogueDirector
 ```
+
+The catalog interleaves the solo missions into the main line at the windows the
+expansion specifies (Act I after M03, Act II after M28, Act III after M52), so
+"next mission" plays the campaign in its intended order.
 
 When a new revision of the bible arrives, drop it in `docs/bibles/`, re-run
 `tools/parse_bible.py` and `tools/render_campaign_doc.py`, and rebuild. No C#
@@ -75,7 +81,7 @@ stand on the real spot, press `F11`, and paste the captured block into the file.
 
 ## Voice
 
-`tools/generate_voice.py` batch-generates the 255 lines through ElevenLabs (bible
+`tools/generate_voice.py` batch-generates the 292 lines through ElevenLabs (bible
 Track 3) into `scripts/Bloodlines/audio/<CUE_ID>.wav`, which the dialogue director
 picks up automatically. Every line is written to read correctly as a subtitle alone,
 so the campaign is playable with no voice pack at all.
@@ -97,6 +103,6 @@ src/Bloodlines/       the mod
 data/                 generated campaign data (missions, dialogue, anchors)
 config/               ini templates that ship to scripts/Bloodlines/
 tools/                bible parser, campaign doc renderer, voice batch generator
-docs/                 install, toolchain, architecture, campaign, bible notes
+docs/                 install, toolchain, architecture, campaign, QA protocol, bible notes
 docs/bibles/          the source bibles and their extracted text
 ```

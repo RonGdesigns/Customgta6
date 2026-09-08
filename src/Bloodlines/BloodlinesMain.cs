@@ -59,8 +59,9 @@ namespace Bloodlines
             KeyUp += OnKeyUp;
             Aborted += OnAborted;
 
-            Logger.Info("Ready. " + _progress.CompletedCount + "/70 complete. Deploy crew with " +
-                        _config.DeployCrewKey + ", start a mission with " + _config.MissionStartKey + ".");
+            Logger.Info("Ready. " + _progress.CompletedCount + "/" + _catalog.All.Count +
+                        " complete. Deploy crew with " + _config.DeployCrewKey +
+                        ", start a mission with " + _config.MissionStartKey + ".");
         }
 
         private void OnTick(object sender, EventArgs e)
@@ -119,16 +120,14 @@ namespace Bloodlines
         /// <summary>
         /// Track 4 of the bible: the in-engine debugging harness. Off unless
         /// [Dev] Enabled is set, because a stray Delete key mid-mission would
-        /// otherwise rewind a player who never asked for a QA build.
+        /// otherwise rewind a player who never asked for a QA build. The toolkit's
+        /// switch and ability binds are the gameplay defaults now, so only the
+        /// stage-warp and checkpoint keys live here.
         /// </summary>
         private void HandleQaKey(Keys key)
         {
             switch (key)
             {
-                case Keys.NumPad1: _switching.TrySwitch(CrewSlot.Ice); break;
-                case Keys.NumPad2: _switching.TrySwitch(CrewSlot.Gohan); break;
-                case Keys.NumPad3: _switching.TrySwitch(CrewSlot.Guess); break;
-                case Keys.Capital: _abilities.Toggle(); break;
                 case Keys.PageUp: _missions.WarpStage(1); break;
                 case Keys.PageDown: _missions.WarpStage(-1); break;
                 case Keys.Insert: _missions.CommitCheckpoint(); break;

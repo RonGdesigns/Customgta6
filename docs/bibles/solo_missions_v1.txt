@@ -1,0 +1,341 @@
+
+OFFICIAL EXPANSION MODULE • SOLO CHARACTER STORYLINES
+GRAND THEFT AUTO V: BLOODLINES
+Solo Character Story Missions (SM01–SM09) • Personal Debts, Origin Flashpoints & Mastery Quests
+■
+1. SOLO MISSIONS RATIONALE & STRUCTURAL INTEGRATION
+PACING, INDIVIDUAL AGENCY & MECHANISTIC FOCUS
+While the main 70-mission campaign focuses on high-octane trio coordination, these 9 dedicated Solo Missions (3 per protagonist across Acts I, II, and
+III) provide narrative intimacy and deep individual gameplay loops:
+Ice (Darius Vance):
+ Focuses on black-market military arms logistics, gritty CQC takedowns, and settling painful wartime betrayal debts from his military
+deployment years.
+Gohan (Devin Mercer):
+ Focuses on pure stealth infiltration, electronic warfare, physical server splicing, and exacting revenge on the white-collar auditors
+who originally framed him.
+Guess (Ron Ortiz):
+ Focuses on illegal underground street racing, midnight drift contracts, hazardous off-road speed runs, and securing maritime escape
+pipelines for the crew's family.
+■
+2. ACT I SOLO MISSIONS: INDEPENDENT TRADECRAFT (SM01–SM03)
+Taking place between Missions 03 and 08 in Los Santos, each brother operates alone to establish his independent supply pipeline before the Port
+Heist.
+•
+•
+•
+SM01: "LEAD & KEVLAR" (ICE (DARIUS VANCE))
+Act I • Ice Solo • Terminal Island Warehouse 4 • 23:00 HRS • Drizzle
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: INFILTRATE RUSSIAN ARMS WAREHOUSE AND SEIZE AP ROUND CRATES AS ICE
+Before the crew can hit the Vespucci evidence vault, Ice needs heavy armor-piercing 7.62 ammunition that standard gun runners don't stock. A
+crooked arms broker named Sergei tried to shortchange Ice on military ordnance. Ice hits Sergei's dockside warehouse alone, clearing armed guards
+with tactical assault shotguns and executing Sergei to seize the crate.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM01_S1_01_ICE
+ICE
+[Low, dangerous growl] 'Sergei thought he could pocket twenty
+grand and hand me surplus civilian brass. Time to remind him
+who taught him logistics.'
+Approaching warehouse gate
+SM01_S1_02_ICE
+ICE
+[Kicking side door open, racking heavy shotgun] 'Two sentries at
+the forklift. Dead before they drop their coffee.'
+Breaching side entrance
+SM01_S2_03_ENEMY
+SERGEI
+'Vance! Put the gun down! We can work something out, brother!'
+Sergei cornered in office
+SM01_S2_04_ICE
+ICE
+'We aren't brothers, Sergei. And your credit just expired.'
+Shotgun execution
+SM01_S2_05_ICE
+ICE
+'Crates loaded in the trunk. Armor-piercing tungsten-core 7.62.
+Gohan and Guess have what they need.'
+Securing ammunition
+GTA V: BLOODLINES — SOLO MISSIONS EXPANSION & NARRATIVE DOSSIER
+Page 1 of 5
+
+■
+3. ACT II SOLO MISSIONS: DESERT SURVIVAL & SELF-RELIANCE (SM04–SM06)
+Taking place during the Blaine County exile between Missions 28 and 36, these solitary missions establish resource dominance in the rugged
+badlands.
+SM02: "ZERO-DAY INJECTION" (GOHAN (DEVIN MERCER))
+Act I • Gohan Solo • Lifeinvader Data Annex / Rockford • 02:00 HRS • Fog
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: INFILTRATE LIFEINVADER DATA ANNEX AND SPLICING OPTICAL TAP AS GOHAN
+To prepare his predictive drone algorithms, Gohan needs clean municipal optical access without triggering ISP tripwires. He scales the rear fire
+escape of the Lifeinvader Rockford server annex, using a suppressed pistol, stun gun, and Thermal Pulse to bypass biometric guards and inject a
+zero-day exploit into the central node.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM02_S1_01_GOHAN
+GOHAN
+[Whispering through comm headset] 'Lifeinvader auxiliary annex.
+Security is all outsourced rent-a-cops and automated laser
+sweeps.'
+Rooftop infiltration
+SM02_S1_02_GOHAN
+GOHAN
+'Thermal pulse active. Two guards behind the server bay door.
+Stun gun primed... discharging.'
+Silent taser takedown
+SM02_S2_03_GOHAN
+GOHAN
+[Keystrokes clicking rapidly] 'Root terminal cracked. Splicing zero-
+day worm into the core routing table. City surveillance is blind to
+our license plates.'
+Terminal exploit
+SM02_S2_04_GOHAN
+GOHAN
+'Slip down the fire escape before internal IT notices the packet
+spike. Clean and invisible.'
+Rooftop descent
+SM03: "MIDNIGHT DRIFT" (GUESS (RON ORTIZ))
+Act I • Guess Solo • Olympic Fwy Industrial Basin • 01:00 HRS • Clear / Streetlights
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: WIN UNDERGROUND PINK-SLIP TOURNAMENT BENEATH OLYMPIC FREEWAY AS GUESS
+To secure an ultra-rare racing transmission and twin-plate clutch for their getaway fleet, Guess enters an illegal underground street race organized by
+the Marabunta Grande under the Olympic Freeway overpass. Guess must pilot a tuned drift coupe through a high-stakes three-lap street circuit, using
+Slipstream Reflex to edge out two hostile racers who pull machine guns on the final straight.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM03_S1_01_GUESS
+GUESS
+[Twin-turbo revving at 7,000 RPM, two-step popping] 'Marabunta
+thinks their tuned Elegy has the top end. They don't know who is
+behind this wheel.'
+Starting line rev
+SM03_S1_02_GUESS
+GUESS
+[Slipstream Reflex activated, slow-mo engine roar] 'Feathering the
+clutch... clipping the barrier by two inches... slide initiated!'
+Hairpin drift
+SM03_S2_03_ENEMY
+RIVAL RACER
+'He's passing on the inside! Shoot his damn tires out!'
+Rival driver shooting
+SM03_S2_04_GUESS
+GUESS
+[Laughing wildly, ducking below dashboard] 'Bumping me in the
+chicane?! Eat this concrete pillar!'
+PIT maneuver into pillar
+SM03_S2_05_GUESS
+GUESS
+'Checkered flag! Title is in my pocket and the racing transmission
+is loaded on the truck.'
+Crossing finish line
+GTA V: BLOODLINES — SOLO MISSIONS EXPANSION & NARRATIVE DOSSIER
+Page 2 of 5
+
+SM04: "DEAD DROP QUARRY" (ICE (DARIUS VANCE))
+Act II • Ice Solo • Davis Quartz Overlook • 18:30 HRS • Dusk / Wind
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: ELIMINATE AEGIS RECON SNIPER NESTS PERCHED ABOVE THE QUARRY AS ICE
+An elite Aegis mercenary sniper duo has set up an overwatch camp on the highest rim of Davis Quartz, monitoring the crew's desert transit routes.
+Ice hunts them on foot with a ghillie cloak and thermal sniper rifle, tracking footprint patterns through the red shale and taking them out in a long-
+range counter-sniper duel.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM04_S1_01_ICE
+ICE
+[Wind howling through scope, breathing slow] 'Two Aegis
+marksmen on the eastern quarry tower. Range: seven hundred
+yards. Wind: 6 knots east.'
+Setting bipod
+SM04_S1_02_ICE
+ICE
+[Suppressed crack] 'Spotter down. Sniper scrambling for the
+rocks... leading the target... fired.'
+Long-range kill
+SM04_S2_03_ICE
+ICE
+'Both shooters neutralized. Ripping their encrypted radio
+transceivers. Now we hear every Aegis squad moving in Blaine.'
+Looting sniper nest
+SM05: "BLACK BOX ESTUARY" (GOHAN (DEVIN MERCER))
+Act II • Gohan Solo • Lago Zancudo Swamplands • 02:00 HRS • Heavy Fog
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: INFILTRATE COVERT GOVERNMENT MONITORING BUOY IN ZANCUDO SWAMP
+The military has dropped a coastal acoustic listening buoy in the Zancudo swamp to track any movement in and out of Fort Zancudo. Gohan
+navigates the foggy reeds in a quiet kayak, scuba-diving under the buoy to clamp an automated hardware interceptor that feeds military air-defense
+telemetry straight to his laptop.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM05_S1_01_GOHAN
+GOHAN
+[Reeds rustling, water rippling] 'Swamplands are pitch black.
+Patrol chopper spotlight passing two hundred yards north.'
+Kayak stealth
+SM05_S1_02_GOHAN
+GOHAN
+[Diving underwater, rebreather hiss] 'Acoustic buoy submerged
+harness located. Splicing hardware interceptor into sensor array.'
+Underwater splice
+SM05_S2_03_GOHAN
+GOHAN
+'Signal locked. Every military flight plan leaving Zancudo now
+displays on our radar. Paddling back to the pickup.'
+Mission complete
+SM06: "CANYON RUNNER" (GUESS (RON ORTIZ))
+Act II • Guess Solo • Raton Canyon Rim • 16:00 HRS • Heat Shimmer
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: HOT-RUN OFF-ROAD TROPHY TRUCK LOADED WITH AVIATION FUEL ACROSS RATON
+To fuel their customized biplanes at McKenzie Airfield, Guess steals an off-road fuel tanker truck from a rogue desert refinery. Cartel hijackers on dirt
+bikes chase him along the narrow cliff edges of Raton Canyon. Guess uses the truck's mass and high-speed throttle control to survive hair-raising cliff
+jumps and smash through roadblocks.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM06_S1_01_GUESS
+GUESS
+[V8 diesel roaring, chassis shuddering] 'Tanker full of high-octane
+aviation fuel. One stray bullet in the rear tank and I am a fireball in
+the canyon.'
+Canyon drive start
+SM06_S1_02_GUESS
+GUESS
+'Cartel dirt bikes dropping down the ridge! Trying to shoot the fuel
+cap!'
+Bikes flanking
+SM06_S2_03_GUESS
+GUESS
+[Flooring pedal, swerving into lead bike] 'Not today, boys! Take the
+scenic dive into the river below!'
+Clipping hostile bike
+SM06_S2_04_GUESS
+GUESS
+'Slid into McKenzie airfield on two wheels! Tanker intact. The
+biplanes are fueled for the rig strike.'
+Arriving at hangar
+GTA V: BLOODLINES — SOLO MISSIONS EXPANSION & NARRATIVE DOSSIER
+Page 3 of 5
+
+■
+4. ACT III SOLO MISSIONS: PERSONAL RECKONINGS & EXIT STRATEGY (SM07–SM09)
+Taking place during the urban war between Missions 52 and 62, each brother settles his personal demons and secures clean escape documents
+before the final siege.
+SM07: "BLOOD DEBT" (ICE (DARIUS VANCE))
+Act III • Ice Solo • Del Perro Luxury Hotel • 23:00 HRS • Rain / Neon
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: ASSASSINATE MAJOR STERLING IN HIS SECURE DEL PERRO HOTEL SUITE
+Ice discovers that Major Sterling—the corrupt military commander who sold out Ice's logistics unit in Afghanistan fifteen years ago—is now a vice
+president at Aegis Tactical living in a penthouse suite in Del Perro. Ice handles this purely personal vendetta alone, fighting through private security
+floor-by-floor to confront Sterling face-to-face.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM07_S1_01_ICE
+ICE
+[Cold, venomous tone] 'Fifteen years ago Sterling got my whole
+squad ambushed in Kandahar for a five-hundred-thousand-dollar
+kickback. Tonight I settle the ledger.'
+Elevator ascent
+SM07_S1_02_ICE
+ICE
+[Breaching suite doors with suppressed assault rifle] 'Four
+executive bodyguards in the foyer—neutralized.'
+Suite shootout
+SM07_S2_03_ENEMY
+STERLING
+[Cowering behind marble desk] 'Vance! You're a ghost! That was
+fifteen years ago in the desert!'
+Sterling cornered
+SM07_S2_04_ICE
+ICE
+'I didn't forget a single name on those dog tags, Sterling. Look at
+me.'
+Execution moment
+SM07_S2_05_ICE
+ICE
+[Walking out into rain] 'Debt settled. The past is buried. Now we
+finish Aegis in Los Santos.'
+Hotel exit
+SM08: "BURNER PROTOCOL" (GOHAN (DEVIN
+MERCER))
+Act III • Gohan Solo • Pillbox Hill Forensic Audit Firm • 03:00 HRS • Interior
+Darkness
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: INCINERATE ARCHIVES OF THE FORENSIC FIRM THAT ORIGINALLY FRAMED GOHAN
+The white-collar corporate accounting firm 'Vanderbilt & Cole' in Pillbox Hill is the entity that fabricated fraud evidence against Gohan fifteen years
+prior, forcing him into street crime. Gohan infiltrates their top-floor headquarters alone, downloading their client extortion files and setting off
+automated chemical incendiary charges in the physical file vaults.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM08_S1_01_GOHAN
+GOHAN
+[Looking up at glass tower] 'Vanderbilt & Cole. The suits who
+doctored the ledgers and handed my name to the feds fifteen
+years ago. Payback time.'
+Office infiltration
+SM08_S1_02_GOHAN
+GOHAN
+'Bypassing their biometric vault lock. Downloading sixty gigabytes
+of blackmail files.'
+Vault download
+SM08_S2_03_GOHAN
+GOHAN
+'Chemical thermite strips armed along every filing cabinet. In sixty
+seconds, their entire corrupt history is ash.'
+Igniting vault
+SM08_S2_04_GOHAN
+GOHAN
+[Watching flames reflect in glass window] 'My record is clean. My
+name is cleared. Now let's go help Ice and Guess take Maze
+Bank.'
+Elevator escape
+GTA V: BLOODLINES — SOLO MISSIONS EXPANSION & NARRATIVE DOSSIER
+Page 4 of 5
+
+SM09: "THE LONG EXIT" (GUESS (RON ORTIZ))
+Act III • Guess Solo • LS Port Terminal 4 • 04:00 HRS • Pre-Dawn Mist
+SOLO STAGE MECHANICS & OBJECTIVES
+HUD: STEAL PROTOTYPE HYPERCAR AND DELIVER TO CARGO SHIP TO SECURE ESCAPE PASSES
+To ensure that all three men and their families have genuine, untraceable diplomatic passports and clean cargo transport out of the country after the
+final score, Guess undertakes a solo high-speed extraction of an impounded experimental hypercar from the LSPD auto pound and drives it through a
+5-star police gauntlet to a foreign container ship waiting at Terminal Island.
+CUE ID
+SPEAKER
+DIALOGUE LINE
+TRIGGER EVENT
+SM09_S1_01_GUESS
+GUESS
+'The foreign captain wants this hypercar on his cargo deck before
+dawn, or the escape passports don't get stamped. Guess never
+fails a delivery.'
+Hotwiring hypercar
+SM09_S1_02_GUESS
+GUESS
+[Sirens wailing, five-star police pursuit] 'LSPD SWAT cruisers
+setting up spiked roadblocks on the bridge! Slipstream Reflex
+engaged!'
+Highway drift
+SM09_S2_03_GUESS
+GUESS
+[Launching car off construction ramp over police cruiser] 'Flying
+over the blockade! Eat my exhaust!'
+Ramp jump
+SM09_S2_04_GUESS
+GUESS
+'Car driven straight into the shipping container! Container door
+locked! Passports and sea passage secured for the whole crew!'
+Mission passed
+GTA V: BLOODLINES — SOLO MISSIONS EXPANSION & NARRATIVE DOSSIER
+Page 5 of 5

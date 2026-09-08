@@ -221,8 +221,7 @@ namespace Bloodlines.Missions
         {
             get
             {
-                if (Ctx?.Data == null) return null;
-                return int.TryParse(Id.Substring(1), out int number) ? Ctx.Data.Mission(number) : null;
+                return Ctx?.Data?.Mission(Id);
             }
         }
 

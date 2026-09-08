@@ -52,6 +52,12 @@ namespace Bloodlines.Crew
         {
             if (!_crew.IsDeployed) return false;
 
+            if (_crew.IsSolo)
+            {
+                GameUtils.Subtitle("~r~" + _crew.Active.FirstName + " is working this one alone.", 2500);
+                return false;
+            }
+
             if (IsSwitching) return false;
 
             if (Locked)
