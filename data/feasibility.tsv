@@ -1,0 +1,80 @@
+id	tier	technique	note
+M01	Green	direct	Ped/vehicle spawns, firefight, scripted escape. Built.
+M02	Green	direct	Freeway intercept on live traffic AI. Built.
+M03	Yellow	fake	Uncoupling a 40-car freight train is not exposed to script. Freeze a train at a junction and blip it as "blockade"; the depot raid and hauler defence are Green.
+M04	Green	direct	Garage firefight plus subway pursuit. Trains on the line are a hazard, not a system.
+M05	Yellow	fake	Sea-cave interior needs an MLO or a substitute (existing Paleto cave). Cliff sniping, flare drops and the boat chase are Green.
+M06	Green	direct	Depot breach, alley hold, reverse extraction. Interior is an MLO or a walled-off exterior yard.
+M07	Yellow	fake	Climbing a mast has no animation set; use a ladder-and-teleport with a camera cut. Drone is a Buzzard at altitude. BASE jump is Green.
+M08	Green	direct	Forklift is drivable; crate load is a hold-zone objective plus a prop attach.
+M09	Yellow	fake	Landing skids on a moving truck roof is unreliable physics. Slow the convoy to a stop off-camera, or attach the heli to the truck for the beat.
+M10	Green	direct	Escort with a speed floor, RPG from the bed, PIT manoeuvres. The campaign's best Green set piece.
+M11	Green	direct	Static workshop scene; dyno is a UI meter over a frozen vehicle.
+M12	Yellow	fake	ROV drone: use a submersible with a locked camera, or a camera-only "drone mode" with no vehicle at all.
+M13	Green	direct	Limpet charges on boats, then detonate. Straight explosive work.
+M14	Green	direct	Hangar theft and a low-altitude run. SAMs are scripted rockets from fixed points.
+M15	Yellow	fake	Maintenance vault interior needs an MLO; the tranquilliser takedowns and splice are Green.
+M16	Green	direct	Zancudo is already hostile territory; Cargobob theft is stock.
+M17	Green	direct	Static customisation scene, same pattern as M11.
+M18	Green	direct	Staging: park three vehicles, play the countdown speech.
+M19	Yellow	fake	Underwater cutting: hold-zone objective with particle effects. Container "rising" is a spawned prop moved on a curve.
+M20	Red	set piece	Cargobob winch on a 30-ton container under AA fire. The winch works; the weight does not. Attach the container to the heli and script the flight path with the player in gunner role.
+M21	Green	direct	Boat escort with flares and hostile launches.
+M22	Yellow	fake	Container drop is a prop teleport. The cruise-missile strike on the foundry is a cutscene: fade, explosion, smoke column prop.
+M23	Green	direct	Bunker clear-out. Interior is an MLO or the existing Senora structures.
+M24	Yellow	fake	Crane dredging: hold-zone plus a prop rising out of the water on a timer.
+M25	Green	direct	Bridge sniping and a river extraction.
+M26	Green	direct	Duster dogfight; weaponised biplanes exist in stock content.
+M27	Red	set piece	Plane-to-plane boarding at 8,000 ft with zero-G interior combat. Fake in three cuts: matched flight (attach player plane to the jet's path), a cut to a static interior standing in for the cabin, then a scripted bail-out. Do not attempt physical zero-G AI.
+M28	Green	direct	Tower climb and EMP splice; same ladder-and-cut technique as M07.
+M29	Yellow	fake	Truck onto a moving flatbed: freeze the train at speed 0 with a moving-camera illusion, or attach the truck once it is close.
+M30	Green	direct	Downhill trophy-truck run under helicopter fire.
+M31	Green	direct	Mines and turrets: proximity checks plus scripted explosions. CIWS is a scripted turret.
+M32	Yellow	fake	Underwater intake infiltration needs an interior; the warhead cases are props.
+M33	Green	direct	Salt-flat ambush and rescue. Smoke is a particle effect.
+M34	Green	direct	Sandstorm escort with a turret. Weather is settable; the rockslide is a scripted explosion plus prop swap.
+M35	Green	direct	Convoy ambush in a pass. Stock vehicles throughout.
+M36	Yellow	fake	Sub recon: same drone treatment as M12.
+M37	Green	direct	Aircraft theft and retrofit; retrofit is a static scene.
+M38	Green	direct	Quarry firefight using haulers as cover.
+M39	Yellow	fake	Deep-water cable cutting: hold-zone at depth with limited air as the tension.
+M40	Green	direct	Static boat-armouring scene.
+M41	Green	direct	Lodge infiltration in a blizzard. Weather is settable.
+M42	Red	set piece	Air-dropping a submarine from a Titan. Fake it: cargo ramp cutscene, cut to the sub already under parachutes, splashdown spawn.
+M43	Green	direct	Staging scene.
+M44	Yellow	fake	Underwater charges on rig pylons; the rig itself needs a prop or an existing platform.
+M45	Yellow	fake	Helipad drop in a storm onto a structure that has to exist first. Everything above deck is Green once it does.
+M46	Yellow	fake	Vault interior — MLO or a substitute interior.
+M47	Red	set piece	A collapsing, tilting rig. GTA V cannot deform a structure. Do it with a camera-shaken fade, swap to a pre-damaged version of the prop, and put the player in a BASE jump before the "collapse" resolves.
+M48	Green	direct	Highway blockade breakout.
+M49	Green	direct	Checkpoint ram with tower sniping.
+M50	Yellow	fake	Archive interior needs an MLO; the sentry takedowns and the wipe are Green.
+M51	Green	direct	Transformer yard sabotage; the blackout is a scripted light change over Downtown.
+M52	Green	direct	Rooftop sniper shot on a scripted walk path, then a bike escape.
+M53	Green	direct	Subway tunnel ambush with mines and night vision.
+M54	Yellow	fake	Penthouse interior — MLO. The balcony roost and antenna are dressing.
+M55	Red	set piece	Three simultaneous penthouse breaches on a 300-second clock. This is the mission the whole switch system exists for, and it is worth building properly: three separate spawn sets, one shared timer, forced switching between them. Interiors can be substituted, the mechanic cannot.
+M56	Green	direct	Canal armour clash. The aqueduct is one of the best drivable spaces in the game.
+M57	Green	direct	Jet-ski anti-air run.
+M58	Green	direct	Compound assault in Mirror Park.
+M59	Green	direct	Radio-mast climb and broadcast, with sniper cover on the Vinewood sign.
+M60	Green	direct	Neighbourhood defence in waves. Reuses SurviveWavesObjective wholesale.
+M61	Yellow	fake	Flooded gunship interior needs a wreck prop; the underwater fight is Green.
+M62	Red	set piece	Train, boat and helicopter converging with a sling-load pickup. Build it as three scripted lanes with forced switches; the container hook is an attach, not a physics winch.
+M63	Green	direct	Lobby breach by ramming. Maze Bank's ground floor is enterable.
+M64	Yellow	fake	Elevator-shaft ascent with falling cars. Stairwell fights are Green; the falling car is a scripted prop on a path.
+M65	Yellow	fake	Boardroom confrontation needs the top-floor interior (an MLO exists in some map packs).
+M66	Green	direct	Antenna BASE jump into a storm. Stock parachute mechanics.
+M67	Green	direct	Dialogue scene inside a moving truck.
+M68	Green	direct	18-wheeler running battle in the canal with a roof turret.
+M69	Yellow	fake	Runway rampage dodging landing airliners. Spawn planes on scripted approach paths rather than relying on ambient air traffic.
+M70	Red	set piece	Cargo-plane siege ending with a taxi off the seawall into the ocean. Waves and the holdout are Green; the seawall launch is a scripted vehicle path plus a camera cut into the water.
+SM01	Green	direct	Warehouse assault. Built.
+SM02	Yellow	fake	Server annex interior; laser sweeps are scripted trigger volumes with a visual effect.
+SM03	Green	direct	Street race under the freeway. Uses RaceCheckpointObjective.
+SM04	Green	direct	Counter-sniper duel in open terrain. Ideal Ice showcase, no interiors needed.
+SM05	Yellow	fake	Swamp kayak and dive; the buoy is a prop, the splice a hold-zone.
+SM06	Green	direct	Canyon fuel-tanker run under bike attack.
+SM07	Yellow	fake	Hotel suite interior — MLO or a substitute. The floor-by-floor fight is Green.
+SM08	Yellow	fake	Office tower interior; the incendiary burn is a particle-and-fade sequence.
+SM09	Green	direct	Impound theft, five-star pursuit, container delivery.

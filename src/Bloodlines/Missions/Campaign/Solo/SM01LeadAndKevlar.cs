@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.Drawing;
 using Bloodlines.Core;
 using Bloodlines.Crew;
+using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
 
@@ -10,15 +10,17 @@ namespace Bloodlines.Missions.Campaign
     /// <summary>
     /// SM01 — "Lead &amp; Kevlar". Terminal Island warehouse 4, 23:00, drizzle.
     ///
-    /// The first of the nine solo missions, and the pattern for the rest: one
-    /// character, no crew, no switching. Ice goes after Sergei — an arms broker who
-    /// took his money and shipped him civilian brass — for the armour-piercing 7.62
-    /// the crew needs before the evidence-vault job.
+    /// The first solo mission, and the reference for how a composed mission is
+    /// written: spawn the world in <see cref="Setup"/>, then describe the mission as
+    /// stages of objectives. Compare against M01, which is the same amount of
+    /// gameplay written as a bespoke state machine and four times the code.
     ///
-    /// Solo missions are where a character's discipline stands alone, so this one is
-    /// deliberately close-quarters: no overwatch perch, no wheelman, just rooms.
+    /// Ice goes after Sergei — an arms broker who took his money and shipped him
+    /// civilian brass — for the armour-piercing 7.62 the crew needs before the
+    /// evidence-vault job. No crew, no switching: solo missions are where a
+    /// character's discipline stands alone.
     /// </summary>
-    public sealed class SM01LeadAndKevlar : Mission
+    public sealed class SM01LeadAndKevlar : ComposedMission
     {
         private static readonly string[] GuardModels = { "g_m_m_armboss_01", "g_m_y_strpunk_01", "s_m_y_dealer_01" };
 
@@ -28,14 +30,11 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _warehouse;
         private Vector3 _office;
         private Vector3 _trunk;
-        private Blip _objectiveBlip;
-        private bool _sergeiCornered;
-        private bool _cratesTaken;
 
         public override string Id => "SM01";
         public override string Title => "Lead & Kevlar";
 
-        protected override bool OnStart()
+        protected override bool Setup()
         {
             _warehouse = Ctx.Locations.Position("SM01.WarehouseGate");
             _office = Ctx.Locations.Position("SM01.SergeiOffice");
@@ -46,114 +45,45 @@ namespace Bloodlines.Missions.Campaign
                 return false;
             }
 
-            Ctx.Switching.SetLocked("Ice is working this one alone.");
             ApplyBibleSetting();
-
-            var player = Game.Player.Character;
-            player.Weapons.Give(WeaponHash.PumpShotgun, 120, true, true);
+            Game.Player.Character.Weapons.Give(WeaponHash.PumpShotgun, 120, true, true);
 
             SpawnSergei();
             SpawnGuards();
-
-            Say("SM01_S1_01_ICE");
-            Objective("Breach the warehouse and clear Sergei's guards.");
-            SetObjectiveBlip(_office, "Sergei's office");
             return true;
         }
 
-        protected override void OnUpdate()
+        protected override IEnumerable<MissionStage> BuildStages()
         {
-            var player = Game.Player.Character;
-            if (player == null || !player.Exists()) return;
+            yield return new MissionStage("Breach",
+                    new ReachZoneObjective("Breach the side entrance.", () => _office, 30f, flat: true))
+                .PlayedBy(CrewSlot.Ice)
+                .WithDialogue(1)
+                .OnExit(context =>
+                {
+                    foreach (var guard in _guards)
+                    {
+                        if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(80f);
+                    }
+                });
 
-            switch (Stage)
-            {
-                case 0: UpdateBreach(player); break;
-                case 1: UpdateClear(player); break;
-                case 2: UpdateSergei(player); break;
-                case 3: UpdateCrates(player); break;
-            }
-        }
+            yield return new MissionStage("Clear the floor",
+                    new KillTargetsObjective("Clear Sergei's men.", () => _guards))
+                .PlayedBy(CrewSlot.Ice);
 
-        // ---------- Stage 0: the side entrance ----------
+            yield return new MissionStage("Sergei",
+                    new KillTargetsObjective("Corner Sergei in the back office.", () => new[] { _sergei }))
+                .PlayedBy(CrewSlot.Ice)
+                .WithDialogue(2)
+                .OnEnter(context =>
+                {
+                    if (_sergei != null && _sergei.Exists()) _sergei.Task.HandsUp(30000);
+                });
 
-        private void UpdateBreach(Ped player)
-        {
-            GameUtils.DrawObjectiveMarker(_office, Color.FromArgb(120, 66, 133, 244), 2f);
-
-            if (player.Position.DistanceTo(_warehouse) > 25f && !player.IsInCombat) return;
-
-            Say("SM01_S1_02_ICE");
-            foreach (var guard in _guards)
-            {
-                if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(80f);
-            }
-
-            Objective("Clear the floor.");
-            Advance();
-        }
-
-        // ---------- Stage 1: the floor ----------
-
-        private void UpdateClear(Ped player)
-        {
-            _guards.RemoveAll(guard => guard == null || !guard.Exists() || guard.IsDead);
-
-            GameUtils.Subtitle("~s~Sergei's men: ~r~" + _guards.Count, 500);
-            if (_guards.Count > 0) return;
-
-            Objective("Corner Sergei in the back office.");
-            SetObjectiveBlip(_office, "Sergei");
-            Advance();
-        }
-
-        // ---------- Stage 2: Sergei ----------
-
-        private void UpdateSergei(Ped player)
-        {
-            if (_sergei == null || !_sergei.Exists())
-            {
-                Fail("Sergei got away with the shipment.");
-                return;
-            }
-
-            if (_sergei.IsDead)
-            {
-                Say("SM01_S2_04_ICE");
-                Objective("Load the AP crates into the trunk.");
-                SetObjectiveBlip(_trunk, "Ammunition crates");
-                Advance();
-                return;
-            }
-
-            GameUtils.DrawObjectiveMarker(_sergei.Position, Color.FromArgb(130, 224, 74, 62), 0.8f);
-
-            if (_sergeiCornered) return;
-            if (player.Position.DistanceTo(_sergei.Position) > 12f) return;
-
-            // He begs before he dies — the bible gives him one line and Ice one back.
-            _sergeiCornered = true;
-            _sergei.Task.HandsUp(30000);
-            Say("SM01_S2_03_ENEMY");
-        }
-
-        // ---------- Stage 3: the crates ----------
-
-        private void UpdateCrates(Ped player)
-        {
-            GameUtils.DrawObjectiveMarker(_trunk, Color.FromArgb(120, 106, 168, 122), 2f);
-
-            if (!GameUtils.IsWithin(player.Position, _trunk, 3f)) return;
-
-            if (!_cratesTaken)
-            {
-                _cratesTaken = true;
-                Say("SM01_S2_05_ICE");
-                GameUtils.Subtitle("~g~Armour-piercing tungsten-core 7.62 secured.", 4000);
-                return;
-            }
-
-            if (!Ctx.Dialogue.IsSpeaking) Pass();
+            yield return new MissionStage("The crates",
+                    new HoldZoneObjective("Load the AP crates.", () => _trunk, 4, 3f, "Loading crates"))
+                .PlayedBy(CrewSlot.Ice)
+                .OnExit(context => GameUtils.Subtitle("~g~Armour-piercing tungsten-core 7.62 secured.", 4000));
         }
 
         // ---------- world building ----------
@@ -204,32 +134,8 @@ namespace Bloodlines.Missions.Campaign
             }
         }
 
-        private void SetObjectiveBlip(Vector3 position, string name)
-        {
-            GameUtils.SafeDelete(_objectiveBlip);
-            _objectiveBlip = Track(World.CreateBlip(position));
-            if (_objectiveBlip == null) return;
-
-            _objectiveBlip.Sprite = BlipSprite.Standard;
-            _objectiveBlip.Color = BlipColor.Yellow;
-            _objectiveBlip.ShowRoute = true;
-            _objectiveBlip.Name = name;
-        }
-
-        protected override void OnStageEntered(int stage)
-        {
-            if (stage >= 1)
-            {
-                foreach (var guard in _guards)
-                {
-                    if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(80f);
-                }
-            }
-        }
-
         protected override void OnCleanup()
         {
-            GameUtils.SafeDelete(_objectiveBlip);
             _guards.Clear();
         }
     }

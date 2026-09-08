@@ -151,6 +151,66 @@ cars, and takes the frame rate with it.
 A mission that needs world state rebuilt when a stage is entered out of order (a
 restore, or a QA warp) overrides `OnStageEntered(int stage)`.
 
+## Objectives: missions as composition
+
+A mission written as a bespoke state machine costs 300–500 lines. M01 is 480. Written
+76 more times that is the difference between a finished campaign and twelve good
+missions and sixty-seven unfinished ones — so the routine parts are a library:
+
+| Objective | What it does |
+|---|---|
+| `ReachZoneObjective` | get somewhere, on foot or in a vehicle |
+| `HoldZoneObjective` | stay in a zone for N seconds — data rips, thermite, dredging |
+| `KillTargetsObjective` | clear a specific set of peds |
+| `SurviveWavesObjective` | hold out against N waves, spawner supplied by the mission |
+| `EnterVehicleObjective` | get into a specific vehicle and seat |
+| `ProtectObjective` | fail if something dies or is wrecked |
+| `LoseWantedObjective` | shake the police |
+| `SwitchCharacterObjective` | the handoff as an explicit beat |
+| `AimAtObjective` | hold a weapon on a target — sniper set-ups, EMP locks |
+| `TimerObjective` | a countdown the stage runs under |
+| `RaceCheckpointObjective` | checkpoints and laps |
+
+A `ComposedMission` implements two methods — `Setup()` spawns the world,
+`BuildStages()` returns the mission:
+
+```csharp
+yield return new MissionStage("Clear the floor",
+        new KillTargetsObjective("Clear Sergei's men.", () => _guards))
+    .PlayedBy(CrewSlot.Ice)
+    .WithDialogue(2);
+```
+
+`.PlayedBy` locks switching to a character for that stage; `.OwnedBy` marks the
+objectives as theirs without locking, which is how a mission teaches switching by
+making the work only progress for the right character. `.WithDialogue(n)` fires that
+stage's cue block from the bible. Objective ticking, the on-screen objective line,
+stage advance, checkpoints, failure with a reason and teardown are handled once in
+the base class.
+
+SM01 is the reference: 236 lines bespoke, 142 composed, and most of what is left is
+spawning. Bespoke stays available — M01 uses it, and the Red-tier set pieces in
+`docs/FEASIBILITY.md` will need it.
+
+## Companion AI
+
+Companions run an explicit state machine (`CompanionController`), not generic GTA
+follower AI:
+
+```
+Follow ─┬─ Combat            in a fight, left alone
+        ├─ Hold              split-approach missions
+        ├─ Vehicle           boarding or riding the active character's car
+        ├─ Scripted          a mission has taken direct control
+        ├─ TeleportRecovery  beyond the leash, repositioned
+        └─ Downed            dead; respawns if configured
+```
+
+Vehicle boarding is deliberate rather than left to the AI. A companion who will not
+get into the getaway car ends a run faster than any firefight, so if the car is
+already moving or they are too far to reach it, they are warped into a free seat.
+Warping reads badly for a second; missing the extraction reads badly for a run.
+
 ## Writing a mission
 
 Subclass `Mission`, implement three methods, register it in `MissionRegistry`.

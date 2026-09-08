@@ -30,6 +30,7 @@ namespace Bloodlines.Crew
         private readonly Dictionary<CrewSlot, Ped> _peds = new Dictionary<CrewSlot, Ped>();
         private readonly Dictionary<CrewSlot, Blip> _blips = new Dictionary<CrewSlot, Blip>();
 
+        private readonly CompanionController _companions;
         private RelationshipGroup _crewGroup;
         private bool _groupsReady;
         private Ped _storyPed;
@@ -38,7 +39,11 @@ namespace Bloodlines.Crew
         public CrewRoster(ModConfig config)
         {
             _config = config;
+            _companions = new CompanionController(config);
         }
+
+        /// <summary>The companion state machine — missions can take direct control through it.</summary>
+        public CompanionController CompanionAI => _companions;
 
         public CrewSlot ActiveSlot { get; private set; } = CrewSlot.Ice;
 
@@ -53,7 +58,11 @@ namespace Bloodlines.Crew
         /// character. Missions that run three separate operations at once (M01, M06,
         /// M55) need this; a tailing crew would walk straight through the fiction.
         /// </summary>
-        public bool CompanionsHoldPosition { get; set; }
+        public bool CompanionsHoldPosition
+        {
+            get => _companions.HoldPosition;
+            set => _companions.HoldPosition = value;
+        }
 
         /// <summary>True while only one character is deployed (a solo mission).</summary>
         public bool IsSolo { get; private set; }
@@ -245,20 +254,16 @@ namespace Bloodlines.Crew
             var player = PedFor(ActiveSlot);
             if (player == null) return;
 
-            foreach (var ped in Companions)
+            foreach (var protagonist in Protagonist.All)
             {
-                ped.Task.ClearAll();
-                ped.AlwaysKeepTask = true;
-                ped.BlockPermanentEvents = true;
+                if (protagonist.Slot == ActiveSlot) continue;
 
-                if (CompanionsHoldPosition)
-                {
-                    ped.Task.GuardCurrentPosition();
-                }
-                else
-                {
-                    ped.Task.FollowToOffsetFromEntity(player, new Vector3(1.5f, -1.5f, 0f), 2.0f, -1, 4.0f, true);
-                }
+                var ped = PedFor(protagonist.Slot);
+                if (ped == null) continue;
+
+                // Force a fresh decision rather than leaving a stale task in place.
+                _companions.Forget(protagonist.Slot);
+                _companions.Update(protagonist.Slot, ped, player);
             }
         }
 
@@ -321,17 +326,10 @@ namespace Bloodlines.Crew
                     ped.Health = _config.CompanionHealthFloor;
                 }
 
-                if (ped.IsInCombat || CompanionsHoldPosition) continue;
-
-                var player = PedFor(ActiveSlot);
-                if (player != null && ped.Position.DistanceTo(player.Position) > _config.CompanionLeashDistance)
-                {
-                    // Companions that fall too far behind teleport back rather than
-                    // pathfinding across half of Los Santos and desyncing the mission.
-                    ped.Position = player.Position + player.ForwardVector * -2.5f;
-                    ped.Task.ClearAll();
-                    AssignCompanionAI();
-                }
+                // Follow / combat / vehicle / hold / recovery all live in the state
+                // machine, so there is one place to reason about what a companion is
+                // doing and why.
+                _companions.Update(protagonist.Slot, ped, PedFor(ActiveSlot));
             }
         }
 
@@ -434,6 +432,8 @@ namespace Bloodlines.Crew
 
                 GameUtils.SafeDelete(ped);
             }
+
+            foreach (var protagonist in Protagonist.All) _companions.Forget(protagonist.Slot);
 
             _peds.Clear();
             IsDeployed = false;

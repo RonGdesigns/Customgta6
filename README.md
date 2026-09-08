@@ -22,6 +22,8 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Dialogue director (bible's AudioManager) | working — speaker-coloured subtitles, WAV playback when present |
 | Checkpoints (bible's CheckpointManager) | working — stage, positions, health, wreck purge |
 | Mission framework — stage machine, tracked entities, pass/fail | working |
+| Objective library — 11 reusable objectives, missions as composition | working |
+| Companion AI — explicit state machine incl. vehicle boarding | working |
 | Mission dispatcher — registry-driven, prerequisites, external mission packs | working |
 | Save state — `savegame.json`: progress, economy, safehouses, fleet upgrades | working |
 | Fleet upgrades applied at runtime (turbine Granger, reinforced Kraken) | working |
@@ -75,8 +77,10 @@ When a new revision of the bible arrives, drop it in `docs/bibles/`, re-run
 `tools/parse_bible.py` and `tools/render_campaign_doc.py`, and rebuild. No C#
 changes are needed for new or rewritten missions — only for new mission *scripts*.
 
-`docs/BIBLE-NOTES.md` records where the two bibles disagree and the open questions
-the code had to answer to move forward.
+`docs/BIBLE-NOTES.md` records where the bibles disagree and the open questions the
+code had to answer to move forward. `docs/FEASIBILITY.md` tiers all 79 missions
+Green/Yellow/Red by how hard each is to make reliable in the engine, with the faking
+technique for every Red.
 
 ## Coordinates
 
@@ -110,6 +114,6 @@ data/                 generated campaign data (missions, dialogue, anchors, regi
 assets/               OpenIV DLC pack source — handling metadata, interiors to come
 config/               ini templates that ship to scripts/Bloodlines/
 tools/                bible parser, campaign doc renderer, voice generator, packager
-docs/                 install, toolchain, architecture, campaign, QA protocol, bible notes
+docs/                 install, toolchain, architecture, campaign, feasibility, QA, bible notes
 docs/bibles/          the source bibles and their extracted text
 ```
