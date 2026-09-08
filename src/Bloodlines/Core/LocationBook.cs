@@ -33,6 +33,10 @@ namespace Bloodlines.Core
             { "M01.RegroupPoint",     new Vector3(1073.0f, -3160.0f, 5.9f)  },
             { "M01.ExitPoint",        new Vector3(1180.0f, -2990.0f, 5.9f)  },
 
+            // --- Mission 02: Loose Strands (Olympic Freeway corridor, APPROX) ---
+            { "M02.InterceptStart",   new Vector3(102.0f, -1810.0f, 27.0f)  },
+            { "M02.CanalEscape",      new Vector3(285.0f, -1900.0f, 24.0f)  },
+
             // --- Crew safehouse: Cypress Flats industrial shop (Part I base, APPROX) ---
             { "Base.CypressFlats",    new Vector3(866.0f, -2110.0f, 30.5f)  }
         };
@@ -42,6 +46,7 @@ namespace Bloodlines.Core
             { "M01.CraneNest", 210f },
             { "M01.WarehouseBay", 90f },
             { "M01.PrototypeCar", 270f },
+            { "M02.InterceptStart", 60f },
             { "Base.CypressFlats", 175f }
         };
 

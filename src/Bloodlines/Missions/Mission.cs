@@ -39,6 +39,9 @@ namespace Bloodlines.Missions
 
         protected int Stage { get; private set; }
 
+        /// <summary>Stage index, for the checkpoint manager and the QA harness.</summary>
+        public int CurrentStage => Stage;
+
         protected int StageStartedAt { get; private set; }
 
         protected int SecondsInStage => (Game.GameTime - StageStartedAt) / 1000;
@@ -85,11 +88,17 @@ namespace Bloodlines.Missions
             }
         }
 
+        /// <summary>
+        /// Moves to the next stage, commits a checkpoint, and queues the bible's
+        /// dialogue for that stage. Stage numbering follows the cue ids (S1, S2, …),
+        /// so stage 0 in code is the mission's S1 block.
+        /// </summary>
         protected void Advance()
         {
             Stage++;
             StageStartedAt = Game.GameTime;
             Logger.Debug(Id + " -> stage " + Stage);
+            Ctx?.Checkpoints?.Commit(Id, Stage);
         }
 
         protected void GoToStage(int stage)
@@ -102,6 +111,37 @@ namespace Bloodlines.Missions
         protected void Objective(string text)
         {
             GameUtils.Subtitle("~y~" + text, 5000);
+        }
+
+        /// <summary>Fires one written line from the bible, by its cue id.</summary>
+        protected void Say(string cueId)
+        {
+            Ctx?.Dialogue?.Play(cueId);
+        }
+
+        /// <summary>Fires every line the bible assigns to a stage, in order.</summary>
+        protected void SayStage(int stage)
+        {
+            Ctx?.Dialogue?.PlayStage(Id, stage);
+        }
+
+        /// <summary>
+        /// Jumps to a stage after a checkpoint restore or a QA warp. Missions that
+        /// need to rebuild world state for a stage override <see cref="OnStageEntered"/>.
+        /// </summary>
+        public void JumpToStage(int stage)
+        {
+            if (Status != MissionStatus.Running) return;
+
+            GoToStage(stage);
+            try
+            {
+                OnStageEntered(stage);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Mission " + Id + " failed entering stage " + stage, ex);
+            }
         }
 
         public void Pass()
@@ -118,6 +158,7 @@ namespace Bloodlines.Missions
             Status = MissionStatus.Failed;
             FailReason = reason;
             Logger.Info("Mission failed: " + Id + " — " + reason);
+            Ctx?.Dialogue?.Clear();
             Cleanup();
         }
 
@@ -126,6 +167,7 @@ namespace Bloodlines.Missions
             if (Status != MissionStatus.Running) return;
             Status = MissionStatus.Aborted;
             Logger.Info("Mission aborted by player: " + Id);
+            Ctx?.Dialogue?.Clear();
             Cleanup();
         }
 
@@ -174,6 +216,33 @@ namespace Bloodlines.Missions
             Ctx?.Switching?.SetUnlocked();
         }
 
+        /// <summary>This mission's entry in the bible, or null if the data is missing.</summary>
+        protected MissionInfo Info
+        {
+            get
+            {
+                if (Ctx?.Data == null) return null;
+                return int.TryParse(Id.Substring(1), out int number) ? Ctx.Data.Mission(number) : null;
+            }
+        }
+
+        /// <summary>
+        /// Applies the time of day and weather the bible specifies for this mission.
+        /// Setting is not decoration here: half these missions are written around
+        /// darkness, fog or rain doing the concealment work.
+        /// </summary>
+        protected void ApplyBibleSetting()
+        {
+            var info = Info;
+            if (info == null) return;
+
+            info.ParseClock(out int hour, out int minute);
+            if (hour >= 0) GameUtils.SetClock(hour, minute);
+
+            GameUtils.SetWeather(info.Weather);
+            Logger.Debug(Id + " setting: " + info.Time + " / " + info.Weather);
+        }
+
         /// <summary>Spawn the world, set the first objective. Return false to reject the start.</summary>
         protected abstract bool OnStart();
 
@@ -182,6 +251,14 @@ namespace Bloodlines.Missions
 
         /// <summary>Undo anything the mission changed that is not a tracked entity.</summary>
         protected virtual void OnCleanup()
+        {
+        }
+
+        /// <summary>
+        /// Called when a stage is entered out of sequence — a checkpoint restore or a
+        /// QA stage warp. Rebuild whatever that stage assumes exists.
+        /// </summary>
+        protected virtual void OnStageEntered(int stage)
         {
         }
     }

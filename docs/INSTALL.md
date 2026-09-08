@@ -41,7 +41,12 @@ copy you mod.
 5. Copy the `config/` files into `<GTA V>/scripts/Bloodlines/` — the mod creates
    that folder and writes defaults on first run if you skip this, but the shipped
    inis are commented.
-6. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
+6. Copy the `data/` folder into `<GTA V>/scripts/Bloodlines/data/`. **This one is not
+   optional**: without it there are no mission titles, no objectives and no dialogue,
+   and the mod will say so on screen.
+7. Optional: put generated voice lines in `<GTA V>/scripts/Bloodlines/audio/` as
+   `<CUE_ID>.wav` (see `tools/generate_voice.py`). The campaign plays fine without them.
+8. Launch in **Story Mode**. `Bloodlines/Bloodlines.log` appears next to the inis;
    it is the first place to look when something doesn't happen.
 
 ## Controls
@@ -56,6 +61,37 @@ copy you mod.
 | `F11` | dev: capture the current coordinates (needs `[Dev] Enabled = True`) |
 
 All of them are remappable in `Bloodlines.ini`.
+
+### QA harness
+
+Track 4 of the bible, active only with `[Dev] Enabled = True` so a stray key never
+rewinds a player who didn't ask for a QA build:
+
+| Key | Action |
+|---|---|
+| `Numpad 1/2/3` | force a switch to Ice / Gohan / Guess |
+| `Caps Lock` | trigger the active character's ability |
+| `Page Up` / `Page Down` | warp the running mission forward / back one stage |
+| `Insert` | commit a checkpoint |
+| `Delete` | restore the last checkpoint |
+| `F11` | capture coordinates to `Bloodlines.Captures.ini` |
+
+`F9` reloads all SHVDN scripts without restarting the game — that one is SHVDN's own
+binding, not this mod's.
+
+### Folder layout when installed
+
+```
+Grand Theft Auto V/
+  ScriptHookV.dll, dinput8.dll, ScriptHookVDotNet.asi, ScriptHookVDotNet3.dll
+  scripts/
+    Bloodlines.dll
+    Bloodlines/
+      Bloodlines.ini, Bloodlines.Locations.ini, Bloodlines.Progress.ini
+      Bloodlines.log
+      data/     missions.tsv, dialogue.tsv, anchors.tsv
+      audio/    <CUE_ID>.wav  (optional)
+```
 
 ## Staying banned-free
 

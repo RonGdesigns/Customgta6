@@ -1,0 +1,297 @@
+
+PRODUCTION BIBLE & TECHNICAL MOD ARCHITECTURE
+LOS SANTOS: BLOODLINES
+A 70-Mission Tri-Protagonist Overhaul • Character Revision Edition
+■
+1. EXECUTIVE CONCEPT & NARRATIVE FOUNDATION
+Los Santos: Bloodlines
+ is an action-thriller narrative campaign built within the Grand Theft Auto V engine. The storyline
+centers on three Black childhood friends from South Central Davis who left on athletic and academic scholarships fifteen
+years prior. Having re-entered the criminal underworld through distinct, high-stakes trades, they inadvertently crash into one
+another during an offshore wetwork operation at Terminal Island.
+The design discards standard slow escort missions in favor of rapid, multi-vehicle combat operations featuring synchronized
+character switching, high-altitude drops, sea-to-land breaches, and full-city pursuits.
+■
+2. PROTAGONIST PROFILES & NPC MODEL BINDINGS
+Darius "Ice" Vance
+THE TACTICIAN • HEAVY
+ASSAULT
+Appearance:
+ Tall, imposing athletic
+build, long locs/dreads.
+GTA V Ped Hash:
+G_M_Y_FamCA_01
+ (or custom rigged
+IG_Claypain
+ / Franklin dreads
+variation)
+Special Ability:
+Overwatch Focus
+ —
+Slows combat stagger, enhances
+weapon penetration, and minimizes
+weapon recoil.
+Vehicle Focus:
+ Heavy armor, tactical
+gunships (Savage, Buzzard,
+Insurgent).
+Devin "Gohan" Mercer
+THE INSIDE MAN • BREAKER
+Appearance:
+ Medium height, stocky
+build, clean standard natural hair / low
+taper fade.
+GTA V Ped Hash:
+G_M_Y_FamDNF_01
+ (or
+MP_M_Freemode_01
+ custom face
+morph)
+Special Ability:
+Thermal Pulse
+ —
+Wall-penetrating vision tracking guard
+telemetry, cameras, and electrical
+conduits.
+Vehicle Focus:
+ High-spec tuners,
+stealth minisubs (Kraken), interceptors.
+Ron "Guess" Ortiz
+THE WHEELMAN • HOTFOOT
+Appearance:
+ Shorter, wiry build, clean
+bald head.
+GTA V Ped Hash:
+G_M_Y_BallaEast_01
+ (bald variant)
+or
+CS_Stretch
+ head mesh
+Special Ability:
+Slipstream Reflex
+ —
+Extreme driving time-dilation enabling
+instant weight recovery and impossibly
+sharp drift arcs.
+Vehicle Focus:
+ Tuner platforms, stunt
+planes (Mallard/Titan), speedboats.
+■
+3. THE INCITING COLLISION: "GHOST IN THE DOCKYARD"
+MISSION 01: TERMINAL ISLAND DRY-DOCKS (02:00 HOURS)
+Three unrelated contracts cross wires:
+Ice
+ is perched on a container crane to assassinate a cartel capo aboard a dry-
+docked superyacht;
+Gohan
+ infiltrates the vessel's lower decks to rip an encrypted cold-storage ledger;
+Guess
+ breaches
+the adjacent warehouse bay to boost a rare high-performance prototype car.
+The Fatal Recognition:
+ A dropped radio callsign exposes their identities. The three stop to verify each other's faces,
+creating a 90-second gap that allows the cartel target to flee on an armored launch while servers remain partially intact.
+The
+Cifuentes Cartel
+, private defense contractor
+Aegis Tactical
+, and the
+LSPD Special Investigations Division
+immediately tie the trio to the joint strike.
+GTA V: BLOODLINES — DESIGN BIBLE & MOD SPECIFICATION
+Page 1 of 4
+
+■
+4. 70-MISSION CAMPAIGN ARCHITECTURE
+PART I: THE BLEEDING TRAIL
+Missions 01 – 22
+Setting up base in an abandoned Cypress Flats industrial shop, the trio works to clean biometrics, settle gang bounties, and eliminate
+corrupt forensic detectives before their identities go live on federal wiretaps.
+M06: "Clean Sweep" (First Dynamic Tri-Switch)
+Heist on the Vespucci LSPD Evidence Depot. Gohan drops building power via access tunnels; Ice holds off tactical SWAT units in the
+alleyway using heavy ordnance; Guess handles the armored getaway van timed to a passing freight train.
+M10: "Open Throttle" (Combat Escort Gauntlet)
+Escorting a modified engine transport across Del Perro Freeway at 95+ mph under relentless attack from cartel choppers and dirt bikes.
+Ice repels gunships with an RPG, Gohan disables hostile ECUs via portable EMP, and Guess pits aggressive interceptors.
+M19–M22: "The Port of Los Santos Heist"
+Multi-phase major score involving Fort Zancudo Cargobobs, underwater container cutting, and high-speed maritime escape under Coast
+Guard fire.
+PART II: THE SQUEEZE
+Missions 23 – 48
+Driven out of Los Santos and into hiding across Blaine County. The crew discovers that Aegis Tactical and the Cifuentes Cartel are running
+an illicit arms pipeline through the Alamo Sea basin.
+M27: "Flight Risk" (Mid-Air Boarding Gauntlet)
+Guess maneuvers a stunt plane directly over a chartered Shamal jet at 8,000 feet. Ice skydives onto the roof, cuts the cabin hatch with a
+torch, and eliminates the cartel crew in freefall before dropping into the Pacific to Gohan’s speedboat.
+M34: "Mud & Iron" (Badlands Half-Track Escort)
+Traversing the Senora Desert in an armored half-track while dodging anti-materiel snipers mounted on wind turbines and low-flying
+planes dropping incendiary ordnance.
+M44–M48: "The Paleto Deep-Sea Incursion"
+Coordinated assault on an Aegis offshore oil platform using Kraken submersibles, mini-gun Mavericks, and hull-breaching thermite
+charges to seize cartel bearer bonds.
+PART III: SCORCHED EARTH
+Missions 49 – 70
+Total urban warfare as PMC units, cartel hit squads, and militarized police close the county borders. The crew executes an all-out offensive
+to wipe out the leadership of all three organizations simultaneously.
+M55: "Skyline Descent" (Triple Penthouse Raid)
+Simultaneous coordinated breaches into three high-rises across Downtown within an exact five-minute timer to zero out cartel escrow
+accounts.
+M62: "Steel Horizon" (Train / Sea / Air Convergence)
+Intercepting a high-speed coastal freight train. Ice clears automated flatbed rail turrets, Gohan matches speed in an ocean launch while
+jamming signals, and Guess extracts the crew via an Annihilator chopper.
+M68–M70: "Blood Brothers" (The Climax)
+A three-stage final offensive through the Los Santos River canal, the Maze Bank Tower, and an 18-wheeler running gun battle down
+Runway 30L at LSIA, ending with a three-man holdout inside a grounded cargo plane.
+■
+5. TECHNICAL IMPLEMENTATION FRAMEWORK
+SYSTEM LAYER
+MODDING TOOLCHAIN
+IMPLEMENTATION SPECIFICATION
+MISSION ENGINE
+Script Hook V .NET (C#)
+GTA V: BLOODLINES — DESIGN BIBLE & MOD SPECIFICATION
+Page 2 of 4
+
+SYSTEM LAYER
+MODDING TOOLCHAIN
+IMPLEMENTATION SPECIFICATION
+Controls dynamic 3-character switching, native cutscenes, mission
+checkpoints, and custom fail conditions.
+INTERIORS & NODES
+CodeWalker MLO Tools
+Opens inaccessible interiors (dock warehouses, penthouse suites,
+hangar bays) and lays AI combat cover nodes.
+ENTITIES & MODELS
+OpenIV (.RPF Archives)
+Injects exact NPC ped models (FamCA_01, FamDNF_01,
+BallaEast_01) and sets up custom weapon loads.
+SCRIPT PROTOTYPING
+Mission Maker v1.7+
+Used for fast route plotting, AI relationship groups (Hate/Like), and
+mission objective testing.
+■
+6. PRODUCTION SCRIPT: DYNAMIC 3-WAY CHARACTER SWITCH
+CONTROLLER
+C# script hook controlling character model spawning, camera transitions, and combat behavior for Ice, Gohan, and Guess:
+using
+ System;
+using
+ System.Windows.Forms;
+using
+ GTA;
+using
+ GTA.Math;
+using
+ GTA.Native;
+public class
+BloodlinesSwitchController
+ :
+Script
+{
+private
+Ped
+ ice, gohan, guess;
+private int
+ activeHero = 0;
+// 0 = Ice (Darius), 1 = Gohan (Devin), 2 = Guess (Ron)
+public
+BloodlinesSwitchController
+()
+    {
+        Tick += OnTick;
+        KeyUp += OnKeyUp;
+    }
+private void
+OnKeyUp
+(
+object
+ sender,
+KeyEventArgs
+ e)
+    {
+if
+ (e.KeyCode ==
+Keys
+.D1)
+ExecuteSwitch
+(0);
+if
+ (e.KeyCode ==
+Keys
+.D2)
+ExecuteSwitch
+(1);
+if
+ (e.KeyCode ==
+Keys
+.D3)
+ExecuteSwitch
+(2);
+    }
+private void
+ExecuteSwitch
+(
+int
+ targetIndex)
+    {
+if
+ (targetIndex == activeHero)
+return
+;
+Ped
+ target = (targetIndex == 0) ? ice : (targetIndex == 1) ? gohan : guess;
+Ped
+ current =
+Game
+.Player.Character;
+if
+ (target !=
+null
+ && target.IsAlive)
+        {
+// Trigger GTA V aerial camera transition
+Function
+.
+Call
+(
+Hash
+.START_PLAYER_SWITCH, current, target, 0, 1);
+Game
+.Player.
+ChangeModel
+(target.Model);
+// Assign combat posture to companion AI when relinquished
+            current.Task.
+FightAgainstHatedTargets
+(200.0f);
+            activeHero = targetIndex;
+        }
+    }
+private void
+OnTick
+(
+object
+ sender,
+EventArgs
+ e)
+    {
+// Keep unswitched companions from dropping to random ambient damage
+if
+ (ice !=
+null
+ && activeHero != 0) ice.Health = 200;
+if
+ (gohan !=
+null
+ && activeHero != 1) gohan.Health = 200;
+GTA V: BLOODLINES — DESIGN BIBLE & MOD SPECIFICATION
+Page 3 of 4
+
+if
+ (guess !=
+null
+ && activeHero != 2) guess.Health = 200;
+    }
+}
+GTA V: BLOODLINES — DESIGN BIBLE & MOD SPECIFICATION
+Page 4 of 4

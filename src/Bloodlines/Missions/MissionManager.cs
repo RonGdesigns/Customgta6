@@ -11,15 +11,19 @@ namespace Bloodlines.Missions
     {
         private readonly MissionContext _context;
         private readonly CampaignProgress _progress;
+        private readonly MissionCatalog _catalog;
 
         private Mission _current;
         private MissionDefinition _currentDefinition;
 
-        public MissionManager(MissionContext context, CampaignProgress progress)
+        public MissionManager(MissionContext context, CampaignProgress progress, MissionCatalog catalog)
         {
             _context = context;
             _progress = progress;
+            _catalog = catalog;
         }
+
+        public MissionCatalog Catalog => _catalog;
 
         public bool IsRunning => _current != null && _current.Status == MissionStatus.Running;
 
@@ -43,6 +47,9 @@ namespace Bloodlines.Missions
                 Logger.Warn("Attempted to start unwritten mission " + definition.Id);
                 return false;
             }
+
+            _context.Checkpoints.Clear();
+            _context.Dialogue.Clear();
 
             var mission = definition.Factory();
             if (!mission.Begin(_context))
@@ -107,6 +114,31 @@ namespace Bloodlines.Missions
         private void Finish()
         {
             _current = null;
+        }
+
+        /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
+        public void CommitCheckpoint()
+        {
+            if (!IsRunning) return;
+            _context.Checkpoints.Commit(_current.Id, _current.CurrentStage);
+            GameUtils.Subtitle("~g~Checkpoint committed — stage " + _current.CurrentStage, 2500);
+        }
+
+        /// <summary>QA harness: restore the last checkpoint of the running mission.</summary>
+        public void RestoreCheckpoint()
+        {
+            if (!IsRunning) return;
+            int stage = _context.Checkpoints.Restore(_current.Id);
+            if (stage >= 0) _current.JumpToStage(stage);
+        }
+
+        /// <summary>QA harness: step the running mission forward or back a stage.</summary>
+        public void WarpStage(int delta)
+        {
+            if (!IsRunning) return;
+            int stage = System.Math.Max(0, _current.CurrentStage + delta);
+            _current.JumpToStage(stage);
+            GameUtils.Subtitle("~y~Stage warp -> " + stage, 2500);
         }
 
         /// <summary>Called on mod teardown so an aborted session leaves no mission peds behind.</summary>

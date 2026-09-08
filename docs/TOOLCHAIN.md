@@ -9,7 +9,8 @@ Section 5 of the design bible maps onto real tools like this.
 | Entities & models | **OpenIV** | injecting custom ped models, liveries and weapon loads into `mods/update.rpf` | not started — the mod currently uses stock peds |
 | Prototyping | **Map Editor / Menyoo** | fast route plotting and prop placement, exported and hand-carried into script data | optional |
 | Cutscenes | scripted cameras + `PLAY_SYNCHRONIZED_*` | there is no usable cutscene *authoring* tool; cinematics are hand-built from camera interpolation and synced scene anims | not started |
-| Audio | OpenIV + custom `.awc` | dialogue is the single most expensive unshipped piece of a campaign this size | not started |
+| Dialogue | `tools/generate_voice.py` → WAV | 255 written lines batch-generated through ElevenLabs (bible Track 3) and played by `DialogueDirector`; subtitles work with no audio at all | tool ready, no lines generated |
+| Ambient audio | OpenIV + custom `.awc` | in-world sound beyond dialogue | not started |
 
 ## Ped models
 
@@ -27,10 +28,24 @@ Swapping any of these for a custom rigged ped is a one-line change in
 right call eventually — a story built on three specific faces should not be wearing
 ambient gang models — but nothing in the code depends on that happening first.
 
+## The bible pipeline
+
+`tools/parse_bible.py` reads a bible PDF and writes `data/*.tsv`;
+`tools/render_campaign_doc.py` regenerates `docs/CAMPAIGN.md` from it;
+`tools/generate_voice.py` turns `data/dialogue.tsv` into a voice pack. All three are
+dependency-free Python 3 — no pip install, no venv — because a content pipeline that
+breaks when a machine changes is a pipeline nobody re-runs.
+
+```bash
+python3 tools/parse_bible.py docs/bibles/omnibus_v2.pdf
+python3 tools/render_campaign_doc.py
+python3 tools/generate_voice.py --mission M01 --dry-run
+```
+
 ## Order of work that actually converges
 
-1. **Vertical slice.** One mission, played until it is fun. (M01 is drafted; it has
-   not been tuned in game.)
+1. **Vertical slice.** One mission, played until it is fun. (M01 and M02 are drafted;
+   neither has been tuned in game.)
 2. **Framework hardening.** Checkpoints, mid-mission saves, replay, mission fail
    flows — cheaper to fix at mission 1 than at mission 20.
 3. **Interiors.** MLOs gate several bible missions (evidence depot, penthouses, the

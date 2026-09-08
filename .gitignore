@@ -6,3 +6,4 @@ obj/
 lib/*.dll
 Bloodlines.log
 Bloodlines.Captures.ini
+build/

@@ -10,19 +10,22 @@ using GTA;
 namespace Bloodlines
 {
     /// <summary>
-    /// Mod entry point. SHVDN constructs this once when the script loads and again
-    /// after every reload, so everything it owns must be re-creatable and every
-    /// world change it makes must be undone in <see cref="OnAborted"/>.
+    /// Mod entry point — the bible's BloodlinesCore. SHVDN constructs this on load
+    /// and again after every reload, so everything it owns must be re-creatable and
+    /// every world change it makes must be undone in <see cref="OnAborted"/>.
     /// </summary>
     public sealed class BloodlinesMain : Script
     {
         private readonly ModConfig _config;
+        private readonly CampaignData _data;
+        private readonly MissionCatalog _catalog;
         private readonly CrewRoster _crew;
         private readonly SwitchController _switching;
         private readonly AbilityController _abilities;
+        private readonly DialogueDirector _dialogue;
+        private readonly CheckpointManager _checkpoints;
         private readonly MissionManager _missions;
         private readonly CampaignProgress _progress;
-        private readonly LocationBook _locations;
 
         private int _abortHeldSince;
 
@@ -35,15 +38,20 @@ namespace Bloodlines
             Logger.Configure(Path.Combine(root, "Bloodlines.log"), _config.VerboseLogging);
             Logger.Info("Los Santos: Bloodlines loading.");
 
-            _locations = LocationBook.Load(Path.Combine(root, "Bloodlines.Locations.ini"));
-            _progress = CampaignProgress.Load(Path.Combine(root, "Bloodlines.Progress.ini"));
+            var locations = LocationBook.Load(Path.Combine(root, "Bloodlines.Locations.ini"));
+            _data = CampaignData.Load(Path.Combine(root, "data"));
+            _catalog = new MissionCatalog(_data);
+            _progress = CampaignProgress.Load(Path.Combine(root, "Bloodlines.Progress.ini"), _catalog);
 
             _crew = new CrewRoster(_config);
             _switching = new SwitchController(_crew);
             _abilities = new AbilityController(_config, _crew);
+            _dialogue = new DialogueDirector(_data, Path.Combine(root, "audio"));
+            _checkpoints = new CheckpointManager(_crew);
 
-            var context = new MissionContext(_config, _locations, _crew, _switching, _abilities);
-            _missions = new MissionManager(context, _progress);
+            var context = new MissionContext(_config, locations, _data, _crew, _switching,
+                _abilities, _dialogue, _checkpoints);
+            _missions = new MissionManager(context, _progress, _catalog);
 
             Interval = 0;
             Tick += OnTick;
@@ -51,8 +59,8 @@ namespace Bloodlines
             KeyUp += OnKeyUp;
             Aborted += OnAborted;
 
-            Logger.Info("Ready. " + _progress.CompletedCount + "/70 missions complete. " +
-                        "Deploy crew with " + _config.DeployCrewKey + ", start a mission with " + _config.MissionStartKey + ".");
+            Logger.Info("Ready. " + _progress.CompletedCount + "/70 complete. Deploy crew with " +
+                        _config.DeployCrewKey + ", start a mission with " + _config.MissionStartKey + ".");
         }
 
         private void OnTick(object sender, EventArgs e)
@@ -61,6 +69,7 @@ namespace Bloodlines
             {
                 _crew.Update();
                 _abilities.Update();
+                _dialogue.Update();
                 _missions.Update();
                 HandleAbortHold();
             }
@@ -86,17 +95,44 @@ namespace Bloodlines
         {
             try
             {
-                if (e.KeyCode == _config.SwitchIceKey) _switching.TrySwitch(CrewSlot.Ice);
-                else if (e.KeyCode == _config.SwitchGohanKey) _switching.TrySwitch(CrewSlot.Gohan);
-                else if (e.KeyCode == _config.SwitchGuessKey) _switching.TrySwitch(CrewSlot.Guess);
-                else if (e.KeyCode == _config.AbilityKey) _abilities.Toggle();
-                else if (e.KeyCode == _config.MissionStartKey) StartMission();
-                else if (e.KeyCode == _config.DeployCrewKey) ToggleDeployment();
-                else if (e.KeyCode == _config.AbortKey && _abortHeldSince == 0) _abortHeldSince = Game.GameTime;
+                if (HandleGameplayKey(e.KeyCode)) return;
+                if (_config.DevToolsEnabled) HandleQaKey(e.KeyCode);
             }
             catch (Exception ex)
             {
                 Logger.Error("Key handling failed", ex);
+            }
+        }
+
+        private bool HandleGameplayKey(Keys key)
+        {
+            if (key == _config.SwitchIceKey) { _switching.TrySwitch(CrewSlot.Ice); return true; }
+            if (key == _config.SwitchGohanKey) { _switching.TrySwitch(CrewSlot.Gohan); return true; }
+            if (key == _config.SwitchGuessKey) { _switching.TrySwitch(CrewSlot.Guess); return true; }
+            if (key == _config.AbilityKey) { _abilities.Toggle(); return true; }
+            if (key == _config.MissionStartKey) { StartMission(); return true; }
+            if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }
+            if (key == _config.AbortKey && _abortHeldSince == 0) { _abortHeldSince = Game.GameTime; return true; }
+            return false;
+        }
+
+        /// <summary>
+        /// Track 4 of the bible: the in-engine debugging harness. Off unless
+        /// [Dev] Enabled is set, because a stray Delete key mid-mission would
+        /// otherwise rewind a player who never asked for a QA build.
+        /// </summary>
+        private void HandleQaKey(Keys key)
+        {
+            switch (key)
+            {
+                case Keys.NumPad1: _switching.TrySwitch(CrewSlot.Ice); break;
+                case Keys.NumPad2: _switching.TrySwitch(CrewSlot.Gohan); break;
+                case Keys.NumPad3: _switching.TrySwitch(CrewSlot.Guess); break;
+                case Keys.Capital: _abilities.Toggle(); break;
+                case Keys.PageUp: _missions.WarpStage(1); break;
+                case Keys.PageDown: _missions.WarpStage(-1); break;
+                case Keys.Insert: _missions.CommitCheckpoint(); break;
+                case Keys.Delete: _missions.RestoreCheckpoint(); break;
             }
         }
 
@@ -109,6 +145,12 @@ namespace Bloodlines
         {
             if (_missions.IsRunning) return;
 
+            if (!_data.IsLoaded)
+            {
+                GameUtils.Notify("~r~No campaign data.~s~ Copy data/ into scripts/Bloodlines/data/.");
+                return;
+            }
+
             var next = _progress.NextPlayable();
             if (next == null)
             {
@@ -117,10 +159,14 @@ namespace Bloodlines
             }
 
             // Missions own their own deployment; a free-roam crew would fight the
-            // mission's split spawn, so stand it down first.
+            // mission's spawn, so stand it down first.
             if (_crew.IsDeployed) StandDown();
 
-            _missions.Start(next);
+            if (_missions.Start(next))
+            {
+                GameUtils.Notify("~b~" + next.Id + "~s~ — " + next.Title + "~n~" + next.Info.Location +
+                                 " · " + next.Info.Time);
+            }
         }
 
         private void ToggleDeployment()
@@ -152,6 +198,7 @@ namespace Bloodlines
         private void StandDown()
         {
             _abilities.Stop();
+            _dialogue.Clear();
             _crew.Dismiss();
             GameUtils.Notify("~y~Crew stood down.");
         }
@@ -163,6 +210,7 @@ namespace Bloodlines
                 Logger.Info("Script aborting — tearing down.");
                 _missions.Shutdown();
                 _abilities.Stop();
+                _dialogue.Clear();
                 _crew.Dismiss();
                 Game.TimeScale = 1.0f;
             }

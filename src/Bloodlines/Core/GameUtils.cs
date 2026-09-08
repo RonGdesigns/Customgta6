@@ -100,6 +100,37 @@ namespace Bloodlines.Core
             Function.Call(Hash.PLAY_SOUND_FRONTEND, -1, sound, set, true);
         }
 
+        public static void SetClock(int hour, int minute)
+        {
+            Function.Call(Hash.SET_CLOCK_TIME, hour, minute, 0);
+        }
+
+        /// <summary>
+        /// Maps the bible's prose weather ("Storm / Breakers", "Foggy Sunrise") onto a
+        /// RAGE weather type. Unmatched descriptions leave the weather alone rather
+        /// than guessing, so an unrecognised phrase never overrides a deliberate one.
+        /// </summary>
+        public static void SetWeather(string description)
+        {
+            if (string.IsNullOrEmpty(description)) return;
+
+            string text = description.ToUpperInvariant();
+            string weather = null;
+
+            if (text.Contains("THUNDER") || text.Contains("STORM") || text.Contains("TYPHOON")) weather = "THUNDER";
+            else if (text.Contains("RAIN") || text.Contains("DRIZZLE")) weather = "RAIN";
+            else if (text.Contains("FOG") || text.Contains("MIST") || text.Contains("SALT FOG")) weather = "FOGGY";
+            else if (text.Contains("SMOG") || text.Contains("SMOKE") || text.Contains("DUST") || text.Contains("SAND")) weather = "SMOG";
+            else if (text.Contains("OVERCAST") || text.Contains("SHALE")) weather = "OVERCAST";
+            else if (text.Contains("SUNRISE") || text.Contains("CLEARING")) weather = "CLEARING";
+            else if (text.Contains("BLIZZARD") || text.Contains("SNOW")) weather = "XMAS";
+            else if (text.Contains("CLEAR") || text.Contains("SUN") || text.Contains("GLARE") || text.Contains("HEAT")) weather = "EXTRASUNNY";
+
+            if (weather == null) return;
+
+            Function.Call(Hash.SET_WEATHER_TYPE_NOW, weather);
+        }
+
         public static void FadeOut(int ms)
         {
             Function.Call(Hash.DO_SCREEN_FADE_OUT, ms);

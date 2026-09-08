@@ -13,19 +13,21 @@ namespace Bloodlines.Missions
     public sealed class CampaignProgress
     {
         private readonly string _path;
+        private readonly MissionCatalog _catalog;
         private readonly HashSet<int> _completed = new HashSet<int>();
 
-        private CampaignProgress(string path)
+        private CampaignProgress(string path, MissionCatalog catalog)
         {
             _path = path;
+            _catalog = catalog;
         }
 
-        public static CampaignProgress Load(string path)
+        public static CampaignProgress Load(string path, MissionCatalog catalog)
         {
-            var progress = new CampaignProgress(path);
+            var progress = new CampaignProgress(path, catalog);
             var settings = ScriptSettings.Load(path);
 
-            foreach (var definition in MissionRegistry.All)
+            foreach (var definition in catalog.All)
             {
                 if (settings.GetValue<bool>("Completed", definition.Id, false))
                 {
@@ -44,8 +46,8 @@ namespace Bloodlines.Missions
         /// <summary>Lowest-numbered mission that is playable and not yet finished.</summary>
         public MissionDefinition NextPlayable()
         {
-            return MissionRegistry.Playable.FirstOrDefault(m => !IsComplete(m.Number))
-                   ?? MissionRegistry.Playable.FirstOrDefault();
+            return _catalog.Playable.FirstOrDefault(m => !IsComplete(m.Number))
+                   ?? _catalog.Playable.FirstOrDefault();
         }
 
         public void MarkComplete(int number)
@@ -63,7 +65,7 @@ namespace Bloodlines.Missions
         private void Save()
         {
             var settings = ScriptSettings.Load(_path);
-            foreach (var definition in MissionRegistry.All)
+            foreach (var definition in _catalog.All)
             {
                 settings.SetValue("Completed", definition.Id, IsComplete(definition.Number));
             }
