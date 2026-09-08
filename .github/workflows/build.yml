@@ -1,0 +1,22 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # net48 builds on Linux via Microsoft.NETFramework.ReferenceAssemblies, and
+      # ScriptHookVDotNet3 is a compile-time NuGet reference, so no Windows runner
+      # and no game install are needed to catch API breakage.
+      - name: Build
+        run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror

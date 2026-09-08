@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>Bloodlines</AssemblyName>
+    <RootNamespace>Bloodlines</RootNamespace>
+    <LangVersion>9.0</LangVersion>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Company>Los Santos: Bloodlines</Company>
+    <Product>Los Santos: Bloodlines</Product>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+  <!--
+    ScriptHookVDotNet3 is pulled from NuGet purely as a compile-time reference.
+    The DLL that actually runs is the one shipped with your SHVDN install next
+    to GTA5.exe, so nothing here is copied to the output: shipping a second copy
+    into scripts/ makes SHVDN load two assemblies and the mod silently dies.
+    Pin this to the SHVDN version you have installed. See docs/INSTALL.md.
+  -->
+  <ItemGroup>
+    <PackageReference Include="ScriptHookVDotNet3" Version="3.6.0">
+      <ExcludeAssets>runtime</ExcludeAssets>
+      <Private>false</Private>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Reference assemblies so the project also builds on Linux/CI without a Windows SDK. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

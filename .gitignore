@@ -1,0 +1,8 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+lib/*.dll
+Bloodlines.log
+Bloodlines.Captures.ini
