@@ -35,45 +35,61 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Ground(Ctx.Locations, "M06.Culvert", "M06.Feeder", "M06.SallyPort", "M06.ServerRacks", "M06.AlleyHold", "M06.GrangerSpawn")) return false;
             _feeder = Ctx.Locations.Position("M06.Feeder");
             _sallyPort = Ctx.Locations.Position("M06.SallyPort");
             _racks = Ctx.Locations.Position("M06.ServerRacks");
             _alley = Ctx.Locations.Position("M06.AlleyHold");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, Ctx.Locations.Position("M06.Culvert"), 0f)) return false;
+            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, new Dictionary<CrewSlot, PedPlacement>
+            {
+                [CrewSlot.Gohan] = new PedPlacement(Ctx.Locations.Position("M06.Culvert"), 0f),
+                [CrewSlot.Ice] = new PedPlacement(_alley, Ctx.Locations.Heading("M06.AlleyHold")),
+                [CrewSlot.Guess] = new PedPlacement(Ctx.Locations.Position("M06.GrangerSpawn"), Ctx.Locations.Heading("M06.GrangerSpawn"))
+            })) return false;
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            Ctx.Crew.PedFor(CrewSlot.Ice).Task.GuardCurrentPosition();
 
             ApplyBibleSetting();
             SpawnGranger();
+            if (_granger == null || !_granger.Exists()) return false;
+            Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_granger, VehicleSeat.Driver);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Cut the power",
-                    new HoldZoneObjective("Gohan — sever the 480-volt feeder.", () => _feeder, 6, 3f,
-                        "Cutting the feeder"))
+                    new MissionInteraction("Gohan: cut the marked power feeder", () => _feeder, 6, 3f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                .OnExit(context => Say("M06_S1_01_GOHAN"));
 
             yield return new MissionStage("Sally port",
-                    new ReachZoneObjective("Ice — breach the sally port.", () => _sallyPort, 5f))
-                .OwnedBy(CrewSlot.Ice);
+                    new ReachZoneObjective("Ice: walk into the yellow depot ENTRANCE marker. No ability or button is needed.", () => _sallyPort, 5f))
+                .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context => Say("M06_S1_02_ICE"));
 
             // The burn and the siege run together: the thermite does not care how the
             // alley is going, and the alley does not stop when the racks are slag.
             yield return new MissionStage("Burn the racks",
-                    new HoldZoneObjective("Gohan — thermite the server racks.", () => _racks, 20, 3f,
-                        "Thermite burning"),
-                    new SurviveWavesObjective("Ice — hold the alley.", SpawnSwatWave, 3, 6000))
-                .WithDialogue(2)
-                .OnEnter(context => Game.Player.WantedLevel = 3)
-                .OnExit(context => GameUtils.Subtitle("~g~Core is slag. The biometrics are gone.", 4000));
+                    new AssignedWorkObjective("Gohan is preparing the thermite. Ice: hold the alley while he works.", CrewSlot.Gohan, () => _racks, 20),
+                    new SurviveWavesObjective("Ice: defeat the RED-marked SWAT waves while Gohan finishes the burn. Stay on Ice.", SpawnSwatWave, 3, 6000))
+                .OwnedBy(CrewSlot.Ice)
+                
+                .OnEnter(context => { Say("M06_S2_03_ICE"); Game.Player.WantedLevel = 3; context.Crew.CompanionAI.ReleaseControl(CrewSlot.Ice); context.Crew.CompanionsHoldPosition = true; })
+                .OnExit(context => { Say("M06_S2_04_GOHAN"); GameUtils.Subtitle("~g~Core is slag. Return to the Granger.", 4000); });
 
             yield return new MissionStage("Reverse extraction",
-                    new EnterVehicleObjective("Get in the Granger.", () => _granger))
+                    new EnterVehicleObjective("Switch to Guess in the Granger and wait for Ice and Gohan to board.", () => _granger, VehicleSeat.Driver, requireCrew: true))
+                .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context =>
                 {
+                    Say("M06_S2_05_GUESS");
+                    context.Crew.CompanionAI.ReleaseAll();
+                    context.Crew.CompanionsHoldPosition = false;
+                    context.Crew.CompanionAI.RequireSharedVehicle = true;
                     if (_granger != null && _granger.Exists()) _granger.IsEngineRunning = true;
+                    context.Crew.AssignCompanionAI();
                 });
 
             yield return new MissionStage("Out of Vespucci",

@@ -34,7 +34,8 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            _dredge = Ctx.Locations.Position("M24.DredgePoint");
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            _dredge = Ctx.Locations.Position("M24.CraneSpawn") + new Vector3(-12f, 0f, 0f);
             _ridge = Ctx.Locations.Position("M24.RidgeLine");
             _bunker = Ctx.Locations.Position("M23.BunkerDoor");
 
@@ -46,36 +47,42 @@ namespace Bloodlines.Missions.Campaign
 
             ApplyBibleSetting();
             SpawnCrane();
+            if (!RequireAssets(_crane)) return false;
+            Station(CrewSlot.Ice, _ridge + new Vector3(0f, -25f, 0f));
+            Station(CrewSlot.Gohan, _dredge + new Vector3(15f, -10f, 0f));
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Into the shallows",
-                    new DeliverVehicleObjective("Guess — back the crane truck into the shallows.",
+                    new DeliverVehicleObjective("Guess — park the recovery truck at the dry shoreline marker.",
                         () => _crane, () => _dredge, 18f))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             // The dredge and the shakedown run together: Ice is holding the ridge for
             // exactly as long as the cable takes.
             yield return new MissionStage("Dredge the crates",
-                    new HoldZoneObjective("Work the crane cable.", () => _dredge, 22, 12f, "Dredging"),
-                    new SurviveWavesObjective("Ice — keep the deputies off the haul.", SpawnDeputyWave, 2, 5000),
+                    new AssignedWorkObjective("Guess works the recovery cable. Ice: cover him from the ridge.", CrewSlot.Guess, () => _dredge, 22),
+                    new SurviveWavesObjective("Ice — keep the deputies off the haul.", SpawnDeputyWave, 2, 5000) { RequiredCharacter = CrewSlot.Ice },
                     new ProtectObjective("", () => _crane, "The crane truck was destroyed."))
-                .WithDialogue(1)
+                
                 .OnExit(context =>
                 {
                     context.State.AlamoGoldDredgedTons += 5f;
                     context.State.CashOnHand += 200000;
                     GameUtils.Subtitle("~g~Five tons up. Twenty-five still in the mud.", 5000);
-                });
+                })
+                .AfterCues("M24_S1_01_GUESS")
+                .WithCues("M24_S1_02_ICE");
 
             yield return new MissionStage("Back to the bunker",
                     new DeliverVehicleObjective("Get the haul to the radar base.",
-                        () => _crane, () => _bunker, 35f),
+                        () => _crane, () => _bunker, 35f) { RequiredCharacter = CrewSlot.Guess },
                     new ProtectObjective("", () => _crane, "The crane truck was destroyed."))
-                .OnExit(context => GameUtils.Subtitle("~g~Cash reserves replenished for Blaine operations.", 5000));
+                .OnExit(context => GameUtils.Subtitle("~g~Cash reserves replenished for Blaine operations.", 5000))
+                .AfterCues("M24_S1_03_GOHAN");
         }
 
         private IEnumerable<Ped> SpawnDeputyWave(int wave)

@@ -33,6 +33,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _launch = Ctx.Locations.Position("M13.KayakLaunch");
             _slipway = Ctx.Locations.Position("M13.CanalSlipway");
             _barges.Add(Ctx.Locations.Position("M13.BargeOne"));
@@ -50,36 +51,42 @@ namespace Bloodlines.Missions.Campaign
             SpawnKayak();
             SpawnGranger();
             SpawnWatchmen();
+            if (!RequireAssets(_kayak, _granger)) return false;
+            Station(CrewSlot.Ice, _kayak, VehicleSeat.Driver);
+            Station(CrewSlot.Guess, _granger, VehicleSeat.Driver);
+            Station(CrewSlot.Gohan, _granger, VehicleSeat.Passenger);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Into the basin",
-                    new EnterVehicleObjective("Ice — take the kayak into the basin.", () => _kayak))
+                    new EnterVehicleObjective("Ice — take the water scooter into the basin.", () => _kayak))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Limpets",
                     new MultiHoldObjective("Plant limpet charges on all three barges.",
-                        _barges, 6, 4f, "Arming the charge"),
+                        _barges, 6, 6f, "Arming the charge", () => _kayak),
                     new AvoidDetectionObjective(() => _watchmen,
                         "A dock watchman called it in before the charges were set.", 40f, 4))
-                .OwnedBy(CrewSlot.Ice);
+                .OwnedBy(CrewSlot.Ice)
+                .AfterCues("M13_S1_01_ICE");
 
             yield return new MissionStage("Clear the water",
                     new ReachZoneObjective("Get to the western slipway.", () => _slipway, 10f))
-                .WithDialogue(1)
-                .OnEnter(context => GameUtils.Subtitle("~y~Guess is idling on the slipway. Move.", 4000));
+                
+                .OnEnter(context => GameUtils.Subtitle("~y~Guess is idling on the slipway. Move.", 4000))
+                .WithCues("M13_S1_02_GUESS");
 
             yield return new MissionStage("Blow the basin",
-                    new EnterVehicleObjective("Get in the Granger and hit the clacker.",
-                        () => _granger))
+                    new MissionInteraction("Ice: board the Granger, then trigger the planted charges", () => _granger.Position, 1, 5f, () => _granger))
                 .OnExit(context =>
                 {
                     Detonate();
                     GameUtils.Subtitle("~g~Basin's an inferno. Nothing in the water follows us now.", 6000);
-                });
+                })
+                .AfterCues("M13_S1_03_ICE");
         }
 
         /// <summary>
@@ -110,7 +117,7 @@ namespace Bloodlines.Missions.Campaign
             var blip = Track(_kayak.AddBlip());
             blip.Sprite = BlipSprite.Boat;
             blip.Color = BlipColor.Green;
-            blip.Name = "Kayak";
+            blip.Name = "Water scooter";
         }
 
         private void SpawnGranger()
@@ -140,7 +147,7 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < _barges.Count; i++)
             {
-                var watchman = World.CreatePed(model, _barges[i] + new Vector3(6f, 4f, 1f), 180f);
+                var watchman = World.CreatePed(model, _slipway + new Vector3(-12f + i * 9f, 12f, 0f), 180f);
                 if (watchman == null || !watchman.Exists()) continue;
 
                 watchman.RelationshipGroup = cartel;

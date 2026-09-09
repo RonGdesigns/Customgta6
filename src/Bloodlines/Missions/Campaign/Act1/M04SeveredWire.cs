@@ -34,11 +34,12 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Ground(Ctx.Locations, "M04.GarageEntry", "M04.Breaker", "M04.RampGuards", "M04.ChaseCar")) return false;
             _breaker = Ctx.Locations.Position("M04.Breaker");
             _crashSite = Ctx.Locations.Position("M04.TextileCrash");
 
             var entry = Ctx.Locations.Position("M04.GarageEntry");
-            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, entry, 0f)) return false;
+            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, new Dictionary<CrewSlot, PedPlacement> { [CrewSlot.Gohan] = new PedPlacement(entry - new Vector3(15,10,0),0), [CrewSlot.Ice] = new PedPlacement(entry + new Vector3(0,18,0),180), [CrewSlot.Guess] = new PedPlacement(Ctx.Locations.Position("M04.ChaseCar"),250) })) return false;
 
             ApplyBibleSetting();
             Ctx.Abilities.Refill();
@@ -46,55 +47,53 @@ namespace Bloodlines.Missions.Campaign
             SpawnMiller();
             SpawnBodyguards();
             SpawnChaseCar();
+            if (_miller == null || !_miller.Exists() || _millerCar == null || !_millerCar.Exists() || _chaseCar == null || !_chaseCar.Exists() || _bodyguards.Count != 6) return false;
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_chaseCar, VehicleSeat.Driver);
+            _miller.IsInvincible = true;
+            _miller.SetIntoVehicle(_millerCar, VehicleSeat.Driver);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Kill the lights",
-                    new HoldZoneObjective("Gohan — cut the transformer breaker on B3.", () => _breaker, 5, 3f,
-                        "Cutting the feeder"))
+                    new MissionInteraction("Gohan: cut the marked surface-lot breaker", () => _breaker, 5, 3f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1)
-                .OnEnter(context =>
-                    GameUtils.Subtitle("~y~Thermal Pulse (" + context.Config.AbilityKey + ") sees through the dark.", 5000));
+                .OnEnter(context => Say("M04_S1_01_GOHAN"))
+                .OnExit(context => Say("M04_S1_02_ICE"));
 
             yield return new MissionStage("Take the ramp",
                     new KillTargetsObjective("Ice — clear Miller's escort.", () => _bodyguards))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
                 {
-                    GameUtils.FadeOut(400);
-                    Script.Wait(450);
-                    GameUtils.FadeIn(600);
+                    // Power is cut; gameplay stays with the player.
 
                     foreach (var guard in _bodyguards)
                     {
-                        if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(60f);
+                        if (guard != null && guard.Exists()) { guard.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS"); guard.Task.FightAgainstHatedTargets(60f); }
                     }
 
-                    // Miller does not stay for the firefight — that is the whole mission.
-                    if (_miller != null && _miller.Exists() && _millerCar != null && _millerCar.Exists())
-                    {
-                        _miller.Task.WarpIntoVehicle(_millerCar, VehicleSeat.Driver);
-                        _miller.Task.CruiseWithVehicle(_millerCar, 35f, DrivingStyle.Rushed);
-                    }
+
                 });
 
             yield return new MissionStage("Get after him",
                     new EnterVehicleObjective("Guess — get behind the wheel.", () => _chaseCar, VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(2);
+                .OnEnter(context => Say("M04_S2_03_GUESS"));
 
             yield return new MissionStage("Run him down",
-                    new PursueTargetObjective("Run Miller off the road.", () => _miller,
+                    new PursueTargetObjective("Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive.", () => _miller,
                         "Miller reached his handler and the forensics went with him."))
-                .OnEnter(context => Game.Player.WantedLevel = 2);
+                .OwnedBy(CrewSlot.Guess)
+                .OnEnter(context => { Game.Player.WantedLevel = 2; _miller.IsInvincible = false; _miller.Task.CruiseWithVehicle(_millerCar, 24f, DrivingStyle.Normal); Say("M04_S2_04_ICE"); });
 
             yield return new MissionStage("Recover the drive",
-                    new ReachZoneObjective("Take the drive off Miller.", () => MillerPosition(), 6f))
+                    new MissionInteraction("Guess: collect Miller's drive", () => MillerPosition(), 3, 6f))
                 .OnExit(context =>
                 {
+                    Say("M04_S2_05_ICE");
                     Game.Player.WantedLevel = 0;
                     GameUtils.Subtitle("~g~Drive secured. Miller won't be talking to Aegis again.", 5000);
                 });
@@ -139,7 +138,7 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("s_m_m_highsec_02");
             if (!GameUtils.RequestModel(model)) return;
 
-            var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+            var aegis = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
             var post = Ctx.Locations.Position("M04.RampGuards");
 
             for (int i = 0; i < 6; i++)

@@ -39,7 +39,7 @@ namespace Bloodlines.Core
             string model = vehicle.DisplayName;
 
             if (_state.FleetUpgrades.TryGetValue("grangerTurbineInstalled", out bool turbine) && turbine
-                && vehicle.Model == new Model("granger"))
+                && (vehicle.Model == new Model("granger") || vehicle.Model == new Model("granger2")))
             {
                 InstallTurbine(vehicle);
                 _upgraded.Add(vehicle.Handle);
@@ -61,17 +61,23 @@ namespace Bloodlines.Core
         private static void InstallTurbine(Vehicle vehicle)
         {
             vehicle.Mods.InstallModKit();
-            vehicle.Mods[VehicleModType.Engine].Index = 3;
-            vehicle.Mods[VehicleModType.Transmission].Index = 2;
-            vehicle.Mods[VehicleModType.Brakes].Index = 2;
-            vehicle.Mods[VehicleModType.Armor].Index = 4;
-            vehicle.Mods[VehicleModType.Suspension].Index = 3;
+            Fit(vehicle, VehicleModType.Engine, 3);
+            Fit(vehicle, VehicleModType.Transmission, 2);
+            Fit(vehicle, VehicleModType.Brakes, 2);
+            Fit(vehicle, VehicleModType.Armor, 4);
+            Fit(vehicle, VehicleModType.Suspension, 3);
 
             vehicle.EnginePowerMultiplier = 45f;
             vehicle.EngineTorqueMultiplier = 1.6f;
             vehicle.CanTiresBurst = false;
             vehicle.IsBulletProof = false;
             Function.Call(Hash.SET_VEHICLE_ENVEFF_SCALE, vehicle, 1.0f);
+        }
+
+        private static void Fit(Vehicle vehicle, VehicleModType type, int requested)
+        {
+            int count = vehicle.Mods[type].Count;
+            if (count > 0) vehicle.Mods[type].Index = System.Math.Min(requested, count - 1);
         }
 
         /// <summary>Forgets which vehicles were upgraded — used when the crew stands down.</summary>

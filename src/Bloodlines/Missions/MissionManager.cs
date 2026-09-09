@@ -14,6 +14,7 @@ namespace Bloodlines.Missions
         private readonly MissionCatalog _catalog;
 
         private Mission _current;
+        private MissionDefinition _pending;
         private MissionDefinition _currentDefinition;
 
         public MissionManager(MissionContext context, CampaignState state, MissionCatalog catalog)
@@ -31,18 +32,22 @@ namespace Bloodlines.Missions
         /// <summary>Dev menu: finish the running mission as a pass.</summary>
         public void ForcePass()
         {
-            if (!IsRunning) return;
+            if (_current == null || _context.Cutscenes.IsActive) return;
             _current.Pass();
         }
 
         /// <summary>Dev menu: finish the running mission as a failure.</summary>
         public void ForceFail(string reason)
         {
-            if (!IsRunning) return;
-            _current.Fail(reason);
+            _context.Cutscenes.Stop();
+            _pending = null;
+            _current?.Fail(reason);
         }
 
-        public bool IsRunning => _current != null && _current.Status == MissionStatus.Running;
+        public bool IsRunning => _pending != null || _context.Cutscenes.IsActive ||
+            _current != null;
+
+        public string CurrentObjective => _current?.CurrentObjective ?? (_pending != null ? "Watch the briefing, then follow the objective." : "No mission is running.");
 
         public string CurrentTitle => _currentDefinition?.Title;
 
@@ -57,7 +62,7 @@ namespace Bloodlines.Missions
                 return false;
             }
 
-            if (IsRunning)
+            if (IsRunning || _current != null)
             {
                 GameUtils.Subtitle("~r~A mission is already running. Hold Backspace to abort.", 3000);
                 return false;
@@ -81,6 +86,20 @@ namespace Bloodlines.Missions
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
 
+            definition.Info.ParseClock(out int hour, out int minute);
+            if (hour >= 0) GameUtils.SetClock(hour, minute);
+            GameUtils.SetWeather(definition.Info.Weather);
+            _currentDefinition = definition;
+            if (_context.Cutscenes.Play(definition.Id, "intro", definition.Title))
+            {
+                _pending = definition;
+                return true;
+            }
+            return BeginGameplay(definition);
+        }
+
+        private bool BeginGameplay(MissionDefinition definition)
+        {
             var mission = definition.Factory();
             if (!mission.Begin(_context))
             {
@@ -108,13 +127,23 @@ namespace Bloodlines.Missions
         public void Abort()
         {
             if (!IsRunning) return;
-            _current.Abort();
+            _context.Cutscenes.Stop();
+            _pending = null;
+            _current?.Abort();
             GameUtils.Subtitle("~r~Mission aborted.", 3000);
             Finish();
         }
 
         public void Update()
         {
+            if (_context.Cutscenes.IsActive) return;
+            if (_pending != null)
+            {
+                var pending = _pending;
+                _pending = null;
+                BeginGameplay(pending);
+                return;
+            }
             if (_current == null) return;
 
             if (_current.Status == MissionStatus.Running)
@@ -126,6 +155,8 @@ namespace Bloodlines.Missions
             switch (_current.Status)
             {
                 case MissionStatus.Passed:
+                    // Finish the last gameplay line before the aftermath takes over.
+                    if (_context.Dialogue.HasPending) return;
                     _state.MarkComplete(_currentDefinition.Id, _catalog);
                     GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
                     GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
@@ -138,7 +169,9 @@ namespace Bloodlines.Missions
                     break;
             }
 
+            bool passed = _current.Status == MissionStatus.Passed;
             Finish();
+            if (passed) _context.Cutscenes.Play(_currentDefinition.Id, "outro", "Aftermath: " + _currentDefinition.Title);
         }
 
         private void Finish()
@@ -149,7 +182,7 @@ namespace Bloodlines.Missions
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
         public void CommitCheckpoint()
         {
-            if (!IsRunning) return;
+            if (_current == null || _context.Cutscenes.IsActive) return;
             _context.Checkpoints.Commit(_current.Id, _current.CurrentStage);
             GameUtils.Subtitle("~g~Checkpoint committed — stage " + _current.CurrentStage, 2500);
         }
@@ -157,7 +190,7 @@ namespace Bloodlines.Missions
         /// <summary>QA harness: restore the last checkpoint of the running mission.</summary>
         public void RestoreCheckpoint()
         {
-            if (!IsRunning) return;
+            if (_current == null || _context.Cutscenes.IsActive) return;
             if (!_current.SupportsCheckpointRestore)
             {
                 GameUtils.Subtitle("~y~This mission needs a full restart. Hold Backspace, then retry.", 4000);
@@ -176,7 +209,7 @@ namespace Bloodlines.Missions
         /// </summary>
         public bool TryRestoreCheckpoint()
         {
-            if (!IsRunning || !_current.SupportsCheckpointRestore) return false;
+            if (_current == null || !IsRunning || !_current.SupportsCheckpointRestore) return false;
             if (!_context.Checkpoints.HasCheckpointFor(_current.Id)) return false;
 
             int stage = _context.Checkpoints.Restore(_current.Id);
@@ -189,7 +222,7 @@ namespace Bloodlines.Missions
         /// <summary>QA harness: step the running mission forward or back a stage.</summary>
         public void WarpStage(int delta)
         {
-            if (!IsRunning) return;
+            if (_current == null || _context.Cutscenes.IsActive) return;
             int stage = System.Math.Max(0, _current.CurrentStage + delta);
             _current.JumpToStage(stage);
             GameUtils.Subtitle("~y~Stage warp -> " + stage, 2500);
@@ -198,6 +231,8 @@ namespace Bloodlines.Missions
         /// <summary>Called on mod teardown so an aborted session leaves no mission peds behind.</summary>
         public void Shutdown()
         {
+            _context.Cutscenes.Stop();
+            _pending = null;
             if (_current == null) return;
             _current.Abort();
             _current = null;

@@ -23,6 +23,10 @@ namespace Bloodlines.Missions.Objectives
 
         /// <summary>Bible cue stage played on entry (the S-number in the cue ids). 0 for none.</summary>
         public int DialogueStage { get; private set; }
+        public string[] EntryCues { get; private set; } = new string[0];
+        public string[] ExitCues { get; private set; } = new string[0];
+        public MissionStage WithCues(params string[] cues) { EntryCues = cues; return this; }
+        public MissionStage AfterCues(params string[] cues) { ExitCues = cues; return this; }
 
         /// <summary>Character this whole stage belongs to; switching is locked to them.</summary>
         public CrewSlot? LockedTo { get; private set; }

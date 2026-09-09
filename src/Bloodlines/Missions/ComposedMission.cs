@@ -21,6 +21,50 @@ namespace Bloodlines.Missions
     public abstract class ComposedMission : Mission
     {
         private List<MissionStage> _stages;
+        private readonly HashSet<Crew.CrewSlot> _stationed = new HashSet<Crew.CrewSlot>();
+        protected bool RequireAssets(params GTA.Entity[] entities)
+        {
+            if (entities.All(e => e != null && e.Exists())) return true;
+            Logger.Error(Id + ": a required actor or vehicle failed to spawn.");
+            GameUtils.Notify("Mission assets could not load. Restart this mission.");
+            return false;
+        }
+        protected void Station(Crew.CrewSlot slot, GTA.Math.Vector3 position)
+        {
+            var ped = Ctx.Crew.PedFor(slot);
+            if (ped == null || !ped.Exists()) return;
+            Ctx.Crew.CompanionAI.TakeControl(slot);
+            ped.Task.ClearAllImmediately(); ped.Position = position;
+            ped.Task.GuardCurrentPosition(); _stationed.Add(slot);
+        }
+        protected void Station(Crew.CrewSlot slot, GTA.Vehicle vehicle, GTA.VehicleSeat seat)
+        {
+            var ped = Ctx.Crew.PedFor(slot);
+            if (ped == null || !ped.Exists() || vehicle == null || !vehicle.Exists()) return;
+            Ctx.Crew.CompanionAI.TakeControl(slot);
+            ped.Task.ClearAllImmediately(); ped.SetIntoVehicle(vehicle, seat); _stationed.Add(slot);
+        }
+        private readonly Dictionary<Crew.CrewSlot, int> _assignmentTasks = new Dictionary<Crew.CrewSlot, int>();
+        private void MaintainAssignments(MissionStage stage)
+        {
+            foreach (var objective in stage.Objectives)
+            {
+                if (objective.IsFinished || !objective.RequiredCharacter.HasValue || !objective.AssignmentPosition.HasValue) continue;
+                var slot = objective.RequiredCharacter.Value;
+                if (Ctx.Crew.ActiveSlot == slot) { if (_assignmentTasks.ContainsKey(slot)) _assignmentTasks[slot] = 0; continue; }
+                var ped = Ctx.Crew.PedFor(slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                // Explicit set-piece scripts retain ownership of their actors.
+                if (!_assignmentTasks.ContainsKey(slot) && Ctx.Crew.CompanionAI.StateOf(slot) == Crew.CompanionState.Scripted) continue;
+                if (_assignmentTasks.TryGetValue(slot, out var next) && GTA.Game.GameTime < next) continue;
+                Ctx.Crew.CompanionAI.TakeControl(slot);
+                var target = objective.AssignmentPosition.Value;
+                if (ped.IsInVehicle()) ped.Task.LeaveVehicle();
+                else if (ped.Position.DistanceTo(target) > 3f) ped.Task.GoTo(target);
+                else ped.Task.GuardCurrentPosition();
+                _assignmentTasks[slot] = GTA.Game.GameTime + 5000;
+            }
+        }
 
         protected IReadOnlyList<MissionStage> Stages => _stages;
 
@@ -34,7 +78,7 @@ namespace Bloodlines.Missions
         {
             if (!Setup()) return false;
 
-            _stages = BuildStages().ToList();
+            _stages = PrepareStages();
             if (_stages.Count == 0)
             {
                 Logger.Error(Id + " built no stages.");
@@ -52,6 +96,9 @@ namespace Bloodlines.Missions
             var stage = CurrentStageOrNull();
             if (stage == null) return;
 
+            // A player-controlled station becomes normal crew AI, including driver handover.
+            if (_stationed.Remove(Ctx.Crew.ActiveSlot)) Ctx.Crew.CompanionAI.ReleaseControl(Ctx.Crew.ActiveSlot);
+            MaintainAssignments(stage);
             foreach (var objective in stage.Objectives)
             {
                 if (!objective.IsFinished) objective.Update(Ctx);
@@ -65,7 +112,8 @@ namespace Bloodlines.Missions
             }
 
             var current = stage.Current;
-            if (current != null) GameUtils.Subtitle("~y~" + current.Label, 500);
+            if (current != null) { CurrentObjective = current.RequiredCharacter.HasValue && current.RequiredCharacter.Value != Ctx.Crew.ActiveSlot
+                    ? "Switch to " + Crew.Protagonist.Of(current.RequiredCharacter.Value).Handle + " — " + current.Label : current.Label; GameUtils.Subtitle("~y~" + current.Label, 500); }
 
             if (!stage.IsComplete) return;
 
@@ -87,6 +135,26 @@ namespace Bloodlines.Missions
         /// the compiler and only shows up as a mission hanging at a stage, so it is
         /// worth failing loudly at start instead.
         /// </summary>
+        private List<MissionStage> PrepareStages()
+        {
+            var stages = BuildStages().ToList();
+            // The first six missions have bespoke role handoffs. Later composed jobs
+            // retain their last declared owner until the script explicitly hands off.
+            if (Id.StartsWith("SM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7))
+            {
+                Crew.CrewSlot owner = Ctx.Crew.ActiveSlot;
+                foreach (var stage in stages)
+                {
+                    var assigned = stage.Objectives.FirstOrDefault(o => !o.IsPassive && o.RequiredCharacter.HasValue);
+                    if (assigned != null) owner = assigned.RequiredCharacter.Value;
+                    foreach (var objective in stage.Objectives)
+                        if (!objective.RequiredCharacter.HasValue && !objective.IsPassive) objective.RequiredCharacter = owner;
+                }
+                stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")));
+            }
+            return stages;
+        }
+
         private bool Validate()
         {
             bool valid = true;
@@ -124,11 +192,16 @@ namespace Bloodlines.Missions
 
             var stage = _stages[index];
             Logger.Debug(Id + " stage " + index + ": " + stage.Name);
+            foreach (var slot in _assignmentTasks.Keys) Ctx.Crew.CompanionAI.ReleaseControl(slot);
+            _assignmentTasks.Clear();
 
             if (stage.LockedTo.HasValue)
             {
                 var protagonist = Crew.Protagonist.Of(stage.LockedTo.Value);
-                Ctx.Switching.SetLocked(protagonist.FirstName + " has this one.");
+                Ctx.Switching.SetUnlocked();
+                if (Ctx.Crew.ActiveSlot != stage.LockedTo.Value && !Ctx.Switching.TrySwitch(stage.LockedTo.Value, missionTransition: true))
+                    throw new System.InvalidOperationException("Could not activate " + protagonist.Handle + " for this stage.");
+                Ctx.Switching.SetLocked(protagonist.Handle + " has this one.");
             }
             else
             {
@@ -140,22 +213,25 @@ namespace Bloodlines.Missions
             foreach (var objective in stage.Objectives) objective.Enter(Ctx);
 
             if (stage.DialogueStage > 0) SayStage(stage.DialogueStage);
+            foreach (var cue in stage.EntryCues) Say(cue);
 
             var first = stage.Current;
             if (first != null) Objective(first.Label);
+            MaintainAssignments(stage);
         }
 
         private void ExitStage(MissionStage stage)
         {
             foreach (var objective in stage.Objectives) objective.Exit(Ctx);
             stage.Teardown?.Invoke(Ctx);
+            foreach (var cue in stage.ExitCues) Say(cue);
         }
 
         /// <summary>A checkpoint restore or QA warp re-enters the stage cleanly.</summary>
         protected override void OnStageEntered(int stage)
         {
             if (_stages == null) return;
-            _stages = BuildStages().ToList();
+            _stages = PrepareStages();
             if (!Validate()) throw new System.InvalidOperationException("Invalid rebuilt stages for " + Id);
             EnterStage(stage);
         }

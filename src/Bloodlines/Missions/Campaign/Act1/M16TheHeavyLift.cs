@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _fence = Ctx.Locations.Position("M16.DepotFence");
             _helipad = Ctx.Locations.Position("M16.Helipad");
             _canyon = Ctx.Locations.Position("M16.CanyonRun");
@@ -53,6 +54,9 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnMilitaryPolice();
             SpawnCargobob();
+            if (!RequireAssets(_cargobob)) return false;
+            Station(CrewSlot.Guess, _fence + new Vector3(12f, -10f, 0f));
+            Station(CrewSlot.Gohan, _fence + new Vector3(-12f, -10f, 0f));
             return true;
         }
 
@@ -62,7 +66,7 @@ namespace Bloodlines.Missions.Campaign
                     new ReachZoneObjective("Ice — cross the outer depot on the transponder.",
                         () => _helipad, 30f, flat: true))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1)
+                
                 .OnEnter(context =>
                     GameUtils.Subtitle("~y~Code 7-Echo-Victor. They read you as one of theirs — until you fire.", 6000));
 
@@ -76,9 +80,10 @@ namespace Bloodlines.Missions.Campaign
                     Game.Player.WantedLevel = 4;
                     foreach (var police in _militaryPolice)
                     {
-                        if (police != null && police.Exists()) police.Task.FightAgainstHatedTargets(90f);
+                        if (police != null && police.Exists()) { police.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS"); police.Task.FightAgainstHatedTargets(90f); }
                     }
-                });
+                })
+                .AfterCues("M16_S1_01_ICE");
 
             yield return new MissionStage("Spool the twins",
                     new EnterVehicleObjective("Guess — take the Cargobob.", () => _cargobob,
@@ -86,19 +91,21 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Raton Canyon",
-                    new AltitudeCeilingObjective("Hug the canyon — stay under 60.", 60f,
+                    new AltitudeCeilingObjective("Hug the canyon — stay under 60 metres above terrain.", 60f,
                         "A Lazer got a lock in open sky."),
-                    new ReachZoneObjective("Follow the canyon out.", () => _canyon, 120f, flat: true))
-                .WithDialogue(1);
+                    new DeliverVehicleObjective("Guess: fly the Cargobob through the marked canyon route.", () => _cargobob, () => _canyon, 120f))
+                
+                .WithCues("M16_S1_02_GUESS");
 
             yield return new MissionStage("Terminal Island",
                     new DeliverVehicleObjective("Put the Cargobob down at Terminal Island.",
-                        () => _cargobob, () => _terminal, 40f))
+                        () => _cargobob, () => _terminal, 40f, land: true))
                 .OnExit(context =>
                 {
                     Game.Player.WantedLevel = 0;
                     GameUtils.Subtitle("~g~Heavy lift secured. Berth 44 is now a question of timing.", 5000);
-                });
+                })
+                .WithCues("M16_S1_03_ICE");
         }
 
         private void SpawnMilitaryPolice()
@@ -113,7 +120,7 @@ namespace Bloodlines.Missions.Campaign
                 var trooper = World.CreatePed(model, _helipad + new Vector3(-12f + i * 5f, 8f, 0f), 200f);
                 if (trooper == null || !trooper.Exists()) continue;
 
-                trooper.RelationshipGroup = aegis;
+                trooper.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
                 trooper.IsPersistent = true;
                 trooper.BlockPermanentEvents = true;
                 trooper.Accuracy = 40;

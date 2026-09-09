@@ -37,12 +37,13 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Ground(Ctx.Locations, "M03.RailJunction", "M03.DepotGate", "M03.CraneControls", "M03.HaulerSpawn")) return false;
             _junction = Ctx.Locations.Position("M03.RailJunction");
             _depot = Ctx.Locations.Position("M03.DepotGate");
             _crane = Ctx.Locations.Position("M03.CraneControls");
             _base = Ctx.Locations.Position("Base.CypressFlats");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _junction, Ctx.Locations.Heading("M03.RailJunction")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, new Dictionary<CrewSlot, PedPlacement> { [CrewSlot.Guess] = new PedPlacement(_junction - new Vector3(0,20,0),90), [CrewSlot.Ice] = new PedPlacement(_depot - new Vector3(0,35,0),0), [CrewSlot.Gohan] = new PedPlacement(_crane - new Vector3(0,25,0),0) }))
             {
                 return false;
             }
@@ -50,61 +51,58 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             SpawnDepotGuards();
             SpawnHauler();
-            return true;
+            var approachModel=new Model("primo");
+            if(!GameUtils.RequestModel(approachModel)) return false;
+            var road=World.GetNextPositionOnStreet(_junction-new Vector3(0,25,0));
+            if(road==Vector3.Zero || road.DistanceTo(_junction)>60f){approachModel.MarkAsNoLongerNeeded();return false;}
+            var approach=Track(World.CreateVehicle(approachModel,road,90));approachModel.MarkAsNoLongerNeeded();
+            if(approach==null||!approach.Exists())return false;
+            approach.IsPersistent=true;Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(approach,VehicleSeat.Driver);
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            return _hauler != null && _hauler.Exists() && _guards.Count == 8;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             // Guess, alone at the junction: the rest of the crew is across the city.
             yield return new MissionStage("Seal the response routes",
-                    new HoldZoneObjective("Guess — trip the junction switch.", () => _junction, 6, 4f,
-                        "Decoupling"))
+                    new MissionInteraction("Guess: lock the rail junction", () => _junction, 6, 4f))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1)
-                .OnEnter(context => context.Crew.CompanionsHoldPosition = true);
+                .OnEnter(context => context.Crew.CompanionsHoldPosition = true)
+                .OnExit(context => Say("M03_S1_01_GUESS"));
 
             yield return new MissionStage("Breach the depot",
-                    new ReachZoneObjective("Ice — breach the Murrieta depot gate.", () => _depot, 12f, flat: true))
+                    new ReachZoneObjective("Ice: walk into the yellow ENTRY marker at the depot. No ability or button is needed.", () => _depot, 12f, flat: true))
+                .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context => Say("M03_S1_02_ICE"));
+
+            yield return new MissionStage("Clear the yard",
+                    new KillTargetsObjective("Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear.", () => _guards))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
                 {
-                    // The crew converges: from here they are working the same ground.
-                    context.Crew.CompanionsHoldPosition = false;
-                    foreach (var protagonist in Protagonist.All)
-                    {
-                        var ped = context.Crew.PedFor(protagonist.Slot);
-                        if (ped == null || protagonist.Slot == CrewSlot.Guess) continue;
-                        ped.Position = _depot + new Vector3((int)protagonist.Slot * 3f - 3f, -14f, 0f);
-                    }
-                });
-
-            yield return new MissionStage("Clear the yard",
-                    new KillTargetsObjective("Clear the container yard.", () => _guards))
-                .WithDialogue(2)
-                .OnEnter(context =>
-                {
+                    Say("M03_S2_03_ICE");
                     foreach (var guard in _guards)
                     {
-                        if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(120f);
+                        if (guard != null && guard.Exists()) { guard.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL"); guard.Task.FightAgainstHatedTargets(120f); }
                     }
                 });
 
             yield return new MissionStage("Hoist the container",
-                    new HoldZoneObjective("Gohan — work the gantry crane.", () => _crane, 8, 3.5f,
-                        "Hoisting the container"))
+                    new MissionInteraction("Gohan: load the weapons at the yellow cargo terminal", () => _crane, 8, 3.5f))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(context => GameUtils.Subtitle("~g~Container seated on the hauler.", 4000));
+                .OnExit(context => { Say("M03_S2_04_GOHAN"); GameUtils.Subtitle("~g~Weapons loaded into the orange-marked Benson.", 4000); });
 
             yield return new MissionStage("Run it home",
-                    new EnterVehicleObjective("Guess — take the hauler.", () => _hauler, VehicleSeat.Driver),
+                    new EnterVehicleObjective("Guess: travel to the depot and take the orange-marked Benson truck (driver seat).", () => _hauler, VehicleSeat.Driver),
                     new ProtectObjective("", () => _hauler, "The hauler was destroyed."))
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Cypress Flats",
-                    new ReachZoneObjective("Get the hauler back to Cypress Flats.", () => _base, 25f,
-                        flat: true, requireVehicle: true),
+                    new OccupiedVehicleDestination("Guess: deliver the Benson weapons truck to the yellow foundry marker.", () => _hauler, () => _base, 25f),
                     new ProtectObjective("", () => _hauler, "The hauler was destroyed."))
-                .OnEnter(context => Game.Player.WantedLevel = 2)
+                .OwnedBy(CrewSlot.Guess)
+                .OnEnter(context => { Game.Player.WantedLevel = 2; Say("M03_S2_05_GUESS"); })
                 .OnExit(context =>
                 {
                     Game.Player.WantedLevel = 0;
@@ -117,7 +115,7 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnDepotGuards()
         {
-            var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            var cartel = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
 
             for (int i = 0; i < 8; i++)
             {

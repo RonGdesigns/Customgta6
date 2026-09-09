@@ -16,6 +16,7 @@ namespace Bloodlines.Crew
     /// </summary>
     public sealed class Protagonist
     {
+        public const CrewSlot StartingSlot = CrewSlot.Guess;
         public CrewSlot Slot { get; }
         public string FirstName { get; }
         public string LastName { get; }
@@ -40,8 +41,8 @@ namespace Bloodlines.Crew
             Loadout = loadout;
         }
 
-        /// <summary>Darius "Ice" Vance — the form the bible uses for the cast.</summary>
-        public string DisplayName => FirstName + " \"" + Handle + "\" " + LastName;
+        /// <summary>Gameplay uses nicknames. FullName is reserved for deliberate story references.</summary>
+        public string DisplayName => Handle;
 
         public string FullName => FirstName + " " + LastName;
 
@@ -49,17 +50,17 @@ namespace Bloodlines.Crew
 
         public static readonly Protagonist Ice = new Protagonist(
             CrewSlot.Ice, "Darius", "Vance", "Ice", "The Tactician — Heavy Assault",
-            "g_m_y_famca_01", "Overwatch Focus", BlipColor.Blue,
+            "mp_m_freemode_01", "Overwatch Focus", BlipColor.Blue,
             new[] { WeaponHash.CarbineRifle, WeaponHash.RPG, WeaponHash.Pistol50, WeaponHash.StickyBomb });
 
         public static readonly Protagonist Gohan = new Protagonist(
             CrewSlot.Gohan, "Devin", "Mercer", "Gohan", "The Inside Man — Breaker",
-            "g_m_y_famdnf_01", "Thermal Pulse", BlipColor.Green,
+            "mp_m_freemode_01", "Thermal Pulse", BlipColor.Green,
             new[] { WeaponHash.SMG, WeaponHash.APPistol, WeaponHash.Flashlight, WeaponHash.SmokeGrenade });
 
         public static readonly Protagonist Guess = new Protagonist(
             CrewSlot.Guess, "Ron", "Ortiz", "Guess", "The Wheelman — Hotfoot",
-            "g_m_y_ballaeast_01", "Slipstream Reflex", BlipColor.Orange,
+            "mp_m_freemode_01", "Slipstream Reflex", BlipColor.Orange,
             new[] { WeaponHash.MicroSMG, WeaponHash.Pistol, WeaponHash.SawnOffShotgun });
 
         public static readonly Protagonist[] All = { Ice, Gohan, Guess };

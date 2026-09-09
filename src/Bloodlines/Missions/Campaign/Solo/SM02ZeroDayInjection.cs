@@ -30,6 +30,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _roof = Ctx.Locations.Position("SM02.RoofAccess");
             _serverBay = Ctx.Locations.Position("SM02.ServerBay");
             _terminal = Ctx.Locations.Position("SM02.Terminal");
@@ -49,6 +50,7 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Abilities.Refill();
 
             SpawnGuards();
+            if (_guards.Count != 2) return false;
             return true;
         }
 
@@ -57,30 +59,33 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Rooftop",
                     new ReachZoneObjective("Get onto the annex roof.", () => _roof, 4f))
                 .PlayedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                
+                .WithCues("SM02_S1_01_GOHAN");
 
             yield return new MissionStage("Server bay",
-                    new SubdueTargetsObjective("Put the two guards down quietly.", () => _guards))
+                    new SubdueTargetsObjective("Gohan: use the stun gun on both marked guards. Keep them alive.", () => _guards))
                 .PlayedBy(CrewSlot.Gohan)
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~Thermal Pulse (" + context.Config.AbilityKey + ") tracks them through the wall.", 5000));
+                    GameUtils.Subtitle("~y~Thermal Pulse (" + context.Config.AbilityKey + ") tracks them through the wall.", 5000))
+                .WithCues("SM02_S1_02_GOHAN");
 
             yield return new MissionStage("Root terminal",
-                    new HoldZoneObjective("Inject the worm at the root terminal.", () => _terminal, 8, 2.5f,
-                        "Splicing zero-day"))
+                    new MissionInteraction("Inject the worm at the root terminal.", () => _terminal, 8, 2.5f))
                 .PlayedBy(CrewSlot.Gohan)
-                .WithDialogue(2)
+                
                 .OnExit(context =>
                 {
                     // The payoff is mechanical, not narrative: from here the crew's
-                    // plates are invisible to city surveillance.
-                    Function.Call(Hash.SET_POLICE_RADAR_BLIPS, false);
-                    GameUtils.Subtitle("~g~City surveillance is blind to the crew's plates.", 5000);
-                });
+                    // archive access is recorded; native police radar remains available.
+                    context.State.SetUpgrade("surveillanceWormInstalled", true);
+                    GameUtils.Subtitle("~g~Camera archive access secured. Leave before IT traces the connection.", 5000);
+                })
+                .AfterCues("SM02_S2_03_GOHAN");
 
             yield return new MissionStage("Fire escape",
                     new ReachZoneObjective("Down the fire escape before IT notices.", () => _exit, 6f))
-                .PlayedBy(CrewSlot.Gohan);
+                .PlayedBy(CrewSlot.Gohan)
+                .WithCues("SM02_S2_04_GOHAN");
         }
 
         private void SpawnGuards()
@@ -110,7 +115,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
-            Function.Call(Hash.SET_POLICE_RADAR_BLIPS, true);
+            
             _guards.Clear();
         }
     }

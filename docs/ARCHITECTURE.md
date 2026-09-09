@@ -362,3 +362,20 @@ fallback. A vehicle must have enough passenger seats for the crew.
 On Windows, run `python tools/run_regression_tests.py`. It compiles selected production
 classes against test stand-ins and tests state, timing, recovery cleanup, boarding,
 combat response and survey persistence. These tests do not exercise GTA natives.
+
+
+## Story and mission discovery update
+
+See [STORY-AUDIT.md](STORY-AUDIT.md) for the implemented opening/aftermath scenes, KJ, nickname UI, mission markers, switch behavior, validation and live test sequence.
+
+Run `python tools/build_story.py --check` and `python tools/run_story_tests.py` alongside the existing checks.
+
+
+## M01 live-playtest correction
+
+See `docs/M01-HOTFIX.md` (or `M01-HOTFIX.md` from this docs folder) for the
+current exterior staging, camera fix, assigned M01 companion actions and controller
+controls. The previous descriptions of bible anchors as surveyed geometry are
+superseded: those proposed positions were not verified against installed assets.
+`tools/test_dialogue_parser.py` protects speech extraction; authored revisions
+live in `data/dialogue_edits.json`, applied by `parse_bible.py`.

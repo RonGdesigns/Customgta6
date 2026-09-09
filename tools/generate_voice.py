@@ -72,11 +72,14 @@ def audio_dirs():
 
 
 def rows(mission_filter):
-    with io.open(DIALOGUE, encoding='utf-8') as handle:
-        for row in csv.DictReader(handle, delimiter='\t'):
-            if mission_filter and row['mission'].upper() != mission_filter.upper():
-                continue
-            yield row
+    for path in [DIALOGUE, os.path.join(REPO, 'data', 'scenes.tsv')]:
+        if not os.path.exists(path):
+            continue
+        with io.open(path, encoding='utf-8') as handle:
+            for row in csv.DictReader(handle, delimiter='\t'):
+                if mission_filter and row['mission'].upper() != mission_filter.upper():
+                    continue
+                yield row
 
 
 def main():

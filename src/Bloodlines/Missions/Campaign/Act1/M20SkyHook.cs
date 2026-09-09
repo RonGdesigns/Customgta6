@@ -37,6 +37,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _hover = Ctx.Locations.Position("M20.HoverPoint");
             _deck = Ctx.Locations.Position("M20.DeckGunners");
             _climbOut = Ctx.Locations.Position("M20.ClimbOut");
@@ -55,6 +56,10 @@ namespace Bloodlines.Missions.Campaign
             SpawnCargobob();
             SpawnContainer();
             SpawnDeckGunners();
+            if (!RequireAssets(_cargobob, _container)) return false;
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M12.PierWatch"));
+            Station(CrewSlot.Gohan, apron + new Vector3(-15f, 0f, 0f));
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.HeavySniper, 100, true, true);
             return true;
         }
 
@@ -64,30 +69,31 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — take the Cargobob over the basin.",
                         () => _cargobob, VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             // Ice's job while Guess holds the hover: the two objectives are the two
             // characters, running at once, which is the whole argument for the switch.
             yield return new MissionStage("Suppress the deck",
-                    new KillTargetsObjective("Ice — clear the AA gunners off the freighter.",
+                    new KillTargetsObjective("Ice — clear the marked quayside gunners from the pier.",
                         () => _gunners),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down."))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                
+                .AfterCues("M20_S1_02_ICE");
 
             yield return new MissionStage("Lock the cable",
-                    new HoldZoneObjective("Guess — hold the hover over the container.",
-                        () => _hover, 8, 14f, "Winching"),
+                    new MissionInteraction("Guess — hold the hover over the container.", () => _hover, 8, 14f, () => _cargobob),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down."))
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(context => AttachContainer());
+                .OnExit(context => AttachContainer())
+                .AfterCues("M20_S1_01_GUESS");
 
             yield return new MissionStage("Climb out",
-                    new ReachZoneObjective("Get the bullion over the cranes.", () => _climbOut, 60f,
-                        flat: true, requireVehicle: true),
+                    new DeliverVehicleObjective("Guess: climb in the Cargobob to the elevated yellow marker.", () => _cargobob, () => _climbOut, 30f),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down."))
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~Thirty tons airborne. Gohan — get on our wing.", 5000));
+                    GameUtils.Subtitle("~g~Thirty tons airborne. Gohan — get on our wing.", 5000))
+                .AfterCues("M20_S1_03_GUESS");
         }
 
         /// <summary>

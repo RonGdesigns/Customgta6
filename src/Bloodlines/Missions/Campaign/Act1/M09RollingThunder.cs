@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _convoyStart = Ctx.Locations.Position("M09.ConvoyStart");
             _bunker = Ctx.Locations.Position("M09.Bunker");
 
@@ -48,6 +49,10 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnFrogger();
             SpawnConvoy();
+            if (!RequireAssets(_frogger, _escortTruck, _escortDriver)) return false;
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M09.AmbushPoint") + new Vector3(0f, -35f, 0f));
+            Station(CrewSlot.Gohan, _bunker + new Vector3(8f, 0f, 0f));
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.SniperRifle, 80, true, true);
             return true;
         }
 
@@ -57,20 +62,22 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — take the Frogger up.", () => _frogger,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                
+                .WithCues("M09_S1_01_ICE");
 
             // Shadowing, not chasing: too close and the convoy's anti-air sees them.
             yield return new MissionStage("Shadow the convoy",
                     new ShadowTargetObjective("Hold the ridgeline behind the convoy.",
                         () => _escortTruck, 220f, 25, "The convoy spotted the helicopter and scattered.",
-                        60f))
-                .OnEnter(context => StartConvoy());
+                        60f, acquireSeconds: 180))
+                .OnEnter(context => StartConvoy())
+                .WithCues("M09_S1_02_GUESS");
 
             yield return new MissionStage("Take the driver",
-                    new KillTargetsObjective("Ice — put the escort driver down.",
+                    new KillTargetsObjective("Ice: wait at the ambush point and shoot the marked escort driver.",
                         () => new[] { _escortDriver }))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(2)
+                
                 .OnExit(context =>
                 {
                     // Truck in the culvert, crew scattering: the pickup is now static.
@@ -79,17 +86,18 @@ namespace Bloodlines.Missions.Campaign
                         _escortTruck.IsDriveable = false;
                         _escortTruck.Speed = 0f;
                     }
-                });
+                })
+                .AfterCues("M09_S2_03_ICE");
 
             yield return new MissionStage("Rip the transponder",
-                    new HoldZoneObjective("Pull the IFF transponder out of the cab.",
-                        () => EscortPosition(), 6, 5f, "Ripping the transponder"))
-                .OnExit(context => GameUtils.Subtitle("~g~Code 7-Echo-Victor. Military clearance, tomorrow.", 5000));
+                    new MissionInteraction("Ice: get out, approach the stopped escort cab, and take its IFF transponder.", () => EscortPosition(), 6, 5f))
+                .OnExit(context => GameUtils.Subtitle("~g~Code 7-Echo-Victor. Military clearance, tomorrow.", 5000))
+                .WithCues("M09_S2_04_GUESS")
+                .AfterCues("M09_S2_05_ICE");
 
-            yield return new MissionStage("Back to the bunker",
-                    new ReachZoneObjective("Get the transponder back to the desert base.",
-                        () => _bunker, 30f, flat: true))
-                .OnExit(context => context.State.Unlock("grandSenoraRadarBunker"));
+            yield return new MissionStage("Transponder extraction",
+                    new ReachZoneObjective("Get the transponder to the temporary drop point.",
+                        () => _bunker, 30f, flat: true)); // The permanent bunker unlock belongs to M23.
         }
 
         private Vector3 EscortPosition()

@@ -36,6 +36,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _warehouse = Ctx.Locations.Position("SM01.WarehouseGate");
             _office = Ctx.Locations.Position("SM01.SergeiOffice");
             _trunk = Ctx.Locations.Position("SM01.CrateLoad");
@@ -50,6 +51,8 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnSergei();
             SpawnGuards();
+            if (!RequireAssets(_sergei)) return false;
+            if (_guards.Count != 6) return false;
             return true;
         }
 
@@ -58,32 +61,36 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Breach",
                     new ReachZoneObjective("Breach the side entrance.", () => _office, 30f, flat: true))
                 .PlayedBy(CrewSlot.Ice)
-                .WithDialogue(1)
+                
                 .OnExit(context =>
                 {
                     foreach (var guard in _guards)
                     {
                         if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(80f);
                     }
-                });
+                })
+                .WithCues("SM01_S1_01_ICE");
 
             yield return new MissionStage("Clear the floor",
                     new KillTargetsObjective("Clear Sergei's men.", () => _guards))
-                .PlayedBy(CrewSlot.Ice);
+                .PlayedBy(CrewSlot.Ice)
+                .WithCues("SM01_S1_02_ICE");
 
             yield return new MissionStage("Sergei",
-                    new KillTargetsObjective("Corner Sergei in the back office.", () => new[] { _sergei }))
+                    new MissionInteraction("Ice: approach Sergei and demand the crate codes", () => _sergei.Position, 4, 4f))
                 .PlayedBy(CrewSlot.Ice)
-                .WithDialogue(2)
+                
                 .OnEnter(context =>
                 {
                     if (_sergei != null && _sergei.Exists()) _sergei.Task.HandsUp(30000);
-                });
+                })
+                .WithCues("SM01_S2_03_ENEMY", "SM01_S2_04_ICE");
 
             yield return new MissionStage("The crates",
-                    new HoldZoneObjective("Load the AP crates.", () => _trunk, 4, 3f, "Loading crates"))
+                    new MissionInteraction("Load the AP crates.", () => _trunk, 4, 3f))
                 .PlayedBy(CrewSlot.Ice)
-                .OnExit(context => GameUtils.Subtitle("~g~Armour-piercing tungsten-core 7.62 secured.", 4000));
+                .OnExit(context => GameUtils.Subtitle("~g~Armour-piercing tungsten-core 7.62 secured.", 4000))
+                .AfterCues("SM01_S2_05_ICE");
         }
 
         // ---------- world building ----------
@@ -97,7 +104,8 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (_sergei == null || !_sergei.Exists()) return;
 
-            _sergei.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            _sergei.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
+            _sergei.IsInvincible = true;
             _sergei.IsPersistent = true;
             _sergei.BlockPermanentEvents = true;
             _sergei.Armor = 50;
@@ -136,6 +144,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            if (_sergei != null && _sergei.Exists()) _sergei.IsInvincible = false;
             _guards.Clear();
         }
     }

@@ -12,9 +12,9 @@ data or the docs:
 
 | Handle | Name | Role | Model |
 |---|---|---|---|
-| **Ice** | Darius Vance | The Tactician — heavy assault | `g_m_y_famca_01` |
-| **Gohan** | Devin Mercer | The Inside Man — breaker | `g_m_y_famdnf_01` |
-| **Guess** | Ron Ortiz | The Wheelman — hotfoot | `g_m_y_ballaeast_01` |
+| **Ice** | Darius Vance | The Tactician — heavy assault | `mp_m_freemode_01` (Ice appearance) |
+| **Gohan** | Devin Mercer | The Inside Man — breaker | `mp_m_freemode_01` (Gohan appearance) |
+| **Guess** | Ron Ortiz | The Wheelman — hotfoot | `mp_m_freemode_01` (Guess appearance) |
 
 M62's prose in the omnibus used "Jules" and "Malik" for Gohan and Guess — leftovers
 from an earlier draft. `tools/parse_bible.py` normalizes those to the current names
@@ -39,7 +39,7 @@ change that table rather than the generated files.
 | M01 target | unnamed "cartel capo" | **Mateo Cifuentes**, escaping on an armored launch | v2 |
 | M01 geography | "Terminal Island", no coordinates | crane **#4**, superyacht **The Mariana**, warehouse **bay 2**, plus surveyed coordinates | v2 |
 | Ice's ability | stagger, penetration, recoil | stagger reduction, penetration | both — implemented as all three |
-| Interstitials | not covered | safehouses, workbenches, ambient cycles, Weazel News | **not implemented yet** |
+| Interstitials | not covered | safehouses, workbenches, ambient cycles, Weazel News | Exterior homes, basic workbenches, independent trips and mission follow-ups implemented; custom interiors and advanced crafting remain pending |
 
 ## Deliberate deviations from the toolkit
 

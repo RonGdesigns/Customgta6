@@ -208,6 +208,7 @@ def main():
             if mission_id and mission_id in cues_by_mission:
                 written = cues_by_mission[mission_id]
                 fired = set(CUE_ID.findall(source))
+                fired.update(re.findall(r'"(S?M\d+_S\d+_\d+_[A-Z]+)"', source))
                 stages = {int(stage) for stage in STAGE_CUE.findall(source)}
                 for cue in written:
                     if cue['stage'] in {str(stage) for stage in stages}:

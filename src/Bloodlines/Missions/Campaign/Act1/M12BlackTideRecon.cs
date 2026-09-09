@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _jetty = Ctx.Locations.Position("M12.SouthJetty");
             _hull = Ctx.Locations.Position("M12.FreighterHull");
             _buoy = Ctx.Locations.Position("M12.SonarBuoy");
@@ -48,6 +49,9 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnRov();
             SpawnPatrols();
+            if (!RequireAssets(_rov)) return false;
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M12.PierWatch"));
+            Station(CrewSlot.Guess, _jetty + new Vector3(12f, 0f, 0f));
             return true;
         }
 
@@ -57,29 +61,31 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Gohan — take the ROV out from the south jetty.",
                         () => _rov, VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                
+                .WithCues("M12_S1_01_GOHAN");
 
             // Detection runs alongside the work for the rest of the mission: the patrols
             // are not an obstacle to shoot through, they are the clock.
             yield return new MissionStage("Under the sonar",
-                    new ReachZoneObjective("Slip under the sonar buoys.", () => _buoy, 12f),
+                    new DeliverVehicleObjective("Gohan: descend in the sub to the underwater yellow marker.", () => _rov, () => _buoy, 6f),
                     new AvoidDetectionObjective(() => _patrols,
                         "A patrol launch caught the ROV on the surface.", 45f, 4))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnEnter(context => GameUtils.Subtitle("~y~Stay below fifteen feet. Their sweep is surface only.", 5000));
+                .OnEnter(context => GameUtils.Subtitle("~y~Dive toward the underwater marker. Stay clear of patrols and break their sight line.", 5000))
+                .WithCues("M12_S1_02_ICE");
 
             yield return new MissionStage("Map the hull",
-                    new HoldZoneObjective("Acoustic-scan hold 3's bulkhead.", () => _hull, 14, 8f,
-                        "Pinging the hull"),
+                    new MissionInteraction("Acoustic-scan hold 3's bulkhead.", () => _hull, 14, 8f, () => _rov),
                     new AvoidDetectionObjective(() => _patrols,
                         "A patrol launch caught the ROV on the surface.", 45f, 4))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1)
+                
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~Eight inches of reinforced steel. We need acoustic torches.", 5000));
+                    GameUtils.Subtitle("~g~Eight inches of reinforced steel. We need acoustic torches.", 5000))
+                .AfterCues("M12_S1_03_GOHAN");
 
             yield return new MissionStage("Back to the jetty",
-                    new ReachZoneObjective("Bring the ROV home.", () => _jetty, 15f))
+                    new DeliverVehicleObjective("Gohan: surface in the sub beside the jetty.", () => _rov, () => _jetty + new Vector3(0f, -8f, -4f), 10f))
                 .OnExit(context =>
                 {
                     // What this mission actually produces is the breach point for M19.
@@ -129,7 +135,7 @@ namespace Bloodlines.Missions.Campaign
                 crew.BlockPermanentEvents = true;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 150, true, true);
                 crew.Task.WarpIntoVehicle(boat, VehicleSeat.Driver);
-                crew.Task.CruiseWithVehicle(boat, 8f, DrivingStyle.Normal);
+                crew.Task.StartBoatMission(boat, _buoy + new Vector3(-30f + i * 60f, 0f, 4f), VehicleMissionType.GoTo, 8f, (VehicleDrivingFlags)786603, 15f, (BoatMissionFlags)7);
 
                 _patrols.Add(crew);
 

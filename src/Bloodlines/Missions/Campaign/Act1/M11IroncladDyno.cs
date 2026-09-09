@@ -33,6 +33,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _shop = Ctx.Locations.Position("M11.ChopShop");
             _dyno = Ctx.Locations.Position("M11.DynoPad");
 
@@ -44,16 +45,19 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Ctx.Crew.CompanionsHoldPosition = true;
             SpawnGranger();
+            if (!RequireAssets(_granger)) return false;
+            Station(CrewSlot.Ice, _dyno + new Vector3(4f, 0f, 0f));
+            Station(CrewSlot.Gohan, _shop + new Vector3(0f, 10f, 0f));
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Mount the turbine",
-                    new HoldZoneObjective("Guess — fabricate the motor mounts.", () => _dyno, 10, 4f,
-                        "Torquing the converter"))
+                    new MissionInteraction("Guess — fabricate the motor mounts.", () => _dyno, 10, 4f))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                
+                .AfterCues("M11_S1_01_GUESS");
 
             yield return new MissionStage("On the dyno",
                     new EnterVehicleObjective("Ice — get in and hold it on the dyno.", () => _granger,
@@ -61,7 +65,7 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Manifold pressure",
-                    new DynoObjective("Hold manifold pressure between 22 and 28 PSI.",
+                    new DynoObjective("Ice: use partial RT or tap W to hold 22-28 PSI. Stay in the driver seat.",
                         () => _granger, TargetBoostLow, TargetBoostHigh, 12))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context =>
@@ -71,13 +75,15 @@ namespace Bloodlines.Missions.Campaign
                     context.State.SetUpgrade("grangerTurbineInstalled", true);
                     context.State.Unlock("burroHeightsChopShop");
                     GameUtils.Subtitle("~g~Exhaust temps green. The 3600LX is done.", 5000);
-                });
+                })
+                .AfterCues("M11_S1_02_ICE");
 
             yield return new MissionStage("Berth 44",
-                    new ReachZoneObjective("Hear Gohan out.", () => _shop, 6f))
-                .WithDialogue(1)
+                    new DialogueFinishedObjective("Listen to Gohan's Berth 44 briefing."))
+                
                 .OnExit(context =>
-                    GameUtils.Subtitle("~y~Three billion in cartel gold, sitting in Berth 44.", 6000));
+                    GameUtils.Subtitle("~y~Three billion in cartel gold, sitting in Berth 44.", 6000))
+                .WithCues("M11_S1_03_GUESS", "M11_S1_04_ICE", "M11_S1_05_GOHAN");
         }
 
         private void SpawnGranger()
@@ -131,7 +137,7 @@ namespace Bloodlines.Missions.Campaign
 
         public override void Enter(MissionContext context)
         {
-            _lastTick = Game.GameTime;
+            _held = 0f; _lastTick = Game.GameTime;
         }
 
         public override void Update(MissionContext context)
@@ -146,6 +152,8 @@ namespace Bloodlines.Missions.Campaign
             float delta = (Game.GameTime - _lastTick) / 1000f;
             _lastTick = Game.GameTime;
             if (delta <= 0f || delta > 1f) delta = 0.016f;
+
+            if (!IsOwnerActive(context) || vehicle.GetPedOnSeat(VehicleSeat.Driver) != Game.Player.Character) return;
 
             // Engine revs stand in for manifold pressure: the game models no boost, but
             // CurrentRPM is exactly the value the player is modulating with the trigger.

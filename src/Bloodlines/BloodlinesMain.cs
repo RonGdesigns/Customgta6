@@ -17,6 +17,7 @@ namespace Bloodlines
     public sealed class BloodlinesMain : Script
     {
         private readonly ModConfig _config;
+        private readonly CharacterWheel _characterWheel;
         private readonly CampaignData _data;
         private readonly MissionCatalog _catalog;
         private readonly CrewRoster _crew;
@@ -25,14 +26,21 @@ namespace Bloodlines
         private readonly DialogueDirector _dialogue;
         private readonly CheckpointManager _checkpoints;
         private readonly MissionManager _missions;
+        private readonly CutsceneDirector _cutscenes;
+        private readonly MissionMarkers _missionMarkers;
         private readonly DeathController _death;
         private readonly FleetGarage _garage;
+        private readonly CrewHomes _homes;
+        private readonly CampaignDispatches _dispatches;
+        private readonly WeaponProgression _weapons;
         private readonly DevMenu _menu;
         private readonly SurveyMode _survey;
         private readonly LocationBook _locations;
         private readonly CampaignState _state;
 
         private int _abortHeldSince;
+        private CrewSlot? _controllerSelection;
+        private bool _controllerWheelHeld;
 
         public BloodlinesMain()
         {
@@ -51,21 +59,38 @@ namespace Bloodlines
                 _config.DevCaptureKey.ToString(), _config.SurveyTeleportKey.ToString());
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
+            _dispatches = new CampaignDispatches(_state);
 
+            CrewAppearance.Load(Path.Combine(root, "Bloodlines.Appearance.ini"));
             _crew = new CrewRoster(_config);
+            _weapons = new WeaponProgression(_state); _crew.Arsenal = _weapons;
+            _homes = new CrewHomes(_crew, _state, _locations, _weapons);
+            _crew.CompanionAI.Life.HomeDestination = _homes.Position;
+            _crew.CompanionAI.Driver.MissionDestination = ObjectiveMarkers.DestinationFor;
+            _characterWheel = new CharacterWheel(Path.Combine(root, "ui"));
             _switching = new SwitchController(_crew);
+            _switching.ExternalBlockReason = () => _death != null && _death.IsHandling ? "Move a few steps to finish recovering before switching." : _homes.Apartment.Inside || _homes.Apartment.Busy ? "Exit the apartment before switching characters." : null;
             _abilities = new AbilityController(_config, _crew);
-            _switching.BeforeSwitch = _abilities.Stop;
+            _switching.BeforeSwitch = () => { _abilities.Stop(); CrewAppearance.Leave(_crew.ActiveSlot); };
+            _switching.OnDistantHandover = (slot, ped) => CrewAppearance.ChangeAfterAbsence(ped, slot,
+                !_missions.IsRunning && !_cutscenes.IsActive && !_survey.IsActive &&
+                Game.Player.Character != null && !Game.Player.Character.IsInCombat);
             _dialogue = new DialogueDirector(_data, root);
             _checkpoints = new CheckpointManager(_crew);
             _garage = new FleetGarage(_state);
 
             var context = new MissionContext(_config, _locations, _data, _crew, _switching,
                 _abilities, _dialogue, _checkpoints, _state);
+            context.Cutscenes = _cutscenes = new CutsceneDirector(_crew, _dialogue, _locations, dataDirectory);
             _missions = new MissionManager(context, _state, _catalog);
+            _missionMarkers = new MissionMarkers(_catalog, _state, _missions, _locations, dataDirectory, _config.MissionStartKey.ToString());
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
-                _state, _dialogue, _data, _survey, _death);
+                _state, _dialogue, _data, _survey, _death, _homes, _dispatches);
+            _homes.OpenMenu = _menu.OpenHomePage;
+            _homes.RouteNextLead = _missionMarkers.RouteNextAvailable;
+            _homes.ApplyFleetUpgrade = _garage.Update;
+            _homes.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive;
 
             Interval = 0;
             Tick += OnTick;
@@ -80,6 +105,8 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            Step("controller ability", () => _abilities.HandleController(_homes.Apartment.Inside || _homes.Apartment.Busy || _menu.IsOpen || _characterWheel.IsOpen ||
+                _cutscenes.IsActive || _death.IsHandling || ControllerInput.Pressed(GTA.Control.CharacterWheel)));
             // Each subsystem is stepped separately. Wrapping the whole tick in one
             // try/catch meant a fault in the first line stopped every line after it:
             // a crew-controller bug took missions, dialogue and the dev menu with it,
@@ -88,15 +115,50 @@ namespace Bloodlines
             // Death runs first, and blocks the rest of the tick while it does. A
             // corpse must not be fed to the companion AI or ticked through a
             // mission objective for the frames it takes to stand back up.
+            if (_cutscenes.IsActive && (Game.Player.Character == null || Game.Player.Character.IsDead))
+            {
+                Step("close character wheel", _characterWheel.Close);
+                Step("stop scene", _cutscenes.Stop);
+            }
+            if (_characterWheel.IsOpen && (Game.Player.Character == null || Game.Player.Character.IsDead ||
+                !_crew.IsDeployed || _cutscenes.IsActive || _menu.IsOpen)) _characterWheel.Close();
+            if (Game.Player.Character == null || Game.Player.Character.IsDead) Step("cancel apartment", _homes.StopApartment);
             Step("death", _death.Update);
-            if (_death.IsHandling) return;
+            if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_homes.Apartment.Busy) { Step("apartment loading", _homes.UpdateTransition); return; }
+            if (_cutscenes.IsActive)
+            {
+                ObjectiveMarkers.Clear();
+                _missionMarkers.Clear();
+                _homes.Clear();
+                Step("cutscene", _cutscenes.Update);
+                Step("abort hold", HandleAbortHold);
+                return;
+            }
+            _crew.CompanionAI.MissionActive = _missions.IsRunning;
             Step("crew", _crew.Update);
+            Step("military response", () => _crew.CompanionAI.Military.Update(_crew.ActiveSlot, _crew.IsDeployed && !_missions.IsRunning && !_survey.IsActive, _crew.CrewGroup, _menu.IsOpen));
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
-            Step("dialogue", _dialogue.Update);
+            Step("weapon ownership", () => _weapons.Update(_crew));
+            Step("homes", () => _homes.Update(!_missions.IsRunning && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
+            ObjectiveMarkers.ActiveSlot = _crew.ActiveSlot;
+            ObjectiveMarkers.BeginFrame(_missions.IsRunning);
             Step("missions", _missions.Update);
+            ObjectiveMarkers.EndFrame();
+            if (_cutscenes.IsActive) { _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            Step("dialogue", _dialogue.Update);
+            Step("crew dispatches", () => _dispatches.Update(_crew.IsDeployed && !_missions.IsRunning && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen && !_dialogue.HasPending));
+            Step("controller menu", _menu.HandleControllerToggle);
             Step("menu", _menu.Update);
             Step("survey", _survey.Update);
+            Step("mission markers", () => _missionMarkers.Update(_menu.IsOpen));
+            if (!_menu.IsOpen && _missionMarkers.Nearby != null && Game.IsControlJustPressed(GTA.Control.Context))
+                StartMission(_missionMarkers.Nearby);
+            if (_missions.IsRunning && !_menu.IsOpen)
+                new GTA.UI.TextElement(_missions.LastAttempted.Id + " | " + _missions.CurrentTitle,
+                    new System.Drawing.PointF(24, 74), .28f, System.Drawing.Color.White).Draw();
+            if (_missions.IsRunning && !_menu.IsOpen) MissionObjectiveHud.Draw(_missions.CurrentObjective);
             Step("controller switch", HandleControllerSwitch);
             Step("abort hold", HandleAbortHold);
         }
@@ -141,8 +203,10 @@ namespace Bloodlines
         /// </summary>
         private void HandleControllerSwitch()
         {
-            if (!_config.ControllerSwitchEnabled || !_crew.IsDeployed) return;
-
+            if (!_config.ControllerSwitchEnabled || !_crew.IsDeployed || _menu.IsOpen || _homes.Apartment.Inside || _homes.Apartment.Busy)
+            {
+                _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; return;
+            }
             if (_config.SuppressVanillaSwitch)
             {
                 Game.DisableControlThisFrame(GTA.Control.CharacterWheel);
@@ -151,14 +215,37 @@ namespace Bloodlines
                 Game.DisableControlThisFrame(GTA.Control.SelectCharacterTrevor);
                 Game.DisableControlThisFrame(GTA.Control.SelectCharacterMultiplayer);
             }
-
-            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterMichael)) { _switching.TrySwitch(CrewSlot.Ice); return; }
-            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterFranklin)) { _switching.TrySwitch(CrewSlot.Gohan); return; }
-            if (Game.IsControlJustPressed(GTA.Control.SelectCharacterTrevor)) { _switching.TrySwitch(CrewSlot.Guess); return; }
-
-            if (!Game.IsControlPressed(GTA.Control.CharacterWheel)) return;
-            if (Game.IsControlJustPressed(GTA.Control.ScriptPadRight)) CycleCrew(1);
-            else if (Game.IsControlJustPressed(GTA.Control.ScriptPadLeft)) CycleCrew(-1);
+            bool held = ControllerInput.Pressed(GTA.Control.CharacterWheel);
+            if (!held)
+            {
+                _characterWheel.Close();
+                var selected = _controllerSelection;
+                _controllerSelection = null;
+                if (_controllerWheelHeld && selected.HasValue) _switching.TrySwitch(selected.Value);
+                _controllerWheelHeld = false;
+                return;
+            }
+            if (!_characterWheel.IsOpen)
+            {
+                _abilities.Stop();
+                _characterWheel.Open(_crew.ActiveSlot);
+            }
+            _controllerWheelHeld = true;
+            Game.DisableControlThisFrame(GTA.Control.LookLeftRight);
+            Game.DisableControlThisFrame(GTA.Control.LookUpDown);
+            Game.DisableControlThisFrame(GTA.Control.MeleeAttack1);
+            Game.DisableControlThisFrame(GTA.Control.VehicleExit);
+            float x = ControllerInput.Axis(GTA.Control.LookLeftRight);
+            float y = ControllerInput.Axis(GTA.Control.LookUpDown);
+            if (y < -0.55f && Math.Abs(y) >= Math.Abs(x)) _controllerSelection = CrewSlot.Gohan;
+            else if (x < -0.55f) _controllerSelection = CrewSlot.Ice;
+            else if (x > 0.55f) _controllerSelection = CrewSlot.Guess;
+            if (ControllerInput.JustPressed(GTA.Control.SelectCharacterMichael)) _controllerSelection = CrewSlot.Ice;
+            if (ControllerInput.JustPressed(GTA.Control.SelectCharacterFranklin)) _controllerSelection = CrewSlot.Gohan;
+            if (ControllerInput.JustPressed(GTA.Control.SelectCharacterTrevor)) _controllerSelection = CrewSlot.Guess;
+            if (_controllerSelection.HasValue) _characterWheel.Selected = _controllerSelection.Value;
+            _characterWheel.Draw(_crew);
+            GameUtils.Subtitle("Release D-pad Down to switch." + (_config.DevToolsEnabled ? "  B: debug menu" : ""), 500);
         }
 
         private void HandleAbortHold()
@@ -175,9 +262,17 @@ namespace Bloodlines
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
-            if (_death.IsHandling) return;
+            if (_homes.Apartment.Busy) return;
+            if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_cutscenes.IsActive)
+            {
+                if (e.KeyCode == Keys.Enter) _cutscenes.Stop();
+                else if (e.KeyCode == _config.AbortKey && _abortHeldSince == 0) _abortHeldSince = Game.GameTime;
+                return;
+            }
             try
             {
+                if (_menu.IsOpen && e.KeyCode != _config.DevMenuKey) { _menu.HandleKey(e.KeyCode); return; }
                 // The menu takes keys first while it is open, so its navigation never
                 // doubles as a gameplay bind.
                 if (_config.DevToolsEnabled)
@@ -188,9 +283,10 @@ namespace Bloodlines
                         return;
                     }
 
-                    if (_menu.HandleKey(e.KeyCode)) return;
+                    if (_menu.IsOpen) { _menu.HandleKey(e.KeyCode); return; }
                 }
 
+                if (_characterWheel.IsOpen) return;
                 if (HandleGameplayKey(e.KeyCode)) return;
                 if (_config.DevToolsEnabled) HandleQaKey(e.KeyCode);
             }
@@ -202,13 +298,14 @@ namespace Bloodlines
 
         private bool HandleGameplayKey(Keys key)
         {
+            if (_homes.Apartment.Inside || _homes.Apartment.Busy) return true;
             if (key == _config.SwitchIceKey) { _switching.TrySwitch(CrewSlot.Ice); return true; }
             if (key == _config.SwitchGohanKey) { _switching.TrySwitch(CrewSlot.Gohan); return true; }
             if (key == _config.SwitchGuessKey) { _switching.TrySwitch(CrewSlot.Guess); return true; }
             if (key == _config.SwitchNextKey) { CycleCrew(1); return true; }
             if (key == _config.SwitchPrevKey) { CycleCrew(-1); return true; }
             if (key == _config.AbilityKey) { _abilities.Toggle(); return true; }
-            if (key == _config.MissionStartKey) { StartMission(); return true; }
+            if (key == _config.MissionStartKey) { StartMission(_missionMarkers.Nearby); return true; }
             if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }
             if (key == _config.AbortKey && _abortHeldSince == 0) { _abortHeldSince = Game.GameTime; return true; }
             if (key == _config.DevCaptureKey && _survey.IsActive) { _survey.Capture(); return true; }
@@ -241,8 +338,9 @@ namespace Bloodlines
             if (e.KeyCode == _config.AbortKey) _abortHeldSince = 0;
         }
 
-        private void StartMission()
+        private void StartMission(MissionDefinition requested = null)
         {
+            if (_homes.Apartment.Inside || _homes.Apartment.Busy) { GameUtils.Notify("~y~Exit the apartment before starting a job."); return; }
             if (_missions.IsRunning) return;
 
             if (!_data.IsLoaded)
@@ -251,7 +349,7 @@ namespace Bloodlines
                 return;
             }
 
-            var next = _state.NextPlayable(_catalog);
+            var next = requested ?? _state.NextPlayable(_catalog);
             if (next == null)
             {
                 GameUtils.Notify("~y~No scripted missions available.");
@@ -289,7 +387,7 @@ namespace Bloodlines
             }
 
             var player = Game.Player.Character;
-            if (!_crew.Deploy(CrewSlot.Ice, player.Position, player.Heading))
+            if (!_crew.Deploy(Protagonist.StartingSlot, player.Position, player.Heading))
             {
                 GameUtils.Notify("~r~Crew failed to deploy — see Bloodlines.log.");
                 return;
@@ -306,14 +404,18 @@ namespace Bloodlines
             var player = Game.Player.Character;
             if (_crew.IsDeployed && player != null && player.Exists())
             {
-                _state.RecordPosition(_crew.ActiveSlot, player.Position);
+                _state.RecordPosition(_crew.ActiveSlot, _homes.SavePosition);
                 Step("save position", _state.Save);
             }
 
+            Step("close character wheel", _characterWheel.Close);
+            Step("stop scene", _cutscenes.Stop);
             Step("stop ability", _abilities.Stop);
             Step("stop switching", _switching.Cancel);
             Step("clear dialogue", _dialogue.Clear);
             Step("reset garage", _garage.Reset);
+            Step("leave apartment", _homes.StopApartment);
+            Step("release DLC cars", _menu.ReleaseVehicles);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
             GameUtils.Notify("~y~Crew stood down.");
@@ -322,11 +424,20 @@ namespace Bloodlines
         private void OnAborted(object sender, EventArgs e)
         {
             Logger.Info("Script aborting - tearing down.");
+            Step("close character wheel", _characterWheel.Close);
+            Step("stop scene", _cutscenes.Stop);
+            Step("stop home markers", _homes.Clear);
+            Step("stop mission markers", _missionMarkers.Clear);
+            Step("stop objective markers", ObjectiveMarkers.Clear);
             Step("stop survey", _survey.Stop);
             Step("stop switching", _switching.Cancel);
             Step("mission shutdown", _missions.Shutdown);
+            Step("close character wheel", _characterWheel.Close);
+            Step("stop scene", _cutscenes.Stop);
             Step("stop ability", _abilities.Stop);
             Step("clear dialogue", _dialogue.Clear);
+            Step("leave apartment", _homes.StopApartment);
+            Step("release DLC cars", _menu.ReleaseVehicles);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
             Step("restore time", () => Game.TimeScale = 1f);

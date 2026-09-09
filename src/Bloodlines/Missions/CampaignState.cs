@@ -59,6 +59,10 @@ namespace Bloodlines.Missions
             { "racingTransmissionInstalled", false }
         };
 
+        public Dictionary<string, HashSet<uint>> Weapons { get; } = new Dictionary<string, HashSet<uint>>(StringComparer.OrdinalIgnoreCase);
+
+        public HashSet<string> ReadDispatches { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         public int CompletedCount => Completed.Count;
 
         public bool IsComplete(string missionId) => Completed.Contains(missionId);
@@ -120,6 +124,15 @@ namespace Bloodlines.Missions
                 Merge(state.Safehouses, Json.Object(root.TryGetValue("unlockedSafehouses", out var s) ? s : null));
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
 
+                var lockers = Json.Object(root.TryGetValue("weaponLockers", out var w) ? w : null);
+                foreach (var hero in Protagonist.All)
+                {
+                    var owned = new HashSet<uint>();
+                    foreach (var value in Json.Array(lockers, hero.Slot.ToString()))
+                        if (uint.TryParse(value?.ToString(), out uint hash)) owned.Add(hash);
+                    state.Weapons[hero.Slot.ToString()] = owned;
+                }
+                foreach (var entry in Json.Array(root, "readDispatches")) if (entry != null) state.ReadDispatches.Add(entry.ToString());
                 Logger.Info("Save loaded: " + state.CompletedCount + " missions complete, act " + state.ActiveAct + ".");
             }
             catch (Exception ex)
@@ -195,11 +208,20 @@ namespace Bloodlines.Missions
         public void Reset()
         {
             Completed.Clear();
+            ReadDispatches.Clear();
+            Weapons.Clear();
             CurrentMissionId = "";
             ActiveAct = 1;
             CashOnHand = 0;
             AlamoGoldDredgedTons = 0f;
             OffshoreEscrowBalance = 0;
+            var defaults = new CampaignState(_path);
+            Safehouses.Clear();
+            foreach (var pair in defaults.Safehouses) Safehouses[pair.Key] = pair.Value;
+            FleetUpgrades.Clear();
+            foreach (var pair in defaults.FleetUpgrades) FleetUpgrades[pair.Key] = pair.Value;
+            LastHero = CrewSlot.Ice;
+            LastLocation = Vector3.Zero;
             Save();
         }
 
@@ -233,7 +255,9 @@ namespace Bloodlines.Missions
                     }
                 },
                 { "unlockedSafehouses", Safehouses.ToDictionary(p => p.Key, p => (object)p.Value) },
-                { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) }
+                { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },
+                { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }
             };
 
             try
@@ -243,8 +267,8 @@ namespace Bloodlines.Missions
                 // a half-written save where the real one was.
                 string temporary = _path + ".tmp";
                 File.WriteAllText(temporary, Json.Write(document) + Environment.NewLine);
-                if (File.Exists(_path)) File.Delete(_path);
-                File.Move(temporary, _path);
+                if (File.Exists(_path)) File.Replace(temporary, _path, _path + ".bak");
+                else File.Move(temporary, _path);
                 Logger.Debug("Save written to " + _path);
             }
             catch (IOException ex)

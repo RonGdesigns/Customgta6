@@ -4,6 +4,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -34,6 +35,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _spawn = Ctx.Locations.Position("M21.LaunchSpawn");
             _breakwater = Ctx.Locations.Position("M21.Breakwater");
             _ridge = Ctx.Locations.Position("M21.RidgeCross");
@@ -51,7 +53,12 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnLaunch();
             SpawnCargobob();
-            SpawnHostileBoats();
+            if (!RequireAssets(_launch, _cargobob, _cargobobPilot)) return false;
+            Station(CrewSlot.Gohan, _launch, VehicleSeat.Driver);
+            Station(CrewSlot.Ice, _launch, VehicleSeat.Passenger);
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.MicroSMG, 500, true, true);
+            // Hold the airborne lift while the player reads the briefing and boards.
+            StartCargobob();
             return true;
         }
 
@@ -61,26 +68,28 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Gohan — take the armed launch.", () => _launch,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Draw the locks",
-                    new ShadowTargetObjective("Stay on the Cargobob's wing.", () => _cargobob, 160f, 20,
-                        "The Cargobob was left alone and took a missile."),
+                    new ShadowTargetObjective("Stay on the Cargobob's wing.", () => _cargobob, 240f, 15,
+                        "The launch lost contact with the Cargobob.", acquireSeconds: 60),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .OnEnter(context => StartCargobob());
+                .OnEnter(context => { StartCargobob(); SpawnHostileBoats(); })
+                .WithCues("M21_S1_01_GOHAN");
 
             yield return new MissionStage("Kill the speedboats",
                     new KillTargetsObjective("Clear the Aegis boats before they close.",
                         () => _hostileCrews),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .WithDialogue(1);
+                
+                .AfterCues("M21_S1_02_ICE");
 
             yield return new MissionStage("Over the ridge",
-                    new ReachZoneObjective("See the bullion over the mountain ridge.", () => _ridge, 300f,
-                        flat: true),
+                    new DeliverVehicleObjective("Gohan: take the launch through the yellow breakwater exit. Guess will continue inland by air.", () => _launch, () => _breakwater, 50f),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~Ridge cleared. We're crossing into Blaine County.", 5000));
+                    GameUtils.Subtitle("~g~Water route clear. Guess is taking the bullion north to the Alamo.", 5000))
+                .AfterCues("M21_S1_03_GUESS");
         }
 
         private void SpawnLaunch()
@@ -111,7 +120,7 @@ namespace Bloodlines.Missions.Campaign
             if (_cargobob == null || !_cargobob.Exists()) return;
             _cargobob.IsPersistent = true;
 
-            _cargobobPilot = Track(World.CreatePed(pilotModel, _cargobob.Position, 0f));
+            _cargobobPilot = Ctx.Crew.PedFor(CrewSlot.Guess);
             model.MarkAsNoLongerNeeded();
             pilotModel.MarkAsNoLongerNeeded();
             if (_cargobobPilot == null || !_cargobobPilot.Exists()) return;
@@ -119,7 +128,8 @@ namespace Bloodlines.Missions.Campaign
             _cargobobPilot.RelationshipGroup = Ctx.Crew.CrewGroup;
             _cargobobPilot.IsPersistent = true;
             _cargobobPilot.BlockPermanentEvents = true;
-            _cargobobPilot.Task.WarpIntoVehicle(_cargobob, VehicleSeat.Driver);
+            Station(CrewSlot.Guess, _cargobob, VehicleSeat.Driver);
+            _cargobob.IsEngineRunning = true;
 
             var blip = Track(_cargobob.AddBlip());
             blip.Sprite = BlipSprite.Helicopter;
@@ -135,7 +145,9 @@ namespace Bloodlines.Missions.Campaign
             // Heavy and slow on purpose: the escort has to be able to keep up with it,
             // and the player has to feel why it needs protecting.
             _cargobob.EnginePowerMultiplier = 0.6f;
-            _cargobobPilot.Task.DriveTo(_cargobob, _ridge, 60f, 28f, DrivingStyle.Rushed);
+            var target = _breakwater + new Vector3(0f, 0f, 45f);
+            _cargobobPilot.Task.StartHeliMission(_cargobob, target, VehicleMissionType.GoTo, 12f, 25f,
+                (int)target.Z, 35, -1f, 50f, (HeliMissionFlags)(256 | 4096));
         }
 
         private void SpawnHostileBoats()
@@ -162,7 +174,15 @@ namespace Bloodlines.Missions.Campaign
                 crew.Accuracy = 35;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 250, true, true);
                 crew.Task.WarpIntoVehicle(boat, VehicleSeat.Driver);
-                crew.Task.VehicleChase(Game.Player.Character);
+                crew.Task.StartBoatMission(boat, _launch, VehicleMissionType.GoTo, 14f, (VehicleDrivingFlags)786603, 20f, (BoatMissionFlags)7);
+                var gunner = Track(World.CreatePed(crewModel, boat.Position, 0f));
+                if (gunner != null && gunner.Exists())
+                {
+                    gunner.RelationshipGroup = aegis; gunner.IsPersistent = true; gunner.BlockPermanentEvents = true;
+                    gunner.Accuracy = 20; gunner.Weapons.Give(WeaponHash.MicroSMG, 500, true, true);
+                    gunner.SetIntoVehicle(boat, VehicleSeat.Passenger); gunner.Task.VehicleShootAtPed(Game.Player.Character);
+                    _hostileCrews.Add(gunner);
+                }
 
                 _hostileCrews.Add(crew);
 

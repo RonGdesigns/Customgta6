@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _bridge = Ctx.Locations.Position("M25.BridgeDeck");
             _riverbed = Ctx.Locations.Position("M25.Riverbed");
 
@@ -50,6 +51,8 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnTanker();
             SpawnBoat();
+            if (!RequireAssets(_tanker, _boat)) return false;
+            Game.Player.Character.Weapons.Give(WeaponHash.RPG, 6, false, false);
             return true;
         }
 
@@ -58,13 +61,14 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("High ground",
                     new ReachZoneObjective("Take the bridge deck.", () => _bridge, 8f))
                 .PlayedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Seal the pass",
                     new DestroyVehicleObjective("Detonate the fuel tanker across the southern pass.",
                         () => _tanker))
                 .PlayedBy(CrewSlot.Ice)
-                .OnEnter(context => GameUtils.Subtitle("~y~One round into the tank seals the road.", 4000));
+                .OnEnter(context => GameUtils.Subtitle("~y~Use the RPG on the tanker from at least 30 metres away.", 4000))
+                .WithCues("M25_S1_01_ICE");
 
             yield return new MissionStage("Hold the bridge",
                     new SurviveWavesObjective("Hold the bridge — thermal scope, they have no cover.",
@@ -72,11 +76,12 @@ namespace Bloodlines.Missions.Campaign
                 .PlayedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Off the bridge",
-                    new ReachZoneObjective("Go over the rail — Guess is on the sandbar.",
-                        () => _riverbed, 25f, flat: true))
-                .WithDialogue(1)
+                    new ReachZoneObjective("Ice: parachute down toward the marked extraction boat.",
+                        () => _riverbed, 12f, flat: false))
+                
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~A hundred and ten metres to the water. Jump.", 5000));
+                    GameUtils.Subtitle("~y~A hundred and ten metres to the water. Jump.", 5000))
+                .WithCues("M25_S1_02_GUESS");
 
             yield return new MissionStage("River extraction",
                     new EnterVehicleObjective("Get in the boat.", () => _boat))
@@ -84,7 +89,8 @@ namespace Bloodlines.Missions.Campaign
                 {
                     context.State.CashOnHand += 40000;
                     GameUtils.Subtitle("~g~The sheriff's department doesn't chase anyone down this gorge.", 5000);
-                });
+                })
+                .AfterCues("M25_S1_03_ICE");
         }
 
         private IEnumerable<Ped> SpawnHunterWave(int wave)
@@ -97,11 +103,13 @@ namespace Bloodlines.Missions.Campaign
 
             // They come up the access road, which is the only reason a sniper on a
             // bridge is a fair fight rather than a firing range.
-            var approach = _bridge + new Vector3(0f, -120f - wave * 30f, -20f);
+            var approach = _bridge + new Vector3(0f, -65f - wave * 10f, 0f);
 
             for (int i = 0; i < 3 + wave; i++)
             {
-                var hunter = World.CreatePed(model, approach + new Vector3(-8f + i * 4f, 0f, 0f), 0f);
+                var post = World.GetSafeCoordForPed(approach + new Vector3(-8f + i * 4f, 0f, 0f), false, 0);
+                if (post == Vector3.Zero) continue;
+                var hunter = World.CreatePed(model, post, 0f);
                 if (hunter == null || !hunter.Exists()) continue;
 
                 hunter.RelationshipGroup = law;
@@ -151,7 +159,7 @@ namespace Bloodlines.Missions.Campaign
             var blip = Track(_boat.AddBlip());
             blip.Sprite = BlipSprite.Boat;
             blip.Color = BlipColor.Orange;
-            blip.Name = "Guess";
+            blip.Name = "Extraction boat";
         }
 
         protected override void OnCleanup()

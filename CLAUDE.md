@@ -131,10 +131,22 @@ the Legacy/Enhanced split, and what to do when `Bloodlines.log` never appears.
 ## Recovery and survey contracts
 
 Current missions have SupportsCheckpointRestore=false: a death fails the mission
-and regroups at the real pre-deployment position. Do not claim checkpoint recovery
+and recovers only the active hero at the real pre-deployment position. Surviving
+teammates retain their locations, health, transport and personal heat. Do not claim checkpoint recovery
 until vehicles, entities, active character and private mission state can be rebuilt.
 DeathController is frame-driven; gameplay must not tick while IsHandling is true.
 Critical teardown steps must remain independently protected.
+
+Recovery completion requires walking input and at least 0.5m of horizontal movement,
+not just CanControlCharacter=true. While checking, normal gameplay and all switch
+entry points stay blocked. After four seconds of attempted but blocked walking,
+the single retry gives way to the existing emergency Story Mode return. Do not
+reintroduce CHANGE_PLAYER_PED when the active ped already is the player.
+
+Military dispatch is staggered at 4s / 12s / 20s (helicopter / convoy / tank),
+subject to valid off-camera positions. Retry unavailable approaches after 3s.
+Keep at most three managed units and replacement cooldowns; never clear dispatch
+on every MissionActive=false assignment. See docs/MILITARY-PRESSURE-AND-RECOVERY.md.
 
 Survey destinations create a yellow GPS route; F7 explicitly teleports and F11 saves
 on-foot captures. Bloodlines.Surveyed.ini loads automatically and overrides M01's
@@ -144,3 +156,42 @@ Companions reserve separate seats and attempt normal nearby entry before fallbac
 
 Run `python tools/run_regression_tests.py` on Windows as well as the build/lint checks.
 These source-level tests use GTA stand-ins and cannot establish live native behavior.
+
+
+## Story, KJ and mission-marker update
+
+Gameplay names are Ice, Gohan and Guess (`Protagonist.DisplayName`); full names are
+reserved for deliberate story uses. KJ is a supporting NPC in SM03, with a second
+appearance authored for the future SM09 script; never add him to `CrewSlot`.
+
+`data/story_beats.txt` and `data/opening_scene.txt` are authored additions, distinct
+from the original PDFs. `python tools/build_story.py` compiles `data/scenes.tsv` and
+`docs/STORY-SCRIPT.md`; `--check` verifies freshness and coverage. Add scene data to
+packages with the DLL. `mission_starts.tsv` maps implemented missions to existing
+LocationBook keys, so surveyed overrides also move their markers.
+
+CutsceneDirector runs before mission.Begin for briefings, and after completion for
+aftermath. Never start objective clocks and then pause only their Update calls for
+a briefing. M01's recognition explicitly starts its combat clock after the scene.
+Scenes own temporary camera/control/entity flags and restore them on every exit.
+Enter or controller A skips; the normal abort hold remains available. Exactly two
+classes still derive from GTA.Script; the directors and marker services do not.
+
+Switches within 80m avoid the aerial camera. Distant switches use a bounded collision
+check and short fade; missionTransition preserves an already-owned mission fade.
+Occupied crew transport must survive mission cleanup. M11 owns turbine installation;
+M23 owns the permanent bunker unlock. Keep optional solo consequences out of mandatory
+main-scene prerequisites.
+
+Run the existing regression suite plus `python tools/run_story_tests.py` (43 checks).
+See `docs/STORY-AUDIT.md` for coverage, limitations and the live playtest sequence.
+
+
+## M01 live-playtest correction
+
+See `docs/M01-HOTFIX.md` (or `M01-HOTFIX.md` from this docs folder) for the
+current exterior staging, camera fix, assigned M01 companion actions and controller
+controls. The previous descriptions of bible anchors as surveyed geometry are
+superseded: those proposed positions were not verified against installed assets.
+`tools/test_dialogue_parser.py` protects speech extraction; authored revisions
+live in `data/dialogue_edits.json`, applied by `parse_bible.py`.

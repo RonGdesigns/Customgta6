@@ -11,7 +11,7 @@ namespace Bloodlines.Missions.Campaign
     /// M26 — "The Alamo Scramble". Alamo airspace, 11:00, high wind.
     ///
     /// Cartel spotter planes are quartering the Alamo looking for the sunken bullion.
-    /// Guess takes up a Duster with twin machine guns and puts them both in the lake
+    /// Guess takes up an armed Lazer interceptor and puts them both in the lake
     /// while Gohan jams their radio calls.
     ///
     /// The campaign's only pure air-to-air mission, and it is here for variety as much
@@ -32,6 +32,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _pad = Ctx.Locations.Position("M26.DusterPad");
             _patrolBox = Ctx.Locations.Position("M26.PatrolBox");
 
@@ -42,41 +43,47 @@ namespace Bloodlines.Missions.Campaign
             }
 
             ApplyBibleSetting();
+            Station(CrewSlot.Ice, _pad + new Vector3(-15f, 0f, 0f));
+            Station(CrewSlot.Gohan, _pad + new Vector3(0f, -20f, 0f));
             SpawnDuster();
             SpawnSpotters();
+            if (!RequireAssets(_duster)) return false;
+            if (_spotters.Count != 2 || _pilots.Count != 2) return false;
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Scramble",
-                    new EnterVehicleObjective("Guess — get the Duster up.", () => _duster,
+                    new EnterVehicleObjective("Guess — take off in the marked Lazer.", () => _duster,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("First spotter",
                     new DestroyVehicleObjective("Splash the lead spotter.",
                         () => _spotters.Count > 0 ? _spotters[0] : null))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => GameUtils.Subtitle("~y~Two biplanes quartering the lake. Take the lead.", 5000));
+                .OnEnter(context => GameUtils.Subtitle("~y~Use the Lazer aircraft weapons on the two red plane markers.", 5000))
+                .WithCues("M26_S1_01_GUESS");
 
             yield return new MissionStage("Second spotter",
                     new DestroyVehicleObjective("The second one is diving for Grapeseed — kill him.",
                         () => _spotters.Count > 1 ? _spotters[1] : null))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                
+                .WithCues("M26_S1_02_GOHAN");
 
             yield return new MissionStage("Home",
-                    new ReachZoneObjective("Put the Duster back down at McKenzie.", () => _pad, 50f,
-                        flat: true))
+                    new DeliverVehicleObjective("Guess: land the Lazer at McKenzie and stop.", () => _duster, () => _pad, 65f, land: true))
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~Both spotters in the lake. The Alamo stash stays a ghost.", 5000));
+                    GameUtils.Subtitle("~g~Both spotters in the lake. The Alamo stash stays a ghost.", 5000))
+                .AfterCues("M26_S1_03_GUESS");
         }
 
         private void SpawnDuster()
         {
-            var model = new Model("duster");
+            var model = new Model("lazer");
             if (!GameUtils.RequestModel(model)) return;
 
             _duster = Track(World.CreateVehicle(model, _pad, Ctx.Locations.Heading("M26.DusterPad")));
@@ -88,7 +95,7 @@ namespace Bloodlines.Missions.Campaign
             var blip = Track(_duster.AddBlip());
             blip.Sprite = BlipSprite.Plane;
             blip.Color = BlipColor.Orange;
-            blip.Name = "Armed Duster";
+            blip.Name = "Lazer interceptor";
         }
 
         private void SpawnSpotters()
@@ -104,7 +111,7 @@ namespace Bloodlines.Missions.Campaign
                 var plane = Track(World.CreateVehicle(planeModel,
                     _patrolBox + new Vector3(i * 120f - 60f, i * 80f, i * 40f), 180f));
                 if (plane == null || !plane.Exists()) continue;
-                plane.IsPersistent = true;
+                plane.IsPersistent = true; plane.IsEngineRunning = true; plane.ForwardSpeed = 40f;
                 _spotters.Add(plane);
 
                 var pilot = Track(World.CreatePed(pilotModel, plane.Position, 0f));

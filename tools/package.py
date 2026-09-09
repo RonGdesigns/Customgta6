@@ -33,7 +33,7 @@ PREBUILT = os.path.join(REPO, 'prebuilt', 'Bloodlines.dll')
 DEPLOY = os.path.join(REPO, 'build', 'deploy')
 
 DATA_FILES = ['missions.tsv', 'dialogue.tsv', 'anchors.tsv', 'locations.tsv',
-              'campaign_registry.json']
+              'campaign_registry.json', 'scenes.tsv', 'mission_starts.tsv']
 CONFIG_FILES = ['Bloodlines.ini', 'Bloodlines.Locations.ini']
 
 
@@ -93,6 +93,9 @@ def main():
 
     scripts = os.path.join(DEPLOY, 'scripts')
     root = os.path.join(scripts, 'Bloodlines')
+    ui_source = os.path.join(REPO, 'assets', 'ui')
+    if os.path.isdir(ui_source):
+        shutil.copytree(ui_source, os.path.join(root, 'ui'), dirs_exist_ok=True)
     data = os.path.join(root, 'data')
     audio = os.path.join(root, 'audio')
     missions = os.path.join(root, 'missions')

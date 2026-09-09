@@ -62,6 +62,7 @@ namespace Bloodlines.Core
         }
 
         public bool IsSpeaking => _speaking != null;
+        public bool HasPending => _speaking != null || _queue.Count > 0;
 
         /// <summary>Queues one cue by its bible id (for example "M01_S1_01_ICE").</summary>
         public void Play(string cueId)
@@ -112,9 +113,10 @@ namespace Bloodlines.Core
             if (_queue.Count == 0) return;
 
             _speaking = _queue.Dequeue();
-            _speakingUntil = Game.GameTime + DurationFor(_speaking);
+            string audio = ResolveAudioPath(_speaking);
+            _speakingUntil = Game.GameTime + Math.Max(DurationFor(_speaking), WaveTiming.DurationMs(audio) + 250);
             GTA.UI.Screen.ShowSubtitle(Format(_speaking), 100);
-            PlayAudio(_speaking);
+            PlayAudio(_speaking, audio);
             Logger.Debug("Cue " + _speaking.CueId + ": " + _speaking.Line);
         }
 
@@ -142,19 +144,19 @@ namespace Bloodlines.Core
                 case "ICE": return "~b~";
                 case "GOHAN": return "~g~";
                 case "GUESS": return "~o~";
+                case "KJ": return "~p~";
                 default: return "~r~"; // antagonists and one-off speakers
             }
         }
 
-        private void PlayAudio(DialogueCue cue)
+        private void PlayAudio(DialogueCue cue, string path)
         {
-            string path = ResolveAudioPath(cue);
-            if (path == null) return;
-
             try
             {
                 _player?.Stop();
                 _player?.Dispose();
+                _player = null;
+                if (path == null) return;
                 _player = new SoundPlayer(path);
                 _player.Play();
             }

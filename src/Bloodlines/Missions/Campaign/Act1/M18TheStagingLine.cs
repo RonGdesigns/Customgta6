@@ -32,6 +32,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _channel = Ctx.Locations.Position("M18.ChannelMark");
             _hangar = Ctx.Locations.Position("M18.SaltHangar");
             _haulerMark = Ctx.Locations.Position("M18.HaulerMark");
@@ -41,6 +42,10 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
 
             SpawnAssets();
+            if (!RequireAssets(_kraken, _cargobob, _hauler)) return false;
+            Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
+            Station(CrewSlot.Guess, _cargobob, VehicleSeat.Driver);
+            Station(CrewSlot.Ice, _hauler, VehicleSeat.Driver);
             return true;
         }
 
@@ -52,29 +57,32 @@ namespace Bloodlines.Missions.Campaign
                     new DeliverVehicleObjective("Hold her in the channel.", () => _kraken,
                         () => _channel, 25f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Bird in the hangar",
                     new DeliverVehicleObjective("Guess — put the Cargobob in the salt hangar.",
-                        () => _cargobob, () => _hangar, 30f))
+                        () => _cargobob, () => _hangar, 30f, land: true))
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Load the launchers",
                     new DeliverVehicleObjective("Ice — bring the hauler onto the line.",
-                        () => _hauler, () => _haulerMark, 20f),
-                    new HoldZoneObjective("Load the anti-air launchers.", () => _haulerMark, 10, 6f,
-                        "Loading launchers"))
+                        () => _hauler, () => _haulerMark, 20f))
+                .OwnedBy(CrewSlot.Ice);
+
+            yield return new MissionStage("Load the parked hauler",
+                    new MissionInteraction("Load the anti-air launchers.", () => _haulerMark, 10, 6f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Countdown",
-                    new ReachZoneObjective("Regroup on the line.", () => _haulerMark, 10f))
-                .WithDialogue(1)
+                    new DialogueFinishedObjective("Keep your assigned vehicle in place. Listen to the final radio check."))
+                
                 .OnExit(context =>
                 {
                     // Everything Act I has been buying is now in one place.
                     GameUtils.Subtitle("~y~Tonight we hit Berth 44, take thirty tons of their gold, " +
                                        "and finish what started.", 7000);
-                });
+                })
+                .WithCues("M18_S1_01_ICE", "M18_S1_02_GUESS", "M18_S1_03_GOHAN");
         }
 
         private void SpawnAssets()

@@ -12,7 +12,7 @@ namespace Bloodlines.Missions.Campaign
     /// M10 — "Open Throttle". Del Perro Freeway, 23:00, rain.
     ///
     /// The turbine engines have to reach the shop, and the whole of Act I's escalation
-    /// is riding on the flatbed. Guess holds it above eighty, Ice works the RPG from
+    /// is riding on the flatbed. Guess keeps the cargo moving, Ice steps out to use the RPG beside
     /// the bed, Gohan fries the bikes' electronics.
     ///
     /// The purest Green set piece in the campaign — no interiors, no faked physics,
@@ -35,6 +35,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _start = Ctx.Locations.Position("M10.ConvoyStart");
             _tunnel = Ctx.Locations.Position("M10.TunnelMouth");
 
@@ -49,6 +50,9 @@ namespace Bloodlines.Missions.Campaign
             player.Weapons.Give(WeaponHash.RPG, 10, false, true);
 
             if (!SpawnFlatbed()) return false;
+            Station(CrewSlot.Ice, _flatbed, VehicleSeat.Passenger);
+            Station(CrewSlot.Gohan, _start + new Vector3(15f, -10f, 0f));
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.RPG, 12, false, true);
             return true;
         }
 
@@ -58,33 +62,36 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — take the flatbed.", () => _flatbed,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             // The speed floor and the bikes run together: dropping below eighty is what
             // lets them box the flatbed in, which is exactly what the bible says.
             yield return new MissionStage("Del Perro run",
-                    new SpeedFloorObjective("Keep the flatbed above 80.", 80f,
-                        "The chase boxed the flatbed in and popped the slicks."),
+                    new SpeedFloorObjective("Keep the flatbed above 35 mph; use drive-by weapons on the bikes.", 35f,
+                        "The chase boxed the flatbed in and popped the slicks.", graceSeconds: 20),
                     new KillTargetsObjective("Clear the cartel bikes.", () => _bikers, 0, false),
                     new ProtectObjective("", () => _flatbed, "The flatbed and the engines are gone."))
-                .OnEnter(context => SpawnBikes());
+                .OnEnter(context => SpawnBikes())
+                .WithCues("M10_S1_01_GUESS", "M10_S1_02_ICE", "M10_S1_03_GOHAN");
 
             yield return new MissionStage("Gunship",
-                    new DestroyVehicleObjective("Ice — put the Buzzard down.", () => _buzzard),
+                    new DestroyVehicleObjective("Ice: have Guess stop, get out, and use the RPG on the marked Buzzard.", () => _buzzard),
                     new ProtectObjective("", () => _flatbed, "The flatbed and the engines are gone."))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(2)
-                .OnEnter(context => SpawnBuzzard());
+                
+                .OnEnter(context => { SpawnBuzzard(); Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess); Ctx.Crew.PedFor(CrewSlot.Guess).Task.ClearAllImmediately(); _flatbed.Speed = 0f; })
+                .AfterCues("M10_S2_04_ICE");
 
             yield return new MissionStage("Tunnel mouth",
-                    new ReachZoneObjective("Get the engines to the tunnel.", () => _tunnel, 30f,
-                        flat: true, requireVehicle: true),
+                    new DeliverVehicleObjective("Guess: get back in the flatbed and deliver the engines to the tunnel.", () => _flatbed, () => _tunnel, 30f) { RequiredCharacter = CrewSlot.Guess },
                     new ProtectObjective("", () => _flatbed, "The flatbed and the engines are gone."))
                 .OnExit(context =>
                 {
-                    context.State.SetUpgrade("grangerTurbineInstalled", true);
+                    // M11 owns installation; these engines are still cargo.
                     GameUtils.Subtitle("~g~Engines delivered. Burro Heights, tomorrow.", 5000);
-                });
+                })
+                .WithCues("M10_S2_05_GUESS")
+                .AfterCues("M10_S2_06_GOHAN");
         }
 
         private bool SpawnFlatbed()
@@ -135,7 +142,8 @@ namespace Bloodlines.Missions.Campaign
                 rider.Accuracy = 20;
                 rider.Weapons.Give(WeaponHash.MicroSMG, 200, true, true);
                 rider.Task.WarpIntoVehicle(bike, VehicleSeat.Driver);
-                rider.Task.VehicleShootAtPed(player);
+                rider.Task.VehicleChase(player);
+                GTA.Native.Function.Call(GTA.Native.Hash.SET_PED_COMBAT_ATTRIBUTES, rider, 52, true);
 
                 _bikers.Add(rider);
             }

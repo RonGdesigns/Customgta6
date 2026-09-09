@@ -101,6 +101,7 @@ namespace Bloodlines.Missions.Objectives
             if (target == null || !target.Exists()) { Fail("The target is gone."); return; }
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            ObjectiveMarkers.Navigation(target.Position, RequiredCharacter);
             float distance = player.Position.DistanceTo(target.Position);
             bool inBand = IsOwnerActive(context) && distance <= _maxDistance && distance >= _minDistance;
             int now = Game.GameTime;
@@ -165,7 +166,7 @@ namespace Bloodlines.Missions.Objectives
             if (height <= _ceiling)
             {
                 _highSince = 0;
-                GameUtils.Subtitle("~s~" + (int)height + " ft above terrain", 400);
+                GameUtils.Subtitle("~s~" + (int)height + " m above terrain", 400);
                 return;
             }
 
@@ -189,30 +190,24 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<Vehicle> _vehicle;
         private readonly Func<Vector3> _destination;
         private readonly float _radius;
-
+        private readonly bool _land;
         public DeliverVehicleObjective(string label, Func<Vehicle> vehicle, Func<Vector3> destination,
-            float radius = 12f)
-            : base(label)
-        {
-            _vehicle = vehicle;
-            _destination = destination;
-            _radius = radius;
-        }
-
+            float radius = 12f, bool land = false) : base(label)
+        { _vehicle = vehicle; _destination = destination; _radius = radius; _land = land; }
         public override void Update(MissionContext context)
         {
-            var vehicle = _vehicle();
-            var destination = _destination();
-
-            GameUtils.DrawObjectiveMarker(destination, Color.FromArgb(120, 232, 168, 56), _radius * 0.5f);
-
-            if (vehicle == null || !vehicle.Exists())
-            {
-                Fail("The vehicle is gone.");
-                return;
-            }
-
-            if (GameUtils.IsWithinFlat(vehicle.Position, destination, _radius)) Complete();
+            var vehicle = _vehicle(); var destination = _destination();
+            if (vehicle == null || !vehicle.Exists() || !vehicle.IsDriveable) { Fail("The required vehicle is lost."); return; }
+            var player = Game.Player.Character;
+            // Locate the vehicle first, then route that vehicle to its destination.
+            bool aboard = player != null && player.IsInVehicle(vehicle);
+            ObjectiveMarkers.Navigation(aboard ? destination : vehicle.Position, aboard ? null : RequiredCharacter, aboard ? vehicle : null);
+            GameUtils.DrawObjectiveMarker(destination, Color.Yellow, Math.Max(2f, _radius * .3f));
+            if (!IsOwnerActive(context) || !aboard) return;
+            if (vehicle.Position.DistanceTo(destination) > _radius) return;
+            if (_land && (vehicle.HeightAboveGround > 3f || vehicle.Speed > 3f))
+            { GameUtils.Subtitle("Land the marked aircraft and slow to a stop.", 500); return; }
+            Complete();
         }
     }
 
@@ -296,11 +291,14 @@ namespace Bloodlines.Missions.Objectives
 
         private int _activeSite = -1;
         private int _startedAt;
+        private readonly Func<Vehicle> _vehicle;
+        private readonly string _action;
 
         public MultiHoldObjective(string label, IEnumerable<Vector3> sites, int secondsEach,
-            float radius = 3f, string workText = "Working")
+            float radius = 3f, string workText = "Working", Func<Vehicle> vehicle = null)
             : base(label)
         {
+            _action = label; _vehicle = vehicle;
             _sites = sites.ToList();
             _secondsEach = secondsEach;
             _radius = radius;
@@ -326,6 +324,10 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
+            int nearest = Enumerable.Range(0, _sites.Count).Where(i => !_done.Contains(i)).OrderBy(i => player.Position.DistanceTo(_sites[i])).First();
+            ObjectiveMarkers.Navigation(_sites[nearest], _vehicle == null ? RequiredCharacter : null, _vehicle?.Invoke());
+            Label = _action + " — " + Remaining + " sites left; press E / D-pad Right at a marker.";
+            if (!IsOwnerActive(context) || (_vehicle == null ? player.IsInVehicle() : !player.IsInVehicle(_vehicle()))) { _activeSite = -1; return; }
             int near = -1;
             for (int i = 0; i < _sites.Count; i++)
             {
@@ -342,6 +344,7 @@ namespace Bloodlines.Missions.Objectives
 
             if (_activeSite != near)
             {
+                if (!Game.IsControlJustPressed(GTA.Control.Context)) return;
                 _activeSite = near;
                 _startedAt = Game.GameTime;
                 return;
@@ -356,7 +359,7 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            GameUtils.Subtitle(_workText + "... " + (_secondsEach - elapsed) + "s", 500);
+            Label = _workText + " — stay at this marker: " + (_secondsEach - elapsed) + "s; " + Remaining + " left.";
         }
     }
 }

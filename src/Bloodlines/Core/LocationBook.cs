@@ -75,7 +75,8 @@ namespace Bloodlines.Core
             // Per-install overrides win: someone who has surveyed a position should not
             // lose it to a data-file update.
             book.ApplyOverrides(overridesPath, false);
-            book.ApplyMissionAnchors(data);
+            // Bible anchors describe proposed set pieces, including an absent yacht
+            // interior. They are reference material, not verified spawn geometry.
             if (surveyedPath != null && File.Exists(surveyedPath)) book.ApplyOverrides(surveyedPath, true);
 
             Logger.Info("Loaded " + book._locations.Count + " campaign locations (" +
@@ -107,37 +108,6 @@ namespace Bloodlines.Core
                 }
             }
 
-        }
-
-        private void ApplyMissionAnchors(CampaignData data)
-        {
-            if (data == null) return;
-            var keys = new Dictionary<string, string>
-            {
-                { "M01.CraneNest", "Ice: Roost 4" },
-                { "M01.LowerDeckLedger", "Gohan: Bilge Hatch" },
-                { "M01.PrototypeCar", "Guess: Bay 2" },
-                { "M01.LaunchEscape", "Mateo: Escape Boat" }
-            };
-            foreach (var pair in keys)
-            {
-                var location = Get(pair.Key);
-                if (location == null || location.Status == LocationStatus.Surveyed) continue;
-                if (!data.TryAnchor(pair.Value, out var position, out var heading)) continue;
-                location.Position = position;
-                location.Heading = heading;
-                location.Status = LocationStatus.Bible;
-            }
-            // The original M01 spawner placed Mateo six metres above the bilge.
-            // Give that actual point a survey key rather than ignoring CapoSpawn.
-            var capo = Get("M01.CapoSpawn");
-            var bilge = Get("M01.LowerDeckLedger");
-            if (capo != null && bilge != null && capo.Status != LocationStatus.Surveyed)
-            {
-                capo.Position = bilge.Position + new Vector3(0f, 6f, 6f);
-                capo.Heading = 90f;
-                capo.Status = LocationStatus.Bible;
-            }
         }
 
         private static int CountOf(LocationBook book, LocationStatus status)

@@ -23,7 +23,10 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _rivals = new List<Ped>();
         private readonly List<Vehicle> _rivalCars = new List<Vehicle>();
 
+        private Ped _kj;
         private Vehicle _coupe;
+        private readonly int[] _rivalCheckpoint = new int[2];
+        private readonly int[] _rivalLaps = new int[2];
         private Vector3 _start;
         private List<Vector3> _circuit;
 
@@ -32,6 +35,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _start = Ctx.Locations.Position("SM03.StartLine");
             _circuit = new List<Vector3>
             {
@@ -51,8 +55,9 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Abilities.Refill();
 
             if (!SpawnCoupe()) return false;
+            SpawnKJ();
             SpawnRivals();
-            return true;
+            return _kj != null && _kj.Exists() && _rivals.Count == 2;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -60,25 +65,29 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Starting line",
                     new EnterVehicleObjective("Get in the drift coupe.", () => _coupe, VehicleSeat.Driver))
                 .PlayedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                
+                .WithCues("SM03_S1_01_GUESS");
 
             yield return new MissionStage("Three laps",
-                    new RaceCheckpointObjective("Win the circuit — three laps.", _circuit, 14f, 3),
+                    new RaceCheckpointObjective("Win the circuit — three laps.", _circuit, 14f, 3, () => _coupe),
                     new ProtectObjective("", () => _coupe, "The coupe is wrecked."))
                 .PlayedBy(CrewSlot.Guess)
-                .OnEnter(context => StartRivals());
+                .OnEnter(context => StartRivals())
+                .WithCues("SM03_S1_02_GUESS");
 
             yield return new MissionStage("They pulled guns",
-                    new KillTargetsObjective("Shake the Marabunta shooters.", () => _rivals),
-                    new ReachZoneObjective("Cross the line.", () => _start, 15f, flat: true))
+                    new KillTargetsObjective("Stop the marked shooters OR drive the coupe to the yellow finish marker.", () => _rivals),
+                    new DeliverVehicleObjective("Escape in the drift coupe to the marked finish, or stop the shooters.", () => _coupe, () => _start, 15f),
+                    new ProtectObjective("", () => _coupe, "The coupe is wrecked."))
                 .AnyOf()
                 .PlayedBy(CrewSlot.Guess)
-                .WithDialogue(2)
+                
                 .OnEnter(context =>
                 {
                     foreach (var rival in _rivals)
                     {
                         if (rival == null || !rival.Exists()) continue;
+                        rival.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
                         rival.Task.VehicleShootAtPed(Game.Player.Character);
                     }
                 })
@@ -89,7 +98,42 @@ namespace Bloodlines.Missions.Campaign
                     context.State.CashOnHand += 25000;
                     context.State.SetUpgrade("racingTransmissionInstalled", true);
                     GameUtils.Subtitle("~g~Pink slip and the racing transmission are yours.", 5000);
-                });
+                })
+                .WithCues("SM03_S2_03_ENEMY", "SM03_S2_04_GUESS")
+                .AfterCues("SM03_S2_05_GUESS");
+        }
+
+        private void SpawnKJ()
+        {
+            var model = new Model("a_m_y_stbla_02");
+            if (!GameUtils.RequestModel(model)) return;
+            _kj = Track(World.CreatePed(model, _start + new Vector3(6f, 3f, 0f), 180f));
+            model.MarkAsNoLongerNeeded();
+            if (_kj == null || !_kj.Exists()) return;
+            _kj.IsPersistent = true; _kj.BlockPermanentEvents = true;
+            _kj.IsInvincible = true; _kj.RelationshipGroup = Ctx.Crew.CrewGroup;
+            _kj.Task.StandStill(-1);
+            var blip = Track(_kj.AddBlip());
+            blip.Name = "KJ"; blip.Color = BlipColor.Purple; blip.IsShortRange = false;
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            if (Status != MissionStatus.Running || Stage != 1) return;
+            for (int i = 0; i < _rivals.Count; i++)
+            {
+                var rival = _rivals[i]; var car = _rivalCars[i];
+                if (rival == null || !rival.Exists() || rival.IsDead || car == null || !car.Exists() || !car.IsDriveable) continue;
+                if (car.Position.DistanceTo(_circuit[_rivalCheckpoint[i]]) > 16f) continue;
+                _rivalCheckpoint[i]++;
+                if (_rivalCheckpoint[i] == _circuit.Count)
+                {
+                    _rivalCheckpoint[i] = 0;
+                    if (++_rivalLaps[i] >= 3) { Fail("A rival finished the circuit first."); return; }
+                }
+                rival.Task.DriveTo(car, _circuit[_rivalCheckpoint[i]], 8f, 30f, DrivingStyle.Rushed);
+            }
         }
 
         private bool SpawnCoupe()
@@ -120,7 +164,7 @@ namespace Bloodlines.Missions.Campaign
             var pedModel = new Model("g_m_y_salvaboss_01");
             if (!GameUtils.RequestModel(carModel) || !GameUtils.RequestModel(pedModel)) return;
 
-            var marabunta = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            var marabunta = World.AddRelationshipGroup("BLOODLINES_RACERS"); // Neutral until the post-race ambush.
 
             for (int i = 0; i < 2; i++)
             {

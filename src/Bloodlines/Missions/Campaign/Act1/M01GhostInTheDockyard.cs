@@ -16,8 +16,8 @@ namespace Bloodlines.Missions.Campaign
     /// S1 is the three separate approaches, S2 is the recognition and the firefight
     /// it costs them, S3 is Mateo's escape and the gate-smash extraction.
     ///
-    /// This is the one mission whose positions come from the bible's own surveyed
-    /// coordinate index (Track 2) rather than from estimates.
+    /// Exterior positions remain estimates until captured by the in-game surveyor.
+    /// ProloguePlacement resolves usable ground before deploying the actors.
     /// </summary>
     public sealed class M01GhostInTheDockyard : Mission
     {
@@ -26,20 +26,12 @@ namespace Bloodlines.Missions.Campaign
 
         private static readonly string[] CartelGoons = { "g_m_y_mexgoon_01", "g_m_y_mexgoon_02", "g_m_y_mexgang_01" };
 
-        // Guard posts from the implementation toolkit's M01 listing — authored
-        // against the dockyard geometry, unlike a ring around the regroup point.
-        private static readonly Vector3[] GuardPosts =
-        {
-            new Vector3(968f, -3015f, 12f),
-            new Vector3(960f, -3020f, 12f),
-            new Vector3(980f, -3025f, 6f),
-            new Vector3(995f, -3010f, 6f)
-        };
-
         private readonly List<Ped> _guards = new List<Ped>();
 
-        private Ped _mateo;
+        private Ped _mateo, _technician;
+        private Prop _terminal;
         private Vehicle _prototype;
+        private Vehicle _approachCar;
         private Vehicle _launch;
         private Blip _objectiveBlip;
 
@@ -52,6 +44,9 @@ namespace Bloodlines.Missions.Campaign
         private bool _ledgerRipped;
         private bool _prototypeTaken;
         private bool _mateoFleeing;
+        private bool _exitRouteSet;
+        private CrewSlot? _guidanceSlot;
+        private CrewSlot? _workingSlot;
 
         private int _ripStartedAt;
         private int _recognitionStartedAt;
@@ -61,7 +56,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool OnStart()
         {
-            // Track 2 of the omnibus bible — surveyed positions, used verbatim.
+            // The installed prototype uses accessible dock exteriors. The bible's
+            // crane platform and yacht interior are not installed map assets.
+            if (!ProloguePlacement.Prepare(Ctx.Locations)) return false;
             _roost = Ctx.Locations.Position("M01.CraneNest");
             _bilge = Ctx.Locations.Position("M01.LowerDeckLedger");
             _bayFloor = Ctx.Locations.Position("M01.PrototypeCar");
@@ -73,18 +70,25 @@ namespace Bloodlines.Missions.Campaign
             var placements = new Dictionary<CrewSlot, PedPlacement>
             {
                 { CrewSlot.Ice, new PedPlacement(_roost, Ctx.Locations.Heading("M01.CraneNest")) },
-                { CrewSlot.Gohan, new PedPlacement(_bilge, Ctx.Locations.Heading("M01.LowerDeckLedger")) },
-                { CrewSlot.Guess, new PedPlacement(_bayFloor + new Vector3(2f, 0f, 0f), 90f) }
+                { CrewSlot.Gohan, new PedPlacement(Ctx.Locations.Position("M01.GohanApproach"), Ctx.Locations.Heading("M01.GohanApproach")) },
+                { CrewSlot.Guess, new PedPlacement(Ctx.Locations.Position("M01.GuessApproach"), Ctx.Locations.Heading("M01.GuessApproach")) }
             };
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Ice, placements)) return false;
+            if (!Ctx.Crew.Deploy(Protagonist.StartingSlot, placements)) return false;
+            Ctx.Crew.CompanionsHoldPosition = true;
+            Ctx.Crew.AssignCompanionAI();
 
             SpawnMateo();
+            if (!SpawnLedgerStation()) return false;
             SpawnPrototype();
+            if (!SpawnApproachCar()) return false;
+            if (_mateo == null || !_mateo.Exists() || _prototype == null || !_prototype.Exists()) return false;
             ApplyBibleSetting();
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            UpdateApproachActors();
 
-            Objective("Ice — set the shot on Mateo from Roost 4.");
-            SetObjectiveBlip(_mateo != null && _mateo.Exists() ? _mateo.Position : _bilge, "Mateo Cifuentes");
+            NextApproachObjective();
+            DrawApproachGuidance();
             return true;
         }
 
@@ -92,6 +96,11 @@ namespace Bloodlines.Missions.Campaign
         {
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+
+            if (_mateo == null || !_mateo.Exists() || _mateo.IsDead)
+            { Fail("Mateo was killed. The ledger must lead us to his buyers."); return; }
+            if (Stage == 0 && player.IsShooting)
+            { Fail(Ctx.Crew.Active.DisplayName + " blew the cover by firing. Identify Mateo and copy the ledger without shooting."); return; }
 
             switch (Stage)
             {
@@ -101,11 +110,11 @@ namespace Bloodlines.Missions.Campaign
                 case 3: UpdateExtraction(player); break;
             }
 
-            if (Stage >= 1) CheckCrewWipe();
+            CheckCrewWipe();
 
             // The toolkit makes the getaway car a hard failure condition once the
             // crew is committed to it — there is no second way off the island.
-            if (Stage >= 2 && (_prototype == null || !_prototype.Exists() || !_prototype.IsDriveable))
+            if (_prototype == null || !_prototype.Exists() || !_prototype.IsDriveable)
             {
                 Fail("The getaway car is wrecked.");
             }
@@ -115,6 +124,7 @@ namespace Bloodlines.Missions.Campaign
 
         private void UpdateApproaches(Ped player)
         {
+            UpdateApproachActors();
             switch (Ctx.Crew.ActiveSlot)
             {
                 case CrewSlot.Ice: UpdateIceOverwatch(player); break;
@@ -122,6 +132,7 @@ namespace Bloodlines.Missions.Campaign
                 case CrewSlot.Guess: UpdateGuessBay(player); break;
             }
 
+            DrawApproachGuidance();
             if (!_iceHasEyes || !_ledgerRipped || !_prototypeTaken) return;
 
             BeginRecognition();
@@ -133,10 +144,12 @@ namespace Bloodlines.Missions.Campaign
 
             GameUtils.DrawObjectiveMarker(_mateo.Position, Color.FromArgb(120, 224, 74, 62), 0.9f);
 
-            bool eyesOn = player.IsAiming && Game.Player.IsTargeting(_mateo)
+            bool eyesOn = player.IsAiming && (Game.Player.IsTargeting(_mateo) ||
+                          Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, _mateo))
                           && player.Position.DistanceTo(_mateo.Position) < 260f;
             if (!eyesOn) return;
 
+            Logger.Info("M01 approach complete: Ice identified Mateo.");
             _iceHasEyes = true;
             Say("M01_S1_01_ICE");
             NextApproachObjective();
@@ -148,7 +161,7 @@ namespace Bloodlines.Missions.Campaign
 
             GameUtils.DrawObjectiveMarker(_bilge, Color.FromArgb(120, 106, 168, 122));
 
-            if (!GameUtils.IsWithin(player.Position, _bilge, 2.5f))
+            if (player.IsInVehicle() || !GameUtils.IsWithin(player.Position, _bilge, 2.5f))
             {
                 _ripStartedAt = 0;
                 return;
@@ -156,6 +169,8 @@ namespace Bloodlines.Missions.Campaign
 
             if (_ripStartedAt == 0)
             {
+                if (!Game.IsControlJustPressed(GTA.Control.Context))
+                { GameUtils.Subtitle("Gohan: press E / D-pad Right to copy the shipping terminal.", 500); return; }
                 _ripStartedAt = Game.GameTime;
                 Say("M01_S1_02_GOHAN");
                 return;
@@ -164,10 +179,11 @@ namespace Bloodlines.Missions.Campaign
             int elapsed = (Game.GameTime - _ripStartedAt) / 1000;
             if (elapsed < LedgerRipSeconds)
             {
-                GameUtils.Subtitle("Cloning the stateroom safe... " + (LedgerRipSeconds - elapsed) + "s", 500);
+                GameUtils.Subtitle("Copying the dock ledger... " + (LedgerRipSeconds - elapsed) + "s", 500);
                 return;
             }
 
+            Logger.Info("M01 approach complete: Gohan copied the ledger.");
             _ledgerRipped = true;
             NextApproachObjective();
         }
@@ -184,8 +200,9 @@ namespace Bloodlines.Missions.Campaign
 
             GameUtils.DrawObjectiveMarker(_prototype.Position, Color.FromArgb(120, 214, 138, 58));
 
-            if (!player.IsInVehicle(_prototype)) return;
+            if (!player.IsInVehicle(_prototype) || _prototype.GetPedOnSeat(VehicleSeat.Driver) != player) return;
 
+            Logger.Info("M01 approach complete: Guess took the prototype.");
             _prototypeTaken = true;
             Say("M01_S1_03_GUESS");
             NextApproachObjective();
@@ -196,54 +213,89 @@ namespace Bloodlines.Missions.Campaign
         /// says "press 2" — it states the job, and the job is only doable as the
         /// character who owns it, which is how the switch teaches itself.
         /// </summary>
+        private void UpdateApproachActors()
+        {
+            if (_workingSlot == Ctx.Crew.ActiveSlot) return;
+            _workingSlot = Ctx.Crew.ActiveSlot;
+            foreach (var hero in Protagonist.All)
+            {
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists()) continue;
+                // The mission owns these tasks, so the ordinary follow/boarding AI
+                // cannot overwrite them when a different hero becomes the player.
+                if (hero.Slot == Ctx.Crew.ActiveSlot) continue;
+                // Clearing a seated ped's tasks can eject it during a player handover.
+                // Keep the real seat and hold the car while this assignment waits.
+                if (ped.IsInVehicle())
+                {
+                    if (ped.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver) == ped)
+                        Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, ped, ped.CurrentVehicle, 27, 1500);
+                    continue;
+                }
+                ped.Task.ClearAll();
+                if (hero.Slot == CrewSlot.Ice && _mateo != null && _mateo.Exists())
+                    ped.Task.AimAt(_mateo, -1);
+                else if (hero.Slot == CrewSlot.Gohan)
+                    ped.Task.StartScenario(GameUtils.IsWithinFlat(ped.Position, _bilge, 3f)
+                        ? "WORLD_HUMAN_CLIPBOARD" : "WORLD_HUMAN_STAND_MOBILE", ped.Position, ped.Heading);
+                else ped.Task.StartScenario("WORLD_HUMAN_STAND_MOBILE", ped.Position, ped.Heading);
+            }
+        }
+
+        private void DrawApproachGuidance()
+        {
+            if (_guidanceSlot != Ctx.Crew.ActiveSlot) { _guidanceSlot = Ctx.Crew.ActiveSlot; NextApproachObjective(); }
+            string task;
+            if (Ctx.Crew.ActiveSlot == CrewSlot.Ice && !_iceHasEyes)
+                task = "Ice: identify Mateo in your scope. Keep him alive to trace his buyers. No gunfire.";
+            else if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan && !_ledgerRipped)
+                task = GameUtils.IsWithinFlat(Game.Player.Character.Position, _bilge, 8f)
+                    ? "Gohan: stand at the laptop. Press E / D-pad Right, then stay for 8 seconds."
+                    : "Gohan: take the service path into the yard. Reach the green ledger terminal.";
+            else if (Ctx.Crew.ActiveSlot == CrewSlot.Guess && !_prototypeTaken)
+                task = GameUtils.IsWithinFlat(Game.Player.Character.Position, _prototype.Position, 22f)
+                    ? "Guess: park your car, get out and take the orange prototype."
+                    : "Guess: drive into the dockyard. The orange marker is the prototype you were hired to steal.";
+            else task = !_iceHasEyes ? "Switch to Ice and identify Mateo without firing."
+                : !_ledgerRipped ? "Switch to Gohan. Copy the ledger before the getaway."
+                : "Switch to Guess and take the orange prototype.";
+            CurrentObjective = task;
+            GameUtils.Subtitle("~y~" + task + " ~s~[" + (_iceHasEyes ? 1 : 0) + "/1 eyes, " +
+                (_ledgerRipped ? 1 : 0) + "/1 ledger, " + (_prototypeTaken ? 1 : 0) + "/1 car]", 500);
+        }
+
         private void NextApproachObjective()
         {
-            if (!_iceHasEyes)
-            {
-                Objective("Ice — set the shot on Mateo from Roost 4.");
-                SetObjectiveBlip(_roost, "Roost 4");
-            }
+            if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan && !_ledgerRipped)
+                SetObjectiveBlip(_bilge, "Gohan: dock ledger");
+            else if (Ctx.Crew.ActiveSlot == CrewSlot.Guess && !_prototypeTaken)
+                SetObjectiveBlip(_prototype.Position, "Guess: prototype");
+            else if (!_iceHasEyes)
+                SetObjectiveBlip(_mateo.Position, "Switch to Ice: identify Mateo");
             else if (!_ledgerRipped)
-            {
-                Objective("Gohan — clone the stateroom safe from the bilge.");
-                SetObjectiveBlip(_bilge, "Bilge hatch");
-            }
+                SetObjectiveBlip(_bilge, "Switch to Gohan: dock ledger");
             else if (!_prototypeTaken)
-            {
-                Objective("Guess — get the prototype out of bay 2.");
-                SetObjectiveBlip(_bayFloor, "Warehouse bay 2");
-            }
+                SetObjectiveBlip(_prototype.Position, "Switch to Guess: prototype");
         }
 
         // ---------- Stage 1 (bible S2): the fatal recognition ----------
 
         private void BeginRecognition()
         {
-            GameUtils.FadeOut(800);
-            Script.Wait(900);
 
-            var regroup = Ctx.Locations.Position("M01.RegroupPoint");
-
-            foreach (var protagonist in Protagonist.All)
-            {
-                var ped = Ctx.Crew.PedFor(protagonist.Slot);
-                if (ped == null) continue;
-                ped.Task.ClearAllImmediately();
-                ped.Position = regroup + new Vector3((int)protagonist.Slot * 2.2f - 2.2f, 0f, 0f);
-                ped.Heading = 180f;
-            }
-
+            // Recognition changes what they know, never where they stand or sit.
             SpawnEscapeLaunch();
-            SpawnGuardWave(regroup, 8);
-
-            Ctx.Crew.CompanionsHoldPosition = false;
-            Ctx.Crew.AssignCompanionAI();
-
-            GameUtils.FadeIn(1200);
-            _recognitionStartedAt = Game.GameTime;
+            if (_launch == null || !_launch.Exists()) { Fail("The launch could not spawn. Retry the mission."); return; }
 
             // The whole campaign turns on these three lines.
-            SayStage(2);
+            Ctx.Cutscenes.Play(Id, "recognition", "Fifteen years", _mateo, () =>
+            {
+                if (_mateo != null && _mateo.Exists() && _launch != null && _launch.Exists())
+                {
+                    _mateo.Task.ClearAll();
+                    _mateo.Task.EnterVehicle(_launch, VehicleSeat.Driver, 90000, 2f, EnterVehicleFlags.None);
+                }
+            });
 
             Objective("Hold the dry-dock. Mateo is running for the launch.");
             SetObjectiveBlip(_slipway, "Armored launch");
@@ -252,9 +304,17 @@ namespace Bloodlines.Missions.Campaign
 
         private void UpdateRecognition()
         {
-            // A beat of scripted stillness — the ninety seconds they lose to each other.
-            if (SecondsInStage < 4) return;
-
+            // Mission ticks resume after the scene. Start combat clocks now.
+            _recognitionStartedAt = Game.GameTime;
+            if (_launch == null || !_launch.Exists()) { Fail("The escape launch disappeared."); return; }
+            // Also runs after a skipped scene: the escape remains a real boarding task.
+            if (!_mateo.IsInVehicle(_launch)) _mateo.Task.EnterVehicle(_launch, VehicleSeat.Driver, 90000, 2f, EnterVehicleFlags.None);
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
+            Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
+            Ctx.Crew.AssignCompanionAI();
+            SpawnGuardWave(Ctx.Locations.Position("M01.RegroupPoint"), 8);
+            if (_guards.Count == 0) { Fail("The dockyard guards could not spawn. Retry the mission."); return; }
             Ctx.Crew.OrderCompanionsToFight();
             Advance();
         }
@@ -272,21 +332,25 @@ namespace Bloodlines.Missions.Campaign
                 GameUtils.Subtitle("~y~Hostiles: " + _guards.Count + "   ~s~Mateo clear in ~r~" + remaining + "s", 500);
             }
 
-            if (!_mateoFleeing && remaining <= 0 &&
+            if (!_mateoFleeing && (remaining <= 0 || (_guards.Count <= 2 && remaining <= RecognitionWindowSeconds - 10)) &&
                 _launch != null && _launch.Exists() && _mateo != null && _mateo.Exists() && _mateo.IsAlive)
             {
-                // Mateo is scripted to get away. The campaign hangs off him living
-                // through tonight, and the player's job was never to stop him.
+                if (!_mateo.IsInVehicle(_launch))
+                {
+                    if (remaining < -30) Fail("Mateo's route to the launch was blocked. Retry the mission.");
+                    return;
+                }
                 _mateoFleeing = true;
-                _mateo.Task.CruiseWithVehicle(_launch, 30f, DrivingStyle.Rushed);
+                _mateo.Task.StartBoatMission(_launch, _slipway + new Vector3(0f, -500f, 0f),
+                    VehicleMissionType.GoTo, 20f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
                 Say("M01_S3_07_ICE");
             }
 
-            if (_guards.Count > 2 && remaining > -20) return;
+            if (!_mateoFleeing || (_guards.Count > 2 && remaining > -20)) return;
 
             Say("M01_S3_08_GUESS");
             Objective("Smash the gates. Get the crew out in the prototype.");
-            SetObjectiveBlip(Ctx.Locations.Position("M01.ExitPoint"), "Exfil");
+            SetObjectiveBlip(_prototype.Position, "Board the prototype together");
             Game.Player.WantedLevel = 3;
             Advance();
         }
@@ -296,8 +360,28 @@ namespace Bloodlines.Missions.Campaign
         private void UpdateExtraction(Ped player)
         {
             var exit = Ctx.Locations.Position("M01.ExitPoint");
+            ObjectiveMarkers.Navigation(exit, null, _prototype);
             GameUtils.DrawObjectiveMarker(exit, Color.FromArgb(120, 106, 168, 122), 4f);
 
+            if (!player.IsInVehicle(_prototype))
+            {
+                GameUtils.Subtitle("~y~Get into the orange prototype. Bring all three friends.", 500);
+                GameUtils.DrawObjectiveMarker(_prototype.Position, Color.Orange, 2f);
+                return;
+            }
+            int aboard = 0;
+            foreach (var hero in Protagonist.All)
+            {
+                var member = Ctx.Crew.PedFor(hero.Slot);
+                if (member != null && member.Exists() && member.IsAlive && member.IsInVehicle(_prototype)) aboard++;
+            }
+            if (aboard < 3)
+            {
+                GameUtils.Subtitle("~y~Stop for the crew to board: " + aboard + "/3 in the prototype.", 500);
+                return;
+            }
+            if (!_exitRouteSet) { SetObjectiveBlip(exit, "Escape the dockyard"); _exitRouteSet = true; }
+            GameUtils.Subtitle("~y~Drive the prototype and all three friends to the yellow exit marker.", 500);
             if (!GameUtils.IsWithinFlat(player.Position, exit, 14f)) return;
 
             int clear = 0;
@@ -330,22 +414,66 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (_mateo == null || !_mateo.Exists()) return;
 
-            _mateo.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            // Identification happens before the ambush. A hostile boss provokes
+            // companions and ambient combat before the recognition is scripted.
+            _mateo.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TARGET");
             _mateo.IsPersistent = true;
             _mateo.BlockPermanentEvents = true;
             _mateo.Armor = 100;
-            _mateo.Weapons.Give(WeaponHash.APPistol, 100, true, true);
-            _mateo.Task.StartScenario("WORLD_HUMAN_DRINKING", _mateo.Position, 90f);
+            _mateo.Health = 500; // Mortal: killing this lead fails explicitly instead of ignoring bullets.
+            _mateo.Weapons.Give(WeaponHash.APPistol, 100, false, false);
+            _mateo.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", _mateo.Position, 90f);
 
             var blip = Track(_mateo.AddBlip());
             blip.Sprite = BlipSprite.Enemy;
-            blip.Color = BlipColor.Red;
-            blip.Name = "Mateo Cifuentes";
+            blip.Color = BlipColor.Yellow;
+            blip.Name = "Mateo: identify, keep alive";
+        }
+
+        private bool SpawnLedgerStation()
+        {
+            // Mateo is checking shipping records with a technician; the terminal is
+            // accessible behind them so Gohan does not have to walk up to the target.
+            var laptop = new Model("prop_laptop_01a");
+            var table = new Model("prop_table_03");
+            var worker = new Model("s_m_m_dockwork_01");
+            try
+            {
+                if (!GameUtils.RequestModel(laptop) || !GameUtils.RequestModel(table) || !GameUtils.RequestModel(worker)) return false;
+                var desk = Track(World.CreateProp(table, _bilge, false, true));
+                _terminal = Track(World.CreateProp(laptop, _bilge + new Vector3(0f, 0f, .82f), false, false));
+                if (desk == null || !desk.Exists() || _terminal == null || !_terminal.Exists()) return false;
+                desk.IsPositionFrozen = true; _terminal.IsPositionFrozen = true; _terminal.IsInvincible = true;
+                if (!ProloguePlacement.TryLand(_mateo.Position + new Vector3(2f, -2f, 0f), out var point)) return false;
+                _technician = Track(World.CreatePed(worker, point, 270f));
+                if (_technician == null || !_technician.Exists()) return false;
+                _technician.IsPersistent = true; _technician.BlockPermanentEvents = true;
+                _technician.RelationshipGroup = _mateo.RelationshipGroup;
+                _technician.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", point, 270f);
+                return true;
+            }
+            finally { laptop.MarkAsNoLongerNeeded(); table.MarkAsNoLongerNeeded(); worker.MarkAsNoLongerNeeded(); }
+        }
+
+        private bool SpawnApproachCar()
+        {
+            var model = new Model("primo");
+            if (!GameUtils.RequestModel(model)) return false;
+            _approachCar = Track(World.CreateVehicle(model, Ctx.Locations.Position("M01.GuessApproach"),
+                Ctx.Locations.Heading("M01.GuessApproach")));
+            model.MarkAsNoLongerNeeded();
+            if (_approachCar == null || !_approachCar.Exists()) return false;
+            _approachCar.IsPersistent = true;
+            _approachCar.IsEngineRunning = true;
+            _approachCar.LockStatus = VehicleLockStatus.Unlocked;
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            guess.SetIntoVehicle(_approachCar, VehicleSeat.Driver);
+            return guess.IsInVehicle(_approachCar) && _approachCar.GetPedOnSeat(VehicleSeat.Driver) == guess;
         }
 
         private void SpawnPrototype()
         {
-            var model = new Model("t20");
+            var model = new Model("schafter3"); // Four-seat prototype test mule: all three must escape.
             if (!GameUtils.RequestModel(model)) return;
 
             _prototype = Track(World.CreateVehicle(model, _bayFloor,
@@ -366,6 +494,8 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnEscapeLaunch()
         {
+            if (!MissionSites.Water(Ctx.Locations, "M01.LaunchEscape")) return;
+            _slipway = Ctx.Locations.Position("M01.LaunchEscape");
             var model = new Model("tropic");
             if (!GameUtils.RequestModel(model)) return;
 
@@ -376,11 +506,7 @@ namespace Bloodlines.Missions.Campaign
 
             _launch.IsPersistent = true;
 
-            if (_mateo != null && _mateo.Exists())
-            {
-                _mateo.Task.ClearAllImmediately();
-                _mateo.Task.EnterVehicle(_launch, VehicleSeat.Driver, 25000, 2f, EnterVehicleFlags.None);
-            }
+
         }
 
         private void SpawnGuardWave(Vector3 around, int count)
@@ -392,22 +518,12 @@ namespace Bloodlines.Missions.Campaign
                 var model = new Model(CartelGoons[i % CartelGoons.Length]);
                 if (!GameUtils.RequestModel(model)) continue;
 
-                // The first four take the toolkit's posts; the rest fill in around the
-                // regroup point so the wave still surrounds the crew.
-                Vector3 position;
-                if (i < GuardPosts.Length)
-                {
-                    position = GuardPosts[i];
-                }
-                else
-                {
-                    float angle = i * (360f / count);
-                    position = around + new Vector3(
-                        (float)System.Math.Cos(angle * System.Math.PI / 180f) * 28f,
-                        (float)System.Math.Sin(angle * System.Math.PI / 180f) * 28f,
-                        0f);
-                }
+                float angle = i * (360f / count);
+                var position = around + new Vector3(
+                    (float)System.Math.Cos(angle * System.Math.PI / 180f) * 28f,
+                    (float)System.Math.Sin(angle * System.Math.PI / 180f) * 28f, 0f);
 
+                if (!ProloguePlacement.TryLand(position, out position)) { model.MarkAsNoLongerNeeded(); continue; }
                 var guard = World.CreatePed(model, position, 0f);
                 model.MarkAsNoLongerNeeded();
                 if (guard == null || !guard.Exists()) continue;
@@ -440,12 +556,12 @@ namespace Bloodlines.Missions.Campaign
 
         private void CheckCrewWipe()
         {
-            if (Ctx.Config.CompanionsRespawnOnDeath) return;
+
 
             foreach (var protagonist in Protagonist.All)
             {
                 var ped = Ctx.Crew.PedFor(protagonist.Slot);
-                if (ped == null || ped.IsDead)
+                if (ped == null || !ped.Exists() || (ped.IsDead && !Ctx.Config.CompanionsRespawnOnDeath))
                 {
                     Fail(protagonist.DisplayName + " was killed.");
                     return;
@@ -459,7 +575,9 @@ namespace Bloodlines.Missions.Campaign
             // the recognition timer running again, not the split approach state.
             if (stage < 1) return;
 
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
             Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
             Ctx.Crew.AssignCompanionAI();
             _iceHasEyes = _ledgerRipped = _prototypeTaken = true;
             _recognitionStartedAt = Game.GameTime;
@@ -472,7 +590,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
             Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = false;
             GameUtils.SafeDelete(_objectiveBlip);
             _guards.Clear();
 

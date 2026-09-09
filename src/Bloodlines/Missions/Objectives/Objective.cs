@@ -34,6 +34,8 @@ namespace Bloodlines.Missions.Objectives
         /// <summary>Set by a stage when this objective only counts for one character.</summary>
         public Crew.CrewSlot? RequiredCharacter { get; set; }
 
+        public virtual GTA.Math.Vector3? AssignmentPosition => null;
+
         public bool IsFinished => Status != ObjectiveStatus.Active;
 
         /// <summary>

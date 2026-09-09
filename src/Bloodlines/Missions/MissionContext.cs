@@ -22,6 +22,7 @@ namespace Bloodlines.Missions
             State = state;
         }
 
+        public CutsceneDirector Cutscenes { get; set; }
         public ModConfig Config { get; }
         public LocationBook Locations { get; }
         public CampaignData Data { get; }

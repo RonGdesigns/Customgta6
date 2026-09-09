@@ -32,6 +32,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _ridge = Ctx.Locations.Position("M14.OverwatchRidge");
             _hangar = Ctx.Locations.Position("M14.HangarDoor");
             _mckenzie = Ctx.Locations.Position("M14.McKenzieHangar");
@@ -46,6 +47,9 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnApronGuards();
             SpawnPlane();
+            if (!RequireAssets(_plane)) return false;
+            Station(CrewSlot.Guess, _hangar + new Vector3(0f, -30f, 0f));
+            Station(CrewSlot.Gohan, _ridge + new Vector3(15f, 0f, 0f));
             return true;
         }
 
@@ -54,29 +58,31 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Overwatch",
                     new KillTargetsObjective("Ice — clear the apron from the ridge.", () => _apronGuards))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("The hangar",
                     new ReachZoneObjective("Guess — get to the hangar door.", () => _hangar, 8f))
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Hotwire",
-                    new EnterVehicleObjective("Take the plane with the pod on the pylon.",
+                    new EnterVehicleObjective("Guess: take the marked jammer aircraft.",
                         () => _plane, VehicleSeat.Driver))
-                .OwnedBy(CrewSlot.Guess);
+                .OwnedBy(CrewSlot.Guess)
+                .WithCues("M14_S1_01_GUESS");
 
             // The whole flight home is the objective: climb and the SAMs get a lock.
             yield return new MissionStage("Under the radar",
-                    new AltitudeCeilingObjective("Hug the terrain — stay under 50.", 50f,
+                    new AltitudeCeilingObjective("Hug the terrain — stay under 50 metres above the terrain.", 50f,
                         "A SAM battery locked on and took the plane down."),
-                    new ReachZoneObjective("Get the jammer to McKenzie.", () => _mckenzie, 60f,
-                        flat: true, requireVehicle: true))
-                .WithDialogue(1)
+                    new DeliverVehicleObjective("Guess: land the jammer aircraft at McKenzie and stop.", () => _plane, () => _mckenzie, 60f, land: true))
+                
                 .OnExit(context =>
                 {
                     context.State.Unlock("mckenzieAirfieldHangar");
                     GameUtils.Subtitle("~g~Pod jammer secured. Aegis radar has a hole in it now.", 5000);
-                });
+                })
+                .WithCues("M14_S1_02_ICE")
+                .AfterCues("M14_S1_03_GUESS");
         }
 
         private void SpawnApronGuards()

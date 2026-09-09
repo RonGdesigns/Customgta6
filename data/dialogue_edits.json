@@ -1,0 +1,617 @@
+{
+  "M28_S1_01_GOHAN": {
+    "line": "Surge unit connected. Hold them off while I bring the relay down.",
+    "trigger": "Gohan begins the timed relay splice"
+  },
+  "M28_S1_02_ICE": {
+    "line": "Aegis patrol responding. Gohan, finish the splice. I've got the approach.",
+    "trigger": "Response squad engages after initial yard clearance"
+  },
+  "M28_S1_03_GOHAN": {
+    "line": "Dish offline. Their northern teams just lost the shared feed. Let's get clear.",
+    "trigger": "Relay splice completed"
+  },
+  "M29_S1_01_GUESS": {
+    "line": "Depot's clear. I'll take the road tanker. Ice, open the transfer valve.",
+    "trigger": "Rail-depot guards cleared"
+  },
+  "M29_S1_02_ICE": {
+    "line": "Fuel transferred. Valve closed. Guess, get it to the bunker before another patrol arrives.",
+    "trigger": "Ice completes the transfer at the depot"
+  },
+  "M29_S1_03_GUESS": {
+    "line": "Tanker parked at the bunker. Keep the generator running; I'll keep track of the gauge.",
+    "trigger": "Specified tanker delivered and unloaded"
+  },
+  "M30_S1_01_GUESS": {
+    "line": "Loose shale and a gunship behind me. Gohan, I need that sheltered route now.",
+    "trigger": "Armed helicopter begins pursuit"
+  },
+  "M30_S1_02_GOHAN": {
+    "line": "Take the marked bend into the canyon. The rock walls will give you cover.",
+    "trigger": "Truck reaches ridge descent checkpoint"
+  },
+  "M30_S1_03_GUESS": {
+    "line": "Parts are at the bunker, intact. Next delivery needs a bigger travel allowance.",
+    "trigger": "Specified parts truck delivered and unloaded"
+  },
+  "SM04_S1_01_ICE": {
+    "line": "Two Aegis marksmen watching the quarry road. I'll take the overlook and identify both positions.",
+    "trigger": "Mission begins"
+  },
+  "SM04_S1_02_ICE": {
+    "line": "One down. The other still has a sightline on the road. Can't leave him there.",
+    "trigger": "First marksman eliminated"
+  },
+  "SM04_S2_03_ICE": {
+    "line": "Both down. Radios recovered. Gohan can listen for patrol calls; we'll still have to watch the road.",
+    "trigger": "Both marksmen eliminated and both radios collected"
+  },
+  "SM05_S1_01_GOHAN": {
+    "line": "Swamp's dark enough to hide a boat. Going in quiet. I'll call when I find the buoy.",
+    "trigger": "Gohan reaches the boat"
+  },
+  "SM05_S1_02_GOHAN": {
+    "line": "Buoy located. Fitting the interceptor at the service harness. Keep this channel open.",
+    "trigger": "Gohan begins installing the interceptor"
+  },
+  "SM05_S2_03_GOHAN": {
+    "line": "Signal locked. We can read the flight traffic this buoy relays. Coming back to the pickup.",
+    "trigger": "Interceptor installed"
+  },
+  "SM06_S1_01_GUESS": {
+    "line": "Aviation fuel, full load. Easy on the throttle. This thing only has to arrive in one piece.",
+    "trigger": "Guess boards the tanker"
+  },
+  "SM06_S1_02_GUESS": {
+    "line": "Cartel bikes behind me! Gohan, keep the airfield gate clear.",
+    "trigger": "Armed bike pursuit starts"
+  },
+  "SM06_S2_03_GUESS": {
+    "line": "Through the canyon. Still got the load. I'm taking the next bend slow, whether they like it or not.",
+    "trigger": "Tanker clears the canyon checkpoint"
+  },
+  "SM06_S2_04_GUESS": {
+    "line": "Tanker at McKenzie, intact. Set this fuel aside for the rig operation.",
+    "trigger": "Specified tanker delivered and unloaded"
+  },
+  "M31_S1_03_ICE": {
+    "line": "Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open."
+  },
+  "M33_S1_03_GOHAN": {
+    "line": "Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait."
+  },
+  "M37_S1_03_GOHAN": {
+    "line": "Smoke tanks are ready. They'll break visual contact, but radar and thermal crews can still find us."
+  },
+  "M40_S1_03_GOHAN": {
+    "line": "Armor fitted and both boats water-tested. Keep the engines covered; this isn't a guarantee."
+  },
+  "M48_S1_03_GOHAN": {
+    "line": "The ledgers name their people in Los Santos. We go home with evidence this time."
+  },
+  "M50_S1_03_GOHAN": {
+    "line": "The local alerts are down. That buys us time, not an acquittal. Their backups still exist."
+  },
+  "M53_S1_03_ICE": {
+    "line": "Sweep team down. This corridor is clear. Keep somebody watching the next junction."
+  },
+  "M54_S1_03_GOHAN": {
+    "line": "Satellite link live. I'm marking the patrols transmitting nearby. Quiet teams won't show up."
+  },
+  "M55_S1_02_GOHAN": {
+    "line": "Terminal bypassed at Arcadius! Sixty million identified. Copying the transfer authorizations!"
+  },
+  "M58_S1_03_GUESS": {
+    "line": "Their council's down. That breaks this command chain. Doesn't mean every crew in the city quits."
+  },
+  "M59_S1_03_GOHAN": {
+    "line": "Broadcast is repeating. Independent copies are spreading. They can't silence this by taking one tower."
+  },
+  "M65_S1_03_GOHAN": {
+    "line": "Biometrics accepted! Escrow control is open. I've got the authorizations; we finish the transfer outside."
+  },
+  "M67_S1_01_GOHAN": {
+    "line": "Transfer confirmed. The money's accessible. It isn't invisible, so we still need to get out."
+  },
+  "M70_S1_02_GOHAN": {
+    "line": "Third wave! Ice, we're still here! I'm not losing either of you after finding you again!"
+  },
+  "SM08_S2_04_GOHAN": {
+    "line": "The evidence proving they framed me is out. Clearing my name comes next. First, Ice and Guess need me."
+  },
+  "M01_S1_01_ICE": {
+    "line": "Eyes on Mateo. He is checking a shipment with a dock technician. Keep him alive; the buyers are the real target.",
+    "trigger": "Ice identifies Mateo through aim",
+    "direction": "Quiet; watching the target from dock cover"
+  },
+  "M01_S1_02_GOHAN": {
+    "line": "Dock terminal is open. Copying the ledger. Just need a few seconds without an alarm.",
+    "trigger": "Gohan begins the eight-second data copy",
+    "direction": "Focused; working the dock terminal"
+  },
+  "M01_S2_04_GOHAN": {
+    "line": "Alarm tripped! I've only got part of the ledger! Shooters coming into the yard!",
+    "trigger": "Reference recognition line; replaced by the authored recognition scene"
+  },
+  "M01_S2_05_ICE": {
+    "line": "Wait... that voice. Devin? Gohan? What the hell are you doing in this yard?",
+    "trigger": "Reference recognition line; replaced by the authored recognition scene"
+  },
+  "M01_S3_07_ICE": {
+    "line": "Mateo reached the launch. We have his ledger; we can follow the money. Get to the car!",
+    "trigger": "Mateo escapes after the firefight",
+    "direction": "Frustrated; rallying the others"
+  },
+  "M02_S1_01_GOHAN": {
+    "line": "That van has the dock footage. I'll work from back here. Keep us close - less than three minutes before the upload lands!",
+    "trigger": "Pursuit begins; Gohan already seated"
+  },
+  "M02_S1_02_GUESS": {
+    "line": "Black Rumpo, satellite dome. Gohan, you have a signal? I'll keep us inside thirty-five metres.",
+    "trigger": "Chase car closes to the van"
+  },
+  "M02_S2_03_ICE": {
+    "line": "Halfway. They found the intrusion - guns in the windows! Keep working, Gohan. I'll cover our side.",
+    "trigger": "Remote hack reaches 50 percent"
+  },
+  "M02_S2_04_GOHAN": {
+    "line": "I'm in. Upload cut, ignition disabled. The server's intact. Ice, take the drives.",
+    "trigger": "Remote hack reaches 100 percent"
+  },
+  "M03_S1_01_GUESS": {
+    "line": "Rail junction locked. Their backup route is delayed. Ice, the depot approach is yours.",
+    "trigger": "Matching playable objective event in M03"
+  },
+  "M03_S1_02_ICE": {
+    "line": "Switch to me. Walk into the yellow entry marker at the depot. No ability needed. Once we cross it, clear the guards marked red; then Gohan can load the truck.",
+    "trigger": "Matching playable objective event in M03"
+  },
+  "M03_S2_03_ICE": {
+    "line": "Clear the marked guards first. Nobody starts loading while they're shooting at the terminal.",
+    "trigger": "Matching playable objective event in M03"
+  },
+  "M03_S2_04_GOHAN": {
+    "line": "Weapons loaded. Guess, bring yourself to the depot and take the orange-marked Benson. We need that truck, not another car.",
+    "trigger": "Matching playable objective event in M03"
+  },
+  "M03_S2_05_GUESS": {
+    "line": "I've got the weapons truck. Taking it to the foundry. Ice and Gohan, keep the depot clear until I'm out.",
+    "trigger": "Matching playable objective event in M03"
+  },
+  "M04_S1_01_GOHAN": {
+    "line": "Miller's meeting is in this surface lot. Follow the yellow breaker marker, then press E or D-pad Right. My special ability is optional.",
+    "trigger": "Matching playable objective event in M04"
+  },
+  "M04_S1_02_ICE": {
+    "line": "Breaker cut. Switch to me and clear the marked escort. Guess is waiting in our chase car.",
+    "trigger": "Matching playable objective event in M04"
+  },
+  "M04_S2_03_GUESS": {
+    "line": "Escort's down. Switch to me in the orange-marked car. Once we're ready, we go after Miller on the surface streets.",
+    "trigger": "Matching playable objective event in M04"
+  },
+  "M04_S2_04_ICE": {
+    "line": "He's moving. Follow his red marker, disable the car or stop Miller, then get out for the drive. Don't let him pull away.",
+    "trigger": "Matching playable objective event in M04"
+  },
+  "M04_S2_05_ICE": {
+    "line": "Drive secured. We have the meeting records. Let's see where Miller sent the money.",
+    "trigger": "Matching playable objective event in M04"
+  },
+  "M05_S1_01_ICE": {
+    "line": "I'm covering the coast. Clear the marked shore guards, then switch to Guess in the dinghy. Gohan is already riding with him.",
+    "trigger": "Matching playable objective event in M05"
+  },
+  "M05_S1_02_GUESS": {
+    "line": "Flare away. Gohan, stay aboard. Switch to Gohan for the approach and I'll drive, or take the wheel yourself first.",
+    "trigger": "Matching playable objective event in M05"
+  },
+  "M05_S1_03_GOHAN": {
+    "line": "Mateo's running. Stay in the dinghy and close within twenty-five metres for five seconds. We need him alive.",
+    "trigger": "Matching playable objective event in M05"
+  },
+  "M06_S1_01_GOHAN": {
+    "line": "Feeder cut. Ice, take the yellow sally-port marker. Guess stays with the getaway car.",
+    "trigger": "Matching playable objective event in M06"
+  },
+  "M06_S1_02_ICE": {
+    "line": "Switch to Ice and walk into the yellow entrance marker. No ability needed. Gohan handles the racks while I cover the alley.",
+    "trigger": "Matching playable objective event in M06"
+  },
+  "M06_S2_03_ICE": {
+    "line": "Stay on me and take out the red-marked SWAT. Gohan is working on the racks himself. We leave when the burn is done and the waves are clear.",
+    "trigger": "Matching playable objective event in M06"
+  },
+  "M06_S2_04_GOHAN": {
+    "line": "Burn complete. The backup is gone. We're ready to leave.",
+    "trigger": "Matching playable objective event in M06"
+  },
+  "M06_S2_05_GUESS": {
+    "line": "Granger's waiting at the orange marker. Switch to me in the driver's seat and let both of you board before we leave.",
+    "trigger": "Matching playable objective event in M06"
+  },
+  "M07_S2_04_ICE": {
+    "line": "Aegis helicopter incoming. I need a way off this roof.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M07_S2_05_GUESS": {
+    "line": "Your pickup is marked, Ice. Get down safely. I'm holding the car for you.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M07_S1_02_ICE": {
+    "line": "Receiver clamped. Pulling manifests... Gohan, what are these engines?",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M07_S1_03_GOHAN": {
+    "line": "Aegis is shipping two military turbine engines to Paleto. That's our target.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M07_S1_01_GOHAN": {
+    "line": "Ice, reach the marked antenna platform. Fit the receiver and pull the shipping manifest.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M08_S2_05_GUESS": {
+    "line": "Chained down! Hitting the Del Perro connector!",
+    "trigger": "Gameplay stage 7 entry"
+  },
+  "M08_S2_03_GUESS": {
+    "line": "Crate one seated! Ice, armored technical coming up the boat ramp!",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M08_S2_04_ICE": {
+    "line": "Technical is out. Guess, secure the second crate.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M08_S1_01_GUESS": {
+    "line": "Seven hundred horsepower, bulletproof casings, all-fuel intake. Nothing in San Andreas catches us.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M08_S1_02_GOHAN": {
+    "line": "Camera loop is active. Ice, clear the marked sentries so Guess can load the engines.",
+    "trigger": "Gameplay stage 1 completion"
+  },
+  "M09_S2_04_GUESS": {
+    "line": "Ice, approach the stopped escort on foot. Pull its IFF unit. I'll keep watch from the Frogger.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M09_S2_05_ICE": {
+    "line": "Transponder secured. Code 7-Echo-Victor. We got military clearance tomorrow.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M09_S2_03_ICE": {
+    "line": "Escort driver down. The transponder is still in his cab.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M09_S1_02_GUESS": {
+    "line": "I'm taking the Frogger toward the convoy. Ice, hold the ambush point. Keep the rear escort marked.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M09_S1_01_ICE": {
+    "line": "Three Insurgents north past Harmony. Middle vehicle has Vance. Rear vehicle is escort.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M10_S2_05_GUESS": {
+    "line": "Back to the flatbed. Next stop is the tunnel marker.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M10_S2_06_GOHAN": {
+    "line": "Clear! Tunnel mouth ahead! Engines delivered!",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M10_S2_04_ICE": {
+    "line": "Buzzard is out. Guess, get us moving again.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M10_S1_01_GUESS": {
+    "line": "Keep the loaded flatbed moving above thirty-five. We have a little room to accelerate, but no room to get boxed in.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M10_S1_02_ICE": {
+    "line": "Bikes closing on us. Guess, use your drive-by weapon. I have the passenger side.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M10_S1_03_GOHAN": {
+    "line": "I'm watching the route from here. Keep the truck intact; those engines are our way forward.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M11_S1_03_GUESS": {
+    "line": "Remember when we used to hotwire clunkers behind the Davis car wash? Now we tuning aerospace turbine engines in Burro Heights.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M11_S1_04_ICE": {
+    "line": "Fifteen years ago you couldn't change an alternator without stripping the threads, Guess. You came a long way.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M11_S1_05_GOHAN": {
+    "line": "Enjoy the nostalgia while you can, boys. Aegis just docked three billion in cartel gold bullion into Berth 44. We are taking it.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M11_S1_02_ICE": {
+    "line": "Manifold pressure passing 25 PSI! RPM at 6,200! Exhaust temps holding green!",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M11_S1_01_GUESS": {
+    "line": "Torque converter locked. Roll on dyno! Let's see if this military turbine tears our gearbox in half!",
+    "trigger": "Gameplay stage 1 completion"
+  },
+  "M12_S1_03_GOHAN": {
+    "line": "Breach coordinates tagged. Hull thickness eight inches. We need acoustic plasma torches.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M12_S1_02_ICE": {
+    "line": "Patrols are near the hull. Keep the sub at the marked depth and break their sight line.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M12_S1_01_GOHAN": {
+    "line": "I'm launching the sub from the jetty. First the sonar marker, then the hull scan.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M13_S1_03_ICE": {
+    "line": "Charges blown! Basin is an inferno! Patrol boats burning at moorings!",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M13_S1_02_GUESS": {
+    "line": "I'm holding the Granger at the slipway. Get aboard, then trigger the charges.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M13_S1_01_ICE": {
+    "line": "Charge three armed on barge hull. Guess, be ready on western canal slipway.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M14_S1_02_ICE": {
+    "line": "Radar coverage ahead. Stay under fifty metres above terrain and land at the marked airfield.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M14_S1_03_GUESS": {
+    "line": "Cleared the pass! Pod jammer secured in McKenzie hangar.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M14_S1_01_GUESS": {
+    "line": "The marked aircraft carries the jammer hardware. Getting in, then taking it to McKenzie.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M15_S1_01_GOHAN": {
+    "line": "I'm at the fiber point. Starting the optical bypass; cover the approach.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M15_S1_03_GOHAN": {
+    "line": "Lock gate controls mapped to my laptop. We control port access.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M15_S1_02_ICE": {
+    "line": "All three watchmen stunned. Still breathing. Gohan, finish the connection.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M16_S1_03_ICE": {
+    "line": "Canyon segment clear. Bring the lift to Terminal Island and set it down.",
+    "trigger": "Gameplay stage 5 entry"
+  },
+  "M16_S1_02_GUESS": {
+    "line": "Taking the Cargobob through the canyon. Keeping below sixty metres above terrain.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M16_S1_01_ICE": {
+    "line": "Helipad perimeter clear! Cargobob twin turbines spooled! Take the controls, Guess!",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M17_S1_03_ICE": {
+    "line": "The sub is ready. Tomorrow night we hit Berth 44.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M17_S1_02_GUESS": {
+    "line": "Hydraulic ballast grapples tested. Fifty-ton magnetic lock verified.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M17_S1_01_GOHAN": {
+    "line": "Plasma-arc torches calibrated. Can slice through eight-inch naval bulkhead in four minutes.",
+    "trigger": "Gameplay stage 1 completion"
+  },
+  "M18_S1_01_ICE": {
+    "line": "Tonight we hit Berth 44, take thirty tons of their gold, and finish what started.",
+    "trigger": "Gameplay stage 5 entry"
+  },
+  "M18_S1_02_GUESS": {
+    "line": "Cargobob fueled. Just cut that container loose and I will hoist it.",
+    "trigger": "Gameplay stage 5 entry"
+  },
+  "M18_S1_03_GOHAN": {
+    "line": "Kraken sub submerged in position. Moving to Berth 44.",
+    "trigger": "Gameplay stage 5 entry"
+  },
+  "M19_S1_03_GOHAN": {
+    "line": "Depth charges dropping! Surfacing to the boarding launch!",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M19_S1_02_ICE": {
+    "line": "Container surfacing! Guess, bring the Cargobob in now!",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M19_S1_01_GOHAN": {
+    "line": "Breach is open. Next are the two ballast clamps. Staying in the Kraken to work them.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M20_S1_03_GUESS": {
+    "line": "Full cyclic forward! We are airborne and clearing the cranes!",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M20_S1_01_GUESS": {
+    "line": "Cable locked! Hoisting thirty tons of bullion! KEEP RPGS OFF MY ROTORS!",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M20_S1_02_ICE": {
+    "line": "Quayside gunners clear. Guess, bring the lift over the container and lock it on.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M21_S1_03_GUESS": {
+    "line": "Water exit clear. I'm taking the bullion north. Meet me at the Alamo.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M21_S1_02_ICE": {
+    "line": "Pursuit boats clear. Gohan, take the launch through the breakwater.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M21_S1_01_GOHAN": {
+    "line": "Running the launch alongside the lift. Ice, watch the boats. Guess, keep your route over the water.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M22_S1_02_ICE": {
+    "line": "Our Cypress Foundry is gone. Aegis just leveled the entire city block with precision cruise missiles.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M22_S1_03_GOHAN": {
+    "line": "Servers, tools, clothes... everything we set up in Los Santos is ash. They declared us military combatants.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M22_S1_04_GUESS": {
+    "line": "They burned our city shop? Fine. They don't know who they dealing with out here in the dirt. Blaine County belongs to us now.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M22_S1_05_ICE": {
+    "line": "We need shelter before another strike. That radar site in the desert is our next move.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M22_S1_06_GOHAN": {
+    "line": "They know our names now. We take care of each other, and we take back the initiative.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M22_S1_01_GUESS": {
+    "line": "Container detached! Thirty tons of bullion sitting safe in four feet of Alamo water.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M23_S1_03_GOHAN": {
+    "line": "Generator room online. We have our command center in the desert.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M23_S1_02_GUESS": {
+    "line": "The three storage bays are secure. We can stage the heavy rigs in this yard.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M23_S1_01_ICE": {
+    "line": "Breaching upper radar dome. Four cartel riflemen on walkway.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M24_S1_03_GOHAN": {
+    "line": "Crates loaded! Cash reserves replenished for Blaine operations.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "M24_S1_01_GUESS": {
+    "line": "First five tons recovered. Secure the haul; it still has to reach the radar base.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "M24_S1_02_ICE": {
+    "line": "Sheriff cruisers coming over the ridge! They aren't taking this haul!",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M25_S1_03_ICE": {
+    "line": "In the boat. Getting out of this gorge before another wave arrives.",
+    "trigger": "Gameplay stage 5 completion"
+  },
+  "M25_S1_02_GUESS": {
+    "line": "The extraction boat is waiting below, Ice. Use the parachute; I'll talk you down over the radio.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M25_S1_01_ICE": {
+    "line": "Deputies blocked the southern pass. Detonating fuel tanker on bridge.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M26_S1_03_GUESS": {
+    "line": "Both spotters down in the lake! Our Alamo stash remains a ghost.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M26_S1_02_GOHAN": {
+    "line": "Spotter one splashed! Spotter two is diving for Grapeseed-kill him!",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M26_S1_01_GUESS": {
+    "line": "Two spotters over the Alamo. Taking the Lazer up to stop them finding our stash.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M27_S2_06_GUESS": {
+    "line": "You made the pickup. That ledger tells us who keeps Aegis in the air.",
+    "trigger": "Gameplay stage 5 completion"
+  },
+  "M27_S2_04_GOHAN": {
+    "line": "The jet is losing its nose. Ice, bail out now and deploy your parachute. The boat is marked below.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "M27_S2_05_ICE": {
+    "line": "Ledger secured. Clear of the jet. Gohan, keep the boat where I can see it.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "M27_S2_03_ICE": {
+    "line": "The ledger is in this locker. Hold the jet steady while I secure it.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "M27_S1_01_GUESS": {
+    "line": "Taking the stunt plane up. I need to hold between twelve and sixty metres from the Shamal for the transfer.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "M27_S1_02_ICE": {
+    "line": "Transfer complete. In the cabin. Going for the flight locker.",
+    "trigger": "Gameplay stage 2 completion"
+  },
+  "SM01_S2_05_ICE": {
+    "line": "Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.",
+    "trigger": "Gameplay stage 4 completion"
+  },
+  "SM01_S2_03_ENEMY": {
+    "line": "Vance! Put the gun down! We can work something out, brother!",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "SM01_S2_04_ICE": {
+    "line": "We aren't brothers, Sergei. And your credit just expired.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "SM01_S1_02_ICE": {
+    "line": "Six guards between me and Sergei. I'm clearing the floor before I ask for the codes.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "SM01_S1_01_ICE": {
+    "line": "Sergei thought he could pocket twenty grand and hand me surplus civilian brass. Time to remind him who taught him logistics.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "SM02_S2_04_GOHAN": {
+    "line": "Slip down the fire escape before internal IT notices the packet spike. Clean and invisible.",
+    "trigger": "Gameplay stage 4 entry"
+  },
+  "SM02_S2_03_GOHAN": {
+    "line": "Worm installed. Camera archive access is ours. Getting out before IT traces the connection.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "SM02_S1_02_GOHAN": {
+    "line": "Two marked guards. Stun gun first; the thermal pulse can help me track them.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "SM02_S1_01_GOHAN": {
+    "line": "Lifeinvader annex. Reach the roof marker, then stun both guards. Nobody needs to die for a camera archive.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "SM03_S2_03_ENEMY": {
+    "line": "We lost the race! Shoot his tires before he leaves!",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "SM03_S2_04_GUESS": {
+    "line": "They pulled guns after losing. I can stop them or get the coupe back to the finish.",
+    "trigger": "Gameplay stage 3 entry"
+  },
+  "SM03_S2_05_GUESS": {
+    "line": "Checkered flag! Title is in my pocket and the racing transmission is loaded on the truck.",
+    "trigger": "Gameplay stage 3 completion"
+  },
+  "SM03_S1_02_GUESS": {
+    "line": "Three laps through the yellow checkpoints. KJ, keep an eye on their line.",
+    "trigger": "Gameplay stage 2 entry"
+  },
+  "SM03_S1_01_GUESS": {
+    "line": "Marabunta thinks their tuned Elegy has the top end. They don't know who is behind this wheel.",
+    "trigger": "Gameplay stage 1 entry"
+  },
+  "M01_S1_03_GUESS": {
+    "line": "Bay two. Keys are in the prototype. Someone expected a driver tonight. I am in.",
+    "trigger": "Guess takes the actual prototype driver seat"
+  },
+  "M01_S3_09_GOHAN": {
+    "line": "The copy is here, but half the entries are encrypted. Their security recorded all three of us. We need somewhere to open this."
+  }
+}

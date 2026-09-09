@@ -44,6 +44,7 @@ namespace Bloodlines.Missions
 
         /// <summary>Stage index, for the checkpoint manager and the QA harness.</summary>
         public int CurrentStage => Stage;
+        public string CurrentObjective { get; protected set; } = "";
 
         protected int StageStartedAt { get; private set; }
 
@@ -113,6 +114,7 @@ namespace Bloodlines.Missions
 
         protected void Objective(string text)
         {
+            CurrentObjective = text;
             GameUtils.Subtitle("~y~" + text, 5000);
         }
 
@@ -212,10 +214,30 @@ namespace Bloodlines.Missions
             {
                 if (entity == null || !entity.Exists()) continue;
                 if (playerPed != null && entity.Handle == playerPed.Handle) continue;
+                // A passed flight/boat mission must not delete the transport under
+                // the player or companions before its aftermath starts. Hand occupied
+                // transports back to the world; the engine can reclaim them later.
+                if (entity is Vehicle vehicle)
+                {
+                    bool occupied = playerPed != null && playerPed.Exists() && playerPed.IsInVehicle(vehicle);
+                    if (Ctx?.Crew != null)
+                        foreach (var protagonist in Crew.Protagonist.All)
+                        {
+                            var ped = Ctx.Crew.PedFor(protagonist.Slot);
+                            if (ped != null && ped.Exists() && ped.IsInVehicle(vehicle)) occupied = true;
+                        }
+                    if (occupied) { GameUtils.SafeRelease(entity); continue; }
+                }
                 GameUtils.SafeDelete(entity);
             }
             _entities.Clear();
 
+            if (Ctx?.Crew != null)
+            {
+                Ctx.Crew.CompanionAI.ReleaseAll();
+                Ctx.Crew.CompanionsHoldPosition = false;
+                Ctx.Crew.AssignCompanionAI();
+            }
             Ctx?.Switching?.SetUnlocked();
         }
 

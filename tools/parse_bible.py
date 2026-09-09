@@ -112,9 +112,10 @@ def parse_missions(lines):
     def flush_cue():
         if not cue or not cue_body:
             return
-        # The dialogue wraps across several lines and always ends on the line
-        # carrying the closing quote; whatever follows it is the trigger event.
-        end = next((i for i in range(len(cue_body) - 1, -1, -1) if "'" in cue_body[i]), None)
+        # A closing speech quote ends a line. Apostrophes inside words and
+        # quotes in a later trigger/appendix must never extend the spoken cue.
+        end = next((i for i, part in enumerate(cue_body)
+                    if fold_ascii(part).rstrip().endswith("'")), None)
         if end is None:
             spoken, trigger = join_wrapped(cue_body), ''
         else:
@@ -152,6 +153,13 @@ def parse_missions(lines):
         if not line or FOOTER.match(line):
             continue
 
+        if re.match(r'^TRACK\s+[2-9]\s*:', line):
+            break  # Production appendices are not mission dialogue.
+        if line.startswith(SECTION_BULLET) and mode == 'cue-body':
+            flush_cue()
+            cue, cue_body = None, []
+            mode = 'section-gap'
+            continue
         header = MISSION_HEADER.match(line)
         if header and line.count('(') > line.count(')'):
             # A long solo header wraps: SM08: "BURNER PROTOCOL" (GOHAN (DEVIN / MERCER))
@@ -186,7 +194,7 @@ def parse_missions(lines):
             mode = 'meta'
             continue
 
-        if not current:
+        if not current or mode == "section-gap":
             continue
 
         if mode == 'meta':
@@ -390,6 +398,23 @@ def main():
                'audio_dir', 'assembly', 'class_name', 'title', 'act', 'location',
                'time', 'weather', 'hud', 'synopsis'],
               all_missions)
+    # Explicit authored revisions are separate from both PDF text and parser
+    # repairs. Every regeneration applies the same reviewed editorial choices.
+    edits_path = os.path.join(DATA, 'dialogue_edits.json')
+    if os.path.exists(edits_path):
+        with io.open(edits_path, encoding='utf-8') as handle:
+            edits = json.load(handle)
+        ids = {cue['cue_id'] for cue in all_cues}
+        if len(all_missions) == 79 and set(edits) - ids:
+            raise ValueError('Unknown edited cue IDs: ' + str(set(edits) - ids))
+        for cue in all_cues:
+            changes = edits.get(cue['cue_id'], {})
+            if set(changes) - {'line', 'trigger', 'direction'}:
+                raise ValueError('Unsupported dialogue edit: ' + cue['cue_id'])
+            for key, value in changes.items():
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError('Empty dialogue edit: ' + cue['cue_id'])
+                cue[key] = canonical_names(clean(value))
     write_tsv(os.path.join(DATA, 'dialogue.tsv'),
               ['cue_id', 'mission', 'stage', 'speaker', 'direction', 'line', 'trigger'], all_cues)
     write_tsv(os.path.join(DATA, 'anchors.tsv'),

@@ -16,6 +16,7 @@ namespace Bloodlines.Missions.Objectives
         private readonly bool _flat;
         private readonly bool _inVehicle;
         private readonly Color _colour;
+        private bool _announced;
 
         public ReachZoneObjective(string label, Func<Vector3> position, float radius = 3f,
             bool flat = false, bool requireVehicle = false, Color? colour = null)
@@ -25,7 +26,7 @@ namespace Bloodlines.Missions.Objectives
             _radius = radius;
             _flat = flat;
             _inVehicle = requireVehicle;
-            _colour = colour ?? Color.FromArgb(120, 106, 168, 122);
+            _colour = colour ?? Color.FromArgb(160, 240, 205, 60);
         }
 
         public ReachZoneObjective(string label, Vector3 position, float radius = 3f,
@@ -34,15 +35,19 @@ namespace Bloodlines.Missions.Objectives
         {
         }
 
+        public override Vector3? AssignmentPosition => _inVehicle ? (Vector3?)null : _position();
+
         public override void Update(MissionContext context)
         {
             var target = _position();
             GameUtils.DrawObjectiveMarker(target, _colour, Math.Max(1f, _radius * 0.6f));
+            ObjectiveMarkers.Navigation(target, RequiredCharacter);
 
             if (!IsOwnerActive(context)) return;
 
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            if (!_announced) { GameUtils.Notify("~y~" + Label); _announced = true; }
             if (_inVehicle && !player.IsInVehicle()) return;
 
             bool arrived = _flat
@@ -73,11 +78,14 @@ namespace Bloodlines.Missions.Objectives
             _progressText = progressText ?? label;
         }
 
+        public override Vector3? AssignmentPosition => _position();
+
         public override void Update(MissionContext context)
         {
             var target = _position();
             GameUtils.DrawObjectiveMarker(target, Color.FromArgb(120, 106, 168, 122), _radius);
 
+            ObjectiveMarkers.Navigation(target, RequiredCharacter);
             var player = Game.Player.Character;
             if (!IsOwnerActive(context) || player == null || !player.Exists() ||
                 !GameUtils.IsWithin(player.Position, target, _radius))
@@ -111,6 +119,7 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<IEnumerable<Ped>> _targets;
         private readonly int _allowedSurvivors;
         private readonly bool _showCount;
+        private readonly string _instruction;
 
         public KillTargetsObjective(string label, Func<IEnumerable<Ped>> targets,
             int allowedSurvivors = 0, bool showCount = true)
@@ -118,14 +127,18 @@ namespace Bloodlines.Missions.Objectives
         {
             _targets = targets;
             _allowedSurvivors = allowedSurvivors;
-            _showCount = showCount;
+            _showCount = showCount; _instruction = label;
         }
 
         public override void Update(MissionContext context)
         {
-            int alive = _targets().Count(ped => ped != null && ped.Exists() && ped.IsAlive);
+            var targets = _targets().ToList();
+            if (targets.Count == 0 || targets.Any(p => p == null || !p.Exists())) { Fail("A required hostile failed to load. Restart the mission."); return; }
+            int alive = targets.Count(ped => ped.IsAlive);
+            if (_showCount) Label = _instruction + " Remaining: " + alive;
 
-            if (alive <= _allowedSurvivors)
+            foreach (var target in _targets()) if (target != null && target.Exists() && target.IsAlive) ObjectiveMarkers.Show(target.Position);
+            if (alive <= _allowedSurvivors && IsOwnerActive(context))
             {
                 Complete();
                 return;
@@ -141,6 +154,7 @@ namespace Bloodlines.Missions.Objectives
     /// </summary>
     public sealed class SubdueTargetsObjective : Objective
     {
+        private readonly HashSet<int> _subdued = new HashSet<int>();
         private readonly Func<IEnumerable<Ped>> _targets;
 
         public SubdueTargetsObjective(string label, Func<IEnumerable<Ped>> targets) : base(label)
@@ -150,18 +164,17 @@ namespace Bloodlines.Missions.Objectives
 
         public override void Update(MissionContext context)
         {
-            var standing = _targets()
-                .Where(ped => ped != null && ped.Exists() && ped.IsAlive
-                              && !ped.IsRagdoll && !ped.IsCuffed && !ped.IsBeingStunned)
-                .ToList();
-
-            if (standing.Count == 0)
+            var targets = _targets().ToList();
+            if (targets.Count == 0 || targets.Any(p => p == null || !p.Exists())) { Fail("A required guard is missing. Restart the mission."); return; }
+            if (targets.Any(p => p.IsDead)) { Fail("Keep the watchmen alive. Use the stun gun."); return; }
+            foreach (var ped in targets)
             {
-                Complete();
-                return;
+                if (ped.IsBeingStunned || ped.IsCuffed) _subdued.Add(ped.Handle);
+                if (!_subdued.Contains(ped.Handle)) ObjectiveMarkers.Show(ped.Position);
             }
-
-            GameUtils.Subtitle("~s~Guards standing: ~r~" + standing.Count, 500);
+            int left = targets.Count(p => !_subdued.Contains(p.Handle));
+            Label = "Stun the marked guards; keep them alive. Remaining: " + left;
+            if (left == 0 && IsOwnerActive(context)) Complete();
         }
     }
 
@@ -187,7 +200,9 @@ namespace Bloodlines.Missions.Objectives
 
         public override void Update(MissionContext context)
         {
-            _current.RemoveAll(ped => ped == null || !ped.Exists() || ped.IsDead);
+            if (_current.Any(p => p == null || !p.Exists())) { Fail("A wave lost a required hostile. Restart the mission."); return; }
+            _current.RemoveAll(ped => ped.IsDead);
+            foreach (var ped in _current) ObjectiveMarkers.Show(ped.Position);
 
             if (_current.Count > 0)
             {
@@ -209,6 +224,7 @@ namespace Bloodlines.Missions.Objectives
             _wave++;
             _clearedAt = 0;
             _current.AddRange(_spawnWave(_wave).Where(ped => ped != null && ped.Exists()));
+            if (_current.Count == 0) { Fail("The enemy wave failed to load. Restart the mission."); return; }
             Logger.Debug("Wave " + _wave + " spawned with " + _current.Count + " hostiles.");
         }
 
@@ -220,12 +236,14 @@ namespace Bloodlines.Missions.Objectives
     {
         private readonly Func<Vehicle> _vehicle;
         private readonly VehicleSeat _seat;
+        private readonly bool _requireCrew;
 
-        public EnterVehicleObjective(string label, Func<Vehicle> vehicle, VehicleSeat seat = VehicleSeat.Any)
+        public EnterVehicleObjective(string label, Func<Vehicle> vehicle, VehicleSeat seat = VehicleSeat.Any, bool requireCrew = false)
             : base(label)
         {
             _vehicle = vehicle;
             _seat = seat;
+            _requireCrew = requireCrew;
         }
 
         public override void Update(MissionContext context)
@@ -239,12 +257,19 @@ namespace Bloodlines.Missions.Objectives
 
             GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 214, 138, 58), 1.5f);
 
+            ObjectiveMarkers.Navigation(vehicle.Position, RequiredCharacter);
             if (!IsOwnerActive(context)) return;
 
             var player = Game.Player.Character;
             if (player == null || !player.IsInVehicle(vehicle)) return;
             if (_seat != VehicleSeat.Any && vehicle.GetPedOnSeat(_seat) != player) return;
 
+            if (_requireCrew)
+                foreach (var hero in Crew.Protagonist.All)
+                {
+                    var ped = context.Crew.PedFor(hero.Slot);
+                    if (ped == null || !ped.Exists() || ped.IsDead || !ped.IsInVehicle(vehicle)) return;
+                }
             Complete();
         }
     }
@@ -279,7 +304,7 @@ namespace Bloodlines.Missions.Objectives
             var target = _target();
             if (target == null || !target.Exists())
             {
-                Complete();
+                Fail("The target is missing. Restart this mission.");
                 return;
             }
 
@@ -299,6 +324,7 @@ namespace Bloodlines.Missions.Objectives
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 
+            ObjectiveMarkers.Navigation(target.Position);
             float distance = player.Position.DistanceTo(target.Position);
             GameUtils.Subtitle("~s~Distance: ~y~" + (int)distance + "m", 400);
 
@@ -331,12 +357,13 @@ namespace Bloodlines.Missions.Objectives
         public override void Update(MissionContext context)
         {
             var vehicle = _vehicle();
-            if (vehicle == null || !vehicle.Exists() || vehicle.IsDead || !vehicle.IsDriveable)
+            if (vehicle == null || !vehicle.Exists()) { Fail("The target vehicle failed to load. Restart the mission."); return; }
+            if (vehicle.IsDead || !vehicle.IsDriveable)
             {
-                Complete();
+                if (IsOwnerActive(context)) Complete();
                 return;
             }
-
+            ObjectiveMarkers.Show(vehicle.Position);
             GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), 1.5f);
         }
     }
@@ -516,12 +543,14 @@ namespace Bloodlines.Missions.Objectives
         private int _index;
         private int _lap = 1;
 
-        public RaceCheckpointObjective(string label, IList<Vector3> checkpoints, float radius = 12f, int laps = 1)
+        private readonly Func<Vehicle> _vehicle;
+        public RaceCheckpointObjective(string label, IList<Vector3> checkpoints, float radius = 12f, int laps = 1, Func<Vehicle> vehicle = null)
             : base(label)
         {
             _checkpoints = checkpoints;
             _radius = radius;
             _laps = laps;
+            _vehicle = vehicle;
         }
 
         public override void Update(MissionContext context)
@@ -533,11 +562,15 @@ namespace Bloodlines.Missions.Objectives
             }
 
             var target = _checkpoints[_index];
+            ObjectiveMarkers.Navigation(target, RequiredCharacter, _vehicle?.Invoke());
             GameUtils.DrawObjectiveMarker(target, Color.FromArgb(120, 232, 168, 56), _radius * 0.5f);
             GameUtils.Subtitle("~s~Lap " + _lap + "/" + _laps + "   checkpoint " + (_index + 1) + "/" + _checkpoints.Count, 500);
 
+            ObjectiveMarkers.Navigation(target, RequiredCharacter);
             var player = Game.Player.Character;
-            if (player == null || !GameUtils.IsWithinFlat(player.Position, target, _radius)) return;
+            if (!IsOwnerActive(context) || player == null || !player.Exists() || !player.IsInVehicle() ||
+                (_vehicle != null && !player.IsInVehicle(_vehicle())) ||
+                !GameUtils.IsWithinFlat(player.Position, target, _radius)) return;
 
             _index++;
             if (_index < _checkpoints.Count) return;

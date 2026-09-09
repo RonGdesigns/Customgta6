@@ -9,32 +9,15 @@ using GTA.Native;
 namespace Bloodlines.Missions.Campaign
 {
     /// <summary>
-    /// M27 — "Flight Risk". 8,000 feet over Mount Chiliad, 16:30.
-    ///
-    /// The bible's most cinematic mission and the second Red-tier set piece: Guess
-    /// matches an Aegis Shamal at altitude, Ice crosses to it in the air, fights
-    /// through the cabin as the jet is put into a terminal dive, takes the flight
-    /// ledgers and steps out at four thousand feet into Gohan's boat.
-    ///
-    /// Faked in three moves, per docs/FEASIBILITY.md:
-    ///
-    ///  * The transfer is an attach, not a leap. Two aircraft in relative motion is a
-    ///    physics problem the game loses every time, so once the player is in the
-    ///    band, a fade puts Ice on the jet and the game never has to solve it.
-    ///  * Zero-G is not simulated. The bodyguards fight normally aboard a plane that
-    ///    is genuinely diving; the tilt and the altimeter do the work that ragdoll
-    ///    physics cannot be trusted with.
-    ///  * The dive is a scripted heading and pitch on the jet, so the mission can
-    ///    guarantee it ends over water rather than hoping.
-    ///
-    /// Everything the player does — flying the match, the gunfight, the jump, the
-    /// canopy ride down to the boat — is real.
+    /// Match the jet, transfer under a bounded fade, secure its flight ledger from a
+    /// passenger seat, then parachute into the sea pickup. The Shamal has no walkable
+    /// combat cabin; the ledger is an explicit interaction instead of an impossible gunfight.
     /// </summary>
     public sealed class M27FlightRisk : ComposedMission
     {
-        private const float BailAltitude = 1200f;
+        private const float BailAltitude = 80f;
 
-        private readonly List<Ped> _bodyguards = new List<Ped>();
+
 
         private Vehicle _stuntPlane;
         private Vehicle _shamal;
@@ -50,6 +33,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _formUp = Ctx.Locations.Position("M27.FormUp");
             _jetTrack = Ctx.Locations.Position("M27.JetTrack");
             _seaPickup = Ctx.Locations.Position("M27.SeaPickup");
@@ -71,6 +55,10 @@ namespace Bloodlines.Missions.Campaign
             SpawnStuntPlane();
             SpawnShamal();
             SpawnDinghy();
+            if (!RequireAssets(_stuntPlane, _shamal, _shamalPilot, _dinghy)) return false;
+            Station(CrewSlot.Ice, apron + new Vector3(-15f, 0f, 0f));
+            Station(CrewSlot.Gohan, _dinghy, VehicleSeat.Driver);
+            StartJet();
             return true;
         }
 
@@ -80,7 +68,7 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — take the stunt plane up.", () => _stuntPlane,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             // The match is real flying: hold the band and the transfer becomes possible.
             yield return new MissionStage("Match the Shamal",
@@ -88,26 +76,31 @@ namespace Bloodlines.Missions.Campaign
                         () => _shamal, 60f, 12, "The Shamal outran the stunt plane.", 12f, acquireSeconds: 240))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartJet())
-                .OnExit(context => BoardTheJet());
+                .OnExit(context => BoardTheJet())
+                .WithCues("M27_S1_01_GUESS")
+                .AfterCues("M27_S1_02_ICE");
 
             yield return new MissionStage("Zero-G",
-                    new KillTargetsObjective("Ice — clear the cabin.", () => _bodyguards))
+                    new MissionInteraction("Ice: take the flight ledger from the cabin locker", () => _shamal.Position, 4, 8f, () => _shamal))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(2)
-                .OnExit(context => BeginDive());
+                
+                .OnExit(context => BeginDive())
+                .WithCues("M27_S2_03_ICE");
 
             yield return new MissionStage("Terminal dive",
                     new BailOutObjective("The pilot put her over — get out.", BailAltitude))
-                .OwnedBy(CrewSlot.Ice);
+                .OwnedBy(CrewSlot.Ice)
+                .WithCues("M27_S2_04_GOHAN")
+                .AfterCues("M27_S2_05_ICE");
 
             yield return new MissionStage("Sea pickup",
-                    new ReachZoneObjective("Steer the canopy to Gohan's boat.", () => _seaPickup, 40f,
-                        flat: true))
+                    new EnterVehicleObjective("Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy.", () => _dinghy))
                 .OnExit(context =>
                 {
                     context.State.CashOnHand += 75000;
                     GameUtils.Subtitle("~g~Flight ledgers secured. Every Aegis charter for six months.", 6000);
-                });
+                })
+                .AfterCues("M27_S2_06_GUESS");
         }
 
         /// <summary>
@@ -118,23 +111,22 @@ namespace Bloodlines.Missions.Campaign
         {
             if (_shamal == null || !_shamal.Exists()) return;
 
-            GameUtils.FadeOut(900);
-            Script.Wait(950);
-
-            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && !Ctx.Switching.TrySwitch(CrewSlot.Ice))
-                throw new System.InvalidOperationException("Could not switch to Ice for the transfer.");
-
-            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice != null && ice.Exists())
+            GameUtils.FadeOut(400);
+            try
             {
-                ice.Weapons.Give(WeaponHash.Parachute, 1, false, true);
-                ice.Task.ClearAllImmediately();
-                Function.Call(Hash.SET_PED_INTO_VEHICLE, ice, _shamal, -2);
+                Script.Wait(450);
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                if (ice == null || !ice.Exists()) throw new System.InvalidOperationException("Ice is unavailable.");
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+                ice.Task.ClearAllImmediately(); ice.SetIntoVehicle(_shamal, (VehicleSeat)2);
+                if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && !Ctx.Switching.TrySwitch(CrewSlot.Ice, missionTransition: true))
+                    throw new System.InvalidOperationException("Could not switch to Ice for the transfer.");
+                ice.SetIntoVehicle(_shamal, (VehicleSeat)2);
+                ice.Weapons.Give(WeaponHash.Parachute, 1, false, false);
+                if (!ice.IsInVehicle(_shamal)) throw new System.InvalidOperationException("The aircraft transfer failed.");
             }
-
-            SpawnBodyguards();
-            GameUtils.FadeIn(1400);
-            GameUtils.Subtitle("~y~Hatch blown. Cabin decompressing.", 4000);
+            finally { GameUtils.FadeIn(500); }
+            GameUtils.Subtitle("Ice is aboard. Press E / D-pad Right to secure the ledger.", 5000);
         }
 
         /// <summary>The pilot kicks the stick forward — a scripted attitude, not a hope.</summary>
@@ -144,7 +136,8 @@ namespace Bloodlines.Missions.Campaign
 
             if (_shamalPilot != null && _shamalPilot.Exists()) _shamalPilot.Kill();
 
-            _shamal.Rotation = new Vector3(-55f, _shamal.Rotation.Y, _shamal.Rotation.Z);
+            _shamal.Heading = (_seaPickup - _shamal.Position).ToHeading();
+            _shamal.Rotation = new Vector3(-20f, _shamal.Rotation.Y, _shamal.Rotation.Z);
             _shamal.Speed = 90f;
             GameUtils.Subtitle("~r~She's over. Terminal dive toward the Pacific.", 5000);
         }
@@ -153,8 +146,8 @@ namespace Bloodlines.Missions.Campaign
         {
             if (_shamalPilot == null || !_shamalPilot.Exists() || _shamal == null || !_shamal.Exists()) return;
 
-            _shamalPilot.Task.StartPlaneMission(_shamal, _jetTrack, VehicleMissionType.GoTo,
-                55f, 80f, 700, 40, 0f, false);
+            _shamalPilot.Task.StartPlaneMission(_shamal, _seaPickup + new Vector3(0f, 0f, 700f), VehicleMissionType.Circle,
+                42f, 180f, 700, 40, 0f, false);
         }
 
         private void SpawnStuntPlane()
@@ -188,6 +181,7 @@ namespace Bloodlines.Missions.Campaign
 
             _shamal.IsPersistent = true;
             _shamal.IsEngineRunning = true;
+            _shamal.ForwardSpeed = 45f;
 
             _shamalPilot = Track(World.CreatePed(pilotModel, _shamal.Position, 0f));
             model.MarkAsNoLongerNeeded();
@@ -203,32 +197,6 @@ namespace Bloodlines.Missions.Campaign
             blip.Sprite = BlipSprite.Plane;
             blip.Color = BlipColor.Red;
             blip.Name = "Aegis Shamal";
-        }
-
-        private void SpawnBodyguards()
-        {
-            var model = new Model("s_m_m_highsec_01");
-            if (!GameUtils.RequestModel(model) || _shamal == null || !_shamal.Exists()) return;
-
-            var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
-
-            for (int seat = 0; seat < 2; seat++)
-            {
-                var guard = Track(World.CreatePed(model, _shamal.Position, 0f));
-                if (guard == null || !guard.Exists()) continue;
-
-                guard.RelationshipGroup = aegis;
-                guard.IsPersistent = true;
-                guard.BlockPermanentEvents = true;
-                guard.CanBeDraggedOutOfVehicle = false;
-                guard.Weapons.Give(WeaponHash.APPistol, 100, true, true);
-                Function.Call(Hash.SET_PED_INTO_VEHICLE, guard, _shamal, seat);
-                guard.Task.FightAgainstHatedTargets(30f);
-
-                _bodyguards.Add(guard);
-            }
-
-            model.MarkAsNoLongerNeeded();
         }
 
         private void SpawnDinghy()
@@ -250,7 +218,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
-            _bodyguards.Clear();
+
             GameUtils.FadeIn(500);
         }
     }
@@ -271,7 +239,7 @@ namespace Bloodlines.Missions.Campaign
         public override void Update(MissionContext context)
         {
             var player = Game.Player.Character;
-            if (player == null || !player.Exists()) return;
+            if (player == null || !player.Exists() || !IsOwnerActive(context)) return;
 
             float height = player.HeightAboveGround;
 
@@ -281,9 +249,9 @@ namespace Bloodlines.Missions.Campaign
                 return;
             }
 
-            GameUtils.Subtitle("~r~" + (int)height + " ft — GET OUT", 400);
+            GameUtils.Subtitle("~r~" + (int)height + " m — exit the aircraft and deploy your parachute", 400);
 
-            if (height < _floor * 0.5f) Fail("Ice rode the jet into the water.");
+            if (height < _floor) Fail("Ice rode the jet into the water.");
         }
     }
 }

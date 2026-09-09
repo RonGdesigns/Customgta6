@@ -37,6 +37,7 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            if (CutsceneDirector.IsSceneRunning) return;
             if (SurveyMode.OwnsCaptureKey) return;
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;

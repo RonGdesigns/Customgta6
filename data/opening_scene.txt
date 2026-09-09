@@ -1,0 +1,22 @@
+# M01 cold open: private channels, not a conversation between friends.
+intro
+GUESS|Terminal Island. Two in the morning. They sent me a gate code, a photograph and half the money. That's usually the part where I should ask more questions.
+GUESS|I'm outside the freight entrance in my own car. One pickup inside the yard. Keep it quiet, get paid, go home.
+GOHAN|Different client, same dockyard. The laptop behind their work station holds Mateo's payment ledger. I'm at the service entrance; I need to reach it before the security shift.
+ICE|Mateo Cifuentes. The contract says identify him, keep him alive and trace the shipment. From here I can watch the yard without crossing it.
+GUESS|There it is. Bay two, the four-door prototype. My car stays here when I take that one. Whoever owns it won't be pleased.
+GOHAN|I used to audit books like these. The numbers tell you who got paid. Missing entries tell you who somebody wants forgotten.
+ICE|Mateo's checking shipping records with a dock technician. I don't know who's moving through the yard below. I keep the scope on him until I'm certain.
+GUESS|No names on the job, no backup promised. All right. Easy through the gate. Let's find out what they paid for.
+
+# Recognition happens only after the three playable approaches succeed.
+recognition
+GOHAN|Copy finished. The alarm opened their dock security channel. Can anyone hear me? Shooters coming into the yard!
+ICE|Wait. That voice... Devin? Gohan? Stay in cover. I'm watching the yard.
+GUESS|Why am I hearing my high school graduation on a tactical radio? Ice? Both of you?
+GOHAN|Darius. Ron. I thought you were both out of this city.
+GUESS|I came back. Tried your old numbers. Figured scholarships bought you two somewhere you didn't need to call from.
+ICE|Mine bought me a way out. Didn't teach me how to come home. We can't do this here.
+GOHAN|You said you were leaving after graduation. You didn't say we'd have to spend fifteen years guessing if you were alive.
+GUESS|We can be angry in a moving car. There's room for three. Tell me you remember how to get in one.
+ICE|Mateo's running for the slipway. Let him lead us to the buyers. Cover each other and get to Guess's car.

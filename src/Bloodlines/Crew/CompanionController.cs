@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Bloodlines.Core;
 using GTA;
@@ -10,6 +11,10 @@ namespace Bloodlines.Crew
     {
         /// <summary>Tailing the active character on foot.</summary>
         Follow,
+        Driving,
+        Convoy,
+        Independent,
+        Disembarking,
 
         /// <summary>Fighting; left alone until the fight ends.</summary>
         Combat,
@@ -47,6 +52,46 @@ namespace Bloodlines.Crew
         private const float VehicleWarpSpeed = 8f;
         private const int VehicleTaskTimeoutMs = 12000;
 
+        private bool _sharedVehicle;
+        public bool RequireSharedVehicle
+        {
+            get => _sharedVehicle;
+            set
+            {
+                if (value && !_sharedVehicle) { Driver.Clear(); Convoy.Clear(); }
+                _sharedVehicle = value;
+            }
+        }
+        private readonly HashSet<CrewSlot> _separatedByRecovery = new HashSet<CrewSlot>();
+        public bool SeparatedByRecovery(CrewSlot slot) => _separatedByRecovery.Contains(slot);
+        public void SeparateAfterRecovery(CrewSlot active)
+        {
+            foreach (CrewSlot slot in Enum.GetValues(typeof(CrewSlot)))
+                if (slot != active) _separatedByRecovery.Add(slot);
+            _separatedByRecovery.Remove(active);
+        }
+        private bool _missionActive;
+        public bool MissionActive
+        {
+            get => _missionActive;
+            set
+            {
+                if (value == _missionActive) return;
+                if (value) { Life.Clear(); _separatedByRecovery.Clear(); }
+                Military.Clear();
+                _missionActive = value;
+            }
+        }
+        public CompanionLife Life { get; } = new CompanionLife();
+        public MilitaryResponse Military { get; }
+        private bool _independent = true;
+        public bool IndependentFreeRoam
+        {
+            get => _independent;
+            set { _separatedByRecovery.Clear(); if (value == _independent) return; _independent = value; Life.Clear(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); }
+        }
+        public CompanionConvoy Convoy { get; } = new CompanionConvoy();
+        public CompanionDriver Driver { get; } = new CompanionDriver();
         private readonly ModConfig _config;
         private readonly Dictionary<CrewSlot, CompanionState> _states = new Dictionary<CrewSlot, CompanionState>();
         private readonly Dictionary<CrewSlot, int> _stateSince = new Dictionary<CrewSlot, int>();
@@ -60,10 +105,28 @@ namespace Bloodlines.Crew
         public CompanionController(ModConfig config)
         {
             _config = config;
+            Military = new MilitaryResponse(Life.Wanted);
+            Convoy.AllowCatchupTeleport = slot => !SeparatedByRecovery(slot);
+            Driver.HasBoardingPassengers = vehicle =>
+            {
+                foreach (var request in _boarding.Values)
+                    if (request.Vehicle.Handle == vehicle.Handle && vehicle.IsSeatFree(request.Seat)) return true;
+                return false;
+            };
         }
 
         /// <summary>Companions hold position instead of following (split-approach missions).</summary>
         public bool HoldPosition { get; set; }
+        // Identity survives the engine changing relationship groups on player handover.
+        public Func<Ped, bool> IsCrewMember { get; set; }
+
+        private bool IsFriendly(Ped ped, Ped companion, Ped leader)
+        {
+            return ped == null || !ped.Exists() || ped.IsDead || ped.Handle == companion.Handle ||
+                (leader != null && ped.Handle == leader.Handle) ||
+                (Game.Player.Character != null && ped.Handle == Game.Player.Character.Handle) ||
+                (IsCrewMember != null && IsCrewMember(ped)) || ped.RelationshipGroup == companion.RelationshipGroup;
+        }
 
         public CompanionState StateOf(CrewSlot slot)
         {
@@ -73,6 +136,9 @@ namespace Bloodlines.Crew
         /// <summary>A mission takes direct control of one companion until it releases it.</summary>
         public void TakeControl(CrewSlot slot)
         {
+            Life.Suspend(slot);
+            Driver.Forget(slot);
+            Convoy.Forget(slot);
             _scripted.Add(slot);
             SetState(slot, CompanionState.Scripted);
         }
@@ -86,12 +152,24 @@ namespace Bloodlines.Crew
         public void ReleaseAll()
         {
             _scripted.Clear();
+            Driver.Clear();
+            Convoy.Clear();
+            RequireSharedVehicle = false;
         }
 
         public void Update(CrewSlot slot, Ped companion, Ped leader)
         {
             if (companion == null || !companion.Exists()) return;
 
+            // Stop an already-running native combat task if its victim became the
+            // player or another crew member after a switch/respawn.
+            var combatTarget = Function.Call<Ped>(Hash.GET_PED_TARGET_FROM_COMBAT_PED, companion, 0);
+            if (combatTarget != null && combatTarget.Exists() && IsFriendly(combatTarget, companion, leader))
+            {
+                companion.Task.ClearAllImmediately();
+                Driver.Restart(slot);
+                Refresh(slot);
+            }
             var state = Decide(slot, companion, leader);
 
             // A slot with nothing recorded has never been applied. StateOf() reports
@@ -110,13 +188,23 @@ namespace Bloodlines.Crew
             // A few states need upkeep rather than a one-shot task.
             switch (state)
             {
+                case CompanionState.Independent:
+                    Life.Update(slot, companion);
+                    break;
+                case CompanionState.Convoy:
+                    Convoy.IsCrewMember = IsCrewMember;
+                    Convoy.Update(slot, companion, leader, Driver);
+                    break;
+                case CompanionState.Driving:
+                    Driver.Update(slot, companion);
+                    break;
                 case CompanionState.Vehicle:
                     MaintainVehicle(slot, companion, leader);
                     break;
                 case CompanionState.Combat:
                     if (!companion.IsInCombat && StateAge(slot) >= 1000)
                     {
-                        Engage(slot, companion);
+                        Engage(slot, companion, leader);
                         _stateSince[slot] = Game.GameTime;
                     }
                     break;
@@ -133,20 +221,60 @@ namespace Bloodlines.Crew
         private CompanionState Decide(CrewSlot slot, Ped companion, Ped leader)
         {
             if (companion.IsDead) return CompanionState.Downed;
+            if (leader != null && leader.Exists() && companion.Position.DistanceTo(leader.Position) < 65f)
+                _separatedByRecovery.Remove(slot);
             if (_scripted.Contains(slot)) return CompanionState.Scripted;
+            // Separate approach actors must not board the leader's car or abandon
+            // their assignment because another character starts a fight.
+            if (HoldPosition) return CompanionState.Hold;
+            // A shared ride is a commitment, even while free-roam independence is on.
+            if (leader != null && leader.Exists() && leader.IsInVehicle() && companion.IsInVehicle(leader.CurrentVehicle))
+            {
+                if (leader.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
+                { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Vehicle;
+            }
+            if (IndependentFreeRoam && !MissionActive)
+            {
+                var ride = companion.CurrentVehicle;
+                if (ride != null && !(ride.Model.IsCar || ride.Model.IsBike) && ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
+                { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                if ((ride == null || ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle != companion.Handle) && FindThreat(slot, companion, leader) != null) return CompanionState.Combat;
+                return CompanionState.Independent;
+            }
+            if (!MissionActive && !RequireSharedVehicle && !IndependentFreeRoam && leader != null && leader.Exists())
+            {
+                if (StateOf(slot) == CompanionState.Disembarking && companion.IsInVehicle() && StateAge(slot) < 15000) return CompanionState.Disembarking;
+                var vehicle = companion.CurrentVehicle;
+                if (vehicle != null && vehicle.Exists() && vehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
+                {
+                    bool canLeave = (vehicle.Model.IsCar || vehicle.Model.IsBike || vehicle.Model.IsHelicopter) &&
+                        !vehicle.IsInAir && vehicle.HeightAboveGround < 3f && vehicle.Speed < 2f;
+                    if (!leader.IsInVehicle() && canLeave && companion.Position.DistanceTo(leader.Position) < 65f)
+                    { Driver.Forget(slot); return CompanionState.Disembarking; }
+                    if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion);
+                    return CompanionState.Driving;
+                }
+                if (!companion.IsInVehicle() && companion.Position.DistanceTo(leader.Position) >= 150f) return CompanionState.Convoy;
+            }
+            if (!RequireSharedVehicle && leader != null && leader.Exists() &&
+                (Convoy.HasRide(slot) || (leader.IsInVehicle() && !companion.IsInVehicle() &&
+                    companion.Position.DistanceTo(leader.Position) >= 200f))) return CompanionState.Convoy;
+            if (Driver.Owns(slot, companion)) return CompanionState.Driving;
 
+            if (companion.IsInVehicle() && companion.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle != companion.Handle && FindThreat(slot, companion, leader) != null) return CompanionState.Combat;
             if (leader != null && leader.Exists() && leader.IsInVehicle())
             {
                 var vehicle = leader.CurrentVehicle;
                 if (vehicle != null && vehicle.Exists() && HasSeatFor(slot, vehicle, companion)) return CompanionState.Vehicle;
             }
 
-            if (FindThreat(slot, companion, leader) != null || companion.IsInCombat) return CompanionState.Combat;
+            if (FindThreat(slot, companion, leader) != null) return CompanionState.Combat;
 
-            if (HoldPosition) return CompanionState.Hold;
 
-            if (leader != null && leader.Exists() &&
-                companion.Position.DistanceTo(leader.Position) > _config.CompanionLeashDistance)
+
+            if (leader != null && leader.Exists() && (!leader.IsInVehicle() || RequireSharedVehicle) &&
+                companion.Position.DistanceTo(leader.Position) > _config.CompanionLeashDistance && !SeparatedByRecovery(slot))
             {
                 return CompanionState.TeleportRecovery;
             }
@@ -169,11 +297,25 @@ namespace Bloodlines.Crew
                     }
                     break;
 
+                case CompanionState.Independent:
+                    Life.IsCrewMember = IsCrewMember;
+                    Life.Update(slot, companion);
+                    break;
+                case CompanionState.Disembarking:
+                    companion.Task.LeaveVehicle();
+                    break;
                 case CompanionState.Hold:
                     companion.Task.ClearAll();
                     companion.Task.GuardCurrentPosition();
                     break;
 
+                case CompanionState.Convoy:
+                    Convoy.IsCrewMember = IsCrewMember;
+                    Convoy.Update(slot, companion, leader, Driver);
+                    break;
+                case CompanionState.Driving:
+                    Driver.Update(slot, companion);
+                    break;
                 case CompanionState.Vehicle:
                     BoardVehicle(slot, companion, leader);
                     break;
@@ -183,7 +325,7 @@ namespace Bloodlines.Crew
                     break;
 
                 case CompanionState.Combat:
-                    Engage(slot, companion);
+                    Engage(slot, companion, leader);
                     break;
                 case CompanionState.Scripted:
                 case CompanionState.Downed:
@@ -194,14 +336,12 @@ namespace Bloodlines.Crew
         private Ped FindThreat(CrewSlot slot, Ped companion, Ped leader)
         {
             if (_lastScan.TryGetValue(slot, out var last) && Game.GameTime - last < 500)
-                return _threats.TryGetValue(slot, out var cached) && cached.Exists() && !cached.IsDead ? cached : null;
+                return _threats.TryGetValue(slot, out var cached) && !IsFriendly(cached, companion, leader) ? cached : null;
             _lastScan[slot] = Game.GameTime;
             _threats.Remove(slot);
             foreach (var ped in World.GetNearbyPeds(companion, 100f))
             {
-                if (ped == null || !ped.Exists() || ped.IsDead || ped.Handle == companion.Handle ||
-                    (leader != null && ped.Handle == leader.Handle) ||
-                    ped.RelationshipGroup == companion.RelationshipGroup) continue;
+                if (IsFriendly(ped, companion, leader)) continue;
                 bool attacksCrew = Function.Call<bool>(Hash.IS_PED_IN_COMBAT, ped, companion) ||
                     (leader != null && leader.Exists() && Function.Call<bool>(Hash.IS_PED_IN_COMBAT, ped, leader));
                 bool activeHostile = leader != null && leader.Exists() &&
@@ -214,12 +354,18 @@ namespace Bloodlines.Crew
             return null;
         }
 
-        private void Engage(CrewSlot slot, Ped companion)
+        private void Engage(CrewSlot slot, Ped companion, Ped leader)
         {
-            if (!_threats.TryGetValue(slot, out var target) || !target.Exists() || target.IsDead) return;
-            companion.Task.ClearAll();
-            companion.Task.FightAgainst(target);
-            Logger.Debug(Protagonist.Of(slot).FirstName + " engaging hostile " + target.Handle);
+            if (!_threats.TryGetValue(slot, out var target) || IsFriendly(target, companion, leader)) return;
+            if (companion.IsInVehicle())
+            {
+                if (companion.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle) return;
+                Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, companion, 2, true);
+                companion.Weapons.Give(WeaponHash.MicroSMG, 300, true, true);
+                companion.Task.VehicleShootAtPed(target);
+            }
+            else { companion.Task.ClearAll(); companion.Task.FightAgainst(target); }
+            Logger.Debug(Protagonist.Of(slot).Handle + " engaging hostile " + target.Handle);
         }
 
         private void BoardVehicle(CrewSlot slot, Ped companion, Ped leader)
@@ -231,7 +377,7 @@ namespace Bloodlines.Crew
             _boarding[slot] = new Boarding { Vehicle = vehicle, Seat = seat };
             _stateSince[slot] = Game.GameTime;
             float distance = companion.Position.DistanceTo(vehicle.Position);
-            if (distance > VehicleTaskRange || (distance > 25f && vehicle.Speed > VehicleWarpSpeed))
+            if (!SeparatedByRecovery(slot) && RequireSharedVehicle && (distance > VehicleTaskRange || (distance > 25f && vehicle.Speed > VehicleWarpSpeed)))
             {
                 companion.Task.ClearAllImmediately();
                 companion.Task.WarpIntoVehicle(vehicle, seat);
@@ -241,7 +387,7 @@ namespace Bloodlines.Crew
             // No warp flags: nearby companions walk to their own reserved door.
             companion.Task.ClearAll();
             companion.Task.EnterVehicle(vehicle, seat, 20000, 2f, EnterVehicleFlags.None);
-            Logger.Debug(Protagonist.Of(slot).FirstName + " walking to vehicle seat " + seat);
+            Logger.Debug(Protagonist.Of(slot).Handle + " walking to vehicle seat " + seat);
         }
 
         private void MaintainVehicle(CrewSlot slot, Ped companion, Ped leader)
@@ -259,6 +405,13 @@ namespace Bloodlines.Crew
             int age = StateAge(slot);
             if (age < VehicleTaskTimeoutMs) return;
             if (age < 20000 && Function.Call<bool>(Hash.IS_PED_GETTING_INTO_A_VEHICLE, companion)) return;
+            if (!RequireSharedVehicle || SeparatedByRecovery(slot))
+            {
+                _boarding.Remove(slot);
+                companion.Task.FollowToOffsetFromEntity(leader, new Vector3(0f,-5f,0f), 3f, -1, 8f, true);
+                _stateSince[slot] = Game.GameTime;
+                return;
+            }
             companion.Task.ClearAllImmediately();
             companion.Task.WarpIntoVehicle(vehicle, request.Seat);
             _stateSince[slot] = Game.GameTime;
@@ -311,7 +464,7 @@ namespace Bloodlines.Crew
             if (state != CompanionState.Vehicle) _boarding.Remove(slot);
             _states[slot] = state;
             _stateSince[slot] = Game.GameTime;
-            Logger.Debug(Protagonist.Of(slot).FirstName + " -> " + state);
+            Logger.Debug(Protagonist.Of(slot).Handle + " -> " + state);
         }
 
         public void Refresh(CrewSlot slot)
@@ -325,7 +478,11 @@ namespace Bloodlines.Crew
 
         public void Forget(CrewSlot slot)
         {
+            _separatedByRecovery.Remove(slot);
+            Life.Suspend(slot);
             Refresh(slot);
+            Driver.Forget(slot);
+            Convoy.Forget(slot);
             _scripted.Remove(slot);
         }
     }

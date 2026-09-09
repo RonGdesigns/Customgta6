@@ -30,6 +30,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _slip = Ctx.Locations.Position("M17.DrySlip");
             _weldPoints.Add(Ctx.Locations.Position("M17.WeldOne"));
             _weldPoints.Add(Ctx.Locations.Position("M17.WeldTwo"));
@@ -43,6 +44,9 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Ctx.Crew.CompanionsHoldPosition = true;
             SpawnKraken();
+            if (!RequireAssets(_kraken)) return false;
+            Station(CrewSlot.Guess, _slip + new Vector3(-8f, 0f, 0f));
+            Station(CrewSlot.Ice, _slip + new Vector3(12f, -10f, 0f));
             return true;
         }
 
@@ -52,22 +56,24 @@ namespace Bloodlines.Missions.Campaign
                     new MultiHoldObjective("Weld the plasma-arc torches to the hull.",
                         _weldPoints, 8, 3f, "Welding"))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                
+                .AfterCues("M17_S1_01_GOHAN");
 
             yield return new MissionStage("Grapple test",
-                    new HoldZoneObjective("Guess — test the fifty-ton magnetic lock.",
-                        () => _slip, 10, 4f, "Testing the ballast grapples"))
+                    new MissionInteraction("Guess — test the fifty-ton magnetic lock.", () => _slip, 10, 4f))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
                     context.State.SetUpgrade("krakenSubmarineReinforced", true);
                     GameUtils.Subtitle("~g~Four minutes through eight inches of naval bulkhead.", 5000);
-                });
+                })
+                .AfterCues("M17_S1_02_GUESS");
 
             yield return new MissionStage("Ready",
-                    new ReachZoneObjective("Regroup at the slip.", () => _slip, 8f))
-                .WithDialogue(1)
-                .OnExit(context => GameUtils.Subtitle("~y~The sub is ready. Tomorrow night, Berth 44.", 5000));
+                    new DialogueFinishedObjective("Finish the radio check before staging the heist."))
+                
+                .OnExit(context => GameUtils.Subtitle("~y~The sub is ready. Tomorrow night, Berth 44.", 5000))
+                .WithCues("M17_S1_03_ICE");
         }
 
         private void SpawnKraken()

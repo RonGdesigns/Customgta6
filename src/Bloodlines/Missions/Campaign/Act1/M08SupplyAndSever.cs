@@ -35,6 +35,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _gate = Ctx.Locations.Position("M08.WarehouseGate");
             _cameras = Ctx.Locations.Position("M08.CameraRoom");
             _padOne = Ctx.Locations.Position("M08.CratePadOne");
@@ -48,37 +49,43 @@ namespace Bloodlines.Missions.Campaign
 
             SpawnSentries();
             SpawnHauler();
+            if (!RequireAssets(_hauler)) return false;
+            Station(CrewSlot.Gohan, _cameras + new Vector3(0f, -12f, 0f));
+            Station(CrewSlot.Ice, _gate + new Vector3(-18f, 0f, 0f));
+            Station(CrewSlot.Guess, _padOne + new Vector3(-20f, 0f, 0f));
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.RPG, 8, false, false);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Loop the cameras",
-                    new HoldZoneObjective("Gohan — loop the CCTV feed.", () => _cameras, 5, 3f,
-                        "Looping cameras"))
+                    new MissionInteraction("Gohan — loop the CCTV feed.", () => _cameras, 5, 3f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1)
-                .OnExit(context => GameUtils.Subtitle("~g~Camera loop holds for ninety seconds. Move.", 4000));
+                
+                .OnExit(context => GameUtils.Subtitle("~g~Camera loop is running. Ice, clear the marked sentries.", 4000))
+                .WithCues("M08_S1_01_GUESS")
+                .AfterCues("M08_S1_02_GOHAN");
 
             yield return new MissionStage("Drop the sentries",
-                    new KillTargetsObjective("Ice — drop the sentries with the suppressed pistol.",
+                    new KillTargetsObjective("Ice — drop the sentries at the marked warehouse posts.",
                         () => _sentries))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Crate one",
-                    new HoldZoneObjective("Guess — load the first turbine crate.", () => _padOne, 8, 3.5f,
-                        "Loading crate one"))
+                    new MissionInteraction("Guess — load the first turbine crate.", () => _padOne, 8, 3.5f))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => SpawnTechnical());
 
             yield return new MissionStage("Technical",
                     new DestroyVehicleObjective("Ice — put the Aegis technical down.", () => _technical))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(2);
+                
+                .WithCues("M08_S2_03_GUESS")
+                .AfterCues("M08_S2_04_ICE");
 
             yield return new MissionStage("Crate two",
-                    new HoldZoneObjective("Guess — load the second crate.", () => _padTwo, 8, 3.5f,
-                        "Loading crate two"))
+                    new MissionInteraction("Guess — load the second crate.", () => _padTwo, 8, 3.5f))
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Del Perro connector",
@@ -87,15 +94,15 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Deliver",
-                    new ReachZoneObjective("Get the engines to the connector.", () => _connector, 25f,
-                        flat: true, requireVehicle: true),
+                    new DeliverVehicleObjective("Guess: deliver the loaded flatbed to the connector.", () => _hauler, () => _connector, 25f),
                     new ProtectObjective("", () => _hauler, "The hauler and the engines are gone."))
                 .OnExit(context =>
                 {
                     // The engines are the fleet: M11 puts one of them in the Granger.
-                    context.State.SetUpgrade("grangerTurbineInstalled", true);
+                    // M11 owns installation; these engines are still cargo.
                     GameUtils.Subtitle("~g~Seven hundred horsepower, bulletproof casings. Nothing catches us now.", 6000);
-                });
+                })
+                .WithCues("M08_S2_05_GUESS");
         }
 
         private void SpawnSentries()
@@ -162,6 +169,8 @@ namespace Bloodlines.Missions.Campaign
                 crew.BlockPermanentEvents = true;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
                 crew.Task.WarpIntoVehicle(_technical, seat == 0 ? VehicleSeat.Driver : VehicleSeat.Passenger);
+                if (seat == 0) crew.Task.VehicleChase(Game.Player.Character);
+                else crew.Task.VehicleShootAtPed(Game.Player.Character);
             }
 
             model.MarkAsNoLongerNeeded();

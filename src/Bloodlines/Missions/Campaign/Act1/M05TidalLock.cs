@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -36,6 +38,8 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Ground(Ctx.Locations, "M05.CliffPerch")) return false;
+            if (!MissionSites.Water(Ctx.Locations, "M05.CoveAir", "M05.GrottoMouth", "M05.Sandbar", "M05.DinghySpawn")) return false;
             _perch = Ctx.Locations.Position("M05.CliffPerch");
             _cove = Ctx.Locations.Position("M05.CoveAir");
             _grotto = Ctx.Locations.Position("M05.GrottoMouth");
@@ -49,6 +53,12 @@ namespace Bloodlines.Missions.Campaign
             SpawnLightCrew();
             SpawnMateo();
             SpawnDinghy();
+            if (_dinghy == null || !_dinghy.Exists() || _mateo == null || !_mateo.Exists() || _mateoBoat == null || !_mateoBoat.Exists() || _lightCrew.Count != 4) return false;
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_dinghy, VehicleSeat.Driver);
+            Ctx.Crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(_dinghy, VehicleSeat.RightFront);
+            Function.Call(Hash.REQUEST_WEAPON_ASSET, (uint)WeaponHash.FlareGun, 31, 0);
+            _mateo.IsInvincible = true;
             return true;
         }
 
@@ -58,38 +68,44 @@ namespace Bloodlines.Missions.Campaign
                     new KillTargetsObjective("Ice — take the generator crew off the cave mouth.",
                         () => _lightCrew))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                .OnEnter(context => Say("M05_S1_01_ICE"));
 
             yield return new MissionStage("Light the cove",
-                    new ReachZoneObjective("Guess — get over the cove and drop flares.", () => _cove, 45f,
-                        flat: true))
+                    new MissionInteraction("Guess: launch the signal flare from the dinghy", () => _cove, 1, 45f, () => _dinghy))
                 .OwnedBy(CrewSlot.Guess)
+                .OnEnter(context => context.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess))
                 .OnExit(context =>
                 {
-                    // The flares are the light change, not a prop: the storm lifting over
-                    // the cove is what the player actually reads.
-                    GameUtils.SetWeather("CLEARING");
-                    GameUtils.Subtitle("~y~Magnesium flares away. The cove is lit up like midday.", 4000);
+                    // Launch a visible flare after the explicit interaction.
+                    var point = _dinghy.Position;
+                    Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, point.X, point.Y, point.Z + 2f, point.X, point.Y, point.Z + 70f, 0, true, (uint)WeaponHash.FlareGun, context.Crew.PedFor(CrewSlot.Guess), true, false, 35f);
+                    Say("M05_S1_02_GUESS");
+                    GameUtils.Subtitle("~y~Flare away. Follow the yellow cove marker.", 4000);
                 });
 
             yield return new MissionStage("Breach the grotto",
-                    new ReachZoneObjective("Gohan — punch through the surf into the grotto.", () => _grotto, 12f))
+                    new OccupiedVehicleDestination("Gohan: stay in the dinghy. Let Guess drive to the yellow cove marker, or switch back to drive, then return to Gohan.", () => _dinghy, () => _grotto, 25f))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context =>
                 {
+                    Say("M05_S1_03_GOHAN");
                     if (_mateo != null && _mateo.Exists() && _mateoBoat != null && _mateoBoat.Exists())
                     {
-                        _mateo.Task.CruiseWithVehicle(_mateoBoat, 30f, DrivingStyle.Rushed);
+                        _mateo.Task.StartBoatMission(_mateoBoat, _sandbar, VehicleMissionType.GoTo, 12f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
                     }
                 });
 
             yield return new MissionStage("Run him to the sandbar",
-                    new PursueTargetObjective("Run Mateo down before he clears the point.", () => _mateo,
-                        "Mateo made open water."))
-                .OnEnter(context => GameUtils.Subtitle("~y~He's running for open water.", 3000));
+                    new CaptureBoatObjective(() => _mateo, () => _mateoBoat, () => _dinghy))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnExit(context => { _mateo.Task.ClearAll(); _mateoBoat.IsEngineRunning = false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _mateoBoat, 0f); });
 
             yield return new MissionStage("The revelation",
-                    new ReachZoneObjective("Get to Mateo.", () => MateoPosition(), 8f))
+                    new MissionInteraction("Gohan: question Mateo alive from the dinghy", () => MateoPosition(), 3, 25f, () => _dinghy))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnExit(context => { Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess); Ctx.Crew.PedFor(CrewSlot.Guess).Task.ClearAll(); _dinghy.IsEngineRunning=false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED,_dinghy,0f); });
+
+            yield return new MissionStage("Mateo's account",new DialogueFinishedObjective())
                 .WithDialogue(2)
                 .OnExit(context =>
                 {
@@ -114,7 +130,7 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 4; i++)
             {
-                var guard = World.CreatePed(model, _grotto + new Vector3(-6f + i * 4f, 6f, 1.5f), 0f);
+                var guard = World.CreatePed(model, _perch + new Vector3(12f + i * 4f, -20f, 0f), 0f);
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = cartel;
@@ -143,7 +159,7 @@ namespace Bloodlines.Missions.Campaign
 
             if (_mateo == null || !_mateo.Exists()) return;
 
-            _mateo.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            _mateo.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
             _mateo.IsPersistent = true;
             _mateo.BlockPermanentEvents = true;
             _mateo.Armor = 100;
@@ -180,6 +196,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            if (_mateo != null && _mateo.Exists()) { _mateo.IsInvincible=false; Release(_mateo); }
+            if (_mateoBoat != null && _mateoBoat.Exists()) Release(_mateoBoat);
+            Function.Call(Hash.REMOVE_WEAPON_ASSET,(uint)WeaponHash.FlareGun);
             _lightCrew.Clear();
         }
     }

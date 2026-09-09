@@ -11,7 +11,7 @@ namespace Bloodlines.Missions.Campaign
     /// M23 — "Ghost in the Sage". Grand Senora radar facility, 08:00, desert dust.
     ///
     /// Act II opens with the crew homeless. A Cold War radar installation full of
-    /// cartel squatters becomes the new base — three underground bays for the heavy
+    /// cartel squatters becomes the new base — three exterior storage bays for the heavy
     /// rigs, a generator room, and nobody within twenty miles.
     ///
     /// Structurally this is the mirror of M03: the mission that gives the act its
@@ -32,6 +32,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _approach = Ctx.Locations.Position("M23.DomeApproach");
             _door = Ctx.Locations.Position("M23.BunkerDoor");
             _generator = Ctx.Locations.Position("M23.Generator");
@@ -46,6 +47,8 @@ namespace Bloodlines.Missions.Campaign
 
             ApplyBibleSetting();
             SpawnSquatters();
+            Station(CrewSlot.Guess, _approach + new Vector3(-15f, -8f, 0f));
+            Station(CrewSlot.Gohan, _approach + new Vector3(15f, -8f, 0f));
             return true;
         }
 
@@ -54,9 +57,10 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Breach the dome",
                     new ReachZoneObjective("Ice — get up to the radar dome walkway.", () => _door, 10f))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                
+                .WithCues("M23_S1_01_ICE");
 
-            yield return new MissionStage("Clear the tunnels",
+            yield return new MissionStage("Clear the radar yard",
                     new KillTargetsObjective("Clear the cartel squatters out.", () => _squatters))
                 .OnEnter(context =>
                 {
@@ -69,18 +73,19 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Secure the bays",
                     new MultiHoldObjective("Guess — check the three storage bays.", _bays, 5, 4f,
                         "Clearing the bay"))
-                .OwnedBy(CrewSlot.Guess);
+                .OwnedBy(CrewSlot.Guess)
+                .AfterCues("M23_S1_02_GUESS");
 
             yield return new MissionStage("Power up",
-                    new HoldZoneObjective("Gohan — bring the generator room online.", () => _generator, 10, 4f,
-                        "Starting the generators"))
+                    new MissionInteraction("Gohan — bring the marked generator online.", () => _generator, 10, 4f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1)
+                
                 .OnExit(context =>
                 {
                     context.State.Unlock("grandSenoraRadarBunker");
                     GameUtils.Subtitle("~g~We have a command centre in the desert.", 6000);
-                });
+                })
+                .AfterCues("M23_S1_03_GOHAN");
         }
 
         private void SpawnSquatters()

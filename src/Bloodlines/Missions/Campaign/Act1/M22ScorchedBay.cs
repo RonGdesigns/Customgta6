@@ -33,6 +33,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _drop = Ctx.Locations.Position("M22.AlamoDrop");
             _beach = Ctx.Locations.Position("M22.Beach");
 
@@ -45,6 +46,9 @@ namespace Bloodlines.Missions.Campaign
 
             ApplyBibleSetting();
             SpawnLift();
+            if (!RequireAssets(_cargobob, _container)) return false;
+            Station(CrewSlot.Ice, _beach + new Vector3(-15f, 0f, 0f));
+            Station(CrewSlot.Gohan, _beach + new Vector3(0f, 15f, 0f));
             return true;
         }
 
@@ -54,11 +58,10 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — fly the bullion into the Alamo.",
                         () => _cargobob, VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Drop the container",
-                    new ReachZoneObjective("Hold it over the northern shallows.", () => _drop, 30f,
-                        flat: true, requireVehicle: true))
+                    new MissionInteraction("Guess: hover 20m over the water marker and release the container", () => _drop + new Vector3(0f, 0f, 20f), 3, 10f, () => _cargobob))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
@@ -67,22 +70,24 @@ namespace Bloodlines.Missions.Campaign
                     // starts dredging it back out.
                     context.State.AlamoGoldDredgedTons = 0f;
                     context.State.CashOnHand += 150000;
-                });
+                })
+                .AfterCues("M22_S1_01_GUESS");
 
             yield return new MissionStage("The beach",
-                    new ReachZoneObjective("Regroup on the shore.", () => _beach, 12f))
+                    new DeliverVehicleObjective("Guess: land the Cargobob on the marked shore and stop.", () => _cargobob, () => _beach, 35f, land: true))
                 .OnExit(context => Airstrike(context));
 
             yield return new MissionStage("Blaine County",
-                    new ReachZoneObjective("Load the trucks.", () => _beach, 25f, flat: true))
-                .WithDialogue(1)
+                    new DialogueFinishedObjective("Listen to the emergency call. The foundry has been hit."))
+                
                 .OnExit(context =>
                 {
                     // Act I closes on a loss, not a payday, and the save records both.
                     context.State.Safehouses["cypressFoundry"] = false;
                     context.State.Save();
                     GameUtils.Subtitle("~y~When we come back to Los Santos, we come back as an army.", 7000);
-                });
+                })
+                .WithCues("M22_S1_02_ICE", "M22_S1_03_GOHAN", "M22_S1_04_GUESS", "M22_S1_05_ICE", "M22_S1_06_GOHAN");
         }
 
         /// <summary>

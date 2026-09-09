@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _roof = Ctx.Locations.Position("M07.GarageRoof");
             _mast = Ctx.Locations.Position("M07.MastTop");
             _landing = Ctx.Locations.Position("M07.LandingZone");
@@ -51,6 +52,9 @@ namespace Bloodlines.Missions.Campaign
                 Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
 
             SpawnSedan();
+            if (!RequireAssets(_sedan)) return false;
+            Station(CrewSlot.Guess, _sedan, VehicleSeat.Driver);
+            Station(CrewSlot.Gohan, _sedan, VehicleSeat.Passenger);
             return true;
         }
 
@@ -59,23 +63,25 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("The mast",
                     new ReachZoneObjective("Ice — get up to the antenna platform.", () => _mast, 5f))
                 .OwnedBy(CrewSlot.Ice)
-                .WithDialogue(1);
+                
+                .WithCues("M07_S1_01_GOHAN");
 
             yield return new MissionStage("Clamp the receiver",
-                    new HoldZoneObjective("Clamp the packet sniffer to the dish.", () => _mast, 7, 4f,
-                        "Pulling manifests"))
+                    new MissionInteraction("Clamp the packet sniffer to the dish.", () => _mast, 7, 4f))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context =>
                 {
                     GameUtils.Subtitle("~g~Two military turbine engines, routed to Paleto. That's the target.", 5000);
                     SpawnDrone();
-                });
+                })
+                .AfterCues("M07_S1_02_ICE", "M07_S1_03_GOHAN");
 
             yield return new MissionStage("Off the roof",
-                    new ReachZoneObjective("Chute off the roof — Guess is on Del Perro.", () => _landing, 25f,
-                        flat: true))
-                .WithDialogue(2)
-                .OnEnter(context => GameUtils.Subtitle("~r~Drone minigun spinning up. Jump.", 4000));
+                    new ReachZoneObjective("Descend from the roof, then reach Guess's marked pickup. Use the parachute only if there is clearance.", () => _landing, 25f,
+                        flat: false))
+                
+                .OnEnter(context => GameUtils.Subtitle("~r~Aegis helicopter approaching. Reach the pickup on the ground.", 4000))
+                .WithCues("M07_S2_04_ICE", "M07_S2_05_GUESS");
 
             yield return new MissionStage("Moving pickup",
                     new EnterVehicleObjective("Get in behind Guess.", () => _sedan))
@@ -88,7 +94,7 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnDrone()
         {
-            var model = new Model("buzzard2");
+            var model = new Model("buzzard");
             var pilotModel = new Model("s_m_y_blackops_01");
             if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(pilotModel)) return;
 

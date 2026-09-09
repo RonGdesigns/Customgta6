@@ -27,8 +27,9 @@ namespace Bloodlines.Crew
     public sealed class CrewRoster
     {
         /// <summary>Armor every protagonist spawns and revives with.</summary>
-        private const int StartingArmor = 50;
+        private const int StartingArmor = CrewDurability.Armor;
 
+        public WeaponProgression Arsenal { get; set; }
         private readonly ModConfig _config;
         private readonly Dictionary<CrewSlot, Ped> _peds = new Dictionary<CrewSlot, Ped>();
         private readonly Dictionary<CrewSlot, Blip> _blips = new Dictionary<CrewSlot, Blip>();
@@ -45,12 +46,26 @@ namespace Bloodlines.Crew
         {
             _config = config;
             _companions = new CompanionController(config);
+            _companions.Driver.IsRendezvous = vehicle => !_companions.MissionActive && !_companions.IndependentFreeRoam && PedFor(ActiveSlot) != null && !PedFor(ActiveSlot).IsInVehicle(vehicle);
+            _companions.Driver.FollowDestination = vehicle =>
+            {
+                if (_companions.IndependentFreeRoam && !_companions.MissionActive) return null;
+                var leader = PedFor(ActiveSlot);
+                return leader != null && leader.Exists() && !leader.IsInVehicle(vehicle)
+                    ? (Vector3?)(leader.Position - leader.ForwardVector * 8f) : null;
+            };
+            _companions.IsCrewMember = ped =>
+            {
+                foreach (var member in _peds.Values)
+                    if (member != null && member.Exists() && member.Handle == ped.Handle) return true;
+                return false;
+            };
         }
 
         /// <summary>The companion state machine — missions can take direct control through it.</summary>
         public CompanionController CompanionAI => _companions;
 
-        public CrewSlot ActiveSlot { get; private set; } = CrewSlot.Ice;
+        public CrewSlot ActiveSlot { get; private set; } = Protagonist.StartingSlot;
 
         public Protagonist Active => Protagonist.Of(ActiveSlot);
 
@@ -102,6 +117,8 @@ namespace Bloodlines.Crew
             if (_groupsReady) return;
 
             _crewGroup = World.AddRelationshipGroup("BLOODLINES_CREW");
+            _crewGroup.SetRelationshipBetweenGroups(_crewGroup, Relationship.Companion, true);
+            _crewGroup.SetRelationshipBetweenGroups(new RelationshipGroup(Game.GenerateHash("PLAYER")), Relationship.Companion, true);
             var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
 
@@ -162,6 +179,8 @@ namespace Bloodlines.Crew
 
             StashStoryCharacter();
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, ped, true, true);
+            ProtectCrew(ped);
+            CrewDurability.RestoreAfterSwitch(ped, CrewDurability.Health, StartingArmor);
 
             Logger.Info("Solo deployment: " + protagonist.DisplayName + " at " + position + ".");
             return true;
@@ -215,7 +234,7 @@ namespace Bloodlines.Crew
             StashStoryCharacter();
 
             var lead = PedFor(startAs);
-            if (lead != null) Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, lead, true, true);
+            if (lead != null) { Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, lead, true, true); ProtectCrew(lead); CrewDurability.RestoreAfterSwitch(lead, CrewDurability.Health, StartingArmor); }
 
             RefreshCompanionBlips();
             AssignCompanionAI();
@@ -234,32 +253,53 @@ namespace Bloodlines.Crew
             }
         }
 
+        private void ProtectCrew(Ped ped)
+        {
+            if (ped == null || !ped.Exists()) return;
+            ped.MaxHealth = CrewDurability.Health;
+            ped.CanSufferCriticalHits = false;
+            ped.RelationshipGroup = _crewGroup;
+            Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ped, false, false);
+            Function.Call(Hash.SET_ENTITY_CAN_BE_DAMAGED_BY_RELATIONSHIP_GROUP, ped, false, _crewGroup.Hash);
+        }
+
         private void ConfigurePed(Ped ped, Protagonist protagonist)
         {
-            ped.RelationshipGroup = _crewGroup;
+            CrewAppearance.Apply(ped, protagonist.Slot);
+            ProtectCrew(ped);
             ped.IsPersistent = true;
             ped.BlockPermanentEvents = true;
             ped.CanSufferCriticalHits = false;
             ped.CanBeDraggedOutOfVehicle = false;
             ped.DiesOnLowHealth = false;
-            ped.MaxHealth = 300;
-            ped.Health = 300;
+            ped.MaxHealth = CrewDurability.Health;
+            ped.Health = CrewDurability.Health;
             ped.Armor = StartingArmor;
             ped.Accuracy = 55;
             ped.CanSwitchWeapons = true;
+            Function.Call(Hash.SET_PED_CONFIG_FLAG, ped, 184, true); // Stay in the selected passenger seat.
 
             foreach (var weapon in protagonist.Loadout)
             {
                 ped.Weapons.Give(weapon, 250, false, true);
             }
 
+            Arsenal?.Apply(protagonist.Slot, ped);
             ped.Weapons.Select(protagonist.Loadout[0], true);
         }
 
         /// <summary>Called by the switch controller once the player ped has changed.</summary>
         public void SetActive(CrewSlot slot)
         {
+            var departing = ActiveSlot;
+            if (departing != slot && !_companions.HoldPosition && _companions.StateOf(departing) != CompanionState.Scripted)
+                _companions.Driver.Arm(departing, PedFor(departing));
+            _companions.Driver.Forget(slot);
+            _companions.Convoy.Forget(slot);
             ActiveSlot = slot;
+            ProtectCrew(PedFor(slot));
+            var incoming = PedFor(slot);
+            if (incoming != null && !incoming.IsInVehicle()) incoming.Task.ClearAllImmediately();
             RefreshCompanionBlips();
             AssignCompanionAI();
         }
@@ -285,11 +325,8 @@ namespace Bloodlines.Crew
         /// <summary>Hold position and fight — used inside firefight beats and by missions.</summary>
         public void OrderCompanionsToFight(float radius = 200f)
         {
-            foreach (var ped in Companions)
-            {
-                ped.Task.ClearAll();
-                ped.Task.FightAgainstHatedTargets(radius);
-            }
+            // All companion combat uses the same roster-aware target filter.
+            AssignCompanionAI();
         }
 
         private void RefreshCompanionBlips()
@@ -323,6 +360,18 @@ namespace Bloodlines.Crew
         public void Update()
         {
             if (!IsDeployed) return;
+            if (!_companions.MissionActive)
+            {
+                _companions.Life.Wanted.Capture(ActiveSlot, Game.Player.WantedLevel);
+                var active = PedFor(ActiveSlot); var shared = active?.CurrentVehicle;
+                if (shared != null && shared.Exists())
+                    foreach (var pair in _peds)
+                        if (pair.Value != null && pair.Value.Exists() && pair.Value.IsInVehicle(shared))
+                            _companions.Life.Wanted.Set(pair.Key, _companions.Life.Wanted.Get(ActiveSlot));
+            }
+            // CHANGE_PLAYER_PED can reset the active actor's relationship group.
+            foreach (var member in _peds.Values)
+                if (member != null && member.Exists() && member.RelationshipGroup != _crewGroup) ProtectCrew(member);
 
             foreach (var protagonist in Protagonist.All)
             {
@@ -332,7 +381,7 @@ namespace Bloodlines.Crew
 
                 if (ped.IsDead)
                 {
-                    if (_config.CompanionsRespawnOnDeath) RespawnCompanion(protagonist);
+                    if (_config.CompanionsRespawnOnDeath && !_companions.SeparatedByRecovery(protagonist.Slot)) RespawnCompanion(protagonist);
                     continue;
                 }
 
@@ -349,19 +398,48 @@ namespace Bloodlines.Crew
         }
 
         /// <summary>
-        /// Brings the whole crew back from a death, and puts the player back on the
-        /// active ped. Returns false only when there is nothing left to revive, which
-        /// is the one case the death controller cannot recover from.
-        ///
-        /// RESURRECT_PED is what actually undoes death; assigning health to a corpse
-        /// does nothing, which is why a checkpoint restore alone was never going to be
-        /// enough. Reinstalling the player on the ped afterwards is not optional
-        /// either: the engine detaches the player from a ped it has declared dead, and
-        /// a resurrected ped nobody is driving is just an NPC standing in a fade.
+        /// Recovers the active hero without moving or healing the other heroes.
+        /// Resurrect first, then restore health and physical state. Only attach a
+        /// different ped if player ownership actually changed; never self-handover.
+        /// DeathController separately verifies collision, control and real movement.
         /// </summary>
+        public bool ReviveActiveAt(Vector3 position, float heading)
+        {
+            if (!IsDeployed) return false;
+            var active = PedFor(ActiveSlot);
+            if (active == null || !active.Exists()) return false;
+            _companions.Forget(ActiveSlot);
+            if (active.IsDead) Function.Call(Hash.RESURRECT_PED, active);
+            CrewDurability.RestoreAfterSwitch(active, CrewDurability.Health, StartingArmor);
+            if (active.IsInVehicle())
+            {
+                Function.Call(Hash.TASK_LEAVE_VEHICLE, active, active.CurrentVehicle, 16);
+                for (int attempt = 0; attempt < 10 && active.IsInVehicle(); attempt++) Script.Wait(25);
+                if (active.IsInVehicle()) throw new System.InvalidOperationException("Could not leave the recovery vehicle.");
+            }
+            RecoveryMobility.Restore(active);
+            active.ClearBloodDamage(); active.ClearLastWeaponDamage();
+            active.IsInvincible = false; active.IsPersistent = true;
+            active.Position = position; active.Heading = heading;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, position.X, position.Y, position.Z);
+            // A resurrected player normally still owns this exact ped. Avoid a
+            // self-to-self handover through the engine's character-switch path.
+            if (Game.Player.Character == null || Game.Player.Character.Handle != active.Handle)
+                Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, active, false, true);
+            Game.Player.IsInvincible = false;
+            ProtectCrew(active);
+            CrewDurability.RestoreAfterSwitch(active, CrewDurability.Health, StartingArmor);
+            RecoveryMobility.Restore(active);
+            Logger.Info("Active character recovered without regrouping teammates: " + Active.DisplayName + ".");
+            return active.Exists() && !active.IsDead && Game.Player.Character.Handle == active.Handle;
+        }
+
+        /// <summary>Explicit whole-crew recovery helper; player death uses ReviveActiveAt.</summary>
         public bool ReviveAll()
         {
             if (!IsDeployed) return false;
+            _companions.Driver.Clear();
+            _companions.Convoy.Clear();
 
             var active = PedFor(ActiveSlot);
             if (active == null) return false;
@@ -379,19 +457,25 @@ namespace Bloodlines.Crew
                 Function.Call(Hash.UNCUFF_PED, ped);
                 Function.Call(Hash.SET_ENABLE_HANDCUFFS, ped, false);
 
-                ped.Task.ClearAllImmediately();
+                RecoveryMobility.Restore(ped);
                 ped.ClearBloodDamage();
                 ped.ClearLastWeaponDamage();
-                ped.Health = ped.MaxHealth;
+                ped.MaxHealth = CrewDurability.Health;
+                ped.Health = CrewDurability.Health;
                 ped.Armor = StartingArmor;
                 ped.IsInvincible = false;
                 ped.IsPersistent = true;
                 ped.BlockPermanentEvents = true;
-                ped.RelationshipGroup = _crewGroup;
+                ped.MaxHealth = CrewDurability.Health;
+            ped.CanSufferCriticalHits = false;
+            ped.RelationshipGroup = _crewGroup;
             }
 
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, active, true, true);
             Game.Player.IsInvincible = false;
+            ProtectCrew(active);
+            CrewDurability.RestoreAfterSwitch(active, CrewDurability.Health, StartingArmor);
+            RecoveryMobility.Restore(active);
 
             RefreshCompanionBlips();
             AssignCompanionAI();
@@ -412,7 +496,13 @@ namespace Bloodlines.Crew
                 var ped = PedFor(protagonist.Slot);
                 if (ped == null) continue;
 
-                ped.Task.ClearAllImmediately();
+                if (ped.IsInVehicle())
+                {
+                    Function.Call(Hash.TASK_LEAVE_VEHICLE, ped, ped.CurrentVehicle, 16);
+                    for (int attempt = 0; attempt < 10 && ped.IsInVehicle(); attempt++) Script.Wait(25);
+                    if (ped.IsInVehicle()) throw new System.InvalidOperationException("Could not safely leave recovery vehicle.");
+                }
+                RecoveryMobility.Restore(ped);
                 ped.Position = position + OffsetFor(protagonist.Slot);
                 ped.Heading = heading;
             }
@@ -507,6 +597,9 @@ namespace Bloodlines.Crew
 
         public void Dismiss()
         {
+            if (IsDeployed) Arsenal?.SaveCrew(this);
+            _companions.Life.Clear(clearHeat: true);
+            _companions.Military.Clear();
             RestoreStoryCharacter();
 
             foreach (var blip in _blips.Values) GameUtils.SafeDelete(blip);

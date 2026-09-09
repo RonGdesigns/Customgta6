@@ -32,6 +32,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _entry = Ctx.Locations.Position("M15.AdminEntry");
             _vault = Ctx.Locations.Position("M15.MaintenanceVault");
             _splice = Ctx.Locations.Position("M15.FiberSplice");
@@ -49,31 +50,36 @@ namespace Bloodlines.Missions.Campaign
             player.Weapons.Give(WeaponHash.StunGun, 1, false, true);
 
             SpawnWatchmen();
+            Station(CrewSlot.Ice, _entry + new Vector3(-12f, 0f, 0f));
+            Station(CrewSlot.Guess, _exit + new Vector3(10f, 0f, 0f));
+            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.StunGun, 100, true, true);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Maintenance level",
-                    new ReachZoneObjective("Get down to the maintenance vault.", () => _vault, 5f),
+                    new ReachZoneObjective("Gohan: reach the marked maintenance access outside the administration building.", () => _vault, 5f),
                     new AvoidDetectionObjective(() => _watchmen,
                         "A watchman raised the alarm before the tap was in.", 30f, 4))
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Clear the rounds",
                     new SubdueTargetsObjective("Ice — put the watchmen down without killing them.",
                         () => _watchmen))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~Tranquillisers only. These are night-shift dock workers.", 5000));
+                    GameUtils.Subtitle("~y~Stun gun only. These are night-shift dock workers.", 5000))
+                .AfterCues("M15_S1_02_ICE");
 
             yield return new MissionStage("Splice the trunk",
-                    new HoldZoneObjective("Gohan — splice the optical bypass.", () => _splice, 12, 3f,
-                        "Splicing the trunk line"))
+                    new MissionInteraction("Gohan — splice the optical bypass.", () => _splice, 12, 3f))
                 .OwnedBy(CrewSlot.Gohan)
-                .WithDialogue(1)
+                
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~Harbour lock gates and radar feeds are ours.", 5000));
+                    GameUtils.Subtitle("~g~Harbour lock gates and radar feeds are ours.", 5000))
+                .WithCues("M15_S1_01_GOHAN")
+                .AfterCues("M15_S1_03_GOHAN");
 
             yield return new MissionStage("Out clean",
                     new ReachZoneObjective("Leave the way you came in.", () => _exit, 8f))

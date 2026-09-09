@@ -27,6 +27,7 @@ namespace Bloodlines.Core
     public sealed class DevMenu
     {
         private const int VisibleRows = 11;
+        private readonly ControllerNavigation _stick = new ControllerNavigation();
 
         private readonly ModConfig _config;
         private readonly CrewRoster _crew;
@@ -39,13 +40,17 @@ namespace Bloodlines.Core
         private readonly CampaignData _data;
         private readonly SurveyMode _survey;
         private readonly DeathController _death;
+        private readonly CrewHomes _homes;
+        private readonly CampaignDispatches _dispatches;
+        private readonly StoryVehicles _vehicles = new StoryVehicles();
+        public void ReleaseVehicles() { _vehicles.Clear(); }
 
         private readonly Stack<Page> _stack = new Stack<Page>();
 
         public DevMenu(ModConfig config, CrewRoster crew, SwitchController switching,
             AbilityController abilities, MissionManager missions, MissionCatalog catalog,
             CampaignState state, DialogueDirector dialogue, CampaignData data, SurveyMode survey,
-            DeathController death)
+            DeathController death, CrewHomes homes, CampaignDispatches dispatches)
         {
             _config = config;
             _crew = crew;
@@ -57,16 +62,27 @@ namespace Bloodlines.Core
             _dialogue = dialogue;
             _data = data;
             _survey = survey;
-            _death = death;
+            _death = death; _homes = homes; _dispatches = dispatches;
         }
 
         public bool IsOpen { get; private set; }
 
+        public void Close()
+        {
+            IsOpen = false;
+            _cameraHeld = false;
+            _waitForOpeningDownRelease = false;
+            _stack.Clear();
+            _stick.Reset();
+        }
+
         public void Toggle()
         {
+            _stick.Reset();
             IsOpen = !IsOpen;
             if (!IsOpen)
             {
+                _cameraHeld = false;
                 _stack.Clear();
                 return;
             }
@@ -129,9 +145,46 @@ namespace Bloodlines.Core
             }
         }
 
+        public void HandleControllerToggle()
+        {
+            if (!_config.DevToolsEnabled || IsOpen || _homes.Apartment.Busy) return;
+            if (ControllerInput.Pressed(GTA.Control.CharacterWheel) && ControllerInput.JustPressed(GTA.Control.FrontendCancel))
+            {
+                Toggle();
+                // Consume this opening B press; it must not immediately go back.
+                _openedAt = Game.GameTime;
+                _waitForOpeningDownRelease = true;
+            }
+        }
+
+        private int _openedAt;
+        private bool _waitForOpeningDownRelease;
+        private bool _cameraHeld;
+        private int _pedView, _vehicleView;
+        private void HoldGameplayCamera()
+        {
+            if (!_cameraHeld)
+            {
+                _pedView = Function.Call<int>(Hash.GET_FOLLOW_PED_CAM_VIEW_MODE);
+                _vehicleView = Function.Call<int>(Hash.GET_FOLLOW_VEHICLE_CAM_VIEW_MODE);
+                _cameraHeld = true;
+            }
+            // Menu input must not cycle the gameplay view or start an idle cinematic.
+            // Remember the user's chosen perspective instead of changing their setting.
+            Function.Call(Hash.INVALIDATE_IDLE_CAM);
+            // Native name is absent from the pinned SHVDN 3.6 enum.
+            Function.Call((Hash)0x9E4CFFF989258472UL);
+            for (int group = 0; group < 3; group++)
+                Function.Call(Hash.DISABLE_CONTROL_ACTION, group, (int)GTA.Control.NextCamera, true);
+            if (Function.Call<int>(Hash.GET_FOLLOW_PED_CAM_VIEW_MODE) != _pedView)
+                Function.Call(Hash.SET_FOLLOW_PED_CAM_VIEW_MODE, _pedView);
+            if (Function.Call<int>(Hash.GET_FOLLOW_VEHICLE_CAM_VIEW_MODE) != _vehicleView)
+                Function.Call(Hash.SET_FOLLOW_VEHICLE_CAM_VIEW_MODE, _vehicleView);
+        }
         public void Update()
         {
             if (!IsOpen || _stack.Count == 0) return;
+            HoldGameplayCamera();
 
             // Stop the player shooting or swinging while the menu has focus.
             Game.DisableControlThisFrame(GTA.Control.Attack);
@@ -139,21 +192,53 @@ namespace Bloodlines.Core
             Game.DisableControlThisFrame(GTA.Control.Aim);
             Game.DisableControlThisFrame(GTA.Control.MeleeAttack1);
 
-            Draw(_stack.Peek());
+            Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
+            // Movement and camera stay on the sticks; D-pad and A/B operate the menu.
+            // Keep sprint (A), melee (B), and camera-mode cycling blocked.
+            foreach (var control in new[] { GTA.Control.MoveLeftRight, GTA.Control.MoveUpDown,
+                GTA.Control.MoveUpOnly, GTA.Control.MoveDownOnly, GTA.Control.MoveLeftOnly, GTA.Control.MoveRightOnly,
+                GTA.Control.LookLeftRight, GTA.Control.LookUpDown })
+                Function.Call(Hash.ENABLE_CONTROL_ACTION, 0, (int)control, true);
+            if (!ControllerInput.Pressed(GTA.Control.CharacterWheel)) _waitForOpeningDownRelease = false;
+            bool padReady = !_waitForOpeningDownRelease;
+            var direction = _stick.Update(0f, 0f, Game.GameTime,
+                padReady && ControllerInput.Pressed(GTA.Control.FrontendUp),
+                padReady && ControllerInput.Pressed(GTA.Control.FrontendDown),
+                padReady && ControllerInput.Pressed(GTA.Control.FrontendLeft),
+                padReady && ControllerInput.Pressed(GTA.Control.FrontendRight));
+            if (direction == MenuDirection.Up) HandleKey(Keys.Up);
+            else if (direction == MenuDirection.Down) HandleKey(Keys.Down);
+            else if (direction == MenuDirection.Left) HandleKey(Keys.Left);
+            else if (direction == MenuDirection.Right) HandleKey(Keys.Right);
+            if (Game.GameTime != _openedAt)
+            {
+                if (ControllerInput.JustPressed(GTA.Control.FrontendCancel)) HandleKey(Keys.Back);
+                else if (ControllerInput.JustPressed(GTA.Control.FrontendAccept)) HandleKey(Keys.Enter);
+            }
+            if (IsOpen && _stack.Count > 0) Draw(_stack.Peek());
         }
 
         // ---------- pages ----------
 
         private Page BuildRoot()
         {
+            if (_homes.Apartment.Inside) return BuildHomePage();
             var page = new Page("Bloodlines — dev menu");
 
+            page.Add("Replay M01: Ghost in the Dockyard", () => "three separate assignments",
+                () => { Close(); _survey.Stop(); _missions.Abort(); _missions.Start(_catalog.All.First(m => m.Id == "M01")); });
             page.Add("Missions", () => _catalog.Playable.Count() + " playable",
                 () => _stack.Push(BuildMissionList()));
-            page.Add("Running mission", () => _missions.IsRunning ? _missions.CurrentTitle : "none",
+            page.Add("Current objective", () => _missions.IsRunning ? _missions.LastAttempted.Id : "none", () => _stack.Push(BuildObjectiveDetails()));
+            page.Add("Running mission", () => _missions.IsRunning ? _missions.LastAttempted.Id + " | " + _missions.CurrentTitle : "none",
                 () => _stack.Push(BuildMissionControl()));
             page.Add("Crew", () => _crew.IsDeployed ? _crew.Active.DisplayName : "not deployed",
                 () => _stack.Push(BuildCrew()));
+            page.Add("Crew messages / news", () => _dispatches.Inbox.Count() + " messages", () => _stack.Push(BuildInbox()));
+            page.Add("Home workbench", () => _homes.WorkbenchName, () => { Close(); if (!_missions.IsRunning) _homes.UseWorkbench(); });
+            page.Add("Route to my home", () => _crew.IsDeployed ? _crew.Active.DisplayName : "deploy crew first", () => { if (_crew.IsDeployed) { _homes.RouteHome(); Close(); } });
+            page.Add("DLC weapons", () => "personal locker additions", () => _stack.Push(BuildDlcWeapons()));
+            page.Add("Vehicles", () => "DLC and specialty vehicles", () => _stack.Push(BuildVehicles()));
             page.Add("World", () => "wanted " + Game.Player.WantedLevel,
                 () => _stack.Push(BuildWorld()));
             page.Add("Dialogue", () => _dialogue.IsSpeaking ? "speaking" : "idle",
@@ -192,10 +277,25 @@ namespace Bloodlines.Core
             return page;
         }
 
+        private Page BuildObjectiveDetails()
+        {
+            var page = new Page("Current objective");
+            string remaining = _missions.CurrentObjective;
+            while (remaining.Length > 0)
+            {
+                int length = System.Math.Min(52, remaining.Length);
+                if (length < remaining.Length) { int space = remaining.LastIndexOf(' ', length - 1, length); if (space > 0) length = space; }
+                page.Add(remaining.Substring(0, length), () => "", null);
+                remaining = remaining.Substring(length).TrimStart();
+            }
+            return page;
+        }
+
         private Page BuildMissionControl()
         {
             var page = new Page("Running mission");
 
+            page.Add("Read current objective", () => "", () => _stack.Push(BuildObjectiveDetails()));
             page.Add("Stage", () => _missions.IsRunning ? _missions.CurrentStage.ToString() : "—",
                 null, delta => _missions.WarpStage(delta));
             page.Add("Commit checkpoint", () => "", () => _missions.CommitCheckpoint());
@@ -217,30 +317,42 @@ namespace Bloodlines.Core
 
             page.Add("Deploy / stand down", () => _crew.IsDeployed ? "deployed" : "off", () =>
             {
+                if (_missions.IsRunning) { GameUtils.Subtitle("~y~Abort the mission before changing deployment.", 3000); return; }
                 if (_crew.IsDeployed) _crew.Dismiss();
                 else
                 {
                     var player = Game.Player.Character;
-                    _crew.Deploy(CrewSlot.Ice, player.Position, player.Heading);
+                    _crew.Deploy(Protagonist.StartingSlot, player.Position, player.Heading);
                 }
             });
 
             foreach (var protagonist in Protagonist.All)
             {
                 var slot = protagonist.Slot;
-                page.Add("Switch to " + protagonist.FirstName, () => _crew.ActiveSlot == slot ? "active" : "",
+                page.Add("Switch to " + protagonist.Handle, () => _crew.ActiveSlot == slot ? "active" : "",
                     () => _switching.TrySwitch(slot));
             }
 
             foreach (var protagonist in Protagonist.All)
             {
                 var slot = protagonist.Slot;
-                page.Add("Deploy solo as " + protagonist.FirstName, () => "", () =>
+                page.Add("Deploy solo as " + protagonist.Handle, () => "", () =>
                 {
                     var player = Game.Player.Character;
+                    if (_missions.IsRunning) { GameUtils.Subtitle("~y~Abort the mission before changing deployment.", 3000); return; }
                     _crew.DeploySolo(slot, player.Position, player.Heading);
                 });
             }
+
+            page.Add("Free roam crew", () => _crew.CompanionAI.IndependentFreeRoam ? "independent" : "travel together", () =>
+            {
+                if (_missions.IsRunning) { GameUtils.Subtitle("~y~Mission assignments control the crew during a job.", 3000); return; }
+                _crew.CompanionAI.IndependentFreeRoam = !_crew.CompanionAI.IndependentFreeRoam;
+                foreach (var hero in Protagonist.All) _crew.CompanionAI.Refresh(hero.Slot);
+            });
+
+            page.Add("Off-duty crime encounters", () => _crew.CompanionAI.Life.CrimesEnabled ? "on" : "off", () => _crew.CompanionAI.Life.CrimesEnabled = !_crew.CompanionAI.Life.CrimesEnabled);
+            page.Add("Appearance", () => "hair / face / outfits", () => _stack.Push(BuildAppearance()));
 
             page.Add("Heal everyone", () => "", () =>
             {
@@ -278,12 +390,101 @@ namespace Bloodlines.Core
             return page;
         }
 
+        public void OpenHomePage()
+        {
+            _stick.Reset(); IsOpen = true; _stack.Clear(); _openedAt = Game.GameTime;
+            _waitForOpeningDownRelease = false;
+            _stack.Push(BuildHomePage());
+        }
+        private Page BuildHomePage()
+        {
+            var page = new Page(_homes.ResidenceName);
+            if (_homes.Apartment.Inside)
+                page.Add("Exit apartment", () => "return outside", () => { Close(); _homes.ExitApartment(); });
+            else
+            {
+                page.Add("Enter apartment", () => _homes.Progression, () => { Close(); _homes.EnterApartment(); });
+                if (_config.DevToolsEnabled && !_homes.LuxuryUnlocked)
+                    page.Add("Preview luxury apartment", () => "QA only - does not unlock", () => { Close(); _homes.EnterApartment(true); });
+            }
+            page.Add("Wardrobe", () => "clothes / facial hair", () => _stack.Push(BuildWardrobe(_crew.ActiveSlot)));
+            page.Add("Rest and save", () => "six hours", () => { Close(); _homes.Rest(); });
+            page.Add("Personal weapon locker", () => "restock owned weapons", () => { Close(); _homes.RestockLocker(); });
+            if (!_homes.Apartment.Inside || _crew.ActiveSlot != CrewSlot.Guess)
+                page.Add(_homes.WorkbenchName, () => "personal workbench", () => { Close(); _homes.UseWorkbench(); });
+            page.Add("Crew messages / news", () => _dispatches.Inbox.Count() + " messages", () => _stack.Push(BuildInbox()));
+            return page;
+        }
+        private Page BuildInbox()
+        {
+            var page = new Page("Crew messages and news");
+            foreach (var message in _dispatches.Inbox)
+            {
+                var selected = message;
+                page.Add(message.Sender + ": " + message.Title, () => selected.Mission,
+                    () => { Close(); GameUtils.Subtitle(selected.Sender + ": " + selected.Text, 12000); });
+            }
+            if (!_dispatches.Inbox.Any()) page.Add("No messages yet", () => "complete a job", null);
+            return page;
+        }
+        private Page BuildVehicles()
+        {
+            var page = new Page("Vehicles — select a category");
+            page.Add("Release parked vehicles", () => "keeps occupied vehicles", () => _vehicles.ReleaseParked());
+            foreach (string category in StoryVehicles.Catalog.Select(v => v.Category).Distinct())
+            {
+                string selected = category;
+                page.Add(selected, () => StoryVehicles.Catalog.Count(v => v.Category == selected && StoryVehicles.Available(v)) + " available",
+                    () => _stack.Push(BuildVehicleCategory(selected)));
+            }
+            return page;
+        }
+        private Page BuildDlcWeapons(string category = null)
+        {
+            var page = new Page(category ?? "DLC weapons - active hero");
+            if (category == null)
+                foreach (string group in WeaponProgression.DlcCatalog.Select(w => w.Category).Distinct())
+                { string selected = group; page.Add(group, () => "browse", () => _stack.Push(BuildDlcWeapons(selected))); }
+            else foreach (var weapon in WeaponProgression.DlcCatalog.Where(w => w.Category == category && WeaponProgression.Available(w)))
+            {
+                var selected = weapon;
+                page.Add(weapon.Name, () => "add to personal locker", () =>
+                {
+                    if (!_crew.IsDeployed || _missions.IsRunning) { GameUtils.Notify("~y~Deploy the crew in free roam first."); return; }
+                    if (new WeaponProgression(_state).GiveDlc(_crew.ActiveSlot, _crew.PedFor(_crew.ActiveSlot), selected))
+                        GameUtils.Notify("~g~" + selected.Name + " added to " + _crew.Active.DisplayName + "'s locker.");
+                    else GameUtils.Notify("~y~That weapon could not be equipped on this build.");
+                });
+            }
+            return page;
+        }
+        private Page BuildVehicleCategory(string category)
+        {
+            var page = new Page(category + " — request at a suitable location");
+            foreach (var choice in StoryVehicles.Catalog.Where(v => v.Category == category && StoryVehicles.Available(v)))
+            {
+                var selected = choice;
+                page.Add(selected.Name, () => selected.Model, () =>
+                {
+                    if (_missions.IsRunning) { GameUtils.Notify("~y~Finish or leave the mission before requesting a vehicle."); return; }
+                    if (_vehicles.Spawn(selected)) Close();
+                });
+            }
+            return page;
+        }
+
         private Page BuildWorld()
         {
             var page = new Page("World");
 
-            page.Add("Wanted level", () => Game.Player.WantedLevel.ToString(), null,
-                delta => Game.Player.WantedLevel = Math.Max(0, Math.Min(5, Game.Player.WantedLevel + delta)));
+            page.Add("Military response (sixth tier)", () => "free roam test", () => { if (!_missions.IsRunning && _crew.IsDeployed) _crew.CompanionAI.Military.Trigger(_crew.ActiveSlot); });
+            page.Add("Wanted level", () => (_crew.IsDeployed ? _crew.CompanionAI.Military.Level(_crew.ActiveSlot) : Game.Player.WantedLevel).ToString(), null,
+                delta =>
+                {
+                    if (_crew.IsDeployed && !_missions.IsRunning)
+                        _crew.CompanionAI.Military.SetLevel(_crew.ActiveSlot, _crew.CompanionAI.Military.Level(_crew.ActiveSlot) + delta);
+                    else Game.Player.WantedLevel = Math.Max(0, Math.Min(5, Game.Player.WantedLevel + delta));
+                });
             page.Add("Clock hour", () => Function.Call<int>(Hash.GET_CLOCK_HOURS).ToString("00") + ":00", null,
                 delta =>
                 {
@@ -405,6 +606,58 @@ namespace Bloodlines.Core
             return page;
         }
 
+        private Page BuildAppearance()
+        {
+            var page = new Page("Wardrobe - choose a character");
+            foreach (var hero in Protagonist.All)
+            {
+                var slot = hero.Slot;
+                page.Add(hero.DisplayName, () => "clothes / face / facial hair", () => _stack.Push(BuildWardrobe(slot)));
+            }
+            return page;
+        }
+        private bool CanChangeLook(CrewSlot slot)
+        {
+            if (_missions.IsRunning) { GameUtils.Notify("~y~Change clothes between missions."); return false; }
+            var ped = _crew.PedFor(slot);
+            if (ped == null || !ped.Exists()) { GameUtils.Notify("~y~Deploy this character first."); return false; }
+            return true;
+        }
+        private Page BuildWardrobe(CrewSlot slot)
+        {
+            var page = new Page(Protagonist.Of(slot).DisplayName + " - wardrobe");
+            page.Add("Save looks", () => "kept across restarts", () => { CrewAppearance.Save(); GameUtils.Notify("~g~Crew appearance saved."); });
+            page.Add("Automatic outfit changes", () => CrewAppearance.For(slot).AutoOutfits ? "on" : "off", () =>
+            { CrewAppearance.For(slot).AutoOutfits = !CrewAppearance.For(slot).AutoOutfits; });
+            foreach (string field in new[] { "Hair", "HairColor", "Beard", "BeardColor", "Face", "Skin", "Outfit" })
+            {
+                string selected = field;
+                page.Add(field == "Outfit" ? "Reset clothing preset" : field == "Beard" ? "Facial hair" : field, () =>
+                {
+                    var l = CrewAppearance.For(slot);
+                    int n = selected == "Hair" ? l.Hair : selected == "HairColor" ? l.HairColor : selected == "Beard" ? l.Beard :
+                        selected == "BeardColor" ? l.BeardColor : selected == "Face" ? l.Face : selected == "Skin" ? l.Skin : l.Outfit;
+                    return n < 0 ? "none" : n.ToString();
+                }, adjust: direction => { if (CanChangeLook(slot)) CrewAppearance.Adjust(_crew.PedFor(slot), slot, selected, direction); });
+            }
+            foreach (var fields in new[] { CrewAppearance.Clothing, CrewAppearance.Props }) foreach (string field in fields)
+            {
+                string selected = field;
+                page.Add(field, () => "item / color", () => _stack.Push(BuildClothing(slot, selected)));
+            }
+            return page;
+        }
+        private Page BuildClothing(CrewSlot slot, string field)
+        {
+            var page = new Page(Protagonist.Of(slot).DisplayName + " - " + field);
+            page.Add("Item", () => { int n = CrewAppearance.Drawable(slot, field); return n < 0 ? "default / none" : n.ToString(); },
+                adjust: d => { if (CanChangeLook(slot)) CrewAppearance.AdjustClothing(_crew.PedFor(slot), slot, field, d, false); });
+            page.Add("Color / texture", () => CrewAppearance.Texture(slot, field).ToString(),
+                adjust: d => { if (CanChangeLook(slot)) CrewAppearance.AdjustClothing(_crew.PedFor(slot), slot, field, d, true); });
+            page.Add("Save looks", () => "kept across restarts", () => { CrewAppearance.Save(); GameUtils.Notify("~g~Crew appearance saved."); });
+            return page;
+        }
+
         private void StartSurvey(string missionId)
         {
             if (_missions.IsRunning)
@@ -517,7 +770,7 @@ namespace Bloodlines.Core
 
             new TextElement(
                 (page.Index + 1) + "/" + page.Items.Count +
-                "   ↑↓ move · ←→ adjust · Enter select · Backspace back · " + _config.DevMenuKey + " close",
+                "   Right stick: move/adjust | A: select | B: back | " + _config.DevMenuKey + " close",
                 new PointF(x, y + 4f), 0.26f, Color.FromArgb(190, 150, 156, 166)).Draw();
         }
 

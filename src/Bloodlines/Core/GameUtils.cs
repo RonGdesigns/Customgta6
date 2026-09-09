@@ -62,6 +62,7 @@ namespace Bloodlines.Core
         /// <summary>Ground-hugging objective cylinder, drawn per frame.</summary>
         public static void DrawObjectiveMarker(Vector3 position, Color color, float radius = 1.5f)
         {
+            ObjectiveMarkers.Show(position);
             World.DrawMarker(
                 MarkerType.VerticalCylinder,
                 position - new Vector3(0f, 0f, 0.95f),

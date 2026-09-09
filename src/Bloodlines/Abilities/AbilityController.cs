@@ -23,6 +23,7 @@ namespace Bloodlines.Abilities
         private Ped _owner;
         private float _meter = 1f;
         private int _lastTick;
+        private readonly AbilityChord _chord = new AbilityChord();
 
         public AbilityController(ModConfig config, CrewRoster crew)
         {
@@ -35,6 +36,27 @@ namespace Bloodlines.Abilities
                 { CrewSlot.Guess, new SlipstreamReflex() }
             };
             _lastTick = Game.GameTime;
+        }
+
+        public void HandleController(bool blocked)
+        {
+            bool left = ControllerInput.Pressed(GTA.Control.ScriptLS);
+            bool right = ControllerInput.Pressed(GTA.Control.ScriptRS);
+            if (_crew.IsDeployed)
+            {
+                Game.DisableControlThisFrame(GTA.Control.SpecialAbility);
+                Game.DisableControlThisFrame(GTA.Control.SpecialAbilitySecondary);
+                Game.DisableControlThisFrame(GTA.Control.SpecialAbilityPC);
+                Game.DisableControlThisFrame(GTA.Control.VehicleSpecialAbilityFranklin);
+                if (left && right)
+                {
+                    Game.DisableControlThisFrame(GTA.Control.Duck);
+                    Game.DisableControlThisFrame(GTA.Control.VehicleHorn);
+                    Game.DisableControlThisFrame(GTA.Control.LookBehind);
+                    Game.DisableControlThisFrame(GTA.Control.VehicleLookBehind);
+                }
+            }
+            if (_chord.Update(left, right, blocked || Game.IsPaused || !_crew.IsDeployed || !_config.AbilitiesEnabled)) Toggle();
         }
 
         public bool IsActive => _running != null;
@@ -139,24 +161,15 @@ namespace Bloodlines.Abilities
         {
             if (!_crew.IsDeployed) return;
 
-            var protagonist = _crew.Active;
-            // GTA.UI works in a fixed 1280x720 space regardless of the player's
-            // actual resolution, so these are safe absolute positions.
-            const float x = 60f;
-            float y = Screen.Height - 80f;
-
-            var barBack = new ContainerElement(new PointF(x, y), new SizeF(220f, 9f),
-                Color.FromArgb(170, 12, 12, 14));
-            var barFill = new ContainerElement(new PointF(x, y), new SizeF(220f * _meter, 9f),
-                _running != null
-                    ? Color.FromArgb(235, 232, 168, 56)
-                    : Color.FromArgb(205, 168, 178, 190));
-            var label = new TextElement(protagonist.AbilityName, new PointF(x, y - 24f), 0.30f,
-                Color.FromArgb(225, 226, 226, 230));
-
-            barBack.Draw();
-            barFill.Draw();
-            label.Draw();
+            if (!_config.AbilitiesEnabled || Game.IsPaused || Function.Call<bool>(Hash.IS_RADAR_HIDDEN) ||
+                Function.Call<bool>(Hash.IS_HUD_HIDDEN)) return;
+            var slot = AbilityMeterLayout.Calculate(Function.Call<float>(Hash.GET_ASPECT_RATIO, false),
+                Function.Call<float>(Hash.GET_SAFE_ZONE_SIZE));
+            // Compact yellow overlay in the original ability-bar area; health/armor stay visible.
+            Function.Call(Hash.DRAW_RECT, slot.X + slot.Width * .5f, slot.Y, slot.Width, slot.Height, 20, 17, 7, 230);
+            float fill = slot.Width * System.Math.Max(0f, System.Math.Min(1f, _meter));
+            if (fill > 0f) Function.Call(Hash.DRAW_RECT, slot.X + fill * .5f, slot.Y, fill, slot.Height,
+                232, _running != null ? 194 : 168, 56, 240);
         }
     }
 }

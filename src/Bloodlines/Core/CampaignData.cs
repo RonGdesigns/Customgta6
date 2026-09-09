@@ -130,6 +130,14 @@ namespace Bloodlines.Core
                 if (!string.IsNullOrEmpty(cue.CueId)) data._cues[cue.CueId] = cue;
             }
 
+            foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "scenes.tsv")).Rows)
+            {
+                var cue = new DialogueCue { CueId = row.Text("cue_id"), MissionId = row.Text("mission"),
+                    Stage = -1, Speaker = row.Text("speaker"), Direction = row.Text("direction"),
+                    Line = row.Text("line"), Trigger = row.Text("phase") };
+                if (!string.IsNullOrEmpty(cue.CueId)) data._cues[cue.CueId] = cue;
+            }
+
             foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "anchors.tsv")).Rows)
             {
                 string key = row.Text("key");

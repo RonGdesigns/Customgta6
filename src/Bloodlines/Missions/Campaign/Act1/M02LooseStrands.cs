@@ -24,10 +24,14 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M02LooseStrands : Mission
     {
         private const int UploadWindowSeconds = 180;
-        private const float EmpRange = 30f;
-        private const int EmpLockSeconds = 2;
+        private const float HackRange = 35f;
+        private readonly ProximityHack _hack = new ProximityHack(24);
+        private readonly List<Ped> _gunners = new List<Ped>();
+        private bool _alerted;
+        private int _nextGunfire;
+        private int _driverStage = -1;
 
-        private readonly List<Ped> _escort = new List<Ped>();
+        
 
         private Vehicle _van;
         private Ped _technician;
@@ -35,16 +39,20 @@ namespace Bloodlines.Missions.Campaign
         private Blip _vanBlip;
 
         private int _startedAt;
-        private int _empLockedAt;
+        private int _breachStarted;
         private bool _driveSeized;
         private bool _chopperCalled;
+        private bool _guessDriving;
+        private int _nextDriverUpdate;
 
         public override string Id => "M02";
         public override string Title => "Loose Strands";
 
         protected override bool OnStart()
         {
-            var start = Ctx.Locations.Position("M02.InterceptStart");
+            var requested = Ctx.Locations.Position("M02.InterceptStart");
+            var start = World.GetNextPositionOnStreet(requested);
+            if (start == Vector3.Zero || !GameUtils.IsWithinFlat(start, requested, 80f)) return false;
             float heading = Ctx.Locations.Heading("M02.InterceptStart");
 
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, start, heading)) return false;
@@ -54,6 +62,8 @@ namespace Bloodlines.Missions.Campaign
             if (!SpawnChaseCar(start, heading)) return false;
             if (!SpawnVan(start, heading)) return false;
 
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
+            MaintainPassengers();
             _startedAt = Game.GameTime;
             SayStage(1);
             Objective("Catch the Aegis comm-van before the upload finishes.");
@@ -64,9 +74,13 @@ namespace Bloodlines.Missions.Campaign
         {
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            MaintainPassengers();
+            MaintainGuessDriving(player);
+            MaintainGunfire(player);
+            if (_chase == null || !_chase.Exists() || !_chase.IsDriveable) { Fail("The crew's chase car is wrecked."); return; }
 
             // Once the drives are out of the van, the van itself stops mattering.
-            if ((_van == null || !_van.Exists()) && !_driveSeized)
+            if ((_van == null || !_van.Exists() || _van.IsDead) && !_driveSeized)
             {
                 Fail("The van and its servers are gone.");
                 return;
@@ -92,7 +106,7 @@ namespace Bloodlines.Missions.Campaign
             switch (Stage)
             {
                 case 0: UpdatePursuit(player); break;
-                case 1: UpdateEmpLock(player); break;
+                case 1: UpdateHack(player); break;
                 case 2: UpdateBreach(player); break;
                 case 3: UpdateEscape(player); break;
             }
@@ -100,53 +114,104 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- Stage 0: match speed ----------
 
+        private void MaintainPassengers()
+        {
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan })
+            {
+                if (slot == Ctx.Crew.ActiveSlot) continue;
+                var ped = Ctx.Crew.PedFor(slot);
+                if (ped == null || !ped.Exists()) continue;
+                if (ped.IsInVehicle(_chase))
+                {
+                    if (Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted) Ctx.Crew.CompanionAI.TakeControl(slot);
+                }
+                else if (Ctx.Crew.CompanionAI.StateOf(slot) == CompanionState.Scripted) Ctx.Crew.CompanionAI.ReleaseControl(slot);
+            }
+        }
+
+        private void MaintainGuessDriving(Ped player)
+        {
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            bool drive = Ctx.Crew.ActiveSlot != CrewSlot.Guess && guess != null && guess.Exists() && !guess.IsDead &&
+                _chase != null && _chase.Exists() && _chase.GetPedOnSeat(VehicleSeat.Driver) == guess;
+            if (!drive)
+            {
+                if (_guessDriving) { Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess); _guessDriving = false; _driverStage = -1; }
+                return;
+            }
+            if (!_guessDriving) { Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess); _guessDriving = true; _nextDriverUpdate = 0; }
+            if (Game.GameTime < _nextDriverUpdate) return;
+            _nextDriverUpdate = Game.GameTime + 750;
+            if (Stage == 3)
+            {
+                foreach (var hero in Protagonist.All)
+                {
+                    var member = Ctx.Crew.PedFor(hero.Slot);
+                    if (member == null || !member.Exists() || !member.IsInVehicle(_chase))
+                    { Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, guess, _chase, 27, 1500); _driverStage = -1; return; }
+                }
+            }
+            if (_driverStage == Stage) return;
+            _driverStage = Stage;
+            if (Stage < 2 && _van != null && _van.Exists())
+                Function.Call(Hash.TASK_VEHICLE_FOLLOW, guess, _chase, _van, 27f, (int)DrivingStyle.Normal, 18);
+            else if (Stage == 2 && _van != null && _van.Exists())
+                guess.Task.DriveTo(_chase, _van.Position - _van.ForwardVector * 10f, 5f, 7f, DrivingStyle.Normal);
+            else guess.Task.DriveTo(_chase, Ctx.Locations.Position("M02.CanalEscape"), 10f, 22f, DrivingStyle.Normal);
+        }
+
         private void UpdatePursuit(Ped player)
         {
-            float distance = player.Position.DistanceTo(_van.Position);
-            if (distance > 60f) return;
-
+            ObjectiveMarkers.Navigation(_van.Position, null, _chase);
+            if (_chase.Position.DistanceTo(_van.Position) > 60f) return;
             Say("M02_S1_02_GUESS");
-            Objective("Gohan — put an EMP dart into the drivetrain.");
+            Objective("Stay within 35m. Gohan can hack from his passenger seat while Guess drives.");
             Advance();
         }
 
-        // ---------- Stage 1: Gohan's EMP dart ----------
-
-        private void UpdateEmpLock(Ped player)
+        private void UpdateHack(Ped player)
         {
-            GameUtils.DrawObjectiveMarker(_van.Position + new Vector3(0f, 0f, 2.2f),
-                Color.FromArgb(130, 106, 168, 122), 0.6f);
-
-            if (Ctx.Crew.ActiveSlot != CrewSlot.Gohan)
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            bool seated = gohan != null && gohan.Exists() && gohan.IsAlive && gohan.IsInVehicle(_chase) &&
+                _chase.GetPedOnSeat(VehicleSeat.Driver) != gohan;
+            ObjectiveMarkers.Navigation(_van.Position, null, _chase);
+            float distance = _chase.Position.DistanceTo(_van.Position);
+            bool connected = seated && distance <= HackRange;
+            _hack.Update(Game.GameTime, connected);
+            int percent = (int)(_hack.Progress * 100f);
+            GameUtils.DrawObjectiveMarker(_van.Position + new Vector3(0f,0f,2.2f), Color.Green, .6f);
+            GameUtils.Subtitle("~y~Gohan's remote hack: " + percent + "%  ~s~" + (int)distance + "/35m  " +
+                (!seated ? "Gohan must be a passenger in the crew car." : !connected ? "Signal lost - close the gap." : "Connected - keep the van in range."), 500);
+            if (!_alerted && _hack.Progress >= .5f)
             {
-                _empLockedAt = 0;
-                GameUtils.Subtitle("~y~Only Gohan carries the EMP harness.", 1200);
-                return;
-            }
-
-            bool inRange = player.Position.DistanceTo(_van.Position) < EmpRange;
-            bool aiming = player.IsAiming && Game.Player.IsTargeting(_van);
-
-            if (!inRange || !aiming)
-            {
-                _empLockedAt = 0;
-                return;
-            }
-
-            if (_empLockedAt == 0)
-            {
-                _empLockedAt = Game.GameTime;
+                _alerted = true;
                 Say("M02_S2_03_ICE");
-                return;
+                foreach (var gunner in _gunners)
+                {
+                    if (gunner == null || !gunner.Exists() || gunner.IsDead) continue;
+                    gunner.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+                    gunner.Weapons.Give(WeaponHash.MicroSMG, 300, true, true);
+                }
+                _nextGunfire = 0;
             }
+            if (_hack.Progress >= 1f) DisableVan();
+        }
 
-            if ((Game.GameTime - _empLockedAt) / 1000 < EmpLockSeconds)
+        private void MaintainGunfire(Ped player)
+        {
+            if (!_alerted || Game.GameTime < _nextGunfire) return;
+            _nextGunfire = Game.GameTime + 1200;
+            foreach (var gunner in _gunners)
             {
-                GameUtils.Subtitle("~g~EMP lock...", 400);
-                return;
+                if (gunner == null || !gunner.Exists() || gunner.IsDead) continue;
+                if (gunner.IsInVehicle()) Function.Call(Hash.TASK_VEHICLE_SHOOT_AT_PED, gunner, player, 35f);
+                else gunner.Task.FightAgainst(player);
             }
-
-            FireEmp();
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && ice != null && ice.Exists() && ice.IsInVehicle(_chase))
+                foreach (var gunner in _gunners)
+                    if (gunner != null && gunner.Exists() && gunner.IsAlive)
+                    { Function.Call(Hash.TASK_VEHICLE_SHOOT_AT_PED, ice, gunner, 35f); break; }
         }
 
         /// <summary>
@@ -154,7 +219,7 @@ namespace Bloodlines.Missions.Campaign
         /// physical server has to survive, so this stalls the drivetrain rather than
         /// blowing the engine block.
         /// </summary>
-        private void FireEmp()
+        private void DisableVan()
         {
             Say("M02_S2_04_GOHAN");
 
@@ -170,9 +235,11 @@ namespace Bloodlines.Missions.Campaign
                 _technician.Task.LeaveVehicle(LeaveVehicleFlags.None);
             }
 
-            SpawnEscort();
+            foreach (var gunner in _gunners)
+                if (gunner != null && gunner.Exists() && gunner.IsAlive) gunner.Task.LeaveVehicle(LeaveVehicleFlags.None);
 
-            Objective("Ice — take the rear doors and pull the drives.");
+            _vanBlip.ShowRoute = false;
+            Objective("Switch to Ice, exit the Granger and stand at the marked rear doors of the van for 3 seconds to collect the server drives.");
             Advance();
         }
 
@@ -181,26 +248,40 @@ namespace Bloodlines.Missions.Campaign
         private void UpdateBreach(Ped player)
         {
             var rear = _van.Position - _van.ForwardVector * 3.2f;
+            ObjectiveMarkers.Navigation(rear, CrewSlot.Ice);
             GameUtils.DrawObjectiveMarker(rear, Color.FromArgb(130, 66, 133, 244), 1.2f);
 
             if (Ctx.Crew.ActiveSlot != CrewSlot.Ice)
             {
-                GameUtils.Subtitle("~y~Ice takes the doors.", 1200);
+                _breachStarted = 0;
+                GameUtils.Subtitle("~y~Switch to Ice, exit the Granger and collect the drives at the van's marked REAR doors.", 1200);
                 return;
             }
 
-            if (!GameUtils.IsWithin(player.Position, rear, 3.5f) || player.IsInVehicle()) return;
+            if (!GameUtils.IsWithin(player.Position, rear, 3.5f) || player.IsInVehicle())
+            {
+                _breachStarted = 0;
+                GameUtils.Subtitle("~y~Ice: get out and reach the blue marker BEHIND the van. Taking the van is not the objective.", 500);
+                return;
+            }
+            if (_breachStarted == 0)
+            {
+                _breachStarted = Game.GameTime;
+                Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, _van, 2, false, false);
+                Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, _van, 3, false, false);
+            }
+            if (Game.GameTime - _breachStarted < 3000) { GameUtils.Subtitle("~y~Collecting server drives... stay at the rear doors.", 500); return; }
 
             Say("M02_S2_05_ICE");
             _driveSeized = true;
 
-            if (_technician != null && _technician.Exists())
+            if (_technician != null && _technician.Exists() && _technician.IsAlive)
             {
                 _technician.Task.HandsUp(20000);
             }
 
             SpawnChopper();
-            Objective("Lose the Aegis chopper down the storm canal.");
+            Objective("Return all three to the Granger, then follow the GPS to the storm canal with the server drives.");
             Advance();
         }
 
@@ -210,6 +291,7 @@ namespace Bloodlines.Missions.Campaign
         {
 
             var canal = Ctx.Locations.Position("M02.CanalEscape");
+            ObjectiveMarkers.Navigation(canal, null, _chase);
             GameUtils.DrawObjectiveMarker(canal, Color.FromArgb(120, 106, 168, 122), 5f);
 
             if (!_chopperCalled && SecondsInStage >= 3)
@@ -218,6 +300,13 @@ namespace Bloodlines.Missions.Campaign
                 Say("M02_S2_06_GUESS");
             }
 
+            if (!player.IsInVehicle(_chase)) { GameUtils.Subtitle("~y~Return to the crew's Granger.", 500); return; }
+            foreach (var hero in Protagonist.All)
+            {
+                var member = Ctx.Crew.PedFor(hero.Slot);
+                if (member == null || !member.Exists() || !member.IsAlive || !member.IsInVehicle(_chase))
+                { GameUtils.Subtitle("~y~Bring all three back into the Granger before escaping.", 500); return; }
+            }
             if (!GameUtils.IsWithinFlat(player.Position, canal, 20f)) return;
 
             Game.Player.WantedLevel = 0;
@@ -257,7 +346,9 @@ namespace Bloodlines.Missions.Campaign
             var techModel = new Model("s_m_m_highsec_01");
             if (!GameUtils.RequestModel(vanModel)) return false;
 
-            _van = Track(World.CreateVehicle(vanModel, start + new Vector3(0f, 90f, 0f), heading));
+            var road = World.GetNextPositionOnStreet(start + _chase.ForwardVector * 90f);
+            if (road == Vector3.Zero || road.DistanceTo(start) < 45f || road.DistanceTo(start) > 170f) { vanModel.MarkAsNoLongerNeeded(); return false; }
+            _van = Track(World.CreateVehicle(vanModel, road, heading));
             vanModel.MarkAsNoLongerNeeded();
             if (_van == null || !_van.Exists()) return false;
 
@@ -272,47 +363,35 @@ namespace Bloodlines.Missions.Campaign
 
                 if (_technician != null && _technician.Exists())
                 {
-                    _technician.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+                    _technician.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
                     _technician.IsPersistent = true;
                     _technician.BlockPermanentEvents = true;
                     _technician.Task.WarpIntoVehicle(_van, VehicleSeat.Driver);
                     // Runs the road rather than a fixed path: the route survives the
                     // start point being approximate.
-                    _technician.Task.CruiseWithVehicle(_van, 28f, DrivingStyle.Rushed);
+                    _technician.Task.CruiseWithVehicle(_van, 20f, DrivingStyle.Normal);
                 }
             }
 
+            if (_technician == null || !_technician.Exists()) return false;
+            var gunnerModel = new Model("s_m_y_blackops_01");
+            if (!GameUtils.RequestModel(gunnerModel)) return false;
+            for (int i=0; i<2; i++)
+            {
+                var gunner = Track(World.CreatePed(gunnerModel, _van.Position, heading));
+                if (gunner == null || !gunner.Exists()) { gunnerModel.MarkAsNoLongerNeeded(); return false; }
+                gunner.IsPersistent = true; gunner.BlockPermanentEvents = true; gunner.Accuracy = 20;
+                gunner.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
+                gunner.SetIntoVehicle(_van, (VehicleSeat)i);
+                _gunners.Add(gunner);
+            }
+            gunnerModel.MarkAsNoLongerNeeded();
             _vanBlip = Track(_van.AddBlip());
             _vanBlip.Sprite = BlipSprite.ArmoredTruck;
             _vanBlip.Color = BlipColor.Red;
             _vanBlip.Name = "Aegis comm-van";
-            _vanBlip.ShowRoute = true;
+            _vanBlip.ShowRoute = false;
             return true;
-        }
-
-        private void SpawnEscort()
-        {
-            var model = new Model("s_m_y_blackops_01");
-            if (!GameUtils.RequestModel(model)) return;
-
-            var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
-
-            for (int i = 0; i < 3; i++)
-            {
-                var guard = World.CreatePed(model, _van.Position + new Vector3(4f + i * 2f, 3f, 0f), 0f);
-                if (guard == null || !guard.Exists()) continue;
-
-                guard.RelationshipGroup = aegis;
-                guard.IsPersistent = true;
-                guard.BlockPermanentEvents = true;
-                guard.Accuracy = 40;
-                guard.Armor = 50;
-                guard.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
-                guard.Task.FightAgainstHatedTargets(90f);
-                _escort.Add(Track(guard));
-            }
-
-            model.MarkAsNoLongerNeeded();
         }
 
         private void SpawnChopper()
@@ -339,7 +418,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnStageEntered(int stage)
         {
-            // Restoring past the EMP means the van must already be dead, or the player
+            // Restoring past the remote hack means the van must already be dead, or the player
             // resumes chasing a van that cannot be caught again.
             if (stage >= 2 && _van != null && _van.Exists())
             {
@@ -352,8 +431,11 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess);
+            _guessDriving = false;
             GameUtils.SafeDelete(_vanBlip);
-            _escort.Clear();
+            _gunners.Clear();
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = false;
         }
     }
 }

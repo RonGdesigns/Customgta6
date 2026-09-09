@@ -34,6 +34,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _dive = Ctx.Locations.Position("M19.DiveStart");
             _breach = Ctx.Locations.Position("M19.HullBreach");
             _surface = Ctx.Locations.Position("M19.Surface");
@@ -47,6 +48,8 @@ namespace Bloodlines.Missions.Campaign
 
             ApplyBibleSetting();
             SpawnKraken();
+            if (!RequireAssets(_kraken)) return false;
+            Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
             return true;
         }
 
@@ -55,27 +58,29 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Dive",
                     new EnterVehicleObjective("Take the Kraken down.", () => _kraken, VehicleSeat.Driver))
                 .PlayedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                ;
 
             yield return new MissionStage("Cut the bulkhead",
-                    new HoldZoneObjective("Burn the breach into hold 3.", () => _breach, 16, 8f,
-                        "Acoustic torch cutting"),
+                    new MissionInteraction("Burn the breach into hold 3.", () => _breach, 16, 8f, () => _kraken),
                     new DepthChargeHazard(() => _breach))
                 .PlayedBy(CrewSlot.Gohan)
-                .OnExit(context => GameUtils.Subtitle("~g~Hull breached. Hold 3 is flooding.", 4000));
+                .OnExit(context => GameUtils.Subtitle("~g~Hull breached. Hold 3 is flooding.", 4000))
+                .AfterCues("M19_S1_01_GOHAN");
 
             yield return new MissionStage("Clamp the floats",
                     new MultiHoldObjective("Clamp the ballast floats to the container.",
-                        _clamps, 8, 5f, "Clamping"),
+                        _clamps, 8, 5f, "Clamping", () => _kraken),
                     new DepthChargeHazard(() => _breach))
                 .PlayedBy(CrewSlot.Gohan)
-                .WithDialogue(1);
+                
+                .AfterCues("M19_S1_02_ICE");
 
             yield return new MissionStage("Surface",
-                    new ReachZoneObjective("Surface to the boarding launch.", () => _surface, 12f))
+                    new DeliverVehicleObjective("Gohan: surface in the Kraken at the yellow marker.", () => _kraken, () => _surface, 8f))
                 .PlayedBy(CrewSlot.Gohan)
                 .OnExit(context =>
-                    GameUtils.Subtitle("~g~She's rising. Guess — bring the Cargobob in now.", 6000));
+                    GameUtils.Subtitle("~g~She's rising. Guess — bring the Cargobob in now.", 6000))
+                .WithCues("M19_S1_03_GOHAN");
         }
 
         private void SpawnKraken()
@@ -128,8 +133,8 @@ namespace Bloodlines.Missions.Campaign
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 
-            var offset = new Vector3(Random.Next(-14, 14), Random.Next(-14, 14), Random.Next(2, 8));
-            World.AddExplosion(player.Position + offset, ExplosionType.Boat, 3.5f, 1.2f, null, true, false);
+            var offset = new Vector3((Random.Next(2) == 0 ? -1 : 1) * Random.Next(22, 32), Random.Next(-15, 15), Random.Next(2, 8));
+            World.AddExplosion(player.Position + offset, ExplosionType.Boat, 0.7f, 1.2f, null, true, false);
 
             GameUtils.Subtitle("~r~Depth charges.", 1200);
             _nextDrop = Game.GameTime + Random.Next(5000, 9000);

@@ -1,5 +1,5 @@
 key	x	y	z	heading	kind	status	district_hint
-M01.CraneNest	1082.0	-3175.0	40.0	210	land	estimate	Terminal Island Dry-Docks
+M01.CraneNest	982.0	-3235.0	6.0	35	land	estimate	Terminal Island Dry-Docks
 M01.YachtDeck	1017.0	-3182.0	6.0	0	land	estimate	Terminal Island Dry-Docks
 M01.LowerDeckLedger	1010.0	-3196.0	5.0	0	land	estimate	Terminal Island Dry-Docks
 M01.WarehouseBay	1057.0	-3202.0	6.0	90	land	estimate	Terminal Island Dry-Docks
@@ -8,6 +8,8 @@ M01.CapoSpawn	1019.0	-3184.0	6.0	0	land	estimate	Terminal Island Dry-Docks
 M01.LaunchEscape	1140.0	-3320.0	0.0	0	water	estimate	Terminal Island Dry-Docks
 M01.RegroupPoint	1073.0	-3160.0	5.9	0	land	estimate	Terminal Island Dry-Docks
 M01.ExitPoint	720.50	-2400.10	15.20	0	land	bible	Terminal Island Dry-Docks
+M01.GuessApproach	1175.0	-3090.0	6.0	180	land	estimate	Terminal Island Dry-Docks
+M01.GohanApproach	965.0	-3110.0	6.0	180	land	estimate	Terminal Island Dry-Docks
 SM01.WarehouseGate	1035.0	-3100.0	5.9	340	land	estimate	Terminal Island Warehouse 4
 SM01.SergeiOffice	1046.0	-3080.0	5.9	0	land	estimate	Terminal Island Warehouse 4
 SM01.CrateLoad	1028.0	-3096.0	5.9	0	land	estimate	Terminal Island Warehouse 4
@@ -18,12 +20,12 @@ M03.DepotGate	1270.00	-1940.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fi
 M03.CraneControls	1286.00	-1956.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fields
 M03.HaulerSpawn	1254.00	-1928.00	40.00	180	land	estimate	Cypress Flats / Murrieta Fields
 M04.GarageEntry	233.0	-800.0	30.0	0	land	estimate	Pillbox Hill / Textile City
-M04.Breaker	220.0	-815.0	-50.0	0	underground	estimate	Pillbox Hill / Textile City
-M04.RampGuards	240.0	-805.0	-50.0	0	underground	estimate	Pillbox Hill / Textile City
+M04.Breaker	220.0	-815.0	30.0	0	land	estimate	Pillbox Hill / Textile City
+M04.RampGuards	240.0	-805.0	30.0	0	land	estimate	Pillbox Hill / Textile City
 M04.ChaseCar	250.0	-790.0	30.0	250	land	estimate	Pillbox Hill / Textile City
 M04.TextileCrash	80.0	-1080.0	29.0	0	land	estimate	Pillbox Hill / Textile City
 M05.CliffPerch	2360.0	-840.0	42.0	135	land	estimate	Palomino Highlands Shoreline
-M05.CoveAir	2450.0	-960.0	60.0	0	air	estimate	Palomino Highlands Shoreline
+M05.CoveAir	2450.0	-960.0	1.0	0	water	estimate	Palomino Highlands Shoreline
 M05.GrottoMouth	2480.0	-1000.0	1.0	0	water	estimate	Palomino Highlands Shoreline
 M05.Sandbar	2560.0	-1120.0	0.0	0	water	estimate	Palomino Highlands Shoreline
 M05.DinghySpawn	2420.0	-1040.0	0.0	0	water	estimate	Palomino Highlands Shoreline
@@ -96,7 +98,7 @@ M19.ClampOne	1036.00	-3336.00	-18.00	0	water	estimate	Terminal
 M19.ClampTwo	1046.00	-3336.00	-18.00	0	water	estimate	Terminal
 M19.Surface	1060.00	-3310.00	0.00	0	water	estimate	Terminal
 M20.HoverPoint	1050.00	-3330.00	35.00	180	air	estimate	Terminal
-M20.DeckGunners	1035.00	-3312.00	12.00	0	land	estimate	Terminal
+M20.DeckGunners	1080.00	-3190.00	6.00	0	land	estimate	Terminal
 M20.ClimbOut	1240.00	-3420.00	80.00	20	air	estimate	Pacific Ocean
 M21.LaunchSpawn	1132.00	-3202.00	0.00	20	water	estimate	Terminal
 M21.Breakwater	1320.00	-3520.00	0.00	20	water	estimate	Pacific Ocean
@@ -120,3 +122,14 @@ M26.PatrolBox	900.00	4200.00	220.00	0	air	estimate	Alamo Sea
 M27.FormUp	-100.00	5000.00	700.00	270	air	estimate	Mount Chiliad
 M27.JetTrack	-1400.00	5200.00	700.00	250	air	estimate	Mount Chiliad
 M27.SeaPickup	-2100.00	5300.00	0.00	200	water	estimate	Paleto Cove
+Home.Ice	-1112.0	-1578.0	4.5	120	land	estimate	Vespucci Canals
+Home.Gohan	-693.0	-1004.0	20.0	90	land	estimate	Little Seoul
+Home.Guess	1169.0	-1650.0	36.0	90	land	estimate	El Burro Heights
+Apartment.Starter.Ice	-667.02	-1105.24	14.63	242	land	estimate	Little Seoul
+Apartment.Starter.Gohan	-1288.52	-430.51	35.15	124	land	estimate	Richards Majestic
+Apartment.Starter.Guess	291.517	-1078.674	29.405	270	land	estimate	Mission Row
+Apartment.Luxury.Entrance	-773.6176	299.3455	85.7201	3	land	estimate	Rockford Hills
+Apartment.Starter.Interior	347.2686	-999.2955	-99.19622	0	underground	estimate	
+Apartment.Luxury.Ice	-786.8663	315.7642	217.6385	0	interior	estimate	
+Apartment.Luxury.Gohan	-774.0126	342.0428	196.6864	0	interior	estimate	
+Apartment.Luxury.Guess	-786.9563	315.6229	187.9136	0	interior	estimate	

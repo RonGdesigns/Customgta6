@@ -221,3 +221,18 @@ Written before the fact so it can be scored honestly afterwards:
 
 If all five are fine, the framework is in better shape than the evidence currently
 justifies believing.
+
+
+## Story and mission discovery update
+
+See [STORY-AUDIT.md](STORY-AUDIT.md) for the implemented opening/aftermath scenes, KJ, nickname UI, mission markers, switch behavior, validation and live test sequence.
+
+
+## M01 live-playtest correction
+
+See `docs/M01-HOTFIX.md` (or `M01-HOTFIX.md` from this docs folder) for the
+current exterior staging, camera fix, assigned M01 companion actions and controller
+controls. The previous descriptions of bible anchors as surveyed geometry are
+superseded: those proposed positions were not verified against installed assets.
+`tools/test_dialogue_parser.py` protects speech extraction; authored revisions
+live in `data/dialogue_edits.json`, applied by `parse_bible.py`.
