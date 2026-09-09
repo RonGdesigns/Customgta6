@@ -59,7 +59,7 @@ namespace Bloodlines.Crew
                 {
                     day.Entering = false;
                     if (day.Theft) { Wanted.Set(slot, Math.Max(2, Wanted.Get(slot))); day.Theft = false; SpawnPolice(ped, day); }
-                    Drive(ped, day); return;
+                    Drive(slot, ped, day); return;
                 }
                 if (Game.GameTime - day.EnteredAt < 20000) return;
                 ReleaseRide(day); day.Entering = false; day.Theft = false;
@@ -113,7 +113,7 @@ namespace Bloodlines.Crew
             if (road == Vector3.Zero || road.DistanceTo(point) > 250f)
             { ped.Task.WanderAround(ped.Position, 120f); day.NextTick = Game.GameTime + 15000; return; }
             day.Destination = road; day.Started = day.Travelling = true; day.LastPosition = ped.Position; day.LastProgress = Game.GameTime;
-            if (driving) { day.Ride = ped.CurrentVehicle; Drive(ped, day); return; }
+            if (driving) { day.Ride = ped.CurrentVehicle; Drive(slot, ped, day); return; }
             // Passengers can carry on with their existing driver until it is safe to leave.
             if (ped.IsInVehicle())
             {
@@ -147,15 +147,14 @@ namespace Bloodlines.Crew
             }
             return true;
         }
-        private void Drive(Ped ped, Day day)
+        private void Drive(CrewSlot slot, Ped ped, Day day)
         {
             if (day.Ride == null || !day.Ride.Exists() || !day.Ride.IsDriveable) { day.Started = false; return; }
             day.Ride.IsEngineRunning = true;
-            Function.Call(Hash.SET_DRIVER_ABILITY, ped, 1f);
-            Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, ped, .25f);
+            CrewDriving.Configure(ped, slot, false);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ped, 2, false);
-            ped.Task.DriveTo(day.Ride, day.Destination, 10f, 35f,
-                DrivingStyle.AvoidTrafficExtremely);
+            ped.Task.DriveTo(day.Ride, day.Destination, 10f, CrewDriving.Speed(slot, false),
+                (DrivingStyle)CrewDriving.TrafficFlags);
             day.LastProgress = Game.GameTime;
         }
         private void SpawnPolice(Ped target, Day day)
@@ -175,6 +174,8 @@ namespace Bloodlines.Crew
                 if (day.Officer == null || !day.Officer.Exists()) { ReleasePolice(day); return; }
                 day.Officer.IsPersistent = true; day.Officer.BlockPermanentEvents = true;
                 day.Officer.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_LIFE_POLICE");
+                MilitaryResponse.AllyWithPolice(day.Officer.RelationshipGroup);
+                Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, day.Officer, false, false);
                 day.Officer.SetIntoVehicle(day.PoliceCar, VehicleSeat.Driver);
                 day.Officer.Task.VehicleChase(target);
             }

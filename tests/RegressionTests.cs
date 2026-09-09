@@ -12,7 +12,7 @@ public sealed class ProbeObjective:Objective {public ProbeObjective():base("prob
 public static partial class RegressionTests {
  static int checks;
  static void Check(bool ok,string name){if(!ok)throw new Exception("FAIL: "+name);checks++;Console.WriteLine("PASS: "+name);}
- static void Reset(){Game.GameTime=100;Function.MovementInput=0;Function.SelfHandovers=0;World.StreetResolver=null;World.SphereVisible=false;Function.ClearLos=true;Game.Player=new Player();Game.Arrested=false;Game.TimeScale=1;World.WaypointBlip=null;World.Nearby=new Ped[0];World.CollisionReady=false;Function.Values.Clear();Function.ThrowOnce=null;GameUtils.Faded=false;}
+ static void Reset(){Game.GameTime=100;Function.MovementInput=0;Function.SelfHandovers=0;World.StreetResolver=null;Function.Relations.Clear();Function.Follows.Clear();Function.TrafficShots.Clear();World.SphereVisible=false;Function.ClearLos=true;Game.Player=new Player();Game.Arrested=false;Game.TimeScale=1;World.WaypointBlip=null;World.Nearby=new Ped[0];World.CollisionReady=false;Function.Values.Clear();Function.ThrowOnce=null;GameUtils.Faded=false;}
  static CompanionController AI()=>new CompanionController(new ModConfig()){IndependentFreeRoam=false,RequireSharedVehicle=true};
  static void ConvoyAndIndependentTests(){
   Reset();var ai=new CompanionController(new ModConfig());var p=new Ped{Position=new Vector3(0,600,0)};var leader=new Ped{Position=new Vector3(0,0,0),ForwardVector=new Vector3(0,1,0)};var car=new Vehicle();leader.CurrentVehicle=car;
@@ -65,11 +65,11 @@ public static partial class RegressionTests {
  static void DriverTests(){
   Reset();var ai=AI();var car=new Vehicle();var driver=new Ped{CurrentVehicle=car};car.Seats[VehicleSeat.Driver]=driver;var passenger=new Ped{CurrentVehicle=car};
   ai.Driver.Arm(CrewSlot.Guess,driver);ai.Update(CrewSlot.Guess,driver,passenger);
-  Check(ai.StateOf(CrewSlot.Guess)==CompanionState.Driving&&driver.Task.DriveKind=="cruise"&&driver.Task.DriveSpeed==30,"Former driver continues cautiously while new player rides as passenger");
+  Check(ai.StateOf(CrewSlot.Guess)==CompanionState.Driving&&driver.Task.DriveKind=="cruise"&&driver.Task.DriveSpeed==50,"Former driver continues cautiously while new player rides as passenger");
   Game.GameTime+=1000;ai.Refresh(CrewSlot.Guess);ai.Update(CrewSlot.Guess,driver,passenger);
   Check(driver.Task.DriveCalls==1,"Companion refresh does not restart the driver's task or lose the trip");
   World.WaypointBlip=new Blip{Position=new Vector3(100,200,5)};Game.GameTime+=1000;ai.Update(CrewSlot.Guess,driver,passenger);
-  Check(driver.Task.DriveKind=="road"&&driver.Task.DriveTarget==World.WaypointBlip.Position&&driver.Task.DriveSpeed==35,"Map waypoint gives the driver a cautious road destination");
+  Check(driver.Task.DriveKind=="road"&&driver.Task.DriveTarget==World.WaypointBlip.Position&&driver.Task.DriveSpeed==50,"Map waypoint gives the driver a cautious road destination");
   ai.Driver.MissionDestination=(s,v)=>new Vector3(300,400,5);Game.GameTime+=1000;ai.Update(CrewSlot.Guess,driver,passenger);
   Check(driver.Task.DriveTarget==new Vector3(300,400,5),"Assigned mission destination takes precedence over a waypoint");
   ai.Driver.MissionDestination=null;World.WaypointBlip=null;Game.GameTime+=1000;ai.Update(CrewSlot.Guess,driver,new Ped());
@@ -146,5 +146,5 @@ public static partial class RegressionTests {
   Reset();crew=new CrewRoster{ActivePed=Game.Player.Character};death=new DeathController(new ModConfig(),crew,new MissionManager(),new AbilityController(),new SwitchController(),new DialogueDirector());Function.ThrowOnce=Hash.SET_FADE_OUT_AFTER_ARREST;death.Update();
   Check(crew.Dismissals==1&&!(bool)Function.Values[Hash.PAUSE_DEATH_ARREST_RESTART],"Partial native failure still releases restart suppression");
  }
- public static int Main(string[] args){try{ActiveRecoveryChecks();MilitaryLifecycleChecks();ReunionAndChaseTests();ConvoyAndIndependentTests();CompanionTests();FriendlyFireTests();DriverTests();HandoverTests();HoldTests();ObjectiveTests();SurveyTests(args[0]);DeathTests();Console.WriteLine(checks+" checks passed (stand-ins; live GTA validation still required).");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ public static int Main(string[] args){try{MilitaryAftermathChecks();TeamCombatChecks();ActiveRecoveryChecks();MilitaryLifecycleChecks();ReunionAndChaseTests();ConvoyAndIndependentTests();CompanionTests();FriendlyFireTests();DriverTests();HandoverTests();HoldTests();ObjectiveTests();SurveyTests(args[0]);DeathTests();Console.WriteLine(checks+" checks passed (stand-ins; live GTA validation still required).");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }

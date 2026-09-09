@@ -64,7 +64,7 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
-                    context.State.SetUpgrade("krakenSubmarineReinforced", true);
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Four minutes through eight inches of naval bulkhead.", 5000);
                 })
                 .AfterCues("M17_S1_02_GUESS");

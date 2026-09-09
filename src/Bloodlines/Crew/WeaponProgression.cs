@@ -56,7 +56,11 @@ namespace Bloodlines.Crew
             return true;
         }
         private readonly CampaignState _state;
-        private int _nextCapture;
+        private int _nextCapture, _captureSlot;
+        private WeaponHash[] _validWeapons;
+        private WeaponHash[] ValidWeapons => _validWeapons ?? (_validWeapons = Enum.GetValues(typeof(WeaponHash)).Cast<WeaponHash>()
+            .Concat(DlcCatalog.Select(w => (WeaponHash)w.Hash)).Distinct()
+            .Where(w => w != WeaponHash.Unarmed && Function.Call<bool>(Hash.IS_WEAPON_VALID, (uint)w)).ToArray());
         public WeaponProgression(CampaignState state) { _state = state; }
         private HashSet<uint> Owned(CrewSlot slot)
         {
@@ -64,12 +68,22 @@ namespace Bloodlines.Crew
                 _state.Weapons[slot.ToString()] = weapons = new HashSet<uint>();
             return weapons;
         }
+        public static readonly string[] RewardMissions = { "M03", "M06", "M15", "M23", "M27", "SM01", "SM04", "SM05", "SM06" };
+        public static bool ReceivesReward(string mission, CrewSlot slot) => !mission.StartsWith("SM") ||
+            ((mission == "SM01" || mission == "SM04") && slot == CrewSlot.Ice) ||
+            (mission == "SM05" && slot == CrewSlot.Gohan) || (mission == "SM06" && slot == CrewSlot.Guess);
         public static WeaponHash[] Rewards(string mission)
         {
             switch (mission)
             {
                 case "M03": return new[] { WeaponHash.PumpShotgun, WeaponHash.StunGun, WeaponHash.CombatPistol };
                 case "M06": return new[] { WeaponHash.CombatMG, WeaponHash.CarbineRifle, WeaponHash.AssaultSMG };
+                case "SM04": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_HEAVYSNIPER_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
+                case "SM05": return new[] { WeaponHash.PumpShotgun, (WeaponHash)Game.GenerateHash("WEAPON_PISTOL_MK2"), WeaponHash.CombatPistol };
+                case "SM06": return new[] { WeaponHash.PumpShotgun, WeaponHash.StunGun, (WeaponHash)Game.GenerateHash("WEAPON_SMG_MK2") };
+                case "M23": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_ASSAULTRIFLE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_BULLPUPRIFLE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_CARBINERIFLE_MK2") };
+                case "M27": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_COMBATMG_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_SPECIALCARBINE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_TECPISTOL") };
+                case "SM01": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_PUMPSHOTGUN_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
                 case "M15": return new[] { WeaponHash.HeavySniper, WeaponHash.SpecialCarbine, WeaponHash.AssaultShotgun };
                 default: return new WeaponHash[0];
             }
@@ -77,11 +91,13 @@ namespace Bloodlines.Crew
         public bool UnlockRewards()
         {
             bool changed = false;
-            foreach (string mission in new[] { "M03", "M06", "M15" })
+            foreach (string mission in RewardMissions)
                 if (_state.IsComplete(mission))
                 {
                     var rewards = Rewards(mission);
-                    foreach (var hero in Protagonist.All) changed |= Owned(hero.Slot).Add((uint)rewards[(int)hero.Slot]);
+                    foreach (var hero in Protagonist.All)
+                        if (ReceivesReward(mission, hero.Slot))
+                            changed |= Owned(hero.Slot).Add((uint)rewards[(int)hero.Slot]);
                 }
             return changed;
         }
@@ -89,10 +105,8 @@ namespace Bloodlines.Crew
         {
             if (ped == null || !ped.Exists() || ped.IsDead) return false;
             bool changed = false;
-            foreach (WeaponHash weapon in Enum.GetValues(typeof(WeaponHash)).Cast<WeaponHash>()
-                .Concat(DlcCatalog.Select(w => (WeaponHash)w.Hash)).Distinct())
-                if (weapon != WeaponHash.Unarmed && Function.Call<bool>(Hash.IS_WEAPON_VALID, (uint)weapon) &&
-                    Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, (uint)weapon, false))
+            foreach (WeaponHash weapon in ValidWeapons)
+                if (Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, (uint)weapon, false))
                     changed |= Owned(slot).Add((uint)weapon);
             return changed;
         }
@@ -103,14 +117,16 @@ namespace Bloodlines.Crew
             foreach (uint weapon in Owned(slot))
                 if (Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) &&
                     (restock || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)))
-                    ped.Weapons.Give((WeaponHash)weapon, 60, false, true);
+                    ped.Weapons.Give((WeaponHash)weapon, Core.WeaponMarket.AmmoCount(weapon), false, true);
         }
         public void Update(CrewRoster crew)
         {
             if (Game.GameTime < _nextCapture || !crew.IsDeployed) return;
-            _nextCapture = Game.GameTime + 5000;
+            _nextCapture = Game.GameTime + 1700;
             bool changed = UnlockRewards();
-            foreach (var hero in Protagonist.All) changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
+            var hero = Protagonist.All[_captureSlot++ % Protagonist.All.Length];
+            changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
+            Apply(hero.Slot, crew.PedFor(hero.Slot));
             if (changed) _state.Save();
         }
         public void SaveCrew(CrewRoster crew)

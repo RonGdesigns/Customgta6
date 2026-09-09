@@ -118,7 +118,13 @@ namespace Bloodlines.Missions
                 { "M27", () => new M27FlightRisk() },
                 { "SM01", () => new SM01LeadAndKevlar() },
                 { "SM02", () => new SM02ZeroDayInjection() },
-                { "SM03", () => new SM03MidnightDrift() }
+                { "SM03", () => new SM03MidnightDrift() },
+                { "M28", () => new M28OffTheGrid() },
+                { "M29", () => new M29DustAndDiesel() },
+                { "M30", () => new M30RedlineRidge() },
+                { "SM04", () => new SM04DeadDropQuarry() },
+                { "SM05", () => new SM05BlackBoxEstuary() },
+                { "SM06", () => new SM06CanyonRunner() }
             };
 
         private readonly List<MissionDefinition> _main = new List<MissionDefinition>();

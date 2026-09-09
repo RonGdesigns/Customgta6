@@ -136,19 +136,14 @@ namespace Bloodlines.Crew
         {
             if (ped == null || !ped.Exists()) return;
             var look = For(slot);
-            if (field == "Hair")
-            {
-                int count = Function.Call<int>(Hash.GET_NUMBER_OF_PED_DRAWABLE_VARIATIONS, ped, 2);
-                if (count <= 0) return;
-                look.Hair = (look.Hair + direction + count) % count;
-            }
-            else if (field == "Face") look.Face = (look.Face + direction + 21) % 21;
+            // Head hair is part of each hero's identity, including debug/home paths.
+            if (field == "Hair" || field == "HairColor") return;
+            if (field == "Face") look.Face = (look.Face + direction + 21) % 21;
             else if (field == "Skin") look.Skin = (look.Skin + direction + 21) % 21;
             else if (field == "Outfit")
             { look.Outfit = Wrap(look.Outfit + direction, 3); look.Drawables.Clear(); look.Textures.Clear(); }
             else if (field == "Beard")
             { int count = Function.Call<int>(Hash.GET_PED_HEAD_OVERLAY_NUM, 1); look.Beard = Wrap(look.Beard + 1 + direction, count + 1) - 1; }
-            else if (field == "HairColor") look.HairColor = Wrap(look.HairColor + direction, Function.Call<int>(Hash.GET_NUM_PED_HAIR_TINTS));
             else if (field == "BeardColor") look.BeardColor = Wrap(look.BeardColor + direction, Function.Call<int>(Hash.GET_NUM_PED_HAIR_TINTS));
             Apply(ped, slot);
         }

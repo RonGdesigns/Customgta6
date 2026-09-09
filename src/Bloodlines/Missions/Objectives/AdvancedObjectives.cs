@@ -311,6 +311,9 @@ namespace Bloodlines.Missions.Objectives
         {
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            var required = _vehicle?.Invoke();
+            if (_vehicle != null && (required == null || !required.Exists() || required.IsDead))
+            { Fail("The required work vehicle was lost. Restart the mission."); return; }
 
             for (int i = 0; i < _sites.Count; i++)
             {

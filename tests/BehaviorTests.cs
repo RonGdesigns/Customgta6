@@ -14,9 +14,9 @@ public static partial class RegressionTests
   ai.Update(CrewSlot.Guess,driver,passenger);ai.Update(CrewSlot.Ice,other,passenger);
   Check(ai.StateOf(CrewSlot.Guess)==CompanionState.Driving&&driver.CurrentVehicle==car,"Independent mode preserves the driver when player takes a passenger seat");
   Check(ai.StateOf(CrewSlot.Ice)==CompanionState.Vehicle&&other.CurrentVehicle==car,"Other passenger stays in the shared vehicle during handover");
-  Check(driver.Task.DriveSpeed==30,"Normal cruising uses 2.5 times the previous 12 m/s pace");
+  Check(driver.Task.DriveSpeed==50,"Guess uses the fastest fifty-metre-per-second cruise profile");
   Game.Player.WantedLevel=2;Game.GameTime+=1000;ai.Update(CrewSlot.Guess,driver,passenger);
-  Check(driver.Task.DriveSpeed==45&&driver.Task.Shots==0,"Wanted shared car triggers escape pace without making driver shoot");
+  Check(driver.Task.DriveSpeed==60&&driver.Task.Shots==0,"Wanted shared car triggers escape pace without making driver shoot");
   var attacker=new Ped{RelationshipGroup=2,CombatTarget=passenger,IsInCombat=true};World.Nearby=new[]{attacker};Game.GameTime+=1000;
   ai.Update(CrewSlot.Ice,other,passenger);Check(other.Task.Shots>0&&other.CurrentVehicle==car,"Passenger returns fire with a drive-by task and retains their seat");
   ai.Update(CrewSlot.Guess,driver,passenger);Check(driver.Task.Shots==0&&driver.CurrentVehicle==car,"Driver remains driving through the same attack");

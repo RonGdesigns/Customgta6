@@ -100,7 +100,7 @@ namespace Bloodlines.Missions.Campaign
                 {
                     // The engines are the fleet: M11 puts one of them in the Granger.
                     // M11 owns installation; these engines are still cargo.
-                    GameUtils.Subtitle("~g~Seven hundred horsepower, bulletproof casings. Nothing catches us now.", 6000);
+                    GameUtils.Subtitle("~g~Engines secured. Get them to the shop before we talk horsepower.", 6000);
                 })
                 .WithCues("M08_S2_05_GUESS");
         }

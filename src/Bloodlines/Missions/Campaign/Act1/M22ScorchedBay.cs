@@ -68,8 +68,8 @@ namespace Bloodlines.Missions.Campaign
                     ReleaseContainer();
                     // Thirty tons in four feet of water: the campaign's bank until M24
                     // starts dredging it back out.
-                    context.State.AlamoGoldDredgedTons = 0f;
-                    context.State.CashOnHand += 150000;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                 })
                 .AfterCues("M22_S1_01_GUESS");
 
@@ -83,8 +83,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context =>
                 {
                     // Act I closes on a loss, not a payday, and the save records both.
-                    context.State.Safehouses["cypressFoundry"] = false;
-                    context.State.Save();
+                    // Loss is committed with mission completion, including on retry.
                     GameUtils.Subtitle("~y~When we come back to Los Santos, we come back as an army.", 7000);
                 })
                 .WithCues("M22_S1_02_ICE", "M22_S1_03_GOHAN", "M22_S1_04_GUESS", "M22_S1_05_ICE", "M22_S1_06_GOHAN");

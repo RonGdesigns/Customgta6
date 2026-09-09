@@ -10,7 +10,7 @@ namespace Bloodlines.Crew
     /// <summary>Acquire separate road transport and recover it only outside the camera.</summary>
     public sealed class CompanionConvoy
     {
-        private sealed class Ride { public Vehicle Vehicle; public int NextAttempt, EntryStarted; }
+        private sealed class Ride { public Vehicle Vehicle; public int NextAttempt, EntryStarted, NextShot; public bool Intercepting; }
         private readonly Dictionary<CrewSlot, Ride> _rides = new Dictionary<CrewSlot, Ride>();
         public Func<CrewSlot, bool> AllowCatchupTeleport { get; set; }
         public Func<Ped, bool> IsCrewMember { get; set; }
@@ -21,6 +21,14 @@ namespace Bloodlines.Crew
             _rides.Remove(slot);
         }
         public void Clear() { foreach (var slot in new List<CrewSlot>(_rides.Keys)) Forget(slot); }
+        private static void StopTrafficDriver(Ped ped, Ride ride, Ped occupant)
+        {
+            if (Game.GameTime < ride.NextShot) return;
+            ride.NextShot = Game.GameTime + 2000;
+            if (ped.Position.DistanceTo(occupant.Position) <= 50f && Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, ped, occupant, 17))
+                Function.Call(Hash.TASK_SHOOT_AT_ENTITY, ped, occupant, 1200, Game.GenerateHash("FIRING_PATTERN_BURST_FIRE"));
+            else ped.Task.GoTo(ride.Vehicle.Position);
+        }
         public void Update(CrewSlot slot, Ped ped, Ped leader, CompanionDriver driver)
         {
             if (leader == null || !leader.Exists() || ped == null || !ped.Exists() || ped.IsDead) return;
@@ -63,9 +71,25 @@ namespace Bloodlines.Crew
                     driver.Update(slot, ped);
                     return;
                 }
+                if (ride.Intercepting)
+                {
+                    var occupant = ride.Vehicle.GetPedOnSeat(VehicleSeat.Driver);
+                    if (occupant != null && (occupant.Handle == leader.Handle || occupant.Handle == Game.Player.Character.Handle || IsCrewMember?.Invoke(occupant) == true))
+                    { GameUtils.SafeRelease(ride.Vehicle); ride.Vehicle = null; ride.Intercepting = false; return; }
+                    if (occupant == null || !occupant.Exists() || occupant.IsDead || ride.Vehicle.Speed < 2f)
+                    {
+                        ride.Intercepting = false; ride.EntryStarted = Game.GameTime;
+                        ped.Task.EnterVehicle(ride.Vehicle, VehicleSeat.Driver, 20000, 2f, EnterVehicleFlags.None);
+                        return;
+                    }
+                    if (Game.GameTime - ride.EntryStarted > 6000)
+                    { GameUtils.SafeRelease(ride.Vehicle); ride.Vehicle = null; ride.Intercepting = false; ride.NextAttempt = Game.GameTime + 3000; return; }
+                    StopTrafficDriver(ped, ride, occupant); return;
+                }
                 if (Game.GameTime - ride.EntryStarted < 20000) return;
                 GameUtils.SafeRelease(ride.Vehicle); ride.Vehicle = null;
             }
+            Vehicle selected = null; float best = float.MaxValue;
             foreach (var vehicle in World.GetNearbyVehicles(ped.Position, 90f))
             {
                 if (vehicle == null || !vehicle.Exists() || !vehicle.IsDriveable || vehicle.IsPersistent ||
@@ -81,9 +105,20 @@ namespace Bloodlines.Crew
                 if (crewAboard) continue;
                 var occupant = vehicle.GetPedOnSeat(VehicleSeat.Driver);
                 if (occupant != null && (occupant.Handle == Game.Player.Character.Handle || (IsCrewMember != null && IsCrewMember(occupant)))) continue;
-                ride.Vehicle = vehicle; vehicle.IsPersistent = true; ride.EntryStarted = Game.GameTime;
-                ped.Task.EnterVehicle(vehicle, VehicleSeat.Driver, 20000, 2f, EnterVehicleFlags.None);
-                Logger.Debug(Protagonist.Of(slot).Handle + " taking nearby transport to catch up.");
+                float range = vehicle.Position.DistanceTo(ped.Position);
+                // Prefer parked/empty cars; an on-foot actor cannot intercept fast traffic.
+                if (vehicle.Speed > 12f || vehicle.Speed > 2f && range > 45f) continue;
+                float score = range + (occupant != null && occupant.IsAlive ? 35f : 0f) + vehicle.Speed * 5f;
+                if (score < best) { selected = vehicle; best = score; }
+            }
+            if (selected != null)
+            {
+                ride.Vehicle = selected; selected.IsPersistent = true; ride.EntryStarted = Game.GameTime;
+                var occupant = selected.GetPedOnSeat(VehicleSeat.Driver);
+                ride.Intercepting = selected.Speed > 2f && occupant != null && occupant.Exists() && occupant.IsAlive;
+                if (ride.Intercepting) StopTrafficDriver(ped, ride, occupant);
+                else ped.Task.EnterVehicle(selected, VehicleSeat.Driver, 20000, 2f, EnterVehicleFlags.None);
+                Logger.Debug(Protagonist.Of(slot).Handle + (ride.Intercepting ? " stopping traffic for transport." : " taking nearby transport to catch up."));
                 return;
             }
             // Keep moving if there is no car nearby; no visible teleport into the player's car.

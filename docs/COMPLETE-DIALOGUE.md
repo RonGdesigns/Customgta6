@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 30 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 36 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -21,7 +21,7 @@ Delivery: Private channel; no recognition or shared conversation
 Trigger: intro
 
 **GOHAN** `M01_SCENE_INTRO_03_GOHAN`
-Different client, same dockyard. The laptop behind their work station holds Mateo's payment ledger. I'm at the service entrance; I need to reach it before the security shift.
+Different client, same dockyard. The laptop at the west service station holds Mateo's payment ledger. It's separate from his meeting point. I'm at the service entrance; I need to reach it before the security shift.
 Delivery: Private channel; no recognition or shared conversation
 Trigger: intro
 
@@ -1406,7 +1406,7 @@ I heard your boat before I saw it. For once I knew somebody was waiting. Don't m
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M28 - OFF THE GRID (future gameplay)
+## M28 - OFF THE GRID (scripted)
 
 ### Intro
 
@@ -1449,7 +1449,7 @@ Then we steal power we can store. I'm done making plans that depend on nobody no
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M29 - DUST & DIESEL (future gameplay)
+## M29 - DUST & DIESEL (scripted)
 
 ### Intro
 
@@ -1492,7 +1492,7 @@ I can run the ridge with those parts. I'll tell you when it stops feeling like a
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M30 - REDLINE RIDGE (future gameplay)
+## M30 - REDLINE RIDGE (scripted)
 
 ### Intro
 
@@ -3489,7 +3489,7 @@ Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call w
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM04 - DEAD DROP QUARRY (future gameplay)
+## SM04 - DEAD DROP QUARRY (scripted)
 
 ### Intro
 
@@ -3532,7 +3532,7 @@ Good. No single point of failure, including the man carrying the rifle.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM05 - BLACK BOX ESTUARY (future gameplay)
+## SM05 - BLACK BOX ESTUARY (scripted)
 
 ### Intro
 
@@ -3575,7 +3575,7 @@ Copy. Work's done for tonight. You can stop being useful long enough to eat with
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM06 - CANYON RUNNER (future gameplay)
+## SM06 - CANYON RUNNER (scripted)
 
 ### Intro
 

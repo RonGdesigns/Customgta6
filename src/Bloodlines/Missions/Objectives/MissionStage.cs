@@ -105,6 +105,7 @@ namespace Bloodlines.Missions.Objectives
 
         /// <summary>The objective whose label should be on screen right now.</summary>
         public Objective Current =>
-            Objectives.FirstOrDefault(objective => !objective.IsFinished && !string.IsNullOrEmpty(objective.Label));
+            Objectives.FirstOrDefault(objective => !objective.IsPassive && !objective.IsFinished && !string.IsNullOrEmpty(objective.Label))
+            ?? Objectives.FirstOrDefault(objective => !objective.IsFinished && !string.IsNullOrEmpty(objective.Label));
     }
 }

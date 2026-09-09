@@ -71,7 +71,7 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("M25_S1_01_ICE");
 
             yield return new MissionStage("Hold the bridge",
-                    new SurviveWavesObjective("Hold the bridge — thermal scope, they have no cover.",
+                    new SurviveWavesObjective("Ice: defeat the three red-marked assault waves. Use cover and your rifle.",
                         SpawnHunterWave, 3, 7000))
                 .PlayedBy(CrewSlot.Ice);
 
@@ -87,7 +87,7 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Get in the boat.", () => _boat))
                 .OnExit(context =>
                 {
-                    context.State.CashOnHand += 40000;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~The sheriff's department doesn't chase anyone down this gorge.", 5000);
                 })
                 .AfterCues("M25_S1_03_ICE");

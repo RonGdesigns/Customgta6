@@ -31,7 +31,7 @@ namespace Bloodlines.Missions
         public string CurrentMissionId { get; set; } = "";
         public int ActiveAct { get; private set; } = 1;
         public HashSet<string> Completed { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        public CrewSlot LastHero { get; private set; } = CrewSlot.Ice;
+        public CrewSlot LastHero { get; private set; } = Protagonist.StartingSlot;
         public Vector3 LastLocation { get; private set; }
 
         // --- economy (bible §2 and the heist payouts) ---
@@ -60,6 +60,8 @@ namespace Bloodlines.Missions
         };
 
         public Dictionary<string, HashSet<uint>> Weapons { get; } = new Dictionary<string, HashSet<uint>>(StringComparer.OrdinalIgnoreCase);
+
+        public Dictionary<string, object> CharacterMemory { get; } = new Dictionary<string, object>();
 
         public HashSet<string> ReadDispatches { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -110,7 +112,7 @@ namespace Bloodlines.Missions
                 {
                     state.LastLocation = new Vector3(Json.Float(location, "x"), Json.Float(location, "y"),
                         Json.Float(location, "z"));
-                    if (Enum.TryParse(Json.String(location, "hero", "Ice"), true, out CrewSlot hero))
+                    if (Enum.TryParse(Json.String(location, "hero", "Guess"), true, out CrewSlot hero) && Enum.IsDefined(typeof(CrewSlot), hero))
                     {
                         state.LastHero = hero;
                     }
@@ -124,6 +126,9 @@ namespace Bloodlines.Missions
                 Merge(state.Safehouses, Json.Object(root.TryGetValue("unlockedSafehouses", out var s) ? s : null));
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
 
+                var memory = Json.Object(root.TryGetValue("characterMemory", out var m) ? m : null);
+                foreach (var hero in Protagonist.All)
+                    if (memory.TryGetValue(hero.Slot.ToString(), out var record)) state.CharacterMemory[hero.Slot.ToString()] = record;
                 var lockers = Json.Object(root.TryGetValue("weaponLockers", out var w) ? w : null);
                 foreach (var hero in Protagonist.All)
                 {
@@ -170,13 +175,40 @@ namespace Bloodlines.Missions
         {
             if (string.IsNullOrEmpty(missionId)) return;
 
-            Completed.Add(missionId);
+            if (!Completed.Add(missionId)) return;
+            AwardCompletion(missionId);
 
             var next = NextPlayable(catalog);
             CurrentMissionId = next?.Id ?? "";
             if (next != null) ActiveAct = (int)next.Act;
 
             Save();
+        }
+
+        private void AwardCompletion(string id)
+        {
+            switch (id)
+            {
+                case "M03": Safehouses["cypressFoundry"] = true; break;
+                case "M05": CashOnHand += 50000; break;
+                case "M11": FleetUpgrades["grangerTurbineInstalled"] = true; Safehouses["burroHeightsChopShop"] = true; break;
+                case "M14": Safehouses["mckenzieAirfieldHangar"] = true; break;
+                case "M15": CashOnHand += 15000; break;
+                case "M17": FleetUpgrades["krakenSubmarineReinforced"] = true; break;
+                case "M22": Safehouses["cypressFoundry"] = false; AlamoGoldDredgedTons = 0; CashOnHand += 150000; break;
+                case "M23": Safehouses["grandSenoraRadarBunker"] = true; break;
+                case "M24": AlamoGoldDredgedTons += 5; CashOnHand += 200000; break;
+                case "M25": CashOnHand += 40000; break;
+                case "M27": CashOnHand += 75000; break;
+                case "M28": CashOnHand += 20000; FleetUpgrades["northernRelayDisabled"] = true; break;
+                case "M29": CashOnHand += 35000; FleetUpgrades["bunkerFuelReserves"] = true; break;
+                case "M30": CashOnHand += 45000; FleetUpgrades["satellitePartsSecured"] = true; break;
+                case "SM04": CashOnHand += 15000; FleetUpgrades["quarryRadiosRecovered"] = true; break;
+                case "SM05": CashOnHand += 15000; FleetUpgrades["estuaryTelemetry"] = true; break;
+                case "SM06": CashOnHand += 25000; FleetUpgrades["airfieldFuelReserves"] = true; break;
+                case "SM02": FleetUpgrades["surveillanceWormInstalled"] = true; break;
+                case "SM03": CashOnHand += 25000; FleetUpgrades["racingTransmissionInstalled"] = true; break;
+            }
         }
 
         /// <summary>Records where the crew was, for the save's last-known-location field.</summary>
@@ -194,9 +226,7 @@ namespace Bloodlines.Missions
         public MissionDefinition NextPlayable(MissionCatalog catalog)
         {
             return catalog.Playable.FirstOrDefault(mission =>
-                       !IsComplete(mission.Id) && PrerequisiteMet(mission))
-                   ?? catalog.Playable.FirstOrDefault(mission => !IsComplete(mission.Id))
-                   ?? catalog.Playable.FirstOrDefault();
+                       !IsComplete(mission.Id) && PrerequisiteMet(mission));
         }
 
         public bool PrerequisiteMet(MissionDefinition mission)
@@ -210,6 +240,7 @@ namespace Bloodlines.Missions
             Completed.Clear();
             ReadDispatches.Clear();
             Weapons.Clear();
+            CharacterMemory.Clear();
             CurrentMissionId = "";
             ActiveAct = 1;
             CashOnHand = 0;
@@ -220,7 +251,7 @@ namespace Bloodlines.Missions
             foreach (var pair in defaults.Safehouses) Safehouses[pair.Key] = pair.Value;
             FleetUpgrades.Clear();
             foreach (var pair in defaults.FleetUpgrades) FleetUpgrades[pair.Key] = pair.Value;
-            LastHero = CrewSlot.Ice;
+            LastHero = Protagonist.StartingSlot;
             LastLocation = Vector3.Zero;
             Save();
         }
@@ -257,6 +288,7 @@ namespace Bloodlines.Missions
                 { "unlockedSafehouses", Safehouses.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },
+                { "characterMemory", CharacterMemory },
                 { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }
             };
 
@@ -271,7 +303,7 @@ namespace Bloodlines.Missions
                 else File.Move(temporary, _path);
                 Logger.Debug("Save written to " + _path);
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
                 Logger.Error("Could not write the save file", ex);
             }

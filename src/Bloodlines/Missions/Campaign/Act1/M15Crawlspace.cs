@@ -50,6 +50,8 @@ namespace Bloodlines.Missions.Campaign
             player.Weapons.Give(WeaponHash.StunGun, 1, false, true);
 
             SpawnWatchmen();
+            foreach (var guard in _watchmen) RequireSurvivor(guard, "The dock watchmen must survive. Use the stun gun and leave them alive.");
+            Ctx.Crew.CompanionsHoldPosition = true;
             Station(CrewSlot.Ice, _entry + new Vector3(-12f, 0f, 0f));
             Station(CrewSlot.Guess, _exit + new Vector3(10f, 0f, 0f));
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.StunGun, 100, true, true);
@@ -83,7 +85,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Out clean",
                     new ReachZoneObjective("Leave the way you came in.", () => _exit, 8f))
-                .OnExit(context => context.State.CashOnHand += 15000);
+                ;
         }
 
         private void SpawnWatchmen()

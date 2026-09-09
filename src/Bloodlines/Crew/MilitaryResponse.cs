@@ -11,8 +11,10 @@ namespace Bloodlines.Crew
     /// <summary>A bounded sixth wanted tier above GTA's native five-star limit.</summary>
     public sealed class MilitaryResponse
     {
-        private sealed class Unit { public int ReadyAt, NextShot, LastMoved, NextReport, TargetHandle, NextDrive; public Vector3 LastPosition; public bool Tasked, Convoy, Approaching; public Vehicle Vehicle; public Ped Driver; public readonly List<Ped> Crew = new List<Ped>(); }
+        private sealed class Unit { public Blip Indicator; public int RetiredAt; public int ReadyAt, NextShot, LastMoved, NextReport, TargetHandle, NextDrive; public Vector3 LastPosition; public bool Tasked, Convoy, Approaching; public Vehicle Vehicle; public Ped Driver; public readonly List<Ped> Crew = new List<Ped>(); }
         private readonly List<Unit> _units = new List<Unit>();
+        private readonly List<Unit> _aftermath = new List<Unit>();
+        private int _nextIndicator;
         private readonly PersonalWanted _wanted;
         private CrewSlot? _owner;
         public static readonly string[] Helicopters = { "buzzard", "hunter", "akula", "savage", "annihilator2" };
@@ -38,6 +40,14 @@ namespace Bloodlines.Crew
         public void Update(CrewSlot slot, bool enabled, RelationshipGroup crewGroup, bool paused = false)
         {
             int elapsed = Math.Max(0, Game.GameTime - _lastUpdate); _lastUpdate = Game.GameTime;
+            MaintainAftermath();
+            if (Game.GameTime >= _nextIndicator)
+            {
+                _nextIndicator = Game.GameTime + 500;
+                var color = (Game.GameTime / 500) % 2 == 0 ? BlipColor.Red : BlipColor.Blue;
+                foreach (var unit in _units)
+                    if (unit.Indicator != null && unit.Indicator.Exists()) unit.Indicator.Color = color;
+            }
             if (enabled && paused && Game.Player.WantedLevel == 5 && _wanted.Get(slot) == 6) DrawWanted();
             if (enabled && paused) { if (_atFive >= 0) _atFive += elapsed; return; }
             var player = Game.Player.Character;
@@ -58,7 +68,7 @@ namespace Bloodlines.Crew
                 Trigger(slot); GameUtils.Notify("~r~SIXTH TIER: military response authorized.");
             }
             DrawWanted();
-            int removed = _units.RemoveAll(unit => { if (unit.Vehicle != null && unit.Vehicle.Exists() && !unit.Vehicle.IsDead && unit.Driver != null && unit.Driver.Exists() && unit.Driver.IsAlive) return false; Release(unit); return true; });
+            int removed = _units.RemoveAll(unit => { if (unit.Vehicle != null && unit.Vehicle.Exists() && !unit.Vehicle.IsDead && unit.Driver != null && unit.Driver.Exists() && unit.Driver.IsAlive) return false; RetireLoss(unit); return true; });
             removed += _units.RemoveAll(unit => RetireStranded(unit, player));
             if (removed > 0) _nextWave = Math.Max(_nextWave, Game.GameTime + 4000);
             if (Game.GameTime >= _nextWave && _units.Count < 3)
@@ -144,6 +154,7 @@ namespace Bloodlines.Crew
                 unit.Driver = World.CreatePed(soldierModel, point, target.Heading);
                 if (unit.Driver == null || !unit.Driver.Exists()) { Release(unit); return false; }
                 var group = World.AddRelationshipGroup("BLOODLINES_MILITARY");
+                AllyWithPolice(group);
                 Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, group, crewGroup);
                 Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, crewGroup, group);
                 Configure(unit.Driver, group); unit.Driver.SetIntoVehicle(unit.Vehicle, VehicleSeat.Driver);
@@ -171,12 +182,58 @@ namespace Bloodlines.Crew
                 unit.ReadyAt = Game.GameTime + 1000; unit.NextShot = Game.GameTime + 8000;
                 Logger.Info("Military: spawned " + (convoy ? "convoy" : tank ? "tank" : heli) + " with " + unit.Crew.Count + " rear gunners.");
                 unit.LastPosition = point; unit.LastMoved = Game.GameTime; unit.NextReport = Game.GameTime + 15000;
+                unit.Indicator = unit.Vehicle.AddBlip();
+                unit.Indicator.Sprite = ground ? (tank ? BlipSprite.Tank : BlipSprite.PoliceCarDot) : BlipSprite.PoliceHelicopter;
+                unit.Indicator.Color = BlipColor.Red; unit.Indicator.Scale = .8f;
+                unit.Indicator.IsFriendly = false; unit.Indicator.IsShortRange = false;
+                unit.Indicator.Name = tank ? "Military tank" : convoy ? "Military convoy" : "Military helicopter";
                 _units.Add(unit); _nextTask = Math.Min(_nextTask, unit.ReadyAt);
                 Logger.Info("Military: crew seated; deferring attack until the next game tick.");
                 return true;
             }
             catch { Release(unit); throw; }
             finally { vehicleModel.MarkAsNoLongerNeeded(); soldierModel.MarkAsNoLongerNeeded(); }
+        }
+        // Only our own law-enforcement groups are linked. Native cops retain their
+        // normal wanted-level decisions and relationships with ordinary civilians.
+        internal static void AllyWithPolice(RelationshipGroup group)
+        {
+            foreach (string name in new[] { "COP", "BLOODLINES_MILITARY", "BLOODLINES_LIFE_POLICE" })
+            {
+                int ally = Game.GenerateHash(name);
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 0, group, ally);
+                Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 0, ally, group);
+            }
+        }
+        private void RetireLoss(Unit unit)
+        {
+            GameUtils.SafeDelete(unit.Indicator); unit.Indicator = null;
+            unit.RetiredAt = Game.GameTime;
+            // Keep the real vehicle and bodies intact so physics, fire, wreckage
+            // and helicopter falls can finish. Never synthesize an explosion.
+            _aftermath.Add(unit);
+            if (_aftermath.Count > 6) { ReleaseAftermath(_aftermath[0]); _aftermath.RemoveAt(0); }
+            Logger.Info("Military: unit lost; preserving physical aftermath and scheduling a staggered replacement.");
+        }
+        private void MaintainAftermath()
+        {
+            var player = Game.Player.Character;
+            _aftermath.RemoveAll(unit =>
+            {
+                int age = Game.GameTime - unit.RetiredAt;
+                bool nearby = unit.Vehicle != null && unit.Vehicle.Exists() &&
+                    (unit.Vehicle.IsOnScreen || player != null && player.Exists() && unit.Vehicle.Position.DistanceTo(player.Position) < 150f);
+                if (age < 60000 || nearby && age < 120000) return false;
+                ReleaseAftermath(unit); return true;
+            });
+        }
+        private static void ReleaseAftermath(Unit unit)
+        {
+            GameUtils.SafeDelete(unit.Indicator); unit.Indicator = null;
+            // Hand off to normal engine cleanup; even an expired wreck is not deleted.
+            GameUtils.SafeRelease(unit.Driver);
+            foreach (var ped in unit.Crew) GameUtils.SafeRelease(ped);
+            GameUtils.SafeRelease(unit.Vehicle);
         }
         private static string Kind(Unit unit) => unit.Convoy ? "convoy" : unit.Vehicle.Model.IsHelicopter ? "helicopter" : "tank";
         private static bool TryArrivalPoint(Ped target, bool ground, out Vector3 point)
@@ -252,6 +309,7 @@ namespace Bloodlines.Crew
         }
         private static void Configure(Ped ped, RelationshipGroup group)
         { ped.IsPersistent = true; ped.BlockPermanentEvents = true; ped.RelationshipGroup = group; ped.Health = 250; ped.Armor = 75; ped.Accuracy = 25; ped.Weapons.Give(WeaponHash.CarbineRifle, 600, true, true);
+            Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ped, false, false);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ped, 1, true);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ped, 3, false);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ped, 5, true);
@@ -261,6 +319,10 @@ namespace Bloodlines.Crew
         }
         private static void Release(Unit unit)
         {
+            GameUtils.SafeDelete(unit.Indicator); unit.Indicator = null;
+            if (unit.Vehicle != null && unit.Vehicle.Exists() && unit.Vehicle.IsDead ||
+                unit.Driver != null && unit.Driver.Exists() && unit.Driver.IsDead)
+            { ReleaseAftermath(unit); return; }
             bool borrowed = false;
             if (unit.Vehicle != null && unit.Vehicle.Exists())
                 for (int seat = -1; seat < unit.Vehicle.PassengerCapacity; seat++)
@@ -279,6 +341,8 @@ namespace Bloodlines.Crew
         {
             var old = _units.ToArray(); _units.Clear(); _owner = null; _atFive = -1; _nextWave = 0;
             foreach (var unit in old) try { Release(unit); } catch (Exception ex) { Logger.Error("Military cleanup", ex); }
+            var aftermath = _aftermath.ToArray(); _aftermath.Clear();
+            foreach (var unit in aftermath) try { ReleaseAftermath(unit); } catch (Exception ex) { Logger.Error("Military aftermath release", ex); }
         }
     }
 }

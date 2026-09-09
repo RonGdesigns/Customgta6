@@ -137,7 +137,7 @@ namespace Bloodlines.Missions.Objectives
             int alive = targets.Count(ped => ped.IsAlive);
             if (_showCount) Label = _instruction + " Remaining: " + alive;
 
-            foreach (var target in _targets()) if (target != null && target.Exists() && target.IsAlive) ObjectiveMarkers.Show(target.Position);
+            foreach (var target in _targets()) if (target != null && target.Exists() && target.IsAlive) ObjectiveMarkers.Show(target.Position, BlipColor.Red);
             if (alive <= _allowedSurvivors && IsOwnerActive(context))
             {
                 Complete();
@@ -170,7 +170,7 @@ namespace Bloodlines.Missions.Objectives
             foreach (var ped in targets)
             {
                 if (ped.IsBeingStunned || ped.IsCuffed) _subdued.Add(ped.Handle);
-                if (!_subdued.Contains(ped.Handle)) ObjectiveMarkers.Show(ped.Position);
+                if (!_subdued.Contains(ped.Handle)) ObjectiveMarkers.Show(ped.Position, BlipColor.Yellow);
             }
             int left = targets.Count(p => !_subdued.Contains(p.Handle));
             Label = "Stun the marked guards; keep them alive. Remaining: " + left;
@@ -202,7 +202,7 @@ namespace Bloodlines.Missions.Objectives
         {
             if (_current.Any(p => p == null || !p.Exists())) { Fail("A wave lost a required hostile. Restart the mission."); return; }
             _current.RemoveAll(ped => ped.IsDead);
-            foreach (var ped in _current) ObjectiveMarkers.Show(ped.Position);
+            foreach (var ped in _current) ObjectiveMarkers.Show(ped.Position, BlipColor.Red);
 
             if (_current.Count > 0)
             {
@@ -249,9 +249,9 @@ namespace Bloodlines.Missions.Objectives
         public override void Update(MissionContext context)
         {
             var vehicle = _vehicle();
-            if (vehicle == null || !vehicle.Exists())
+            if (vehicle == null || !vehicle.Exists() || vehicle.IsDead || !vehicle.IsDriveable)
             {
-                Fail("The vehicle is gone.");
+                Fail("The required vehicle is gone or destroyed.");
                 return;
             }
 
@@ -363,7 +363,6 @@ namespace Bloodlines.Missions.Objectives
                 if (IsOwnerActive(context)) Complete();
                 return;
             }
-            ObjectiveMarkers.Show(vehicle.Position);
             GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), 1.5f);
         }
     }

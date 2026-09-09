@@ -108,7 +108,7 @@ namespace Bloodlines.Missions.Campaign
                     Game.Player.WantedLevel = 0;
                     // The foundry is the crew's Act I base — opening it here is what the
                     // mission is actually for.
-                    context.State.Unlock("cypressFoundry");
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~The foundry is operational.", 5000);
                 });
         }

@@ -33,7 +33,12 @@ namespace Bloodlines.Core
             if (location == null) { GameUtils.Notify("~y~Apartment location is missing."); return; }
             // Each penthouse occupies a different floor; no overlapping themes are loaded.
             string ipl = luxury ? (_crew.ActiveSlot == CrewSlot.Ice ? "apa_v_mp_h_01_a" : _crew.ActiveSlot == CrewSlot.Gohan ? "apa_v_mp_h_01_b" : "apa_v_mp_h_01_c") : null;
-            Apartment.Begin(location.Position, ipl, true);
+            // Room-centre probes identify the requested floor when a doorway's
+            // coordinate lookup returns zero. Teleport still uses LocationBook.
+            Vector3? probe = !luxury ? (Vector3?)null : _crew.ActiveSlot == CrewSlot.Ice
+                ? new Vector3(-787.7805f, 334.9232f, 215.8384f) : _crew.ActiveSlot == CrewSlot.Gohan
+                ? new Vector3(-773.2258f, 322.8252f, 194.8862f) : new Vector3(-787.7805f, 334.9232f, 186.1134f);
+            Apartment.Begin(location.Position, ipl, true, probe);
         }
         public void ExitApartment() { if (Apartment.Inside && !Apartment.Busy) Apartment.Begin(Apartment.ExitPosition, null, false); }
         public void StopApartment() { Apartment.Cancel(); }

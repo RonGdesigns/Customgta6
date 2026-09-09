@@ -30,9 +30,14 @@ namespace Bloodlines
         private readonly MissionMarkers _missionMarkers;
         private readonly DeathController _death;
         private readonly FleetGarage _garage;
+        private readonly WorldTuning _worldTuning = new WorldTuning();
+        private readonly TacticalResponse _tactics = new TacticalResponse();
+        private readonly MissionHandoff _handoff = new MissionHandoff();
+        private readonly ShopService _shops;
         private readonly CrewHomes _homes;
         private readonly CampaignDispatches _dispatches;
         private readonly WeaponProgression _weapons;
+        private readonly CrewMemory _memory;
         private readonly DevMenu _menu;
         private readonly SurveyMode _survey;
         private readonly LocationBook _locations;
@@ -63,6 +68,7 @@ namespace Bloodlines
 
             CrewAppearance.Load(Path.Combine(root, "Bloodlines.Appearance.ini"));
             _crew = new CrewRoster(_config);
+            _memory = new CrewMemory(_state);
             _weapons = new WeaponProgression(_state); _crew.Arsenal = _weapons;
             _homes = new CrewHomes(_crew, _state, _locations, _weapons);
             _crew.CompanionAI.Life.HomeDestination = _homes.Position;
@@ -87,6 +93,9 @@ namespace Bloodlines
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
                 _state, _dialogue, _data, _survey, _death, _homes, _dispatches);
+            _shops = new ShopService(_crew, _state, _weapons, _memory);
+            _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
+            _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
             _homes.OpenMenu = _menu.OpenHomePage;
             _homes.RouteNextLead = _missionMarkers.RouteNextAvailable;
             _homes.ApplyFleetUpgrade = _garage.Update;
@@ -105,7 +114,7 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
-            Step("controller ability", () => _abilities.HandleController(_homes.Apartment.Inside || _homes.Apartment.Busy || _menu.IsOpen || _characterWheel.IsOpen ||
+            Step("controller ability", () => _abilities.HandleController(_missions.RequiredSwitch.HasValue || _homes.Apartment.Inside || _homes.Apartment.Busy || _menu.IsOpen || _characterWheel.IsOpen ||
                 _cutscenes.IsActive || _death.IsHandling || ControllerInput.Pressed(GTA.Control.CharacterWheel)));
             // Each subsystem is stepped separately. Wrapping the whole tick in one
             // try/catch meant a fault in the first line stopped every line after it:
@@ -133,13 +142,19 @@ namespace Bloodlines
                 _homes.Clear();
                 Step("cutscene", _cutscenes.Update);
                 Step("abort hold", HandleAbortHold);
+            Step("mission handoff", () => _handoff.Update(_crew, _missions.IsRunning ? _missions.RequiredSwitch : null));
+            if (_handoff.IsWaiting) Step("stop ability during handoff", _abilities.Stop);
                 return;
             }
             _crew.CompanionAI.MissionActive = _missions.IsRunning;
+            Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning));
             Step("crew", _crew.Update);
             Step("military response", () => _crew.CompanionAI.Military.Update(_crew.ActiveSlot, _crew.IsDeployed && !_missions.IsRunning && !_survey.IsActive, _crew.CrewGroup, _menu.IsOpen));
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
+            Step("world speed", () => _worldTuning.Update(_crew));
+            Step("tactical response", () => _tactics.Update(_crew));
+            Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive));
             Step("weapon ownership", () => _weapons.Update(_crew));
             Step("homes", () => _homes.Update(!_missions.IsRunning && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
             ObjectiveMarkers.ActiveSlot = _crew.ActiveSlot;
@@ -161,6 +176,7 @@ namespace Bloodlines
             if (_missions.IsRunning && !_menu.IsOpen) MissionObjectiveHud.Draw(_missions.CurrentObjective);
             Step("controller switch", HandleControllerSwitch);
             Step("abort hold", HandleAbortHold);
+            Step("mission handoff", () => _handoff.Update(_crew, _missions.IsRunning ? _missions.RequiredSwitch : null));
         }
 
         private static void Step(string name, Action step)
@@ -304,7 +320,7 @@ namespace Bloodlines
             if (key == _config.SwitchGuessKey) { _switching.TrySwitch(CrewSlot.Guess); return true; }
             if (key == _config.SwitchNextKey) { CycleCrew(1); return true; }
             if (key == _config.SwitchPrevKey) { CycleCrew(-1); return true; }
-            if (key == _config.AbilityKey) { _abilities.Toggle(); return true; }
+            if (key == _config.AbilityKey) { if (!_missions.RequiredSwitch.HasValue) _abilities.Toggle(); return true; }
             if (key == _config.MissionStartKey) { StartMission(_missionMarkers.Nearby); return true; }
             if (key == _config.DeployCrewKey) { ToggleDeployment(); return true; }
             if (key == _config.AbortKey && _abortHeldSince == 0) { _abortHeldSince = Game.GameTime; return true; }
@@ -349,7 +365,7 @@ namespace Bloodlines
                 return;
             }
 
-            var next = requested ?? _state.NextPlayable(_catalog);
+            var next = requested ?? (_missions.RetryAvailable ? _missions.LastAttempted : _state.NextPlayable(_catalog));
             if (next == null)
             {
                 GameUtils.Notify("~y~No scripted missions available.");
@@ -393,6 +409,7 @@ namespace Bloodlines
                 return;
             }
 
+            _memory.Restore(_crew);
             GameUtils.Notify("~b~Crew up.~s~ " +
                              _config.SwitchIceKey + "/" + _config.SwitchGohanKey + "/" + _config.SwitchGuessKey +
                              " to switch, " + _config.AbilityKey + " for ability.");
@@ -404,6 +421,7 @@ namespace Bloodlines
             var player = Game.Player.Character;
             if (_crew.IsDeployed && player != null && player.Exists())
             {
+                if (!_missions.IsRunning && !_death.IsHandling) _memory.Capture(_crew);
                 _state.RecordPosition(_crew.ActiveSlot, _homes.SavePosition);
                 Step("save position", _state.Save);
             }
@@ -416,6 +434,9 @@ namespace Bloodlines
             Step("reset garage", _garage.Reset);
             Step("leave apartment", _homes.StopApartment);
             Step("release DLC cars", _menu.ReleaseVehicles);
+            Step("clear shops", _shops.Clear);
+            Step("restore world tuning", _worldTuning.Reset);
+            Step("reset pursuit tuning", _tactics.Reset);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
             GameUtils.Notify("~y~Crew stood down.");
@@ -424,6 +445,7 @@ namespace Bloodlines
         private void OnAborted(object sender, EventArgs e)
         {
             Logger.Info("Script aborting - tearing down.");
+            Step("save free-roam crew memory", () => { if (!_missions.IsRunning && !_death.IsHandling) { _memory.Capture(_crew); _state.Save(); } });
             Step("close character wheel", _characterWheel.Close);
             Step("stop scene", _cutscenes.Stop);
             Step("stop home markers", _homes.Clear);
@@ -438,6 +460,9 @@ namespace Bloodlines
             Step("clear dialogue", _dialogue.Clear);
             Step("leave apartment", _homes.StopApartment);
             Step("release DLC cars", _menu.ReleaseVehicles);
+            Step("clear shops", _shops.Clear);
+            Step("restore world tuning", _worldTuning.Reset);
+            Step("reset pursuit tuning", _tactics.Reset);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
             Step("restore time", () => Game.TimeScale = 1f);

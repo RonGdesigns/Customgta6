@@ -33,7 +33,7 @@ PREBUILT = os.path.join(REPO, 'prebuilt', 'Bloodlines.dll')
 DEPLOY = os.path.join(REPO, 'build', 'deploy')
 
 DATA_FILES = ['missions.tsv', 'dialogue.tsv', 'anchors.tsv', 'locations.tsv',
-              'campaign_registry.json', 'scenes.tsv', 'mission_starts.tsv']
+              'campaign_registry.json', 'scenes.tsv', 'mission_starts.tsv', 'mission_gameplay.tsv']
 CONFIG_FILES = ['Bloodlines.ini', 'Bloodlines.Locations.ini']
 
 

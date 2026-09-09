@@ -111,7 +111,7 @@ namespace Bloodlines.Missions.Campaign
                 {
                     // Act I ends on information, not a kill: Aegis bought the city council
                     // and needed a three-man ghost squad to justify the contract.
-                    context.State.CashOnHand += 50000;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~y~Aegis built this. All of it. And they're not finished.", 6000);
                 });
         }

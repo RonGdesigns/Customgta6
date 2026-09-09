@@ -1,7 +1,8 @@
 key	x	y	z	heading	kind	status	district_hint
+M01.IceApproach	964.0	-3250.0	6.0	35	land	estimate	Terminal Island Dry-Docks
 M01.CraneNest	982.0	-3235.0	6.0	35	land	estimate	Terminal Island Dry-Docks
 M01.YachtDeck	1017.0	-3182.0	6.0	0	land	estimate	Terminal Island Dry-Docks
-M01.LowerDeckLedger	1010.0	-3196.0	5.0	0	land	estimate	Terminal Island Dry-Docks
+M01.ServiceTerminal	968.0	-3188.0	6.0	0	land	estimate	Terminal Island Dry-Docks
 M01.WarehouseBay	1057.0	-3202.0	6.0	90	land	estimate	Terminal Island Dry-Docks
 M01.PrototypeCar	1053.0	-3205.0	5.9	270	land	estimate	Terminal Island Dry-Docks
 M01.CapoSpawn	1019.0	-3184.0	6.0	0	land	estimate	Terminal Island Dry-Docks
@@ -133,3 +134,27 @@ Apartment.Starter.Interior	347.2686	-999.2955	-99.19622	0	underground	estimate
 Apartment.Luxury.Ice	-786.8663	315.7642	217.6385	0	interior	estimate	
 Apartment.Luxury.Gohan	-774.0126	342.0428	196.6864	0	interior	estimate	
 Apartment.Luxury.Guess	-786.9563	315.6229	187.9136	0	interior	estimate	
+M28.Approach	737	2523	73	0	land	estimate	
+M28.Relay	737	2573	75	0	land	estimate	
+M28.Cover	701	2550	75	0	land	estimate	
+M28.Pickup	641	2479	70	270	land	estimate	
+M28.Response	797	2590	75	180	land	estimate	
+M29.Approach	2414	4996	46	0	land	estimate	
+M29.Cover	2451	5025	46	0	land	estimate	
+M29.Valve	2486	5050	46	0	land	estimate	
+M29.Truck	2473	5007	46	225	land	estimate	
+M29.Delivery	1993	2898	47	0	land	estimate	
+M30.Start	-447	3862	108	180	land	estimate	
+M30.Bend	-685	3996	130	0	land	estimate	
+M30.Exit	-1083	4362	13	0	land	estimate	
+SM04.Approach	2610	2772	122	0	land	estimate	
+SM04.Overlook	2650	2783	122	0	land	estimate	
+SM04.NestOne	2730	2800	123	0	land	estimate	
+SM04.NestTwo	2754	2890	129	0	land	estimate	
+SM05.Shore	-2287	2641	2	0	land	estimate	
+SM05.Boat	-2308	2645	0	0	water	estimate	
+SM05.Buoy	-2435	2635	0	0	water	estimate	
+SM06.Approach	-1108	2700	19	0	land	estimate	
+SM06.Truck	-1130	2692	19	90	land	estimate	
+SM06.Bend	-1466	4433	18	0	land	estimate	
+SM06.Delivery	2126	4780	41	0	land	estimate	

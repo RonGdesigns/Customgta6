@@ -72,8 +72,8 @@ namespace Bloodlines.Missions.Campaign
                 {
                     // The payoff is permanent and mechanical: FleetGarage applies this
                     // profile to the Granger for the rest of the campaign.
-                    context.State.SetUpgrade("grangerTurbineInstalled", true);
-                    context.State.Unlock("burroHeightsChopShop");
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Exhaust temps green. The 3600LX is done.", 5000);
                 })
                 .AfterCues("M11_S1_02_ICE");

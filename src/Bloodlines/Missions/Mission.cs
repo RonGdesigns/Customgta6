@@ -26,6 +26,8 @@ namespace Bloodlines.Missions
     public abstract class Mission
     {
         private readonly List<Entity> _entities = new List<Entity>();
+        private readonly Dictionary<Ped, string> _survivors = new Dictionary<Ped, string>();
+        protected void RequireSurvivor(Ped ped, string reason) { if (ped != null) _survivors[ped] = reason; }
         private readonly List<Blip> _blips = new List<Blip>();
 
         protected MissionContext Ctx { get; private set; }
@@ -45,6 +47,7 @@ namespace Bloodlines.Missions
         /// <summary>Stage index, for the checkpoint manager and the QA harness.</summary>
         public int CurrentStage => Stage;
         public string CurrentObjective { get; protected set; } = "";
+        public Crew.CrewSlot? RequiredSwitch { get; protected set; }
 
         protected int StageStartedAt { get; private set; }
 
@@ -83,6 +86,8 @@ namespace Bloodlines.Missions
 
             try
             {
+                foreach (var survivor in _survivors)
+                    if (!survivor.Key.Exists() || survivor.Key.IsDead) { Fail(survivor.Value); return; }
                 OnUpdate();
             }
             catch (Exception ex)
@@ -195,8 +200,12 @@ namespace Bloodlines.Missions
             GameUtils.SafeRelease(entity);
         }
 
+        protected virtual void StopObjectives() { }
         public void Cleanup()
         {
+            try { StopObjectives(); } catch (Exception ex) { Logger.Error(Id + " objective shutdown", ex); }
+            ObjectiveMarkers.Clear();
+            try { Ctx?.Cutscenes?.Stop(); } catch (Exception ex) { Logger.Error(Id + " scene shutdown", ex); }
             try
             {
                 OnCleanup();
@@ -228,9 +237,11 @@ namespace Bloodlines.Missions
                         }
                     if (occupied) { GameUtils.SafeRelease(entity); continue; }
                 }
-                GameUtils.SafeDelete(entity);
+                if (entity.IsDead) GameUtils.SafeRelease(entity);
+                else GameUtils.SafeDelete(entity);
             }
             _entities.Clear();
+            _survivors.Clear();
 
             if (Ctx?.Crew != null)
             {

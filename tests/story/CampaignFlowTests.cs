@@ -26,7 +26,7 @@ public static partial class StoryTests
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
    .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==24,"All 24 later and solo production mission classes are in the flow harness");
+  Check(types.Length==30,"All 30 later and solo production mission classes are in the flow harness");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
@@ -42,11 +42,17 @@ public static partial class StoryTests
      string name=objective.GetType().Name;
      if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());
      else if(name=="MissionInteraction") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
-     else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);}
+     else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v); if(Field<bool>(objective,"_requireCrew")) foreach(var hero in Protagonist.All.Where(h=>h.Slot!=crew.ActiveSlot)) crew.PedFor(hero.Slot)?.SetIntoVehicle(v,hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);}
      else if(name=="DeliverVehicleObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
      else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;
      else if(name=="SubdueTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsBeingStunned=true;
      else if(name=="DestroyVehicleObjective") Field<Func<Vehicle>>(objective,"_vehicle")().IsDriveable=false;
+     else if(name=="TrailerDeliveryObjective")
+     {
+      var truck=Field<Func<Vehicle>>(objective,"_truck")();var trailer=Field<Func<Vehicle>>(objective,"_trailer")();var point=Field<Func<Vector3>>(objective,"_destination")();
+      PositionActor(c,objective,point,truck);trailer.Position=point;trailer.Speed=0;
+      GTA.Native.Function.Trailers[truck.Handle]=trailer;
+     }
      else if(name=="MultiHoldObjective")
      {
       var sites=Field<List<Vector3>>(objective,"_sites");var done=Field<HashSet<int>>(objective,"_done");

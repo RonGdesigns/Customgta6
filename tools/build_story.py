@@ -44,7 +44,7 @@ def render():
         raise ValueError('KJ belongs to the two authored Guess solo appearances')
     rows=[]; script=['# Bloodlines: scene and recording script','',
         'Authored expansion of the omnibus and solo bibles. These are new lines, not quotations from the PDFs.', '',
-        '30 gameplay missions exist (M01–M27, SM01–SM03). Other scenes are authored for future scripts; they are not playable missions.', '',
+        '36 gameplay missions exist (M01–M30, SM01–SM06). Other scenes are authored for future scripts; they are not playable missions.', '',
         'Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.',
         'Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.', '',
         'M01 opens on separate private channels at separate exterior approach positions (ground-resolved at runtime). Recognition follows successful approaches, not mission launch.', '',

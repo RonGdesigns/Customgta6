@@ -8,11 +8,10 @@ namespace Bloodlines.Core
     /// <summary>
     /// Applies the campaign's fleet upgrades to the crew's vehicles at runtime.
     ///
-    /// M11 installs a 700-HP turbine in the Granger, M35 brings home the half-track,
-    /// M17 reinforces the Kraken — and once a save records that, the vehicle should
-    /// behave that way for the rest of the campaign. Doing it in script means the
-    /// upgrades work without the OpenIV asset pack installed; the pack (see
-    /// assets/README.md) makes the same changes permanent and world-wide.
+    /// M11's Granger reward supplies plating, brakes, suspension and tires.
+    /// Engine/torque boosts were removed for the requested stock-power driving
+    /// profile. WorldTuning owns the higher road-car gearing ceiling. M17 still
+    /// reinforces the Kraken hull independently.
     ///
     /// Only vehicles the player is actually in are touched, and each one is upgraded
     /// once — reapplying mods every tick fights the engine and audibly stutters the
@@ -43,7 +42,7 @@ namespace Bloodlines.Core
             {
                 InstallTurbine(vehicle);
                 _upgraded.Add(vehicle.Handle);
-                GameUtils.Notify("~b~Turbine Granger 3600LX~s~ — 700 HP, plated.");
+                GameUtils.Notify("~b~Turbine Granger 3600LX~s~ — reinforced fleet package.");
                 Logger.Info("Applied the turbine profile to " + model + ".");
                 return;
             }
@@ -61,14 +60,13 @@ namespace Bloodlines.Core
         private static void InstallTurbine(Vehicle vehicle)
         {
             vehicle.Mods.InstallModKit();
-            Fit(vehicle, VehicleModType.Engine, 3);
-            Fit(vehicle, VehicleModType.Transmission, 2);
             Fit(vehicle, VehicleModType.Brakes, 2);
             Fit(vehicle, VehicleModType.Armor, 4);
             Fit(vehicle, VehicleModType.Suspension, 3);
 
-            vehicle.EnginePowerMultiplier = 45f;
-            vehicle.EngineTorqueMultiplier = 1.6f;
+            // Top-speed extension belongs to WorldTuning; do not boost acceleration.
+            vehicle.EnginePowerMultiplier = 0f;
+            vehicle.EngineTorqueMultiplier = 1f;
             vehicle.CanTiresBurst = false;
             vehicle.IsBulletProof = false;
             Function.Call(Hash.SET_VEHICLE_ENVEFF_SCALE, vehicle, 1.0f);

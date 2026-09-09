@@ -126,22 +126,30 @@ public static partial class StoryTests
   c.Cutscenes.Stop();Check(World.RenderingCamera==null&&Game.Player.CanControlCharacter,"Invalid prior camera returns to gameplay instead of keeping script rendering enabled");
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;var old=c.Locations.Position("M01.CraneNest");
   Check(!ProloguePlacement.Prepare(c.Locations)&&c.Locations.Position("M01.CraneNest")==old&&Script.Waited==600,"Unloaded navmesh rejects M01 within a bound without moving location keys");
+  Reset();crew=Roster();c=Context(crew);c.Locations.Get("M01.ServiceTerminal").Position=c.Locations.Position("M01.CapoSpawn");
+  Check(!ProloguePlacement.Prepare(c.Locations),"M01 rejects terminal overrides that overlap Mateo before moving actors");
+  var legacy=Path.Combine(root,"old-terminal.ini");File.WriteAllText(legacy,"[Positions]\nM01.LowerDeckLedger.X = 1019\nM01.LowerDeckLedger.Y = -3184\nM01.LowerDeckLedger.Z = 6\n");
+  var migrated=LocationBook.Load(dataDir,legacy);
+  Check(migrated.Position("M01.ServiceTerminal").DistanceTo(migrated.Position("M01.CapoSpawn"))>30f,"Legacy terminal overrides cannot restore the old Mateo placement");
   Reset();crew=Roster();c=Context(crew);var mission=new Bloodlines.Missions.Campaign.M01GhostInTheDockyard();
   Check(mission.Begin(c)&&crew.CompanionsHoldPosition,"M01 starts with actors held at their independent assignments");
   Check(crew.ActiveSlot==CrewSlot.Guess&&crew.Peds[CrewSlot.Gohan].Task.Scenarios>0&&crew.Peds[CrewSlot.Ice].Task.Aims>0&&crew.CompanionAI.Controlled.Count==3,"Guess starts playable while Gohan watches the service entrance and Ice covers Mateo");
   Check(crew.Peds.Values.Select(p=>p.Position).Distinct().Count()==3,"M01 deployment keeps three distinct task positions");
   Check(Game.Player.Character.IsInVehicle(World.Vehicles[1])&&World.Vehicles[1].GetPedOnSeat(VehicleSeat.Driver)==Game.Player.Character,"Guess starts seated in his approach car, never on its hood");
-  Check(Game.Player.Character.Position.DistanceTo(c.Locations.Position("M01.PrototypeCar"))>80&&crew.Peds[CrewSlot.Gohan].Position.DistanceTo(c.Locations.Position("M01.LowerDeckLedger"))>40,"Guess and Gohan must travel to their contracts from separated entry points");
+  Check(Game.Player.Character.Position.DistanceTo(c.Locations.Position("M01.PrototypeCar"))>80&&crew.Peds[CrewSlot.Gohan].Position.DistanceTo(c.Locations.Position("M01.ServiceTerminal"))>40,"Guess and Gohan must travel to their contracts from separated entry points");
+  Check(c.Locations.Position("M01.ServiceTerminal").DistanceTo(World.Created[0].Position)>30f,"M01 laptop interaction is separated from Mateo after navigation correction");
   var car=World.Vehicles[0];crew.ActiveSlot=CrewSlot.Guess;Game.Player.Character=crew.Peds[CrewSlot.Guess];Game.Player.Character.SetIntoVehicle(car,VehicleSeat.Driver);Game.Player.Character.Position=c.Locations.Position("M01.ExitPoint");mission.Tick();
   Check(mission.CurrentStage==0&&mission.Status==MissionStatus.Running,"Driving the prototype to the exit early cannot skip Ice and Gohan assignments");
   Check(GameUtils.Message.Contains("Switch to Ice"),"Early driver sees the missing character task instead of a silent marker");
   crew.ActiveSlot=CrewSlot.Ice;Game.Player.Character=crew.Peds[CrewSlot.Ice];Game.Player.Character.IsAiming=true;Function.Values[Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY]=true;mission.Tick();
-  Check(GameUtils.Message.Contains("Switch to Gohan"),"Free aim identifies Mateo without lock-on targeting");
+  Check(GameUtils.Message.Contains("walk to the lookout")&&mission.CurrentStage==0,"Ice cannot identify Mateo before walking from his approach to the lookout");
+  Game.Player.Character.Position=c.Locations.Position("M01.CraneNest");mission.Tick();
+  Check(GameUtils.Message.Contains("Switch to Gohan"),"Free aim identifies Mateo from the lookout without lock-on targeting");
   crew.ActiveSlot=CrewSlot.Gohan;Game.Player.Character=crew.Peds[CrewSlot.Gohan];mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==0,"Waiting at Gohan's entry point does not copy the distant ledger");
-  Game.Player.Character.Position=c.Locations.Position("M01.LowerDeckLedger");Game.Accept=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
+  Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.Accept=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==1&&c.Cutscenes.IsActive,"All three assignments trigger the recognition scene exactly once");
-  Check(Game.Player.Character.Position==c.Locations.Position("M01.LowerDeckLedger")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Recognition preserves split positions and the actual driver's seat");
+  Check(Game.Player.Character.Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Recognition preserves split positions and the actual driver's seat");
   c.Cutscenes.Stop();mission.Tick();
   Check(mission.CurrentStage==2&&World.Created.Count>=9,"Combat spawns after recognition resumes gameplay");
   foreach(var guard in World.Created.Skip(2))guard.IsDead=true;World.Created[0].SetIntoVehicle(World.Vehicles.Last(),VehicleSeat.Driver);Game.GameTime+=10001;mission.Tick();
@@ -243,6 +251,6 @@ public static partial class StoryTests
   var file=Path.Combine(root,"timing.wav");using(var w=new BinaryWriter(File.Create(file))){w.Write(0x46464952u);w.Write(40u+16000u);w.Write(0x45564157u);w.Write(0x20746d66u);w.Write(16u);w.Write((ushort)1);w.Write((ushort)1);w.Write(8000u);w.Write(16000u);w.Write((ushort)2);w.Write((ushort)16);w.Write(0x61746164u);w.Write(16000u);w.Write(new byte[16000]);}
   Check(WaveTiming.DurationMs(file)==1000,"WAV timing uses actual recording byte rate and data length");File.WriteAllText(file,"broken");Check(WaveTiming.DurationMs(file)==0&&WaveTiming.DurationMs(null)==0,"Missing and invalid audio retain subtitle-only timing");
  }
- public static int Main(string[] args){try{dataDir=args[0];root=args[1];ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ public static int Main(string[] args){try{dataDir=args[0];root=args[1];MarketChecks();PowerChecks();StreetsChecks();CampaignAuditChecks();ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }
 

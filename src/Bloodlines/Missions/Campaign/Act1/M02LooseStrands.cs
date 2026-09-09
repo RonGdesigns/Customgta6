@@ -103,6 +103,7 @@ namespace Bloodlines.Missions.Campaign
                 }
             }
 
+            RequiredSwitch = Stage == 2 && Ctx.Crew.ActiveSlot != CrewSlot.Ice ? (CrewSlot?)CrewSlot.Ice : null;
             switch (Stage)
             {
                 case 0: UpdatePursuit(player); break;

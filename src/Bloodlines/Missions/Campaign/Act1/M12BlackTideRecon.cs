@@ -89,7 +89,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context =>
                 {
                     // What this mission actually produces is the breach point for M19.
-                    context.State.CashOnHand += 0;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Breach coordinates tagged. Berth 44 is mapped.", 5000);
                 });
         }

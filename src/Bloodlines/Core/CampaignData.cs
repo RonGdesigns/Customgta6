@@ -115,6 +115,12 @@ namespace Bloodlines.Core
                 if (!string.IsNullOrEmpty(info.Id)) data._missions[info.Id] = info;
             }
 
+            // Authored implementation descriptions override proposed bible geometry.
+            // The original extracted data remains available as design source material.
+            foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "mission_gameplay.tsv")).Rows)
+                if (data._missions.TryGetValue(row.Text("mission"), out var implemented))
+                { implemented.Hud = row.Text("summary"); implemented.Synopsis = row.Text("summary"); }
+
             foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "dialogue.tsv")).Rows)
             {
                 var cue = new DialogueCue

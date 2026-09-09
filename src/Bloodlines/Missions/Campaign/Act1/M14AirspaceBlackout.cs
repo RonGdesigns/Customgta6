@@ -78,7 +78,7 @@ namespace Bloodlines.Missions.Campaign
                 
                 .OnExit(context =>
                 {
-                    context.State.Unlock("mckenzieAirfieldHangar");
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Pod jammer secured. Aegis radar has a hole in it now.", 5000);
                 })
                 .WithCues("M14_S1_02_ICE")

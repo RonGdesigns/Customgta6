@@ -41,17 +41,22 @@ namespace Bloodlines.Missions
         {
             _context.Cutscenes.Stop();
             _pending = null;
+            LastFailureReason = reason;
             _current?.Fail(reason);
+            RetryAvailable = _currentDefinition != null;
         }
 
         public bool IsRunning => _pending != null || _context.Cutscenes.IsActive ||
             _current != null;
 
+        public Crew.CrewSlot? RequiredSwitch => _current?.RequiredSwitch;
         public string CurrentObjective => _current?.CurrentObjective ?? (_pending != null ? "Watch the briefing, then follow the objective." : "No mission is running.");
 
         public string CurrentTitle => _currentDefinition?.Title;
 
         public MissionDefinition LastAttempted => _currentDefinition;
+        public bool RetryAvailable { get; private set; }
+        public string LastFailureReason { get; private set; } = "";
 
         public bool Start(MissionDefinition definition)
         {
@@ -82,9 +87,12 @@ namespace Bloodlines.Missions
                 return false;
             }
 
+            RetryAvailable = false;
+            LastFailureReason = "";
             _context.Abilities.Stop();
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
+            Game.Player.WantedLevel = 0; // Each fresh mission owns its scripted police response.
 
             definition.Info.ParseClock(out int hour, out int minute);
             if (hour >= 0) GameUtils.SetClock(hour, minute);
@@ -100,9 +108,21 @@ namespace Bloodlines.Missions
 
         private bool BeginGameplay(MissionDefinition definition)
         {
-            var mission = definition.Factory();
+            Mission mission;
+            try { mission = definition.Factory(); }
+            catch (System.Exception ex)
+            {
+                Logger.Error(definition.Id + " mission factory failed", ex);
+                _context.Switching.SetUnlocked();
+                _context.Checkpoints.Clear();
+                RetryAvailable = true;
+                GameUtils.Notify("~r~Mission could not load. Retry from the mission menu.");
+                return false;
+            }
+            if (mission == null) { GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
             if (!mission.Begin(_context))
             {
+                RetryAvailable = true;
                 GameUtils.Notify("~r~" + definition.Id + " failed to start. Check Bloodlines.log.");
                 return false;
             }
@@ -130,7 +150,8 @@ namespace Bloodlines.Missions
             _context.Cutscenes.Stop();
             _pending = null;
             _current?.Abort();
-            GameUtils.Subtitle("~r~Mission aborted.", 3000);
+            RetryAvailable = _currentDefinition != null;
+            GameUtils.Subtitle("~r~Mission aborted. Mission key retries from the beginning.", 3000);
             Finish();
         }
 
@@ -164,8 +185,10 @@ namespace Bloodlines.Missions
                     break;
 
                 case MissionStatus.Failed:
+                    LastFailureReason = _current.FailReason ?? "Mission failed.";
+                    RetryAvailable = true;
                     GameUtils.Notify("~r~MISSION FAILED~s~ — " + (_current.FailReason ?? "unknown"));
-                    GameUtils.Subtitle("~r~" + _current.FailReason + "~s~  (press the mission key to retry)", 6000);
+                    GameUtils.Subtitle("~r~" + _current.FailReason + "~s~  (mission key: restart from the beginning)", 6000);
                     break;
             }
 
@@ -177,6 +200,10 @@ namespace Bloodlines.Missions
         private void Finish()
         {
             _current = null;
+            _context.Checkpoints.Clear();
+            _context.Abilities.Stop();
+            _context.Switching.SetUnlocked();
+            ObjectiveMarkers.Clear();
         }
 
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
@@ -223,6 +250,11 @@ namespace Bloodlines.Missions
         public void WarpStage(int delta)
         {
             if (_current == null || _context.Cutscenes.IsActive) return;
+            if (!_current.SupportsCheckpointRestore)
+            {
+                GameUtils.Notify("~y~Stage skipping cannot rebuild this mission. Use full retry.");
+                return;
+            }
             int stage = System.Math.Max(0, _current.CurrentStage + delta);
             _current.JumpToStage(stage);
             GameUtils.Subtitle("~y~Stage warp -> " + stage, 2500);

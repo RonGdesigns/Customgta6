@@ -24,9 +24,9 @@ namespace Bloodlines.Core
         {
             // Prefer the driver's assigned task; never route to somebody else's job.
             foreach (var d in Current)
-                if (d.Owner == slot && (d.Vehicle == 0 || d.Vehicle == vehicle.Handle)) return d.Position;
+                if (d.Owner == slot && (d.Vehicle == 0 || (vehicle != null && d.Vehicle == vehicle.Handle))) return d.Position;
             foreach (var d in Current)
-                if (!d.Owner.HasValue && (d.Vehicle == 0 || d.Vehicle == vehicle.Handle)) return d.Position;
+                if (!d.Owner.HasValue && (d.Vehicle == 0 || (vehicle != null && d.Vehicle == vehicle.Handle))) return d.Position;
             return null;
         }
         public static void BeginFrame(bool enabled)
@@ -36,7 +36,7 @@ namespace Bloodlines.Core
             Pending.Clear();
             if (!enabled) Clear();
         }
-        public static void Show(Vector3 position)
+        public static void Show(Vector3 position, BlipColor color = BlipColor.Yellow)
         {
             if (!_enabled || _used >= 16) return;
             if (_used == Blips.Count) Blips.Add(null);
@@ -52,6 +52,8 @@ namespace Bloodlines.Core
                 blip.ShowRoute = false;
                 blip.Name = "Mission objective";
             }
+            blip.Color = color;
+            blip.Name = color == BlipColor.Red ? "Mission hostile" : "Mission objective";
             blip.Position = position;
             _used++;
         }

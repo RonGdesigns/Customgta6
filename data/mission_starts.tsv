@@ -29,3 +29,9 @@ M27	M26.DusterPad
 SM01	SM01.WarehouseGate
 SM02	SM02.RoofAccess
 SM03	SM03.StartLine
+M28	M28.Approach
+M29	M29.Approach
+M30	M30.Start
+SM04	SM04.Approach
+SM05	SM05.Shore
+SM06	SM06.Approach

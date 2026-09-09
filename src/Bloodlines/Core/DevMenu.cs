@@ -24,7 +24,7 @@ namespace Bloodlines.Core
     ///
     /// Off unless [Dev] Enabled = True.
     /// </summary>
-    public sealed class DevMenu
+    public sealed partial class DevMenu
     {
         private const int VisibleRows = 11;
         private readonly ControllerNavigation _stick = new ControllerNavigation();
@@ -69,6 +69,7 @@ namespace Bloodlines.Core
 
         public void Close()
         {
+            _shopping = null;
             IsOpen = false;
             _cameraHeld = false;
             _waitForOpeningDownRelease = false;
@@ -78,6 +79,7 @@ namespace Bloodlines.Core
 
         public void Toggle()
         {
+            _shopping = null;
             _stick.Reset();
             IsOpen = !IsOpen;
             if (!IsOpen)
@@ -184,6 +186,7 @@ namespace Bloodlines.Core
         public void Update()
         {
             if (!IsOpen || _stack.Count == 0) return;
+            if (_shopping != null && !Shops.CanUse(_shopping)) { Close(); return; }
             HoldGameplayCamera();
 
             // Stop the player shooting or swinging while the menu has focus.
@@ -230,6 +233,7 @@ namespace Bloodlines.Core
             page.Add("Missions", () => _catalog.Playable.Count() + " playable",
                 () => _stack.Push(BuildMissionList()));
             page.Add("Current objective", () => _missions.IsRunning ? _missions.LastAttempted.Id : "none", () => _stack.Push(BuildObjectiveDetails()));
+            page.Add("Last failure / retry", () => _missions.RetryAvailable ? _missions.LastAttempted?.Id : "none", () => _stack.Push(BuildMissionControl()));
             page.Add("Running mission", () => _missions.IsRunning ? _missions.LastAttempted.Id + " | " + _missions.CurrentTitle : "none",
                 () => _stack.Push(BuildMissionControl()));
             page.Add("Crew", () => _crew.IsDeployed ? _crew.Active.DisplayName : "not deployed",
@@ -252,7 +256,7 @@ namespace Bloodlines.Core
 
         private Page BuildMissionList()
         {
-            var page = new Page("Missions — Enter starts, prerequisites ignored");
+            var page = new Page("Missions — Enter starts unlocked jobs");
 
             foreach (var mission in _catalog.All)
             {
@@ -267,6 +271,7 @@ namespace Bloodlines.Core
                             return;
                         }
 
+                        if (!_state.PrerequisiteMet(captured)) { GameUtils.Notify("Finish " + captured.Info.Prerequisite + " first."); return; }
                         if (_missions.IsRunning) _missions.Abort();
                         if (_crew.IsDeployed) _crew.Dismiss();
                         _missions.Start(captured);
@@ -280,7 +285,7 @@ namespace Bloodlines.Core
         private Page BuildObjectiveDetails()
         {
             var page = new Page("Current objective");
-            string remaining = _missions.CurrentObjective;
+            string remaining = _missions.IsRunning ? _missions.CurrentObjective : _missions.LastFailureReason + " Full retry rebuilds the mission from the beginning.";
             while (remaining.Length > 0)
             {
                 int length = System.Math.Min(52, remaining.Length);
@@ -296,6 +301,7 @@ namespace Bloodlines.Core
             var page = new Page("Running mission");
 
             page.Add("Read current objective", () => "", () => _stack.Push(BuildObjectiveDetails()));
+            page.Add("Retry last attempt", () => _missions.RetryAvailable ? "from the beginning" : "", () => { Close(); _missions.Retry(); });
             page.Add("Stage", () => _missions.IsRunning ? _missions.CurrentStage.ToString() : "—",
                 null, delta => _missions.WarpStage(delta));
             page.Add("Commit checkpoint", () => "", () => _missions.CommitCheckpoint());
@@ -344,10 +350,12 @@ namespace Bloodlines.Core
                 });
             }
 
-            page.Add("Free roam crew", () => _crew.CompanionAI.IndependentFreeRoam ? "independent" : "travel together", () =>
+            page.Add("Free roam crew", () => _crew.CompanionAI.IndependentFreeRoam ? "independent" : _crew.CompanionAI.RideAlong ? "ride along" : "drive alongside", () =>
             {
                 if (_missions.IsRunning) { GameUtils.Subtitle("~y~Mission assignments control the crew during a job.", 3000); return; }
-                _crew.CompanionAI.IndependentFreeRoam = !_crew.CompanionAI.IndependentFreeRoam;
+                if (_crew.CompanionAI.IndependentFreeRoam) { _crew.CompanionAI.RideAlong = true; _crew.CompanionAI.IndependentFreeRoam = false; }
+                else if (_crew.CompanionAI.RideAlong) _crew.CompanionAI.RideAlong = false;
+                else { _crew.CompanionAI.IndependentFreeRoam = true; _crew.CompanionAI.RideAlong = true; }
                 foreach (var hero in Protagonist.All) _crew.CompanionAI.Refresh(hero.Slot);
             });
 
@@ -619,17 +627,18 @@ namespace Bloodlines.Core
         private bool CanChangeLook(CrewSlot slot)
         {
             if (_missions.IsRunning) { GameUtils.Notify("~y~Change clothes between missions."); return false; }
+            if (_shopping!=null && (!Shops.CanUse(_shopping) || slot!=_crew.ActiveSlot)) return false;
             var ped = _crew.PedFor(slot);
             if (ped == null || !ped.Exists()) { GameUtils.Notify("~y~Deploy this character first."); return false; }
             return true;
         }
-        private Page BuildWardrobe(CrewSlot slot)
+        private Page BuildWardrobe(CrewSlot slot, bool clothingOnly = false)
         {
             var page = new Page(Protagonist.Of(slot).DisplayName + " - wardrobe");
             page.Add("Save looks", () => "kept across restarts", () => { CrewAppearance.Save(); GameUtils.Notify("~g~Crew appearance saved."); });
             page.Add("Automatic outfit changes", () => CrewAppearance.For(slot).AutoOutfits ? "on" : "off", () =>
             { CrewAppearance.For(slot).AutoOutfits = !CrewAppearance.For(slot).AutoOutfits; });
-            foreach (string field in new[] { "Hair", "HairColor", "Beard", "BeardColor", "Face", "Skin", "Outfit" })
+            foreach (string field in clothingOnly ? new[] { "Outfit" } : new[] { "Beard", "BeardColor", "Face", "Skin", "Outfit" })
             {
                 string selected = field;
                 page.Add(field == "Outfit" ? "Reset clothing preset" : field == "Beard" ? "Facial hair" : field, () =>
@@ -770,7 +779,7 @@ namespace Bloodlines.Core
 
             new TextElement(
                 (page.Index + 1) + "/" + page.Items.Count +
-                "   Right stick: move/adjust | A: select | B: back | " + _config.DevMenuKey + " close",
+                "   D-pad: move/adjust | A: select | B: back | " + _config.DevMenuKey + " close",
                 new PointF(x, y + 4f), 0.26f, Color.FromArgb(190, 150, 156, 166)).Draw();
         }
 

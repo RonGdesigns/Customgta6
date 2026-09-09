@@ -13,7 +13,7 @@ public static partial class StoryTests
   var switching=new SwitchController(crew);
   Check(switching.TrySwitch(CrewSlot.Gohan)&&old.Health==600&&old.Armor==95&&next.Health==330&&next.Armor==12,"Native handover preserves BOTH heroes' distinct health and armor");
   Game.GameTime+=500;next.Health=260;
-  Check(switching.TrySwitch(CrewSlot.Ice)&&old.Health==600&&next.Health==260&&old.MaxHealth==600&&next.MaxHealth==600,"Switching back keeps real damage on the injured hero without transferring it");Function.ResetVitalsOnSwitch=false;
+  Check(switching.TrySwitch(CrewSlot.Ice)&&old.Health==600&&next.Health==260&&old.MaxHealth==900&&next.MaxHealth==900,"Switching back keeps real damage on the injured hero without transferring it");Function.ResetVitalsOnSwitch=false;
   Reset();var ped=Game.Player.Character;var path=Path.Combine(root,"wardrobe.ini");CrewAppearance.Load(path);
   CrewAppearance.AdjustClothing(ped,CrewSlot.Guess,"Shirt",-1,false);
   CrewAppearance.AdjustClothing(ped,CrewSlot.Guess,"Shirt",-1,true);

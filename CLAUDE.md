@@ -102,7 +102,7 @@ characters to ASCII because GTA's text renderer is not dependable outside it.
 - TSV at runtime, not JSON: .NET 4.8 has no built-in JSON reader. The one
   hand-rolled reader (`Core/Json.cs`) exists only for `savegame.json`.
 - Coordinates in `data/locations.tsv` are estimates until surveyed in game with
-  the F11 capture; 117 of 121 are still estimates.
+  the F11 capture; 154 of 159 are still estimates.
 - Log with `Logger`, not SHVDN's log. Identical repeated errors collapse to a
   count — a tick-rate fault produced 100,000 lines before that existed.
 - Every subsystem is stepped separately in `OnTick`. One failure must not take
@@ -117,11 +117,11 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-30 of 79 missions are playable (M01–M27, SM01–SM03); the rest are loaded as data
+36 of 79 missions are playable (M01–M30, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Not started: M28–M70, SM04–SM09, the M55 switching prototype, interstitial
-systems (safehouses, workbenches, Weazel News), MLO interiors, custom peds,
+Gameplay not implemented: M31–M70, SM07–SM09, the M55 switching prototype, interstitial
+systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
 Read `docs/PLAYTEST.md` before a play session and `docs/INSTALL.md` for install,
@@ -147,6 +147,27 @@ Military dispatch is staggered at 4s / 12s / 20s (helicopter / convoy / tank),
 subject to valid off-camera positions. Retry unavailable approaches after 3s.
 Keep at most three managed units and replacement cooldowns; never clear dispatch
 on every MissionActive=false assignment. See docs/MILITARY-PRESSURE-AND-RECOVERY.md.
+
+Military losses now retire into bounded aftermath ownership, not entity deletion.
+Keep explosions, falling aircraft and corpses physically intact; remove their
+pursuit blips and release old wrecks to the engine. Custom law-enforcement groups
+must be allied with COP and one another. Follow-mode threat checks defend every
+crew member and refresh stale combat targets while preserving mission ownership.
+
+All heroes share 900 health and 100 armor on spawn/recovery. Preserve actual damage
+across switching. CompanionRecovery owns a separate 45-second free-roam downed timer,
+including missing bodies; do not permanently suppress it after player death. Only
+recover slots that were actually deployed, at off-camera navigable ground locations,
+then let them travel back. Mission scripts retain their death/failure behavior.
+See docs/MILITARY-INDICATORS-AND-TEAM-COMBAT.md for this combined update and retest.
+
+Free-roam travel modes are Independent, Ride Along (seat sharing with overflow),
+and Drive Alongside (separate transport). Never give overflow drivers a null
+destination while the leader is in a vehicle: use the vehicle-follow task. Keep
+mission-required shared rides and scripted drivers authoritative. CrewDriving
+owns the role-specific road speed profiles. Transport acquisition may carjack
+ordinary parked or slow-moving traffic, with crew/mission exclusions and bounded
+interception attempts; never shoot a crew member to obtain their vehicle.
 
 Survey destinations create a yellow GPS route; F7 explicitly teleports and F11 saves
 on-foot captures. Bloodlines.Surveyed.ini loads automatically and overrides M01's
@@ -183,7 +204,7 @@ Occupied crew transport must survive mission cleanup. M11 owns turbine installat
 M23 owns the permanent bunker unlock. Keep optional solo consequences out of mandatory
 main-scene prerequisites.
 
-Run the existing regression suite plus `python tools/run_story_tests.py` (43 checks).
+Run the existing regression suite plus `python tools/run_story_tests.py`.
 See `docs/STORY-AUDIT.md` for coverage, limitations and the live playtest sequence.
 
 
@@ -195,3 +216,11 @@ controls. The previous descriptions of bible anchors as surveyed geometry are
 superseded: those proposed positions were not verified against installed assets.
 `tools/test_dialogue_parser.py` protects speech extraction; authored revisions
 live in `data/dialogue_edits.json`, applied by `parse_bible.py`.
+
+Current campaign audit: see docs/CAMPAIGN-AUDIT-UPDATE.md, docs/PLAYABLE-MISSION-MAP.md, docs/PROGRESSION-GUIDE.md and docs/CAMPAIGN-REMAINDER.md. Rewards commit only in CampaignState.MarkComplete. Preserve per-character free-roam memory and full-restart retry semantics. Run tools/audit_campaign.py --check and tools/build_story.py --check after mission edits. data/mission_gameplay.tsv is an authored implementation overlay; do not overwrite the original bible extraction to describe adapted gameplay.
+
+
+## Shops and street behavior
+See docs/STREETS-UPDATE.md for the current service locations, prices, role handoffs and live-test limits. Shop transactions use crew cash and validate proximity, wanted state and actual application before charging. Do not present the mod shop as the vanilla clerk sequence. MissionHandoff uses frame inputs only; never reintroduce a persistent frozen ped to enforce a role switch. WorldTuning doubles the high-gear redline and now adds progressive speed-dependent torque per docs/PROGRESSIVE-POWER-UPDATE.md. The user permits extra power but wants gradual acceleration. Keep launches unboosted, cap and time-ramp assistance, and do not claim doubled measured top speed without road testing. Re-resolve shared handling through live vehicles/models before cleanup, and never multiply it per car. Keep police search timers and military dispatch ownership intact.
+
+Current market/travel contracts: read docs/MARKET-AND-TRAVEL-UPDATE.md and docs/FEATURES-STILL-PLANNED.md. WeaponMarket derives shop locks from WeaponProgression.RewardMissions; never bypass milestone gates through regular shop purchases. Clothing stores preserve head hair. Wheel browsing restores both wheel state and cash; car mod slot 24 may be hydraulics. TravelHandling uses checked public Enhanced SDK properties and restores live data; never guess memory offsets or claim measured 2x speed from cap-setting tests.

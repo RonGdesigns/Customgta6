@@ -12,7 +12,7 @@ namespace Bloodlines.Crew
     {
         private sealed class Trip
         {
-            public Ped Driver;
+            public CrewSlot Slot; public int FollowVehicle, NextFollowTask; public Ped Driver;
             public Vehicle Vehicle;
             public Vector3? Destination;
             public Vector3 Anchor;
@@ -30,7 +30,7 @@ namespace Bloodlines.Crew
             if (ped == null || !ped.Exists() || ped.IsDead || vehicle == null || !vehicle.Exists() ||
                 vehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle != ped.Handle) return;
             vehicle.IsPersistent = true;
-            _trips[slot] = new Trip { Driver = ped, Vehicle = vehicle, Anchor = vehicle.Position };
+            _trips[slot] = new Trip { Slot = slot, Driver = ped, Vehicle = vehicle, Anchor = vehicle.Position };
         }
         public void Forget(CrewSlot slot) { _trips.Remove(slot); }
         public void Restart(CrewSlot slot) { if (_trips.TryGetValue(slot, out var trip)) { trip.Started = false; trip.NextCheck = 0; } }
@@ -57,7 +57,7 @@ namespace Bloodlines.Crew
                 return;
             }
             var active = Game.Player.Character;
-            bool urgent = ped.IsInCombat || (active != null && active.IsInVehicle(trip.Vehicle) && (Game.Player.WantedLevel > 0 || active.IsInCombat));
+            bool urgent = ped.IsInCombat || (active != null && (active.IsInVehicle(trip.Vehicle) || IsRendezvous?.Invoke(trip.Vehicle) == true) && (Game.Player.WantedLevel > 0 || active.IsInCombat));
             if (!urgent)
                 foreach (var threat in World.GetNearbyPeds(ped, 90f))
                     if (threat != null && threat.Exists() && threat.IsAlive && threat.Handle != ped.Handle &&
@@ -66,6 +66,20 @@ namespace Bloodlines.Crew
                     { urgent = true; break; }
             bool urgencyChanged = urgent != trip.Urgent; trip.Urgent = urgent;
             trip.Rendezvous = IsRendezvous?.Invoke(trip.Vehicle) == true;
+            if (trip.Rendezvous && active != null && active.IsInVehicle() && active.CurrentVehicle.Exists() &&
+                (trip.Vehicle.Model.IsCar || trip.Vehicle.Model.IsBike))
+            {
+                int target = active.CurrentVehicle.Handle;
+                if (!trip.Started || trip.FollowVehicle != target || urgencyChanged || Game.GameTime >= trip.NextFollowTask)
+                {
+                    CrewDriving.Configure(ped, trip.Slot, trip.Urgent);
+                    Function.Call(Hash.TASK_VEHICLE_FOLLOW, ped, trip.Vehicle, active.CurrentVehicle,
+                        CrewDriving.Speed(trip.Slot, trip.Urgent), CrewDriving.TrafficFlags, 12);
+                    trip.FollowVehicle = target; trip.NextFollowTask = Game.GameTime + 12000; trip.Started = true;
+                }
+                return;
+            }
+            if (trip.FollowVehicle != 0) { trip.FollowVehicle = 0; trip.Started = false; }
             var destination = trip.Rendezvous ? FollowDestination?.Invoke(trip.Vehicle) : MissionDestination?.Invoke(slot, trip.Vehicle);
             if (!destination.HasValue && !trip.Rendezvous)
             {
@@ -115,8 +129,7 @@ namespace Bloodlines.Crew
             var target = trip.Destination ?? trip.Anchor;
             ped.AlwaysKeepTask = true;
             ped.BlockPermanentEvents = true;
-            Function.Call(Hash.SET_DRIVER_ABILITY, ped, 1f);
-            Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, ped, trip.Urgent ? .65f : .25f);
+            CrewDriving.Configure(ped, trip.Slot, trip.Urgent);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ped, 2, false);
             if (model.IsTrain)
             {
@@ -165,9 +178,9 @@ namespace Bloodlines.Crew
                     10f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
             }
             else if (trip.Destination.HasValue)
-                ped.Task.DriveTo(vehicle, target, 8f, trip.Arrived && !trip.Urgent ? 6f : trip.Urgent ? 45f : 35f, DrivingStyle.AvoidTrafficExtremely);
+                ped.Task.DriveTo(vehicle, target, 8f, trip.Arrived && !trip.Urgent ? 6f : CrewDriving.Speed(trip.Slot, trip.Urgent), (DrivingStyle)CrewDriving.TrafficFlags);
             else
-                ped.Task.CruiseWithVehicle(vehicle, trip.Urgent ? 45f : 30f, DrivingStyle.AvoidTrafficExtremely);
+                ped.Task.CruiseWithVehicle(vehicle, CrewDriving.Speed(trip.Slot, trip.Urgent), (DrivingStyle)CrewDriving.TrafficFlags);
             Logger.Debug("Companion driver " + ped.Handle + (trip.Destination.HasValue ? " navigating to " + target : " continuing cautiously"));
         }
     }

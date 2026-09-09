@@ -87,7 +87,7 @@ namespace Bloodlines.Missions.Campaign
                     new PursueTargetObjective("Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive.", () => _miller,
                         "Miller reached his handler and the forensics went with him."))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => { Game.Player.WantedLevel = 2; _miller.IsInvincible = false; _miller.Task.CruiseWithVehicle(_millerCar, 24f, DrivingStyle.Normal); Say("M04_S2_04_ICE"); });
+                .OnEnter(context => { Game.Player.WantedLevel = 2; _miller.IsInvincible = false; _miller.Task.CruiseWithVehicle(_millerCar, 24f, DrivingStyle.Normal); Ctx.Cutscenes.PlayMoment(Id,"Miller breaks cover","GUESS","He is pulling out. Disable the car, then get the drive. I have the wheel.",_miller); Say("M04_S2_04_ICE"); });
 
             yield return new MissionStage("Recover the drive",
                     new MissionInteraction("Guess: collect Miller's drive", () => MillerPosition(), 3, 6f))

@@ -2,7 +2,7 @@
 
 A single-player campaign overhaul for **Grand Theft Auto V (PC)**, built from the
 *Los Santos: Bloodlines* omnibus production bible: three protagonists, a dynamic
-3-way switch, per-character abilities, and a 70-mission campaign with 255 written
+3-way switch, per-character abilities, and a 70-main-mission and 9-solo campaign with 292 written
 lines of dialogue.
 
 This repository is the **mission-script layer** — the C# mod that runs on top of a
@@ -14,8 +14,8 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 
 | Layer | State |
 |---|---|
-| **Act I complete** — all 22 missions playable end to end | working |
-| Act II — 5 of 26 written (M23–M27) | in progress |
+| Act I — 22 gameplay scripts | automated flow checks pass; live testing ongoing |
+| Act II — 8 of 26 scripted (M23–M30) | in progress |
 | Mod bootstrap, config, logging | working |
 | Campaign data pipeline — bible PDFs → TSV → runtime | working, 79 missions / 292 cues / 6 surveyed anchors |
 | Crew roster — spawn, companion AI, blips, respawn, story-character restore | working |
@@ -23,7 +23,7 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Dynamic 3-way switch (bible §3) | working, rewritten off the bible's draft |
 | Abilities — Overwatch Focus / Thermal Pulse / Slipstream Reflex | working, shared meter |
 | Dialogue director (bible's AudioManager) | working — speaker-colored subtitles, WAV playback when present |
-| Checkpoints (bible's CheckpointManager) | working — stage, positions, health, wreck purge |
+| Checkpoints (bible's CheckpointManager) | full restart only; position-only checkpoint restore is blocked |
 | Mission framework — stage machine, tracked entities, pass/fail | working |
 | Objective library — 18 reusable objectives, missions as composition | working |
 | Companion AI — explicit state machine incl. vehicle boarding | working |
@@ -33,12 +33,12 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | Packaging — `tools/package.py` builds an install-ready tree | working |
 | Static checks — mission linter, coordinate audit, stage validation, all in CI | working |
 | OpenIV DLC asset pack (handling metadata, interiors) | scaffolded, untested, no interiors yet |
-| QA harness (bible Track 4) | working — stage warp, checkpoint commit/restore, forced switch |
-| **M01 "Ghost in the Dockyard"** | playable, on the bible's surveyed coordinates |
-| **M02 "Loose Strands"** | playable — freeway intercept under a hard upload clock |
+| QA harness (bible Track 4) | failure/retry, force completion and survey; unsupported stage warps blocked |
+| **M01 "Ghost in the Dockyard"** | scripted, using runtime ground checks and user survey overrides |
+| **M02 "Loose Strands"** | scripted — moving-van proximity hack, rear-door drive pickup and crew extraction |
 | **M03 "Cypress Foundry"** | playable — first three-character joint operation |
 | **M04 "Severed Wire"** | playable — garage hit into a pursuit |
-| **M05 "Tidal Lock"** | playable — Act I finale, cliff overwatch into a boat chase |
+| **M05 "Tidal Lock"** | scripted — shore overwatch, boat capture and living-witness questioning |
 | **M06 "Clean Sweep"** | playable — thermite burn under a three-wave SWAT siege |
 | **M07 "Wiretap Waltz"** | playable — mast tap, drone, parachute to a moving pickup |
 | **M08 "Supply & Sever"** | playable — the turbine engines the fleet is built on |
@@ -58,7 +58,8 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 | **SM02 "Zero-Day Injection"** | playable — Gohan solo, non-lethal stealth |
 | **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
 | Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
-| M28–M70, SM04–SM09 | written and loaded as data; no mission scripts yet |
+| M28–M30, SM04–SM06 | first-pass desert gameplay; live survey/physics checks pending |
+| M31–M70, SM07–SM09 | dialogue and detailed gameplay/scene plans; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has
@@ -180,3 +181,8 @@ controls. The previous descriptions of bible anchors as surveyed geometry are
 superseded: those proposed positions were not verified against installed assets.
 `tools/test_dialogue_parser.py` protects speech extraction; authored revisions
 live in `data/dialogue_edits.json`, applied by `parse_bible.py`.
+
+Current release: see [campaign audit](docs/CAMPAIGN-AUDIT-UPDATE.md), [all playable mission flows](docs/PLAYABLE-MISSION-MAP.md), [progression and unlocks](docs/PROGRESSION-GUIDE.md), and [remaining mission treatments](docs/CAMPAIGN-REMAINDER.md).
+
+## Shops and expanded vehicle travel
+See [Market and travel](docs/MARKET-AND-TRAVEL-UPDATE.md) for story-gated weapon shopping, priced DLC extras, 13 clothing stores, compatible native vehicle upgrades and road/air/water speed tuning. See [Remaining features](docs/FEATURES-STILL-PLANNED.md) for the original plans still outstanding and recommended additions.

@@ -2,7 +2,7 @@
 intro
 GUESS|Terminal Island. Two in the morning. They sent me a gate code, a photograph and half the money. That's usually the part where I should ask more questions.
 GUESS|I'm outside the freight entrance in my own car. One pickup inside the yard. Keep it quiet, get paid, go home.
-GOHAN|Different client, same dockyard. The laptop behind their work station holds Mateo's payment ledger. I'm at the service entrance; I need to reach it before the security shift.
+GOHAN|Different client, same dockyard. The laptop at the west service station holds Mateo's payment ledger. It's separate from his meeting point. I'm at the service entrance; I need to reach it before the security shift.
 ICE|Mateo Cifuentes. The contract says identify him, keep him alive and trace the shipment. From here I can watch the yard without crossing it.
 GUESS|There it is. Bay two, the four-door prototype. My car stays here when I take that one. Whoever owns it won't be pleased.
 GOHAN|I used to audit books like these. The numbers tell you who got paid. Missing entries tell you who somebody wants forgotten.

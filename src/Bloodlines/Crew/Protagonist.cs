@@ -51,17 +51,17 @@ namespace Bloodlines.Crew
         public static readonly Protagonist Ice = new Protagonist(
             CrewSlot.Ice, "Darius", "Vance", "Ice", "The Tactician — Heavy Assault",
             "mp_m_freemode_01", "Overwatch Focus", BlipColor.Blue,
-            new[] { WeaponHash.CarbineRifle, WeaponHash.RPG, WeaponHash.Pistol50, WeaponHash.StickyBomb });
+            new[] { WeaponHash.AssaultRifle, WeaponHash.RPG, WeaponHash.Pistol50, WeaponHash.StickyBomb });
 
         public static readonly Protagonist Gohan = new Protagonist(
             CrewSlot.Gohan, "Devin", "Mercer", "Gohan", "The Inside Man — Breaker",
             "mp_m_freemode_01", "Thermal Pulse", BlipColor.Green,
-            new[] { WeaponHash.SMG, WeaponHash.APPistol, WeaponHash.Flashlight, WeaponHash.SmokeGrenade });
+            new[] { WeaponHash.BullpupRifle, WeaponHash.SMG, WeaponHash.APPistol, WeaponHash.Flashlight, WeaponHash.SmokeGrenade });
 
         public static readonly Protagonist Guess = new Protagonist(
             CrewSlot.Guess, "Ron", "Ortiz", "Guess", "The Wheelman — Hotfoot",
             "mp_m_freemode_01", "Slipstream Reflex", BlipColor.Orange,
-            new[] { WeaponHash.MicroSMG, WeaponHash.Pistol, WeaponHash.SawnOffShotgun });
+            new[] { (WeaponHash)unchecked((uint)Game.GenerateHash("WEAPON_TACTICALRIFLE")), WeaponHash.MicroSMG, WeaponHash.Pistol, WeaponHash.SawnOffShotgun });
 
         public static readonly Protagonist[] All = { Ice, Gohan, Guess };
 

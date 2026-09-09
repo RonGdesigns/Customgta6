@@ -70,8 +70,8 @@ namespace Bloodlines.Missions.Campaign
                 
                 .OnExit(context =>
                 {
-                    context.State.AlamoGoldDredgedTons += 5f;
-                    context.State.CashOnHand += 200000;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Five tons up. Twenty-five still in the mud.", 5000);
                 })
                 .AfterCues("M24_S1_01_GUESS")

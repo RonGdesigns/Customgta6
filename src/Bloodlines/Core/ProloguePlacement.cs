@@ -14,7 +14,7 @@ namespace Bloodlines.Core
             var resolved = new Dictionary<MissionLocation, Vector3>();
             try
             {
-                foreach (string key in new[] { "M01.GuessApproach", "M01.GohanApproach", "M01.CraneNest", "M01.LowerDeckLedger", "M01.PrototypeCar", "M01.CapoSpawn", "M01.RegroupPoint", "M01.ExitPoint" })
+                foreach (string key in new[] { "M01.IceApproach", "M01.GuessApproach", "M01.GohanApproach", "M01.CraneNest", "M01.ServiceTerminal", "M01.PrototypeCar", "M01.CapoSpawn", "M01.RegroupPoint", "M01.ExitPoint" })
                 {
                     var location = book.Get(key);
                     if (location == null || !TryLand(location.Position, out var point))
@@ -31,8 +31,18 @@ namespace Bloodlines.Core
                 { Logger.Error("M01 approach road is not loaded."); return false; }
                 resolved[approach] = road + new Vector3(0f, 0f, .15f);
                 if (GameUtils.IsWithinFlat(resolved[approach], resolved[book.Get("M01.PrototypeCar")], 80f) ||
-                    GameUtils.IsWithinFlat(resolved[book.Get("M01.GohanApproach")], resolved[book.Get("M01.LowerDeckLedger")], 40f))
+                    GameUtils.IsWithinFlat(resolved[book.Get("M01.GohanApproach")], resolved[book.Get("M01.ServiceTerminal")], 40f))
                 { Logger.Error("M01 approach positions are too close to their objectives. Check surveyed overrides."); return false; }
+                if (GameUtils.IsWithinFlat(resolved[book.Get("M01.IceApproach")], resolved[book.Get("M01.CraneNest")], 12f))
+                { Logger.Error("M01 Ice approach must remain at least 12m from the lookout."); return false; }
+                // Ground snapping and saved overrides must never put the hacker
+                // beside Mateo. Check after resolving both positions, before spawning.
+                if (GameUtils.IsWithinFlat(resolved[book.Get("M01.ServiceTerminal")], resolved[book.Get("M01.CapoSpawn")], 30f))
+                {
+                    Logger.Error("M01 service terminal resolved too close to Mateo.");
+                    GameUtils.Notify("M01 terminal is too close to Mateo. Re-survey M01.ServiceTerminal at least 30m away, then retry.");
+                    return false;
+                }
                 foreach (var pair in resolved)
                 {
                     Logger.Info("M01 surface " + pair.Key.Key + ": " + pair.Key.Position + " -> " + pair.Value);

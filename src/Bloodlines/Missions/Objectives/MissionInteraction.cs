@@ -21,12 +21,16 @@ namespace Bloodlines.Missions.Objectives
         private readonly float _radius;
         private readonly int _duration;
         private int _started = -1;
-        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null) : base(action)
-        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; }
+        private readonly bool _stopVehicle;
+        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false) : base(action)
+        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
         public override void Enter(MissionContext c) { base.Enter(c); _started = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right."; }
         public override void Update(MissionContext c)
         {
+            var requiredVehicle = _vehicle?.Invoke();
+            if (_vehicle != null && (requiredVehicle == null || !requiredVehicle.Exists() || requiredVehicle.IsDead))
+            { Fail("The required work vehicle is lost. Restart this mission."); return; }
             var point = _position(); var ped = Game.Player.Character;
             ObjectiveMarkers.Navigation(point, _vehicle == null ? RequiredCharacter : null, _vehicle?.Invoke());
             GameUtils.DrawObjectiveMarker(point, Color.Yellow, Math.Max(1f, _radius * .4f));
@@ -34,6 +38,7 @@ namespace Bloodlines.Missions.Objectives
             bool seated = _vehicle != null && ped != null && ped.IsInVehicle(_vehicle());
             bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && ped.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
             if (!near) { _started = -1; Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : " — take the marked vehicle to the yellow marker."); return; }
+            if (_stopVehicle && requiredVehicle != null && requiredVehicle.Speed > 1f) { _started = -1; Label = _action + " — stop the vehicle to begin unloading."; return; }
             if (_started < 0)
             {
                 Label = _action + " — press E / D-pad Right to start.";

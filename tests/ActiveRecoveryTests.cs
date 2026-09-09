@@ -13,7 +13,7 @@ public static partial class RegressionTests
   var other=new Ped{Position=new Vector3(-300,100,25),Health=220,Armor=13};
   roster.Peds[CrewSlot.Ice]=active;roster.Peds[CrewSlot.Gohan]=driver;roster.Peds[CrewSlot.Guess]=other;
   roster._companions.Life.Wanted.Set(CrewSlot.Gohan,3);var origin=new Vector3(10,20,30);
-  Check(roster.ReviveActiveAt(origin,90)&&active.Position==origin&&!active.IsInVehicle()&&active.Health==600,"Actual roster recovery revives and relocates only the active hero");
+  Check(roster.ReviveActiveAt(origin,90)&&active.Position==origin&&!active.IsInVehicle()&&active.Health==900,"Actual roster recovery revives and relocates only the active hero");
   Check(GTA.Native.Function.SelfHandovers==0,"Active player revival never issues a redundant self-to-self player handover");
   Check(driver.Position==car.Position&&driver.CurrentVehicle==car&&car.GetPedOnSeat(VehicleSeat.Driver)==driver&&driver.Health==410&&driver.Armor==55&&driver.Task.Clears==0,"Surviving driver retains vehicle seat, location, health, armor and task");
   Check(other.Position==new Vector3(-300,100,25)&&other.Health==220&&other.Armor==13&&other.Task.Clears==0&&roster._companions.Life.Wanted.Get(CrewSlot.Gohan)==3,"Distant teammate and personal heat remain unchanged");

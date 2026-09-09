@@ -35,6 +35,7 @@ namespace Bloodlines.Crew
         private readonly Dictionary<CrewSlot, Blip> _blips = new Dictionary<CrewSlot, Blip>();
 
         private readonly CompanionController _companions;
+        private readonly CompanionRecovery _recovery = new CompanionRecovery();
         private RelationshipGroup _crewGroup;
         private bool _groupsReady;
         private Ped _storyPed;
@@ -52,7 +53,7 @@ namespace Bloodlines.Crew
                 if (_companions.IndependentFreeRoam && !_companions.MissionActive) return null;
                 var leader = PedFor(ActiveSlot);
                 return leader != null && leader.Exists() && !leader.IsInVehicle(vehicle)
-                    ? (Vector3?)(leader.Position - leader.ForwardVector * 8f) : null;
+                    ? (Vector3?)(leader.Position - leader.ForwardVector * (leader.IsInVehicle() ? 18f : 8f)) : null;
             };
             _companions.IsCrewMember = ped =>
             {
@@ -259,8 +260,11 @@ namespace Bloodlines.Crew
             ped.MaxHealth = CrewDurability.Health;
             ped.CanSufferCriticalHits = false;
             ped.RelationshipGroup = _crewGroup;
+            // Friendly targeting is blocked by relationships and the companion target filter.
+            // Do not make the player immune to their own fire or explosive splash.
+            ped.IsFireProof = false; ped.IsExplosionProof = false;
             Function.Call(Hash.SET_CAN_ATTACK_FRIENDLY, ped, false, false);
-            Function.Call(Hash.SET_ENTITY_CAN_BE_DAMAGED_BY_RELATIONSHIP_GROUP, ped, false, _crewGroup.Hash);
+            Function.Call(Hash.SET_ENTITY_CAN_BE_DAMAGED_BY_RELATIONSHIP_GROUP, ped, true, _crewGroup.Hash);
         }
 
         private void ConfigurePed(Ped ped, Protagonist protagonist)
@@ -281,11 +285,19 @@ namespace Bloodlines.Crew
 
             foreach (var weapon in protagonist.Loadout)
             {
-                ped.Weapons.Give(weapon, 250, false, true);
+                if (Function.Call<bool>(Hash.IS_WEAPON_VALID, (uint)weapon))
+                    ped.Weapons.Give(weapon, 250, false, true);
             }
 
             Arsenal?.Apply(protagonist.Slot, ped);
-            ped.Weapons.Select(protagonist.Loadout[0], true);
+            var primary = protagonist.Loadout[0];
+            if (!Function.Call<bool>(Hash.IS_WEAPON_VALID, (uint)primary))
+            {
+                primary = WeaponHash.CarbineRifle;
+                ped.Weapons.Give(primary, 250, false, true);
+                Logger.Warn(protagonist.Handle + " starting rifle unavailable; supplied stock Carbine Rifle.");
+            }
+            ped.Weapons.Select(primary, true);
         }
 
         /// <summary>Called by the switch controller once the player ped has changed.</summary>
@@ -376,15 +388,19 @@ namespace Bloodlines.Crew
             foreach (var protagonist in Protagonist.All)
             {
                 var ped = PedFor(protagonist.Slot);
-                if (ped == null) continue;
                 if (protagonist.Slot == ActiveSlot) continue;
+                if (!_peds.ContainsKey(protagonist.Slot)) continue; // Solo missions never deployed this hero.
 
-                if (ped.IsDead)
+                if (ped == null || ped.IsDead)
                 {
-                    if (_config.CompanionsRespawnOnDeath && !_companions.SeparatedByRecovery(protagonist.Slot)) RespawnCompanion(protagonist);
+                    Vector3 recoveryPoint;
+                    if (_recovery.TryGetDestination(protagonist.Slot, ped, PedFor(ActiveSlot),
+                        _config.CompanionsRespawnOnDeath && !_companions.MissionActive, out recoveryPoint))
+                        RespawnCompanion(protagonist, recoveryPoint);
                     continue;
                 }
 
+                _recovery.Forget(protagonist.Slot);
                 if (_config.CompanionHealthFloor > 0 && ped.Health < _config.CompanionHealthFloor)
                 {
                     ped.Health = _config.CompanionHealthFloor;
@@ -469,6 +485,9 @@ namespace Bloodlines.Crew
                 ped.MaxHealth = CrewDurability.Health;
             ped.CanSufferCriticalHits = false;
             ped.RelationshipGroup = _crewGroup;
+            // Friendly targeting is blocked by relationships and the companion target filter.
+            // Do not make the player immune to their own fire or explosive splash.
+            ped.IsFireProof = false; ped.IsExplosionProof = false;
             }
 
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, active, true, true);
@@ -511,27 +530,32 @@ namespace Bloodlines.Crew
             Logger.Info("Crew regrouped at " + position + ".");
         }
 
-        private void RespawnCompanion(Protagonist protagonist)
+        private void RespawnCompanion(Protagonist protagonist, Vector3 position)
         {
             var player = PedFor(ActiveSlot);
             if (player == null) return;
 
-            Logger.Warn(protagonist.DisplayName + " went down; respawning as companion.");
+            Logger.Info(protagonist.DisplayName + " recovering away from the player after the downed timer.");
             var previous = PedFor(protagonist.Slot);
 
             var model = protagonist.Model;
             if (!GameUtils.RequestModel(model)) return;
 
-            var ped = World.CreatePed(model, player.Position + OffsetFor(protagonist.Slot) - player.ForwardVector * 3f, player.Heading);
+            var ped = World.CreatePed(model, position, player.Heading);
             model.MarkAsNoLongerNeeded();
             if (ped == null || !ped.Exists()) return;
 
             ConfigurePed(ped, protagonist);
+            _companions.Forget(protagonist.Slot);
+            _companions.KeepRecoverySeparate(protagonist.Slot);
             _peds[protagonist.Slot] = ped;
-            GameUtils.SafeDelete(previous);
+            _recovery.Forget(protagonist.Slot);
+            // Keep the old body's aftermath, and let this hero travel back normally.
+            GameUtils.SafeRelease(previous);
             RefreshCompanionBlips();
-            AssignCompanionAI();
-            GameUtils.Notify("~o~" + protagonist.DisplayName + "~s~ patched up and back on your six.");
+            _companions.Update(protagonist.Slot, ped, player);
+            GameUtils.Notify("~o~" + protagonist.DisplayName + "~s~ recovered. " +
+                (_companions.IndependentFreeRoam ? "Back to their own plans." : "Making their way back to you."));
         }
 
         /// <summary>
@@ -625,6 +649,7 @@ namespace Bloodlines.Crew
             foreach (var protagonist in Protagonist.All) _companions.Forget(protagonist.Slot);
 
             _peds.Clear();
+            _recovery.Clear();
             IsDeployed = false;
             IsSolo = false;
             DeployOrigin = null;

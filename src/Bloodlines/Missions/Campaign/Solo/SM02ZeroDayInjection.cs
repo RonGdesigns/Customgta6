@@ -50,6 +50,7 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Abilities.Refill();
 
             SpawnGuards();
+            foreach (var guard in _guards) RequireSurvivor(guard, "The annex guards must survive. Stun them and leave without killing them.");
             if (_guards.Count != 2) return false;
             return true;
         }
@@ -77,7 +78,7 @@ namespace Bloodlines.Missions.Campaign
                 {
                     // The payoff is mechanical, not narrative: from here the crew's
                     // archive access is recorded; native police radar remains available.
-                    context.State.SetUpgrade("surveillanceWormInstalled", true);
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Camera archive access secured. Leave before IT traces the connection.", 5000);
                 })
                 .AfterCues("SM02_S2_03_GOHAN");

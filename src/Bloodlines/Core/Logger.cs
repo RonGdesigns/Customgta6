@@ -20,6 +20,14 @@ namespace Bloodlines.Core
 
         private static string _path = "Bloodlines.log";
         private static bool _verbose;
+        private const long MaximumBytes = 4 * 1024 * 1024;
+        private static void Rotate()
+        {
+            if (!File.Exists(_path)) return;
+            string previous = _path + ".previous";
+            if (File.Exists(previous)) File.Delete(previous);
+            File.Move(_path, previous);
+        }
 
         // A fault inside OnTick repeats at the frame rate. The first run of this mod
         // produced ~100,000 identical stack traces in about ninety seconds, which
@@ -37,6 +45,8 @@ namespace Bloodlines.Core
             {
                 try
                 {
+                    Rotate();
+                    _lastError = null; _repeatCount = 0;
                     File.WriteAllText(_path,
                         "=== Los Santos: Bloodlines - session " + DateTime.Now.ToString("u") + " ===" + Environment.NewLine,
                         LogEncoding);
@@ -97,6 +107,7 @@ namespace Bloodlines.Core
             {
                 try
                 {
+                    if (File.Exists(_path) && new FileInfo(_path).Length >= MaximumBytes) Rotate();
                     File.AppendAllText(_path,
                         DateTime.Now.ToString("HH:mm:ss.fff") + " [" + level + "] " + message + Environment.NewLine,
                         LogEncoding);

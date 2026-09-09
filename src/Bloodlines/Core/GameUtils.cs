@@ -50,19 +50,20 @@ namespace Bloodlines.Core
 
         public static void SafeRelease(Entity entity)
         {
-            if (entity == null || !entity.Exists()) return;
-            entity.MarkAsNoLongerNeeded();
+            try { if (entity != null && entity.Exists()) entity.MarkAsNoLongerNeeded(); }
+            catch (Exception ex) { Logger.Warn("Could not release mission entity: " + ex.Message); }
         }
 
         public static void SafeDelete(Blip blip)
         {
-            if (blip != null && blip.Exists()) blip.Delete();
+            try { if (blip != null && blip.Exists()) blip.Delete(); }
+            catch (Exception ex) { Logger.Warn("Could not release map marker: " + ex.Message); }
         }
 
         /// <summary>Ground-hugging objective cylinder, drawn per frame.</summary>
         public static void DrawObjectiveMarker(Vector3 position, Color color, float radius = 1.5f)
         {
-            ObjectiveMarkers.Show(position);
+            ObjectiveMarkers.Show(position, color.R > 150 && color.G < 110 ? BlipColor.Red : BlipColor.Yellow);
             World.DrawMarker(
                 MarkerType.VerticalCylinder,
                 position - new Vector3(0f, 0f, 0.95f),

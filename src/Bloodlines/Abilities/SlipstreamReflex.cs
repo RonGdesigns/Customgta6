@@ -6,7 +6,7 @@ namespace Bloodlines.Abilities
 {
     /// <summary>
     /// Guess — "Slipstream Reflex". Driving-only time dilation with added grip and
-    /// torque, so the drift arcs the bible asks for are actually holdable instead
+    /// control, so the drift arcs the bible asks for are actually holdable instead
     /// of just slow-motion understeer.
     /// </summary>
     public sealed class SlipstreamReflex : Ability
@@ -35,7 +35,7 @@ namespace Bloodlines.Abilities
             }
 
             // Per-frame handling cheats: dropped the moment the ability ends.
-            Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, vehicle, 1.35f);
+            // WorldTuning owns progressive torque, including during this ability.
             Function.Call(Hash.SET_VEHICLE_REDUCE_GRIP, vehicle, false);
             vehicle.CanTiresBurst = false;
         }
@@ -52,7 +52,6 @@ namespace Bloodlines.Abilities
         {
             if (_vehicle != null && _vehicle.Exists())
             {
-                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, _vehicle, 1.0f);
                 _vehicle.CanTiresBurst = _tiresCouldBurst;
             }
             _vehicle = null;

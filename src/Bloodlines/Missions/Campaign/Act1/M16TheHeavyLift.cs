@@ -68,7 +68,7 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice)
                 
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~Code 7-Echo-Victor. They read you as one of theirs — until you fire.", 6000));
+                    GameUtils.Subtitle("~y~Code 7-Echo-Victor. The transponder gets you through the outer yard. Crossing the inner pad starts the fight.", 6000));
 
             yield return new MissionStage("Take the helipad",
                     new KillTargetsObjective("Clear the military police off the pad.",

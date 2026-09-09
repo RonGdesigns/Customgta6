@@ -104,7 +104,7 @@ namespace Bloodlines.Missions.Campaign
             if (_flatbed == null || !_flatbed.Exists()) return false;
 
             _flatbed.IsPersistent = true;
-            _flatbed.EnginePowerMultiplier = 12f;
+            // Preserve the flatbed's engine force; top-speed tuning is shared.
             _flatbed.CanTiresBurst = false;
 
             var blip = Track(_flatbed.AddBlip());

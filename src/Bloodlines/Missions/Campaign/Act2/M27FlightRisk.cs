@@ -97,7 +97,7 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy.", () => _dinghy))
                 .OnExit(context =>
                 {
-                    context.State.CashOnHand += 75000;
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Flight ledgers secured. Every Aegis charter for six months.", 6000);
                 })
                 .AfterCues("M27_S2_06_GUESS");

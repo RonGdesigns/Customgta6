@@ -95,8 +95,8 @@ namespace Bloodlines.Missions.Campaign
                 {
                     // The bible's payout: the pink slip plus the transmission and clutch
                     // the crew's getaway fleet is waiting on.
-                    context.State.CashOnHand += 25000;
-                    context.State.SetUpgrade("racingTransmissionInstalled", true);
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
+                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~g~Pink slip and the racing transmission are yours.", 5000);
                 })
                 .WithCues("SM03_S2_03_ENEMY", "SM03_S2_04_GUESS")
@@ -147,8 +147,7 @@ namespace Bloodlines.Missions.Campaign
 
             _coupe.IsPersistent = true;
             _coupe.Mods.InstallModKit();
-            _coupe.Mods[VehicleModType.Engine].Index = 3;
-            _coupe.Mods[VehicleModType.Transmission].Index = 2;
+            // Drift setup keeps ordinary engine power and acceleration modifiers.
             _coupe.Mods[VehicleModType.Suspension].Index = 3;
 
             var blip = Track(_coupe.AddBlip());

@@ -13,7 +13,8 @@ namespace Bloodlines.Core
         private readonly CrewRoster _crew;
         private readonly List<CrewSlot> _held = new List<CrewSlot>();
         private Ped _ped;
-        private Vector3 _origin, _target;
+        private Vector3 _origin, _target, _probe;
+        private string _waiting;
         private float _heading;
         private bool _frozen, _invincible, _control, _entering, _moved;
         private int _started, _interior;
@@ -25,13 +26,14 @@ namespace Bloodlines.Core
         public Vector3 InteriorPosition { get; private set; }
         public ApartmentAccess(CrewRoster crew) { _crew = crew; }
 
-        public bool Begin(Vector3 target, string ipl, bool enter)
+        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null)
         {
             var ped = Game.Player.Character;
             if (Busy || enter == Inside || ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) return false;
             _ped = ped; _origin = ped.Position; _heading = ped.Heading; _target = target;
             _frozen = ped.IsPositionFrozen; _invincible = ped.IsInvincible; _control = Game.Player.CanControlCharacter;
-            _entering = enter; _moved = false; _started = Game.GameTime; Busy = true;
+            _entering = enter; _moved = false; _started = Game.GameTime; Busy = true; _probe = interiorProbe ?? target; _waiting = null;
+            Logger.Info("Apartment: " + (enter ? "entry" : "exit") + " requested; target=" + target + "; IPL=" + (ipl ?? "stock"));
             try
             {
                 if (enter)
@@ -60,29 +62,54 @@ namespace Bloodlines.Core
             {
                 if (_ped == null || !_ped.Exists() || _ped.IsDead || Game.Player.Character.Handle != _ped.Handle)
                 { Fail(); return; }
-                if (Game.GameTime - _started > 7000) { Fail(); GameUtils.Notify("~y~Apartment loading timed out. Returned to your previous position."); return; }
+                if (Game.GameTime - _started > 12000) { Logger.Warn("Apartment timeout: " + _waiting + "; interior=" + _interior + "; moved=" + _moved + "; target=" + _target); Fail(); GameUtils.Notify("~y~Apartment loading timed out. Returned to your previous position."); return; }
                 Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, _target.X, _target.Y, _target.Z);
                 if (Game.GameTime - _started < 250) return;
                 if (_entering)
                 {
+                    if (!string.IsNullOrEmpty(_ipl) && !Function.Call<bool>(Hash.IS_IPL_ACTIVE, _ipl))
+                    { Waiting("IPL streaming"); return; }
                     if (_interior == 0)
                     {
                         _interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _target.X, _target.Y, _target.Z);
-                        if (_interior == 0) return;
+                        if (_interior == 0 && _probe != _target)
+                            _interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _probe.X, _probe.Y, _probe.Z);
+                        if (_interior == 0) { Waiting("interior lookup"); return; }
+                        Logger.Info("Apartment: pinned interior " + _interior);
                         Function.Call(Hash.PIN_INTERIOR_IN_MEMORY, _interior);
                         Function.Call(Hash.REFRESH_INTERIOR, _interior);
                     }
-                    if (!Function.Call<bool>(Hash.IS_INTERIOR_READY, _interior)) return;
+                    if (!Function.Call<bool>(Hash.IS_INTERIOR_READY, _interior)) { Waiting("interior readiness"); return; }
                 }
-                if (!_moved) { _moved = true; _ped.Position = _target; return; }
+                if (!_moved)
+                {
+                    _moved = true; _ped.Position = _target;
+                    Function.Call(Hash.CLEAR_ROOM_FOR_ENTITY, _ped);
+                    Waiting("destination collision"); return;
+                }
                 if (!Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, _ped)) return;
-                if (_entering && Function.Call<int>(Hash.GET_INTERIOR_FROM_ENTITY, _ped) != _interior) return;
+                if (_entering)
+                {
+                    int entityInterior = Function.Call<int>(Hash.GET_INTERIOR_FROM_ENTITY, _ped);
+                    // Frozen entities can temporarily retain no room association.
+                    // Accept the ready, collision-loaded room at the actual target
+                    // coordinates; never accept a mismatched nonzero room.
+                    if (entityInterior != _interior && (entityInterior != 0 ||
+                        Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _ped.Position.X, _ped.Position.Y, _ped.Position.Z) != _interior))
+                    { Waiting("room association (entity=" + entityInterior + ")"); return; }
+                }
                 Inside = _entering;
+                Logger.Info("Apartment: " + (Inside ? "entered" : "exited") + " with ready collision and restored controls.");
                 RestoreTransition();
                 if (!Inside) ReleaseInterior();
             }
             catch { Fail(); throw; }
+        }
+        private void Waiting(string stage)
+        {
+            if (_waiting == stage) return;
+            _waiting = stage; Logger.Info("Apartment: waiting for " + stage);
         }
         private static void Attempt(Action action) { try { action(); } catch (Exception ex) { Logger.Error("Apartment cleanup", ex); } }
         private void RestoreTransition()

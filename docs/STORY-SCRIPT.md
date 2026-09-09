@@ -2,7 +2,7 @@
 
 Authored expansion of the omnibus and solo bibles. These are new lines, not quotations from the PDFs.
 
-30 gameplay missions exist (M01–M27, SM01–SM03). Other scenes are authored for future scripts; they are not playable missions.
+36 gameplay missions exist (M01–M30, SM01–SM06). Other scenes are authored for future scripts; they are not playable missions.
 
 Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.
 Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.
@@ -19,7 +19,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M01_SCENE_INTRO_02_GUESS) — I'm outside the freight entrance in my own car. One pickup inside the yard. Keep it quiet, get paid, go home.
 
-**GOHAN** (M01_SCENE_INTRO_03_GOHAN) — Different client, same dockyard. The laptop behind their work station holds Mateo's payment ledger. I'm at the service entrance; I need to reach it before the security shift.
+**GOHAN** (M01_SCENE_INTRO_03_GOHAN) — Different client, same dockyard. The laptop at the west service station holds Mateo's payment ledger. It's separate from his meeting point. I'm at the service entrance; I need to reach it before the security shift.
 
 **ICE** (M01_SCENE_INTRO_04_ICE) — Mateo Cifuentes. The contract says identify him, keep him alive and trace the shipment. From here I can watch the yard without crossing it.
 

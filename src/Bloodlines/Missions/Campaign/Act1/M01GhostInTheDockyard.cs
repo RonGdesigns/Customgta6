@@ -60,7 +60,7 @@ namespace Bloodlines.Missions.Campaign
             // crane platform and yacht interior are not installed map assets.
             if (!ProloguePlacement.Prepare(Ctx.Locations)) return false;
             _roost = Ctx.Locations.Position("M01.CraneNest");
-            _bilge = Ctx.Locations.Position("M01.LowerDeckLedger");
+            _bilge = Ctx.Locations.Position("M01.ServiceTerminal");
             _bayFloor = Ctx.Locations.Position("M01.PrototypeCar");
             _slipway = Ctx.Locations.Position("M01.LaunchEscape");
 
@@ -69,7 +69,7 @@ namespace Bloodlines.Missions.Campaign
 
             var placements = new Dictionary<CrewSlot, PedPlacement>
             {
-                { CrewSlot.Ice, new PedPlacement(_roost, Ctx.Locations.Heading("M01.CraneNest")) },
+                { CrewSlot.Ice, new PedPlacement(Ctx.Locations.Position("M01.IceApproach"), Ctx.Locations.Heading("M01.IceApproach")) },
                 { CrewSlot.Gohan, new PedPlacement(Ctx.Locations.Position("M01.GohanApproach"), Ctx.Locations.Heading("M01.GohanApproach")) },
                 { CrewSlot.Guess, new PedPlacement(Ctx.Locations.Position("M01.GuessApproach"), Ctx.Locations.Heading("M01.GuessApproach")) }
             };
@@ -144,6 +144,7 @@ namespace Bloodlines.Missions.Campaign
 
             GameUtils.DrawObjectiveMarker(_mateo.Position, Color.FromArgb(120, 224, 74, 62), 0.9f);
 
+            if (!GameUtils.IsWithinFlat(player.Position, _roost, 6f)) return;
             bool eyesOn = player.IsAiming && (Game.Player.IsTargeting(_mateo) ||
                           Function.Call<bool>(Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY, Game.Player, _mateo))
                           && player.Position.DistanceTo(_mateo.Position) < 260f;
@@ -247,11 +248,13 @@ namespace Bloodlines.Missions.Campaign
             if (_guidanceSlot != Ctx.Crew.ActiveSlot) { _guidanceSlot = Ctx.Crew.ActiveSlot; NextApproachObjective(); }
             string task;
             if (Ctx.Crew.ActiveSlot == CrewSlot.Ice && !_iceHasEyes)
-                task = "Ice: identify Mateo in your scope. Keep him alive to trace his buyers. No gunfire.";
+                task = !GameUtils.IsWithinFlat(Game.Player.Character.Position, _roost, 6f)
+                    ? "Ice: walk to the lookout marker. Then aim at Mateo without firing."
+                    : "Ice: identify Mateo in your scope. Keep him alive to trace his buyers. No gunfire.";
             else if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan && !_ledgerRipped)
                 task = GameUtils.IsWithinFlat(Game.Player.Character.Position, _bilge, 8f)
                     ? "Gohan: stand at the laptop. Press E / D-pad Right, then stay for 8 seconds."
-                    : "Gohan: take the service path into the yard. Reach the green ledger terminal.";
+                    : "Gohan: take the west service lane to the green laptop marker, away from Mateo.";
             else if (Ctx.Crew.ActiveSlot == CrewSlot.Guess && !_prototypeTaken)
                 task = GameUtils.IsWithinFlat(Game.Player.Character.Position, _prototype.Position, 22f)
                     ? "Guess: park your car, get out and take the orange prototype."
@@ -259,6 +262,10 @@ namespace Bloodlines.Missions.Campaign
             else task = !_iceHasEyes ? "Switch to Ice and identify Mateo without firing."
                 : !_ledgerRipped ? "Switch to Gohan. Copy the ledger before the getaway."
                 : "Switch to Guess and take the orange prototype.";
+            bool finishedHere = Ctx.Crew.ActiveSlot == CrewSlot.Ice ? _iceHasEyes : Ctx.Crew.ActiveSlot == CrewSlot.Gohan ? _ledgerRipped : _prototypeTaken;
+            RequiredSwitch = finishedHere ? (!_iceHasEyes ? CrewSlot.Ice : !_ledgerRipped ? CrewSlot.Gohan : !_prototypeTaken ? (CrewSlot?)CrewSlot.Guess : null) : null;
+            if (Ctx.Crew.ActiveSlot == CrewSlot.Ice && !_iceHasEyes)
+            { GameUtils.DrawObjectiveMarker(_roost, Color.Gold); ObjectiveMarkers.Navigation(_roost, CrewSlot.Ice); }
             CurrentObjective = task;
             GameUtils.Subtitle("~y~" + task + " ~s~[" + (_iceHasEyes ? 1 : 0) + "/1 eyes, " +
                 (_ledgerRipped ? 1 : 0) + "/1 ledger, " + (_prototypeTaken ? 1 : 0) + "/1 car]", 500);
@@ -283,6 +290,7 @@ namespace Bloodlines.Missions.Campaign
         private void BeginRecognition()
         {
 
+            RequiredSwitch = null;
             // Recognition changes what they know, never where they stand or sit.
             SpawnEscapeLaunch();
             if (_launch == null || !_launch.Exists()) { Fail("The launch could not spawn. Retry the mission."); return; }
@@ -433,7 +441,7 @@ namespace Bloodlines.Missions.Campaign
         private bool SpawnLedgerStation()
         {
             // Mateo is checking shipping records with a technician; the terminal is
-            // accessible behind them so Gohan does not have to walk up to the target.
+            // at a separate west service station, away from their meeting point.
             var laptop = new Model("prop_laptop_01a");
             var table = new Model("prop_table_03");
             var worker = new Model("s_m_m_dockwork_01");

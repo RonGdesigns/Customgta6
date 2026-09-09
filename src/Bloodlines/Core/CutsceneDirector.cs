@@ -92,7 +92,7 @@ namespace Bloodlines.Core
                     {
                         var position = player.Position + new Vector3((int)protagonist.Slot * 1.8f - 1.8f, 3f, 0f);
                         if (missionId == "M01")
-                            position = _locations.Position(protagonist.Slot == CrewSlot.Ice ? "M01.CraneNest" :
+                            position = _locations.Position(protagonist.Slot == CrewSlot.Ice ? "M01.IceApproach" :
                                 protagonist.Slot == CrewSlot.Gohan ? "M01.GohanApproach" : "M01.GuessApproach");
                         var model = protagonist.Model;
                         if (GameUtils.RequestModel(model, 1000))
@@ -142,7 +142,7 @@ namespace Bloodlines.Core
                             boss.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", boss.Position, boss.Heading); Hold(boss);
                         }
                     }
-                    var terminal = _locations.Position("M01.LowerDeckLedger");
+                    var terminal = _locations.Position("M01.ServiceTerminal");
                     SceneProp("prop_table_03", terminal, true);
                     SceneProp("prop_laptop_01a", terminal + new Vector3(0f, 0f, .82f), false);
                     var workerModel = new Model("s_m_m_dockwork_01");
@@ -190,6 +190,16 @@ namespace Bloodlines.Core
                 Stop();
                 return false;
             }
+        }
+
+        /// <summary>A short camera observation of an action already happening in the world.
+        /// Skipping changes presentation only; no actor is moved or event postponed.</summary>
+        public bool PlayMoment(string missionId, string title, string speaker, string line, Ped actor)
+        {
+            if (IsActive || actor == null || !actor.Exists()) return false;
+            _scenes[missionId + ":moment"] = new List<DialogueCue> { new DialogueCue {
+                CueId = missionId + "_MOMENT", MissionId = missionId, Speaker = speaker, Line = line } };
+            return Play(missionId, "moment", title, actor, () => { });
         }
 
         private void Hold(Entity entity)
