@@ -1,81 +1,35 @@
-# Bloodlines — Proposed Story Changes Addendum (Batches 3–4)
+# Bloodlines — Proposed Story Changes Addendum (Batches 3–5)
 
 **Status:** Proposal only — not implemented.  
 **Companion to:** `docs/PROPOSED-STORY-CHANGES.md`
 
-This addendum records the corrected real-life-inspired trio dynamic, the M10 emotional-language correction, the M17–M27 review, and the next review batch M28–M38. No mission code, dialogue data, runtime behavior, or bible PDFs are changed by this document.
+This addendum carries the corrected real-life-inspired trio dynamic, reviewed changes through M38, and the M39–M49 review. No mission code, dialogue data, runtime behavior, or bible PDFs are changed by this document.
 
----
+## Locked character / continuity rules carried forward
 
-## A. Corrected Core Trio Dynamic
+- Ron, Ice, and Gohan are nearly brothers and remain an equal-status dynamic trio.
+- Ron is the glue: dependable, gets the squad together, keeps it together, and most consistently clutches when plans collapse.
+- Ron is slightly closer operationally to Ice because Ice is generally present and dependable.
+- Gohan is equally loved but has the recurring habit of disappearing, not answering his phone, and handling things himself.
+- Ice clutches a good amount, generally through controlled tactical action.
+- Gohan clutches less often, but his saves can be awkward, strange, overly technical, or almost cringe before they work.
+- Expertise determines who takes point in a phase; this is situational leadership, not hierarchy.
+- Major decisions belong to all three.
+- HUD = mechanics. Dialogue = people.
+- Emotional vocabulary should favor nervous, tense, pressure, rattled, adrenaline, concerned, etc. over explicitly calling these men scared.
+- M01 getaway prototype must have at least four seats; no two-seat T20.
+- M22 needs world logic explaining why the Cypress missile strike was possible but cannot simply be repeated against every future base.
+- M26 Lazer acquisition/storage continuity must be established or the aircraft changed.
 
-Ron, Ice, and Gohan are nearly brothers. Conflict between them should come from habits, communication, judgment, or pressure—not from uncertainty about whether they care about one another.
+## Locked M10 correction
 
-### Ron / Guess — the glue and most consistent clutch
+RON: **“I joke when I'm nervous too. Learn the difference.”**
 
-Ron is generally the dependable one who gets the squad together and keeps it together. He naturally thinks about the best interest of the whole trio and is usually the person checking that everybody is accounted for, has an exit, and gets home.
+## Locked M42 correction
 
-Ron is **not a commanding superior**. His leadership quality is social and practical: he keeps three different personalities moving in the same direction. If a clearer leadership role develops later, it should grow naturally from this established behavior rather than from rank.
+RON: **“Sub deployed. That one had my nerves up. Nobody put that in the flight log.”**
 
-Ron is also the trio's most consistent clutch performer. When a plan collapses, Ron should statistically be the person most often capable of improvising the save, especially when movement, vehicles, extraction, timing, or a fast decision is involved. These saves do not always need to be flashy.
-
-### Ron and Ice — closest operational bond
-
-Ron is slightly closer to Ice because Ice is generally dependable and present. Their disagreements should rarely read as distrust or a contest for authority. Their shorthand should feel like two people who already know the other will show up.
-
-When Ron challenges Ice, the subtext is usually: **"I am riding with you, so tell me what I am riding into."**
-
-Ice also clutches a significant number of situations, usually in a controlled tactical way: an important shot, holding a position, covering an extraction, or stabilizing a fight long enough for the trio to move.
-
-### Gohan — loved brother who disappears
-
-Gohan is equally part of the brotherhood, but he has a recurring habit of being absent, not answering his phone, and going off to do his own thing. Ron and Ice can be annoyed by this without the story implying that Gohan matters less to them.
-
-This trait should provide both character tension and comedy. Gohan may ignore multiple calls, disappear into a project, then arrive with exactly the information or solution the squad needs.
-
-His growth should therefore focus less on learning that he is valuable and more on **learning to keep his brothers informed, share what he knows, and stop designing every solution as if he will always be working alone.**
-
-Gohan clutches less frequently than Ron or Ice, but when he does, it can be awkward, strange, overly technical, or almost cringe in presentation—and still work exactly when the squad needs it.
-
-### Equal trio / situational point person
-
-The existing equal-status rule remains. Expertise determines who takes point in a moment:
-
-- Ron: cohesion, driving, extraction, improvisation, route decisions.
-- Ice: combat, overwatch, tactical positioning, defensive action.
-- Gohan: hacking, intelligence, surveillance, technical systems, evidence.
-
-Nobody is permanently above the other two.
-
----
-
-## B. Emotional Vocabulary Rule
-
-These are solid grown men. Future dialogue should generally avoid framing them as "scared."
-
-Preferred vocabulary includes **nervous, tense, under pressure, rattled, uncertain, adrenaline, pissed, concerned, or feeling the pressure**, depending on the scene.
-
-This does not mean the characters are emotionless. It means their dialogue should describe pressure in a way consistent with their characterization.
-
-### M10 correction
-
-Replace the proposed/current emotional beat:
-
-> **RON:** "I joke when I'm scared too. Learn the difference."
-
-with:
-
-> **RON:** "I joke when I'm nervous too. Learn the difference."
-
-The emotional interpretation also changes from "Ron's humor masks fear" to **"Ron's humor can mask nerves or pressure."**
-
-### M25 related correction
-
-The current line about Ice going quiet so Ron and Gohan would not "hear me scared" should receive the same treatment during implementation.
-
-Suggested direction:
-
-> **ICE:** "I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call."
+This replaces the current "I'm still shaking" wording. Ice's response can remain because the point is that a good plan should acknowledge what it asks of the people executing it.
 
 ---
 
@@ -83,101 +37,39 @@ Suggested direction:
 
 ## M17 — Sub-Zero Payload
 
-**Assessment:** Strong quiet character mission; revise Gohan's development framing.
-
-Ron's observation that Gohan builds equipment as though nobody will come get him is useful, but the deeper issue should be Gohan's habit of handling everything himself without keeping the other two informed.
-
-Suggested future direction:
-
-> **RON:** "See, this that shit you do. Build the whole damn thing like you the only person that's ever gonna touch it."
->
-> **GOHAN:** "I know how I built it."
->
-> **RON:** "That's the problem. You know. What happens when we gotta come get your ass?"
-
-Gohan adding an external release then becomes evidence that he is learning to design around the trio instead of around himself.
-
-Remove "marked yellow" from spoken dialogue and leave that information to the HUD.
+Strong quiet character mission. Gohan's development should focus on his habit of designing/working as though only he will ever need to understand the system. Ron should get on him about keeping the other two informed and making equipment recoverable by somebody besides Gohan. Remove "marked yellow" from spoken dialogue.
 
 ## M18 — The Staging Line
 
-**Assessment:** Strong; protect Ron's crew rule.
-
-Protect:
-
-> "One rule from me: if somebody calls abort, we answer before we argue. A container isn't a fourth brother."
-
-This is Ron functioning as the squad's glue, not issuing an order from above.
-
-Consider tightening Ice's "finish what started" wording so M18 does not sound like the campaign finale. Suggested intent: take something Aegis cannot afford to lose.
+Protect Ron's line: **“One rule from me: if somebody calls abort, we answer before we argue. A container isn't a fourth brother.”** This is Ron as the glue, not Ron asserting rank. Tighten Ice's "finish what started" wording so M18 does not sound like a campaign finale.
 
 ## M19–M21 — The Port Heist
 
-**Assessment:** Protect heavily.
-
-These missions contain some of the most natural trio interaction so far. Gohan asking the others to keep him talking underwater, Ice using an old car-wash story, Ron arguing that the radio was already broken, Ice monitoring Ron's overloaded Cargobob, and Gohan providing Ron an exit all reinforce a lived-in brotherhood.
-
-Avoid over-polishing these scenes into mission exposition.
+Protect heavily. The underwater breathing check, car-wash story, Ron's "already broken" response, Cargobob strain, and Gohan providing an exit are natural brotherhood scenes and should not be over-polished into exposition.
 
 ## M22 — Scorched Bay
 
-**Assessment:** Major turning point; tighten Ron's immediate reaction and establish missile-strike logic.
-
-Protect Ron's aftermath:
-
-> "That shop was going to be ours. Not a hideout. A place you two might actually stay."
-
-This is especially important under the corrected trio dynamic because Ron is the one trying to keep the group physically and emotionally together.
-
-Consider replacing the immediate "Blaine County belongs to us now" reaction with something more controlled and squad-focused, for example:
-
-> **RON:** "They burned our shop. Fine. We still got each other, we still got the score, and we ain't giving them another easy target."
-
-### World-logic requirement
-
-If Aegis can destroy Cypress with precision cruise missiles, later story material needs to establish why this strike was possible and why Aegis cannot casually solve every future safehouse problem with another missile strike.
+Protect Ron's aftermath about Cypress being intended as a real place for the three of them to stay. Consider replacing the immediate "Blaine County belongs to us now" reaction with a more controlled squad-focused response. Establish why Aegis could execute the precision strike and why it cannot casually repeat it.
 
 ## M23 — Ghost in the Sage
 
-**Assessment:** Protect.
-
-Ice's line that nobody calls the bunker home simply because he says so fits the equal-trio rule perfectly. Ron checking the second exit also fits his role as the person thinking about how the squad gets home.
+Protect. Ice explicitly refusing to decide what counts as home for the other two fits the equal-trio rule. Ron checking the second exit fits his glue role.
 
 ## M24 — Liquid Gold
 
-**Assessment:** Protect with minor polish.
-
-Recovering only five tons rather than immediately moving the entire thirty-ton score is sensible and gives the gold continuing strategic value.
+Protect. Recovering only five tons rather than immediately moving the entire thirty-ton score is sensible and gives the gold continuing strategic value.
 
 ## M25 — Bounty Hunters' Canyon
 
-**Assessment:** Keep mission; change the "scared" wording as specified above.
-
-The important character beat is Ice admitting that his bad habit is going quiet and carrying pressure alone. Ron's response should reinforce that the squad needs the call early.
+Keep mission. Replace Ice's "hear me scared" wording with pressure/nerves language. Preferred direction: **“I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.”**
 
 ## M26 — The Alamo Scramble
 
-**Assessment:** Good mission; verify aircraft continuity.
-
-The Lazer should not simply appear because the mission requires one. Confirm that the campaign establishes how the trio acquired, accessed, or stored it. If not, either create that continuity later or use an aircraft already justified by previous missions.
+Good mission. Verify how the trio obtained/accessed/stored the Lazer. Major equipment should not appear solely because a mission requires it.
 
 ## M27 — Flight Risk
 
-**Assessment:** Strong set piece; mechanical-language cleanup only.
-
-Protect:
-
-> "Check your parachute twice; I want an argument about this later."
-
-and Ice explicitly giving both Ron and Gohan a vote on whether the approach is viable.
-
-Move exact 12–60 metre formation requirements and "marked boat" language into the HUD.
-
-Suggested spoken direction:
-
-> **RON:** "I'm matching his speed. Ice, tell me when the gap looks right."
->
-> **GOHAN:** "Jet's dropping its nose. Get out now. I'm underneath you."
+Strong set piece. Protect Ron wanting an argument with Ice later and Ice giving both brothers a vote on the approach. Move exact 12–60 metre formation requirements and marked-boat language to HUD.
 
 ---
 
@@ -185,124 +77,198 @@ Suggested spoken direction:
 
 ## M28 — Off the Grid
 
-**Assessment:** Strong Act II continuation; protect.
-
-Gohan cutting the repeater follows naturally from M27's flight ledger, and Ice telling Gohan that silence is not the same as having something handled fits the corrected Gohan dynamic extremely well.
-
-This should read as Ice knowing his brother's habit of disappearing into a task, not as generic trauma dialogue.
+Protect. Ice telling Gohan that silence is not the same as having something handled directly fits Gohan's habit of disappearing into tasks.
 
 ## M29 — Dust & Diesel
 
-**Assessment:** Structurally solid but currently plain.
-
-The bunker needing fuel is believable, but the dialogue is almost entirely functional. This is a good place for light Ron/Ice shorthand because they are doing a practical two-man job together.
-
-Protect the basic premise: take only what the bunker needs rather than turning every supply run into a giant score.
+Structurally solid but plain. Good location for light Ron/Ice shorthand. Keep the premise of taking only what the bunker needs.
 
 ## M30 — Redline Ridge
 
-**Assessment:** Strong Ron/Gohan relationship opportunity.
-
-Gohan choosing a route from a map and explicitly allowing Ron to reject it from the driver's seat is excellent situational leadership. Ron has the real-world driving judgment; Gohan has the map/intelligence.
-
-Remove "marked bend" from spoken dialogue.
-
-The aftermath should feel like familiar irritation rather than a serious dispute: Ron is getting on Gohan because Gohan's technically correct route did not account for what driving it actually feels like.
+Strong Ron/Gohan relationship beat. Gohan chooses a route from a map but respects Ron's real-world judgment from the driver's seat. Remove "marked bend" from speech. Their aftermath should feel like familiar irritation, not a serious dispute.
 
 ## M31 — The Iron Perimeter
 
-**Assessment:** Strong; protect the central philosophy.
-
-Ron insisting that the bunker defense include an exit is exactly right after Cypress. Ice's aftermath that nobody earns trust by taking every risk himself also works, but should remain mutual rather than sounding like a lesson delivered from a superior.
+Protect the philosophy that every defense needs an exit. Ice's point that nobody earns trust by taking every risk himself should remain mutual, not superior-to-subordinate.
 
 ## M32 — Black Site Zancudo
 
-**Assessment:** Strong mission logic; protect Ron's Ramos decision.
-
-Ron saying they go for Ramos "as a person first" is a strong glue-character moment. The squad needs information, but Ron is making sure usefulness does not become the measure of whether someone gets rescued.
-
-The gameplay dialogue is mostly natural; "bring boat to estuary" can be loosened slightly in the final dialogue pass.
+Protect Ron's decision to rescue Ramos as a person first. Loosen purely mechanical pickup wording during final dialogue polish.
 
 ## M33 — The Informant's Grave
 
-**Assessment:** Strong; protect.
-
-The mission has a clear human priority: rescue Ramos first, interrogate later. Ron saying nobody asks him for codes on a stretcher and Ice backing that decision fits the trio's values.
-
-One logic check for implementation: the gameplay trigger labeled "Code acquired" currently accompanies Gohan saying the codes can wait. Ensure the eventual mission logic does not accidentally contradict the story beat.
+Protect. Rescue and stabilize Ramos before using his information. Check the "Code acquired" gameplay trigger so it does not contradict the dialogue saying the codes can wait.
 
 ## M34 — Mud & Iron
 
-**Assessment:** Strong action mission; some dialogue is overly descriptive.
-
-The half-track/sandstorm escape is cinematic and gives all three something useful to do. However, lines such as "visibility is twenty feet," "turbines spinning like guillotines," exact tower numbering, and announcing six buried Insurgents can be tightened so the characters sound less like combat telemetry.
-
-Gohan's rockslide is a good candidate for one of his **awkward-but-effective clutch moments**: his solution can sound overly technical or questionable right before it works perfectly.
+Strong action mission. Tighten combat-telemetry-style dialogue. Gohan's rockslide is a good candidate for an awkward-but-effective Gohan clutch: the solution sounds overly technical/questionable right before it works perfectly.
 
 ## M35 — The Chianski Ambush
 
-**Assessment:** Strong planning philosophy; light polish.
-
-Protect Ron's point that if the anti-air truck is destroyed, they change the extraction rather than pretending the missing piece will magically appear later.
-
-Gohan surveying the rig himself after Ramos explains it is also good: outside intelligence informs the plan, but the trio verifies what they are actually committing to.
+Protect Ron's rule that if the required extraction equipment is destroyed, they change the extraction rather than pretending the missing piece will appear. Gohan verifying the rig himself after Ramos explains it is good disciplined planning.
 
 ## M36 — Deep Well Recon
 
-**Assessment:** Very strong Gohan mission.
-
-Ron telling Gohan to call out what worries him while he sees it directly addresses Gohan's habit of holding information until he has completed the whole analysis.
-
-Ice's aftermath is also strong:
-
-> "You came back with reasons to wait. That's a successful recon."
-
-That reinforces that a successful mission does not always mean immediate action.
+Protect heavily. Ron telling Gohan to report bad news while he sees it—not after completing the whole diagram—is exactly the corrected relationship dynamic. Ice calling reasons to wait a successful recon is also strong.
 
 ## M37 — The Grapeseed Harvest
 
-**Assessment:** Solid setup mission; light polish.
-
-The smoke-screen logic is clear, and Gohan correctly notes that visual cover does not defeat radar or thermal systems. The line about taking only enough explosives for the surveyed columns also supports the campaign's increasingly disciplined planning.
-
-No major character rewrite needed.
+Solid setup mission. Light polish only. Keep Gohan's distinction between visual smoke cover and radar/thermal detection.
 
 ## M38 — Blood in the Quarry
 
-**Assessment:** Strong; protect Gohan's collateral-damage line.
-
-Gohan refusing to call workers "acceptable losses" simply because a plan looks clean on paper is consistent with his analytical/moral role.
-
-The gameplay lines can lose some exact quantities/locations where HUD text already supplies them, but the mission's story function is sound.
+Protect Gohan's refusal to treat workers as acceptable losses because a plan looks clean on paper. Reduce exact quantities/locations in speech when HUD already supplies them.
 
 ---
 
-## Batch 4 Overall Notes
+# Batch 5 — M39 through M49
 
-M28–M38 is more disciplined than some of the early Act I material. The trio increasingly plans around failure instead of assuming everything will work. That progression should stay.
+## M39 — The Paleto Cable
 
-The corrected relationship context makes several existing scenes stronger:
+**Assessment:** Protect heavily.
 
-- Ron repeatedly builds exits and recovery plans because he is the squad's glue.
-- Ice is the dependable operational anchor Ron can lean on.
-- Gohan's recurring development is learning to communicate before disappearing into the technical work.
-- Gohan's occasional strange technical solutions should sometimes become clutch saves rather than always being presented as perfectly polished plans.
+Gohan handles the underwater technical phase while Ice tells him to maintain a return line to the other two. This fits Gohan's established habit: the development is not learning that he matters, but learning to keep his brothers informed before disappearing into a task.
 
-Continue applying the campaign-wide rule:
+Protect Gohan explicitly telling Ron what he needs from the getaway boats. Protect Ron responding by asking for the drawings so the armor can be built around the actual exit.
 
-**HUD = mechanics. Dialogue = people.**
+## M40 — The Phantom Rigging
 
-And preserve the trio as brothers first, specialists second.
+**Assessment:** Protect.
+
+Ron insisting that the getaway boats be tested while loaded is exactly his dependable/glue role. He is thinking beyond whether the plan works on paper to whether all three actually get home.
+
+Ice acknowledging that his ammunition and equipment add weight is good equal-team planning.
+
+## M41 — The General's Wire
+
+**Assessment:** Strong relationship mission; protect.
+
+Ron's line telling Ice to come back when the agreed job is finished should not read as doubt in Ice's competence. Ron knows Ice will show up. The point is that Ice does not need to keep adding danger or bodies after the objective is complete.
+
+Protect Ice explicitly reporting that he is coming back with what they agreed to take. Protect Gohan thanking him for saying it rather than going silent.
+
+## M42 — Skyfall Delivery
+
+**Assessment:** Strong set piece; locked dialogue correction.
+
+Use the approved Ron line:
+
+> **RON:** “Sub deployed. That one had my nerves up. Nobody put that in the flight log.”
+
+Protect Ice's response that the pressure should be recorded so anybody reading the plan understands what it asks of a person.
+
+The mission also fits Ron/Gohan trust: Ron asks Gohan to talk through each latch before Ron opens the Titan's cargo ramp, while Gohan trusts Ron with the part he cannot verify from inside the Kraken.
+
+## M43 — Staging Paleto
+
+**Assessment:** Protect heavily; major Ron glue moment.
+
+Protect exactly:
+
+> **RON:** “Final check: the exit stays open even if the vault doesn't. We came north as three people. We leave with three.”
+
+This is a key example of how Ron's eventual leadership should develop. He does not announce himself as leader. He establishes that no amount of money is worth losing one of the brothers, and the squad moves around that principle.
+
+Consider tightening Ice's generic "break their fortress and take our five hundred million" line so the final muster has more character and less action-movie exposition.
+
+## M44 — Paleto Deep-Sea: Sub-Surface
+
+**Assessment:** Protect heavily; excellent situational leadership.
+
+Gohan runs this phase because he is underwater disabling the defenses. Protect:
+
+- Gohan insisting nobody jumps ahead because he is underwater.
+- Ice answering: **“Your clock. Your call.”**
+- Ron remaining positioned so the aircraft can still pull away.
+- Ron's aftermath that the trio has finally learned to wait for one another.
+
+This is the equal-trio model working correctly: Gohan leads the phase because it is his phase, not because hierarchy changed.
+
+## M45 — Paleto Deep-Sea: Helipad Breach
+
+**Assessment:** Strong; light dialogue adjustment.
+
+Protect Ron giving Ice one landing opportunity but explicitly allowing Ice to say if the landing is not viable. Protect Ice refusing a "hero jump" just to save a few seconds.
+
+Potential future polish: Ice's aftermath currently assigns both brothers their next tasks in a way that can accidentally sound commander-like. Keep the information but make it more conversational.
+
+Suggested direction:
+
+> **ICE:** “Helipad's secure. Gohan, I need Bradley's card up here. Guess—how's our bird?”
+
+## M46 — Paleto Deep-Sea: Vault Crack
+
+**Assessment:** Major story payoff; protect heavily.
+
+This mission should remain the point where the conspiracy moves from allegation to hard evidence.
+
+The preferred mystery structure is:
+
+- M05: Mateo gives the allegation/lead.
+- Following missions: the trio investigates and verifies pieces.
+- M46: the political escrow ledger provides proof and names officials.
+
+Protect Ice's point that Mateo's word started them moving but cannot finish the fight.
+
+Protect Ron's line prioritizing evidence and leaving enough carrying capacity/room for a person. It reinforces that people come before another bag of money.
+
+## M47 — Paleto Deep-Sea: Collapse
+
+**Assessment:** Strong; explicit Ron clutch.
+
+Protect Ron forcing verbal confirmation from Ice:
+
+> **RON:** “Ice, answer in words. I can't hear a nod through a radio.”
+
+This fits Ron's recurring role of making sure everybody communicates.
+
+Treat the final extraction—Ron getting both Ice and Gohan aboard the getaway boats while the rig collapses—as a significant **Ron clutch moment**. It should feel like the kind of situation where the plan has become chaos and Ron is the one who gets everybody moving and out.
+
+## M48 — The Road Back South
+
+**Assessment:** Protect.
+
+Ice saying he will not call revenge a route home is good development. Gohan emphasizing that they are returning with evidence rather than merely relocating the war is also strong.
+
+Protect Ron stopping premature celebration and immediately focusing on the next crossing. That is consistent with his dependable role.
+
+## M49 — Return to the Concrete
+
+**Assessment:** Strong opening to the return; emphasize Ron clutch.
+
+Protect the reference to the Granger the trio built together and Ice's lesson from Cypress that a place or vehicle can matter without becoming worth more than a person.
+
+The Chumash roadblock should be another strong Ron clutch set piece: bad weather, armored roadblock, narrow opening, Ron identifying the seam and physically getting the trio back toward Los Santos.
+
+Do not over-explain the clutch in dialogue. Let the gameplay and the other characters' reactions establish that Ron came through again.
+
+---
+
+## Batch 5 Overall Notes
+
+M39–M49 gets the real trio dynamic particularly well and should not be over-rewritten.
+
+The progression is clear:
+
+- Gohan increasingly communicates what he needs before disappearing into technical work.
+- Ice remains the dependable tactical anchor but learns that reliability does not require carrying every danger alone.
+- Ron repeatedly checks communication, protects exits, puts people above scores, and becomes the person most likely to get all three home when a plan breaks down.
+
+Do not manufacture extra conflict in this stretch. The brotherhood is functioning. Let tension come from the operation and from familiar habits rather than from questioning the bond.
 
 ---
 
 ## Continuity / Implementation Flags Carried Forward
 
-1. M01 getaway prototype must have at least four seats; no two-seat T20.
-2. M10 Ron says **nervous**, not scared.
-3. M25 Ice's "scared" wording should become pressure/nerves language.
-4. Establish why the M22 Cypress missile strike can happen but cannot simply be repeated against every future base.
-5. Verify the acquisition/storage continuity of M26's Lazer.
-6. Keep Gohan's absence/non-answering habit available as recurring relationship texture without weakening the brotherhood.
-7. Increase Ron's clutch frequency across the campaign; Ice remains a strong secondary clutch performer; Gohan gets less frequent but memorable awkward/technical clutch saves.
-8. Do not turn Ron's glue role into constant command dialogue. Show it through check-ins, exits, recovery decisions, and making sure all three move together.
+1. M01 getaway prototype: minimum four seats; no two-seat T20.
+2. M10 locked wording: **“I joke when I'm nervous too. Learn the difference.”**
+3. M25: replace "scared" with pressure/nerves wording.
+4. M42 locked wording: **“Sub deployed. That one had my nerves up. Nobody put that in the flight log.”**
+5. M22: establish limits/conditions around the Cypress precision strike.
+6. M26: establish Lazer acquisition/storage or change aircraft.
+7. M46: preserve as the hard-evidence payoff to the conspiracy mystery.
+8. M47: treat the extraction as a significant Ron clutch.
+9. M49: emphasize Ron's roadblock escape as another clutch without turning it into self-congratulatory dialogue.
+10. Keep Gohan's absence/non-answering habit available as recurring relationship texture without weakening the brotherhood.
+11. Maintain clutch distribution: Ron most consistently; Ice a strong secondary tactical clutch; Gohan less frequent but memorable awkward/technical clutch saves.
+12. Do not turn Ron's glue role into constant command dialogue. Show it through check-ins, exits, recovery decisions, and getting the trio together.
