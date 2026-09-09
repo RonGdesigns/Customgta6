@@ -126,6 +126,13 @@ public static partial class StoryTests
   c.Cutscenes.Stop();Check(World.RenderingCamera==null&&Game.Player.CanControlCharacter,"Invalid prior camera returns to gameplay instead of keeping script rendering enabled");
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;var old=c.Locations.Position("M01.CraneNest");
   Check(!ProloguePlacement.Prepare(c.Locations)&&c.Locations.Position("M01.CraneNest")==old&&Script.Waited==600,"Unloaded navmesh rejects M01 within a bound without moving location keys");
+  Reset();crew=Roster();c=Context(crew);
+  var iceStart=c.Locations.Position("M01.IceApproach");var lookoutStart=c.Locations.Position("M01.CraneNest");
+  Check(GameUtils.IsWithinFlat(iceStart,lookoutStart,20f)&&!GameUtils.IsWithinFlat(iceStart,lookoutStart,12f),"Ice's lookout is a short walk from his approach, not a hike, and not on top of it");
+  Check(lookoutStart.DistanceTo(c.Locations.Position("M01.CapoSpawn"))<260f,"Ice can still identify Mateo from the lookout");
+  Reset();crew=Roster();c=Context(crew);c.Locations.Get("M01.CraneNest").Position=c.Locations.Position("M01.IceApproach");
+  Check(ProloguePlacement.Prepare(c.Locations),"A lookout that resolves onto Ice's approach is nudged out, not refused");
+  Check(!GameUtils.IsWithinFlat(c.Locations.Position("M01.IceApproach"),c.Locations.Position("M01.CraneNest"),12f),"The nudged lookout still leaves Ice an approach to walk");
   Reset();crew=Roster();c=Context(crew);c.Locations.Get("M01.ServiceTerminal").Position=c.Locations.Position("M01.CapoSpawn");
   Check(!ProloguePlacement.Prepare(c.Locations),"M01 rejects terminal overrides that overlap Mateo before moving actors");
   var legacy=Path.Combine(root,"old-terminal.ini");File.WriteAllText(legacy,"[Positions]\nM01.LowerDeckLedger.X = 1019\nM01.LowerDeckLedger.Y = -3184\nM01.LowerDeckLedger.Z = 6\n");

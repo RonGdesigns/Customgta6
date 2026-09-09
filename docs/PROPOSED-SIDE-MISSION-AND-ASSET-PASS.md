@@ -1,6 +1,6 @@
 # Bloodlines — Proposed Side-Mission Revisions & Stock-Asset Feasibility Pass
 
-**Status:** Proposal only — not implemented.  
+**Status:** Superseded — the approved items were implemented on September 9, 2026. See `HANDOFF-IMPLEMENTATION-UPDATE.md` for what was built and `CHANGE-REGISTER.md` for the per-item decisions. Kept for the reasoning behind each choice; do not re-apply from here.  
 **Companion to:** `docs/PROPOSED-STORY-CHANGES.md` and `docs/PROPOSED-STORY-CHANGES-BATCH3-4.md`
 
 This document records proposed side-mission character revisions, possible additional side missions for character development, and a stock-GTA-asset feasibility pass. It does **not** change mission scripts, dialogue data, scenes, coordinates, or runtime behavior.
