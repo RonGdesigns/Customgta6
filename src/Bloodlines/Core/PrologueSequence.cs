@@ -100,7 +100,7 @@ namespace Bloodlines.Core
             var doorSide = _car.Position + LeftOf(_car) * 1.9f;
             var blocking = new SceneBlocking()
                 .Then(new WaitStep(1200, guess))
-                .Then(new UsePhoneStep(guess, 2600))
+                .Then(new UsePhoneStep(guess, 4200))
                 .Then(new LookAtStep(guess, _car, 900))
                 .Then(new WalkToStep(guess, doorSide, 1.6f))
                 .Then(new EnterVehicleStep(guess, _car, VehicleSeat.Driver));
@@ -191,7 +191,7 @@ namespace Bloodlines.Core
         {
             if (!IsActive) return;
             Logger.Info("Prologue skipped by the player.");
-            _cutscenes.Stop();
+            _cutscenes.Skip();
             Finish();
         }
 

@@ -25,7 +25,7 @@ namespace Bloodlines.Core
             new Message("M15", "Ice", "They lived", "The guards walked away. That's a choice we can still make. The next job doesn't get to erase it just because we're rattled."),
             new Message("M22", "Gohan", "Don't go back", "Cypress is burned. Don't circle the foundry looking for something we forgot. I'm alive. Say you're both alive before we discuss what comes next."),
             new Message("M23", "Guess", "A place to breathe", "Radar bunker isn't home yet. Put your things down anyway. I'm tired of every conversation happening with an engine running."),
-            new Message("M27", "Ice", "After the landing", "We got you out. Next time tell us the whole plan before the plane leaves the ground. I'm angry because I intend to see you tomorrow. Gohan arranged three Eclipse suites under clean names. The bunker stays our base."),
+            new Message("M27", "Ice", "After the landing", "You got me out. Next time I tell you both the whole plan before the plane leaves the ground. Gohan arranged three Eclipse suites under clean names. The bunker stays our base."),
             new Message("SM03", "KJ", "Still got it", "You can still drive, Guess. Next time we meet, let's keep it to the race. Call me when you get back in one piece.")
         };
         private readonly CampaignState _state;

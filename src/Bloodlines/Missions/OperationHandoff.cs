@@ -12,11 +12,17 @@ namespace Bloodlines.Missions
     /// active, where everybody was, which vehicle they were in and whether the
     /// cargo was still attached to it.
     ///
-    /// Entity persistence across a mission boundary is not something the mission
-    /// framework can promise — every mission tears its world down and the next one
-    /// builds its own — so the record is a description, and the receiving mission
-    /// reconstructs the same apparent state from it. The Port Heist (M19 -> M22) is
-    /// the first user; the offshore rig, the tower and the finale reuse the shape.
+    /// This is a capture, not a restore. Every mission tears its world down and the
+    /// next builds its own, so the record describes the state the story needs the
+    /// receiving chapter to reproduce, and each receiver decides which fields it
+    /// consumes. Today: M20 uses the vehicle position and heading to put Gohan back
+    /// in the surfaced Kraken; M21 uses the vehicle position and heading to start the
+    /// loaded Cargobob where M20's climb-out ended and always attaches the container;
+    /// M22 consumes the record and only logs whether the cargo was attached. Hero
+    /// positions, seats, health, clock and weather are recorded for the log and for
+    /// later operations; no current receiver restores them. Records live for one
+    /// session; a fresh session gets each chapter's default staging, which still
+    /// carries the story's visible state (M21 has bullion under the lift either way).
     /// </summary>
     public sealed class OperationHandoff
     {

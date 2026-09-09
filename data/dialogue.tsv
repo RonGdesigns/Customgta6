@@ -41,12 +41,12 @@ M07_S1_03_GOHAN	M07	1	GOHAN		Aegis is shipping two military turbine engines to P
 M07_S2_04_ICE	M07	2	ICE		Aegis helicopter incoming. I need a way off this roof.	Gameplay stage 3 entry
 M07_S2_05_GUESS	M07	2	GUESS		I'm underneath you, Ice. Find a safe way down and I'll be there.	Gameplay stage 3 entry
 M08_S1_01_GUESS	M08	1	GUESS		Seven hundred horsepower, bulletproof casings, all-fuel intake. Nothing in San Andreas catches us.	Gameplay stage 1 entry
-M08_S1_02_GOHAN	M08	1	GOHAN		Camera loop is active. Ice, clear the marked sentries so Guess can load the engines.	Gameplay stage 1 completion
+M08_S1_02_GOHAN	M08	1	GOHAN		Camera loop is active. Ice, the sentries are yours. Then Guess loads the engines.	Gameplay stage 1 completion
 M08_S2_03_GUESS	M08	2	GUESS		Crate one seated! Ice, armored technical coming up the boat ramp!	Gameplay stage 4 entry
 M08_S2_04_ICE	M08	2	ICE	Detonating grenade launcher	Technical is out. Guess, secure the second crate.	Gameplay stage 4 completion
 M08_S2_05_GUESS	M08	2	GUESS		Chained down! Hitting the Del Perro connector!	Gameplay stage 7 entry
 M09_S1_01_ICE	M09	1	ICE		Three Insurgents north past Harmony. Middle vehicle has Vance. Rear vehicle is escort.	Gameplay stage 1 entry
-M09_S1_02_GUESS	M09	1	GUESS		I'm taking the Frogger toward the convoy. Ice, hold the ambush point. Keep the rear escort marked.	Gameplay stage 2 entry
+M09_S1_02_GUESS	M09	1	GUESS		I'm taking the Frogger toward the convoy. Ice, hold the ambush point and keep the rear escort in your sights.	Gameplay stage 2 entry
 M09_S2_03_ICE	M09	2	ICE	Suppressed crack	Escort driver down. The transponder is still in his cab.	Gameplay stage 3 completion
 M09_S2_04_GUESS	M09	2	GUESS		Ice, approach the stopped escort on foot. Pull its IFF unit. I'll keep watch from the Frogger.	Gameplay stage 4 entry
 M09_S2_05_ICE	M09	2	ICE		Transponder secured. Code 7-Echo-Victor. We got military clearance tomorrow.	Gameplay stage 4 completion
@@ -61,8 +61,8 @@ M11_S1_02_ICE	M11	1	ICE	Hands on steering wheel, throttle revving	Manifold press
 M11_S1_03_GUESS	M11	1	GUESS	Leaning into driver window, grinning	Remember when we used to hotwire clunkers behind the Davis car wash? Now we tuning aerospace turbine engines in Burro Heights.	Gameplay stage 4 entry
 M11_S1_04_ICE	M11	1	ICE	Chuckling softly	Fifteen years ago you couldn't change an alternator without stripping the threads, Guess. You came a long way.	Gameplay stage 4 entry
 M11_S1_05_GOHAN	M11	1	GOHAN	Walking into shop with rugged laptop	Enjoy the nostalgia while you can, boys. Aegis just docked three billion in cartel gold bullion into Berth 44. We are taking it.	Gameplay stage 4 entry
-M12_S1_01_GOHAN	M12	1	GOHAN		I'm launching the sub from the jetty. First the sonar marker, then the hull scan.	Gameplay stage 1 entry
-M12_S1_02_ICE	M12	1	ICE		Patrols are near the hull. Keep the sub at the marked depth and break their sight line.	Gameplay stage 2 entry
+M12_S1_01_GOHAN	M12	1	GOHAN		I'm launching the sub from the jetty. Sonar sweep first, then the hull scan.	Gameplay stage 1 entry
+M12_S1_02_ICE	M12	1	ICE		Patrols are near the hull. Keep the sub deep and break their sight line.	Gameplay stage 2 entry
 M12_S1_03_GOHAN	M12	1	GOHAN		Breach coordinates tagged. Hull thickness eight inches. We need acoustic plasma torches.	Gameplay stage 3 completion
 M13_S1_01_ICE	M13	1	ICE		Charge three armed on barge hull. Guess, be ready on western canal slipway.	Gameplay stage 2 completion
 M13_S1_02_GUESS	M13	1	GUESS		I'm holding the Granger at the slipway. Get aboard, then trigger the charges.	Gameplay stage 3 entry
@@ -247,12 +247,12 @@ M68_S1_03_GOHAN	M68	1	GOHAN		Deploying magnetic trail mines! Bridge support blow
 M69_S1_01_GUESS	M69	1	GUESS		Runway 30L! Commercial 747 touching down right in front of us! SWERVING!	Jetliner dodge
 M69_S1_02_ICE	M69	1	ICE		Aegis barricade at the taxiway! Guess, ram the fuel bowser into their line!	Barricade smash
 M69_S1_03_GOHAN	M69	1	GOHAN		C-130 cargo ramp is open! Drive the rig straight up into the cargo hold!	Ramp boarding
-M70_S1_01_ICE	M70	1	ICE	Roaring over minigun fire, brass raining down tarmac	Fifteen years we walked our own roads, but tonight we hold this ground TOGETHER!	Final siege holdout
-M70_S1_02_GOHAN	M70	1	GOHAN	Firing combat rifle, laughing wildly through smoke	Third wave! Ice, we're still here! I'm not losing either of you after finding you again!	Wave three repelled
+M70_S1_01_ICE	M70	1	ICE	Roaring over minigun fire, brass raining down tarmac	Fifteen years on our own roads. Tonight we hold this ground.	Final siege holdout
+M70_S1_02_GOHAN	M70	1	GOHAN	Firing combat rifle, laughing wildly through smoke	Third wave! Ice, still with me?	Wave three repelled
 M70_S1_03_GUESS	M70	1	GUESS	Throttle quad-levers jammed forward	All four turboprops redlining! We ain't dying on this runway! SEAWALL RAMP IN THREE SECONDS!	Seawall taxi
 M70_S1_04_ICE	M70	1	ICE		HOLD ONTO SOMETHING! HIT THE WATER!	Plane launches off seawall
 M70_S1_05_GOHAN	M70	1	GOHAN	Floating in the ocean launch under golden sunrise	We survived it. All three of us.	Sunrise aftermath
-M70_S1_06_GUESS	M70	1	GUESS	Smiling, looking back at the smoking city horizon	Told y'all... Guess never misses an exit.	Brothers laugh
+M70_S1_06_GUESS	M70	1	GUESS	Smiling, looking back at the smoking city horizon	Told y'all it still had engines.	Brothers laugh
 M70_S1_07_ICE	M70	1	ICE	Looking at his brothers, loading fresh magazine, smiling	Let's go home.	Final cut to black: CAMPAIGN COMPLETE
 SM01_S1_01_ICE	SM01	1	ICE	Low, dangerous growl	Sergei thought he could pocket twenty grand and hand me surplus civilian brass. Time to remind him who taught him logistics.	Gameplay stage 1 entry
 SM01_S1_02_ICE	SM01	1	ICE	Kicking side door open, racking heavy shotgun	Six guards between me and Sergei. I'm clearing the floor before I ask for the codes.	Gameplay stage 2 entry

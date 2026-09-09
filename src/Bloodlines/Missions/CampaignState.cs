@@ -22,6 +22,8 @@ namespace Bloodlines.Missions
     public enum CampaignProgress
     {
         StoryAvailable,
+        /// <summary>The next story mission exists but a story gate holds it until named solo jobs are done.</summary>
+        StoryGated,
         SideContentOnly,
         StoryBlocked,
         ImplementedContentComplete
@@ -212,8 +214,8 @@ namespace Bloodlines.Missions
         /// </summary>
         public CampaignProgress Progress(MissionCatalog catalog)
         {
-            var story = catalog.Playable.FirstOrDefault(m => !m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
-            if (story != null) return CampaignProgress.StoryAvailable;
+            var story = NextStory(catalog);
+            if (story != null) return GateSatisfied(story, catalog) ? CampaignProgress.StoryAvailable : CampaignProgress.StoryGated;
             var side = catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
             if (side != null) return CampaignProgress.SideContentOnly;
             bool anyStoryLeft = catalog.Playable.Any(m => !m.IsSolo && !IsComplete(m.Id));
@@ -226,6 +228,7 @@ namespace Bloodlines.Missions
             switch (Progress(catalog))
             {
                 case CampaignProgress.StoryAvailable: return "Next story mission: " + NextPlayable(catalog)?.Id;
+                case CampaignProgress.StoryGated: return DescribeGate(NextStory(catalog), catalog);
                 case CampaignProgress.SideContentOnly: return "Story is caught up for this build. Optional solo jobs remain: " + NextPlayable(catalog)?.Id;
                 case CampaignProgress.StoryBlocked: return "A story mission is waiting on a prerequisite that cannot be met in this build.";
                 default: return "All " + catalog.Playable.Count() + " scripted missions are complete. Later chapters are not in this build; replay any job from the mission menu.";
@@ -273,14 +276,90 @@ namespace Bloodlines.Missions
         /// </summary>
         public MissionDefinition NextPlayable(MissionCatalog catalog)
         {
-            return catalog.Playable.FirstOrDefault(mission =>
-                       !IsComplete(mission.Id) && PrerequisiteMet(mission));
+            // Story first. A solo job becoming available does not make it "next";
+            // it becomes next only when a gate is waiting on it.
+            var story = NextStory(catalog);
+            if (story != null)
+            {
+                var outstanding = OutstandingGateJobs(story, catalog).ToList();
+                if (outstanding.Count == 0) return story;
+                return catalog.Playable.FirstOrDefault(m => outstanding.Contains(m.Id, StringComparer.OrdinalIgnoreCase)) ?? story;
+            }
+            return catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
         }
+
+        /// <summary>The next main mission in order, gate or no gate. Null when none is playable.</summary>
+        public MissionDefinition NextStory(MissionCatalog catalog) =>
+            catalog.Playable.FirstOrDefault(m => !m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
 
         public bool PrerequisiteMet(MissionDefinition mission)
         {
             string prerequisite = mission.Info.Prerequisite;
             return string.IsNullOrEmpty(prerequisite) || IsComplete(prerequisite);
+        }
+
+        // --- story gates ---
+
+        /// <summary>
+        /// Solo jobs are optional inside their window and mandatory before the story
+        /// event they set up. This is the whole rule, in one place: the main mission
+        /// on the left cannot start until every solo on the right is complete.
+        /// </summary>
+        public static readonly IReadOnlyDictionary<string, string[]> StoryGates = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "M19", new[] { "SM01", "SM02", "SM03" } },
+            { "M44", new[] { "SM04", "SM05", "SM06" } },
+            { "M63", new[] { "SM07", "SM08" } },
+            { "M68", new[] { "SM09" } }
+        };
+
+        /// <summary>
+        /// An older save that is already past a gate is never trapped behind it: the
+        /// gate is treated as satisfied once its own mission, or any later main
+        /// mission, is complete. The solos stay available as optional content.
+        /// </summary>
+        public bool GateGrandfathered(string gateMission)
+        {
+            if (IsComplete(gateMission)) return true;
+            if (!TryMainNumber(gateMission, out int gate)) return false;
+            return Completed.Any(id => TryMainNumber(id, out int done) && done > gate);
+        }
+
+        private static bool TryMainNumber(string id, out int number)
+        {
+            number = 0;
+            return !string.IsNullOrEmpty(id) && id.Length == 3 && (id[0] == 'M' || id[0] == 'm') && int.TryParse(id.Substring(1), out number);
+        }
+
+        /// <summary>
+        /// The required solo jobs still standing between the player and this mission.
+        /// A required solo that has no script in this build cannot be asked of anyone,
+        /// so it never blocks; it is logged and the gate opens without it.
+        /// </summary>
+        public IEnumerable<string> OutstandingGateJobs(MissionDefinition mission, MissionCatalog catalog)
+        {
+            if (mission == null || !StoryGates.TryGetValue(mission.Id, out var required) || GateGrandfathered(mission.Id)) yield break;
+            foreach (string solo in required)
+            {
+                if (IsComplete(solo)) continue;
+                var definition = catalog?.Playable.FirstOrDefault(m => string.Equals(m.Id, solo, StringComparison.OrdinalIgnoreCase));
+                if (definition == null)
+                {
+                    Logger.Warn(mission.Id + " gate ignores " + solo + ": it has no script in this build.");
+                    continue;
+                }
+                yield return solo;
+            }
+        }
+
+        public bool GateSatisfied(MissionDefinition mission, MissionCatalog catalog) =>
+            !OutstandingGateJobs(mission, catalog).Any();
+
+        /// <summary>"M19 needs SM01, SM02 finished first." or empty when the gate is open.</summary>
+        public string DescribeGate(MissionDefinition mission, MissionCatalog catalog)
+        {
+            var outstanding = OutstandingGateJobs(mission, catalog).ToList();
+            return outstanding.Count == 0 ? "" : mission.Id + " needs " + string.Join(", ", outstanding) + " finished first.";
         }
 
         public void Reset()

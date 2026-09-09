@@ -183,10 +183,18 @@ public static partial class StoryTests
   Check(scenes.Contains("Sub deployed. That one had my nerves up. Nobody put that in the flight log."),"M42 locked wording is in the scene data");
   Check(scenes.Contains("hear the pressure in my voice")&&!scenes.Contains("hear me scared"),"M25 uses pressure, not fear");
   Check(scenes.Contains("M01\tprologue\tGUESS")&&scenes.Contains("M01\tarrival\tGUESS"),"Prologue and arrival scenes exist for Ron alone");
-  var spoken=File.ReadAllLines(Path.Combine(dataDir,"dialogue.tsv")).Skip(1).Select(l=>l.Split('\t')).Where(f=>f.Length>5&&new[]{"M02","M03","M04","M05","M06","M07","M10","M14","M16","M27","M30","SM02","SM03"}.Contains(f[1])).Select(f=>f[5]).ToArray();
-  string[] hud={"Switch to","yellow marker","orange marker","marked ","press E","D-pad","No ability needed","thirty-five metres","checkpoints"}; // dialect-ok: matches the bible extraction spelling
-  var offenders=spoken.Where(line=>hud.Any(h=>line.IndexOf(h,StringComparison.OrdinalIgnoreCase)>=0)).ToArray();
-  Check(offenders.Length==0,"Early-campaign gameplay dialogue carries no HUD or controller instructions: "+string.Join(" | ",offenders));
+  // Every scripted mission, gameplay lines and scene lines alike. "marking" (a
+  // character marking targets on his own system) is deliberately not matched;
+  // neither is a real-world checkpoint or roadblock.
+  var scripted=new HashSet<string>(typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(Mission))&&t.Namespace=="Bloodlines.Missions.Campaign").Select(t=>((Mission)Activator.CreateInstance(t)).Id),StringComparer.OrdinalIgnoreCase);
+  Check(scripted.Count>=36,"The speech check covers every scripted mission class");
+  var tutorial=new System.Text.RegularExpressions.Regex(@"\bswitch to\b|\bmarked\b|\bmarkers?\b|\bpress [a-z]\b|d-pad|no ability needed|\bwithin \w+ (?:metres|meters)\b|\bradius\b",System.Text.RegularExpressions.RegexOptions.IgnoreCase); // dialect-ok: matches the bible extraction spelling
+  var offenders=new List<string>();
+  foreach(var file in new[]{"dialogue.tsv","scenes.tsv"})
+   foreach(var f in File.ReadAllLines(Path.Combine(dataDir,file)).Skip(1).Select(l=>l.Split('\t')))
+    if(f.Length>5&&scripted.Contains(f[1])&&tutorial.IsMatch(f[5]))offenders.Add(f[0]);
+  Check(offenders.Count==0,"No scripted mission's speech carries HUD, controller, marker or radius instructions: "+string.Join(" | ",offenders));
+  Check(tutorial.IsMatch("walk into the yellow marker")&&tutorial.IsMatch("Switch to Ice")&&!tutorial.IsMatch("I'm marking the patrols")&&!tutorial.IsMatch("past a military checkpoint"),"The speech check catches tutorial phrasing and spares natural uses");
   Check(dialogue.Contains("They wanted all three of you there.")&&!dialogue.Contains("forty-million-dollar defense contract"),"M05 gives an allegation and a lead, not the whole conspiracy");
   Check(scenes.Contains("Breakfast. Three seats. I'm driving.")&&!scenes.Contains("I let shame decide"),"M70 ends on the quiet boat, not a confession");
  }

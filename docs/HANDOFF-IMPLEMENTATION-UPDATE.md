@@ -15,7 +15,7 @@ built and checked without the game running. The per-item reconciliation is in
 - `CampaignState.PrologueComplete` (saved) with `PrologueDue` for saves that have not finished M01.
 - SM01's armor-piercing crates are a real supply line: `armorPiercingSupply` doubles Ice's rifle restock at any locker.
 - SM03's racing transmission is consumed: cars and motorcycles repaired at Guess's chop bay receive the race transmission mod once.
-- Mission-issued weapons are loans: locker capture is suspended while a mission runs.
+- Mission-issued weapons are loans: capture is suspended while a mission runs and the loan is returned at teardown (see the correction pass below).
 - Before M01 is complete, the crew key deploys Guess alone. `[Dev] Enabled = True` keeps the full sandbox.
 
 ### Failure reliability (priority 3)
@@ -33,7 +33,7 @@ built and checked without the game running. The per-item reconciliation is in
 ### Cinematic foundation (priority 5)
 
 - `SceneBlocking` with `WalkToStep`, `EnterVehicleStep`, `ExitVehicleStep`, `UsePhoneStep`, `LookAtStep`, `WaitStep`. Each step has a completion signal, a timeout, and `Finish()` for the instant end state.
-- `CutsceneDirector.Play(..., blocking)`: movers stay unfrozen, the camera tracks the running step's subject, the scene holds until dialogue and blocking are both done, and a skip (or the watchdog, or teardown with a living player) completes the remaining steps. Watching and skipping produce the same seats, positions and control state.
+- `CutsceneDirector.Play(..., blocking)`: movers stay unfrozen, the camera tracks the running step's subject, the scene holds until dialogue and blocking are both done, and a deliberate skip completes the remaining steps while abort, error, watchdog and teardown cancel them (see the correction pass below). Watching and skipping produce the same seats, positions and control state.
 - The prologue: LSIA arrival scene (phone, look, walk, enter car), player drive to the starter apartment entrance, homecoming scene (exit, walk to the door, read the job), fade, time-cut to Terminal Island, M01 cold open. Hold Backspace skips it and still marks it played. Missing locations or a failed car spawn fall back to starting M01 directly.
 - New scene data: `M01:prologue` and `M01:arrival`, authored in `data/opening_scene.txt`, compiled by `tools/build_story.py` (which now requires both blocks and enforces that only Guess speaks in them).
 - New locations: `Prologue.LSIACurb`, `Prologue.LSIACar` (estimates, airport zone validated).
@@ -56,12 +56,22 @@ built and checked without the game running. The per-item reconciliation is in
 ```
 python tools/lint_missions.py          No errors. 35 of 36 missions fire every written line.
 python tools/validate_locations.py     0 of 161 flagged
-python tools/build_story.py --check    79 missions, 350 unique cues, 161 scenes; freshness verified
-python tools/audit_campaign.py         PLAYABLE-MISSION-MAP.md regenerated
-python tools/run_story_tests.py        642 story/runtime checks passed
+python tools/build_story.py --check    79 missions, 351 unique cues, 161 scenes; freshness verified
+python tools/audit_campaign.py --check Mission map freshness verified
+python tools/run_story_tests.py        710 story/runtime checks passed (after the correction pass)
 python tools/run_regression_tests.py   165 checks passed
 python tools/build_roslyn.py           Bloodlines.dll built with warnings as errors; prebuilt/ refreshed
 ```
+
+Correction-pass checks (`tests/story/CorrectionPassTests.cs`) cover: the four
+gates, story-first ordering, gate refusal text, QA bypass, partial progress,
+grandfathering by gate mission and by a later mission, and an unscripted required
+solo; the full weapon-loan lifecycle across pass, rewarding pass, abort, fail and
+starting loadouts, followed by free-roam capture ticks and a restock; the technical
+choice's arrival frame and disabled-control cycling; skip vs cancel vs error vs
+mission abort vs watchdog vs natural completion; deterministic exit/walk/phone/entry
+finishes and cancel; M21's held lift, its release on the escort stage, and its
+release on abort and failure; and the prologue, dispatch and M70 data.
 
 New story checks (`tests/story/HandoffPassTests.cs`) cover: progress states and the
 prologue flag; the weapon loan policy and Ice's supply line; required-asset
@@ -89,6 +99,31 @@ clipping or native stability.
 10. **SM01 / SM03 rewards.** Finish SM01, restock at Ice's locker: double rifle ammo. Finish SM03, repair a car at Guess's chop bay: race transmission notification and the mod on the vehicle.
 11. **Weapon loans.** Start M20 (issues an MG), abort, check the save's `weaponLockers`: no MG for Guess unless he owned it before.
 12. **Dialogue.** Read M02–M06 in play; nothing spoken should tell you which button to press.
+
+## Pre-merge correction pass (same day)
+
+Brought the branch to a merge-ready source-level state. Each item, and what changed:
+
+1. **Solo story gates** — central in `CampaignState.StoryGates` (M19 ← SM01–SM03, M44 ← SM04–SM06, M63 ← SM07–SM08, M68 ← SM09). Story first: a newly unlocked solo is never "next" by catalog order; it becomes next only when a gate is waiting on it. A gated start is refused with the list of remaining jobs; the dev menu bypasses explicitly. **Migration:** a save that already completed the gate mission, or any later main mission, is grandfathered through that gate and keeps the solos as optional content. A required solo with no script never blocks.
+2. **Weapon loans** — a real lifecycle. The locker is snapshotted at mission start; at teardown (pass after completion commits, fail, abort, failed start, shutdown) anything on a hero outside baseline ∪ standard loadout ∪ earned milestone rewards is removed from the hero and the locker. Tested through a full mission, six free-roam capture ticks and a locker restock.
+3. **`TechnicalChoiceObjective`** — the arrival frame consumes both buttons and returns; Detonate is disabled while the panel is open and read as a disabled control, so cycling cannot throw a detonator.
+4. **Skip vs cancel** — `CutsceneDirector.Skip()` completes unplayed blocking; `Stop()` cancels it. Enter / controller A skip; abort, error, watchdog, death and teardown cancel.
+5. **`SceneStep.Finish`** — deterministic end states; exit-vehicle warps out onto a navmesh-checked spot beside the car. `Cancel` clears the running task and moves nobody.
+6. **M21** — the loaded lift is held (frozen, rotors up) until the escort stage begins; cleanup and failure release it. Cold start still shows bullion.
+7. **OperationHandoff** — documentation now states exactly which fields each receiver restores.
+8. **Prologue** — Ron tries both numbers, gets voicemail; consistent with M01.
+9. **M27 dispatch** — Ice speaks as the one extracted; other dispatches audited.
+10. **Later dialogue** — M53, M55, M57, M64 and three M70 gameplay lines tightened; M67, M68 and the remaining M31–M70 character pass are marked deferred in `CHANGE-REGISTER.md`.
+11. **HUD leaks** — M08, M09, M12 gameplay lines and M03/M04/M06 briefings fixed; the speech check now covers every scripted mission's gameplay and scene lines.
+12. **Repository** — `tools/__pycache__` untracked; `__pycache__/` and `*.pyc` ignored.
+
+Additional live-test items from this pass:
+
+13. **Story gates.** Finish M18 with SM01–SM03 unfinished: the marker for M19 shows, starting it reports the three jobs, Gohan's lead routes to SM01. Finish them; M19 starts. Load a save already past M19: no gate message.
+14. **Loans.** Start M20 (issues an MG to Guess), abort, look at Guess's weapon wheel and `weaponLockers` in the save: no MG. Finish M03 as normal: the M03 reward rifles are in the lockers, the mission's temporary weapons are not.
+15. **M28 panel.** Carry sticky bombs to the cabinet; cycling with G must not detonate them.
+16. **Skip vs cancel.** Enter during the prologue arrival: Ron seated. Hold Backspace during it: Ron seated (skip), M01 starts. Die during the homecoming scene: no warp, recovery runs, the drive resumes.
+17. **M21 hold.** The Cargobob hangs in place with rotors turning until Gohan is in the launch; then it flies. Watch the release for a drop or a snap.
 
 ## Not done in this pass
 

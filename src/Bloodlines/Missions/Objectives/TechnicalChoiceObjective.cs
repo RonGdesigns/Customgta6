@@ -4,6 +4,7 @@ using System.Drawing;
 using Bloodlines.Core;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Objectives
 {
@@ -88,15 +89,21 @@ namespace Bloodlines.Missions.Objectives
                 Label = _action + " — get out and reach the yellow marker.";
                 return;
             }
+            // While the panel owns the cycle button, the game must not also read it:
+            // the same key throws a sticky-bomb detonator without this.
+            Game.DisableControlThisFrame(GTA.Control.Detonate);
             if (!_wasNear)
             {
-                // Consume a stale press from the walk-up so the first option is never
-                // committed by the button that opened the panel.
+                // The frame the player arrives is never an input frame: whatever
+                // press brought them here is consumed and nothing is committed.
                 Game.IsControlJustPressed(GTA.Control.Context);
+                Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate);
                 _wasNear = true;
+                Label = _action + " — reading the panel.";
+                return;
             }
             if (Game.IsControlJustPressed(GTA.Control.Context)) { Commit(context, _options[_selected]); return; }
-            if (Game.IsControlJustPressed(GTA.Control.Detonate)) _selected = (_selected + 1) % _options.Count;
+            if (Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate)) _selected = (_selected + 1) % _options.Count;
             var option = _options[_selected];
             Label = _action + " — [" + (_selected + 1) + "/" + _options.Count + "] " + option.Title + ": " + option.Consequence +
                     "  (G / D-pad Left: next, E / D-pad Right: commit)";

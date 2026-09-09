@@ -229,7 +229,7 @@ namespace Bloodlines.Core
             var page = new Page("Bloodlines — dev menu");
 
             page.Add("Replay M01: Ghost in the Dockyard", () => "three separate assignments",
-                () => { Close(); _survey.Stop(); _missions.Abort(); _missions.Start(_catalog.All.First(m => m.Id == "M01")); });
+                () => { Close(); _survey.Stop(); _missions.Abort(); _missions.Start(_catalog.All.First(m => m.Id == "M01"), bypassGates: true); });
             page.Add("Missions", () => _catalog.Playable.Count() + " playable",
                 () => _stack.Push(BuildMissionList()));
             page.Add("Current objective", () => _missions.IsRunning ? _missions.LastAttempted.Id : "none", () => _stack.Push(BuildObjectiveDetails()));
@@ -272,9 +272,10 @@ namespace Bloodlines.Core
                         }
 
                         if (!_state.PrerequisiteMet(captured)) { GameUtils.Notify("Finish " + captured.Info.Prerequisite + " first."); return; }
+                        if (!_state.GateSatisfied(captured, _catalog)) GameUtils.Notify("~y~QA bypass: " + _state.DescribeGate(captured, _catalog));
                         if (_missions.IsRunning) _missions.Abort();
                         if (_crew.IsDeployed) _crew.Dismiss();
-                        _missions.Start(captured);
+                        _missions.Start(captured, bypassGates: true);
                         Toggle();
                     });
             }

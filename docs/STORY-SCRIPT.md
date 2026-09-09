@@ -19,9 +19,11 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M01_SCENE_PROLOGUE_01_GUESS) — Los Santos. Same heat coming off the runway. Fifteen years and the city didn't wait for me.
 
-**GUESS** (M01_SCENE_PROLOGUE_02_GUESS) — Two numbers in this phone I haven't dialed since graduation. Not tonight. Tonight I find out where I'm sleeping.
+**GUESS** (M01_SCENE_PROLOGUE_02_GUESS) — Two numbers in this phone I ain't dialed since graduation. Guess I'll find out if either one still works.
 
-**GUESS** (M01_SCENE_PROLOGUE_03_GUESS) — Car's where the man said it would be. Half a tank. That'll get me across town.
+**GUESS** (M01_SCENE_PROLOGUE_03_GUESS) — Voicemail. Both of them. Same as it ever was.
+
+**GUESS** (M01_SCENE_PROLOGUE_04_GUESS) — Car's where the man said it would be. Half a tank. That'll get me across town.
 
 ### Arrival
 
@@ -95,7 +97,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M03_SCENE_INTRO_01_GUESS) — Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
 
-**GOHAN** (M03_SCENE_INTRO_02_GOHAN) — Guess delays the rail response. Ice clears the depot; I load its weapons. Use the yellow work markers with E or D-pad Right. Then Guess brings the Benson home. Shared base, shared information.
+**GOHAN** (M03_SCENE_INTRO_02_GOHAN) — Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 
 ### Outro
 
@@ -109,7 +111,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M04_SCENE_INTRO_01_GOHAN) — Miller has our forensics and an Aegis buyer. The van's drive gave us the meeting. We need his copy.
 
-**GUESS** (M04_SCENE_INTRO_02_GUESS) — Gohan takes the marked breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
+**GUESS** (M04_SCENE_INTRO_02_GUESS) — Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 
 ### Outro
 
@@ -137,7 +139,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M06_SCENE_INTRO_01_GOHAN) — The mobile upload was one copy. Vespucci has the backup. Burning it buys us time; it doesn't erase who saw us.
 
-**GUESS** (M06_SCENE_INTRO_02_GUESS) — I wait in the Granger. Gohan cuts the marked feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
+**GUESS** (M06_SCENE_INTRO_02_GUESS) — I wait in the Granger. Gohan cuts the feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
 
 ### Outro
 
@@ -795,7 +797,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M53_SCENE_INTRO_01_GOHAN) — Aegis is sweeping the subway approaches. If they hold these tunnels, our tower plan has no sheltered way in or out.
 
-**ICE** (M53_SCENE_INTRO_02_ICE) — Stay close enough to hear the actual answer when I ask if you're hurt. No more automatic 'I'm fine.'
+**ICE** (M53_SCENE_INTRO_02_ICE) — When I ask if you're hurt, I want the real answer. Not the automatic one.
 
 ### Outro
 
@@ -823,7 +825,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M55_SCENE_INTRO_01_GOHAN) — Three terminals, one five-minute window. The breach locks their escrow routes; the final authorization is still at Maze Bank.
 
-**ICE** (M55_SCENE_INTRO_02_ICE) — Nobody changes the timing alone. I spent too long thinking I could keep you safe by keeping you uninformed.
+**ICE** (M55_SCENE_INTRO_02_ICE) — Nobody changes the timing alone. I've done enough keeping you two in the dark.
 
 ### Outro
 
@@ -851,7 +853,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M57_SCENE_INTRO_01_GUESS) — Those gunships are searching our extraction waters. Clear their patrol pattern and we keep a fallback off the coast.
 
-**ICE** (M57_SCENE_INTRO_02_ICE) — You started planning exits for us before either of us learned to ask. I see that now.
+**ICE** (M57_SCENE_INTRO_02_ICE) — You had exits planned for us before we ever asked. Keep doing that.
 
 ### Outro
 
@@ -949,13 +951,13 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M64_SCENE_INTRO_01_GOHAN) — Power is cut above us. The shafts and stairs are the route. Check the next landing before leaving the last one.
 
-**GUESS** (M64_SCENE_INTRO_02_GUESS) — We survived fifteen years apart. I'd still rather climb one miserable staircase with you than disappear again.
+**GUESS** (M64_SCENE_INTRO_02_GUESS) — Fifteen years apart, and I'd still rather climb forty floors of this with you two than do one alone.
 
 ### Outro
 
 **ICE** (M64_SCENE_OUTRO_01_ICE) — Boardroom ahead. If Vance offers one of us a way out, the others hear the offer too.
 
-**GOHAN** (M64_SCENE_OUTRO_02_GOHAN) — And the answer. No more making a decision for someone because we're afraid of what he'll choose.
+**GOHAN** (M64_SCENE_OUTRO_02_GOHAN) — And the answer. Nobody decides for the other two.
 
 ## M65 — EXECUTIVE PRIVILEGE
 

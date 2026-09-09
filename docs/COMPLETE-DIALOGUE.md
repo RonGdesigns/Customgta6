@@ -211,7 +211,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GOHAN** `M03_SCENE_INTRO_02_GOHAN`
-Guess delays the rail response. Ice clears the depot; I load its weapons. Use the yellow work markers with E or D-pad Right. Then Guess brings the Benson home. Shared base, shared information.
+Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -264,7 +264,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `M04_SCENE_INTRO_02_GUESS`
-Gohan takes the marked breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
+Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -375,7 +375,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `M06_SCENE_INTRO_02_GUESS`
-I wait in the Granger. Gohan cuts the marked feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
+I wait in the Granger. Gohan cuts the feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -493,7 +493,7 @@ Delivery:
 Trigger: Gameplay stage 1 entry
 
 **GOHAN** `M08_S1_02_GOHAN`
-Camera loop is active. Ice, clear the marked sentries so Guess can load the engines.
+Camera loop is active. Ice, the sentries are yours. Then Guess loads the engines.
 Delivery: 
 Trigger: Gameplay stage 1 completion
 
@@ -546,7 +546,7 @@ Delivery:
 Trigger: Gameplay stage 1 entry
 
 **GUESS** `M09_S1_02_GUESS`
-I'm taking the Frogger toward the convoy. Ice, hold the ambush point. Keep the rear escort marked.
+I'm taking the Frogger toward the convoy. Ice, hold the ambush point and keep the rear escort in your sights.
 Delivery: 
 Trigger: Gameplay stage 2 entry
 
@@ -705,12 +705,12 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M12_S1_01_GOHAN`
-I'm launching the sub from the jetty. First the sonar marker, then the hull scan.
+I'm launching the sub from the jetty. Sonar sweep first, then the hull scan.
 Delivery: 
 Trigger: Gameplay stage 1 entry
 
 **ICE** `M12_S1_02_ICE`
-Patrols are near the hull. Keep the sub at the marked depth and break their sight line.
+Patrols are near the hull. Keep the sub deep and break their sight line.
 Delivery: 
 Trigger: Gameplay stage 2 entry
 
@@ -2501,7 +2501,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **ICE** `M53_SCENE_INTRO_02_ICE`
-Stay close enough to hear the actual answer when I ask if you're hurt. No more automatic 'I'm fine.'
+When I ask if you're hurt, I want the real answer. Not the automatic one.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -2587,7 +2587,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **ICE** `M55_SCENE_INTRO_02_ICE`
-Nobody changes the timing alone. I spent too long thinking I could keep you safe by keeping you uninformed.
+Nobody changes the timing alone. I've done enough keeping you two in the dark.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -2678,7 +2678,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **ICE** `M57_SCENE_INTRO_02_ICE`
-You started planning exits for us before either of us learned to ask. I see that now.
+You had exits planned for us before we ever asked. Keep doing that.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -2994,7 +2994,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `M64_SCENE_INTRO_02_GUESS`
-We survived fifteen years apart. I'd still rather climb one miserable staircase with you than disappear again.
+Fifteen years apart, and I'd still rather climb forty floors of this with you two than do one alone.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -3023,7 +3023,7 @@ Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GOHAN** `M64_SCENE_OUTRO_02_GOHAN`
-And the answer. No more making a decision for someone because we're afraid of what he'll choose.
+And the answer. Nobody decides for the other two.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3259,12 +3259,12 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M70_S1_01_ICE`
-Fifteen years we walked our own roads, but tonight we hold this ground TOGETHER!
+Fifteen years on our own roads. Tonight we hold this ground.
 Delivery: Roaring over minigun fire, brass raining down tarmac
 Trigger: Final siege holdout
 
 **GOHAN** `M70_S1_02_GOHAN`
-Third wave! Ice, we're still here! I'm not losing either of you after finding you again!
+Third wave! Ice, still with me?
 Delivery: Firing combat rifle, laughing wildly through smoke
 Trigger: Wave three repelled
 
@@ -3284,7 +3284,7 @@ Delivery: Floating in the ocean launch under golden sunrise
 Trigger: Sunrise aftermath
 
 **GUESS** `M70_S1_06_GUESS`
-Told y'all... Guess never misses an exit.
+Told y'all it still had engines.
 Delivery: Smiling, looking back at the smoking city horizon
 Trigger: Brothers laugh
 

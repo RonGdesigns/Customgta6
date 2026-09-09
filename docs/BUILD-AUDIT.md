@@ -103,6 +103,8 @@ This is the cheapest large risk reduction available and it needs no code.
 
 ### 3.5 Dialogue leakage — 3 lines left in scripted missions
 
+*Closed in the same-day correction pass: M08, M09, M12 and three briefings fixed; the speech check now covers every scripted mission.*
+
 The HUD-language pass covered 13 missions and is enforced by a test. Three spoken
 lines outside that set still carry marker language:
 
@@ -149,7 +151,7 @@ line indices 1, 5 and 7, and the spawning of the prototype, Mateo and a dock wor
 That is mission content living in a system every mission uses. `SceneBlocking` now
 gives it somewhere better to live.
 
-### 6. Close the last three HUD lines
+### 6. Close the last three HUD lines *(done in the correction pass)*
 Fix M08 and M12, and widen the enforcing test's mission list so the next one cannot
 slip in. The test is the point; the three lines are five minutes.
 

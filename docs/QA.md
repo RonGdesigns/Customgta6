@@ -27,6 +27,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 14 | **Prologue watch vs skip** | Fresh save, mission key; once watching every line, once pressing Enter at the first line of each scene | Both runs end with Ron seated for the drive and standing at his door afterward; the save shows `prologueComplete: true`; M01's cold open follows the fade |
 | 15 | **End of content** | Mark all 36 jobs complete in the dev menu, press the mission key | A completion message names the state; M01 is not offered |
 | 16 | **Port Heist continuity** | M19 → M22 in one session, then M21 alone in a fresh session | M20 starts Gohan in the Kraken; M21's Cargobob carries a visible container in both cases; `Bloodlines.log` shows `Handoff recorded` / `Handoff consumed` |
+| 17 | **Story gate** | Finish M18 with SM01–SM03 unfinished, press the mission key at M19's marker | The three jobs are named; M19 does not start; Gohan's lead routes to SM01; a save already past M19 shows no gate |
+| 18 | **Weapon loan** | Start M20, abort, open Guess's weapon wheel and the save's `weaponLockers` | No MG on Guess or in the locker; his pre-mission guns and starting rifle are all still there |
+| 19 | **Skip vs cancel** | Enter during the prologue arrival, then on a fresh save die during the homecoming | Enter: Ron seated. Death: no warp, recovery runs, the drive resumes |
 
 ## Before you launch: the static checks
 

@@ -2,11 +2,11 @@
 
 Current build: 36 playable missions, M01–M30 and SM01–SM06, plus Ron's arrival prologue before M01 on a fresh save. The full story outline contains 79 jobs. The next unimplemented main chapter is M31; its marker is intentionally absent. When every scripted job is complete the mission key says so instead of offering M01 again. Existing saves and earned items are retained; a save that already finished M01 never plays the prologue.
 
-Before M01 is complete the crew key deploys Guess alone; Ice and Gohan join after the dockyard. Weapons a mission hands out are loans and are not captured into the locker while that mission runs.
+Before M01 is complete the crew key deploys Guess alone; Ice and Gohan join after the dockyard. Weapons a mission hands out are loans: when the mission ends, however it ends, anything a hero is carrying that was not in the locker before, is not his standard loadout and is not an earned milestone reward is taken back.
 
 ## How progression actually works
 
-Finish a mission to satisfy the next job's prerequisite. The three solo jobs of Act I become available after M03; the three Act II solo jobs open after M28. Optional solo jobs are never required to understand or unlock the next main mission. Replay is available through the mission menu. It does not pay the same reward twice.
+Finish a mission to satisfy the next job's prerequisite. The three solo jobs of Act I become available after M03; the three Act II solo jobs open after M28. Solo jobs are optional inside their window and mandatory before the story event they set up: M19 needs SM01–SM03, M44 needs SM04–SM06, M63 needs SM07–SM08 and M68 needs SM09. Until a gate is reached the mission key and Gohan's lead point at the next main mission; at a gate they point at the first outstanding solo, and starting the story mission tells you which jobs remain. A save that is already past a gate is never sent back. Replay is available through the mission menu. It does not pay the same reward twice.
 
 This is currently a mission-milestone system, not an XP or character-level system. There are no skill points, weapon levels, recurring rent payments or simulated businesses. The cash and gold counters record the crew's resources. Ammu-Nation and vehicle shops now spend crew cash on weapons, ammunition, armor and car work; see MARKET-AND-TRAVEL-UPDATE.md for story locks, weapon prices, customization and Guess Customs discounts. The offshore escrow remains zero in the playable chapters.
 

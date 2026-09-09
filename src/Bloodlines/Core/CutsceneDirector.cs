@@ -31,6 +31,7 @@ namespace Bloodlines.Core
         private Action _sceneAction;
         private bool _actionStarted;
         private SceneBlocking _blocking;
+        private bool _skipping;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
         private List<DialogueCue> _lines;
@@ -299,7 +300,7 @@ namespace Bloodlines.Core
                 Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
                 new GTA.UI.ContainerElement(new PointF(640, 30), new SizeF(1280, 60), Color.Black).Draw();
                 new GTA.UI.TextElement(_title + (_radioScene ? " — phone / radio" : "") + "   |   Enter / controller A: skip", new PointF(35, 15), 0.32f, Color.White).Draw();
-                if (Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Stop(); return; }
+                if (Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
                 _dialogue.Update();
                 if (_blocking != null)
                 {
@@ -330,10 +331,28 @@ namespace Bloodlines.Core
             }
         }
 
+        /// <summary>
+        /// The player chose to skip. Whatever blocking has not played is finished
+        /// instantly so the world ends up exactly where watching would have left it.
+        /// </summary>
+        public void Skip()
+        {
+            if (!IsActive) return;
+            _skipping = true;
+            Stop();
+        }
+
+        /// <summary>
+        /// End the scene without completing it: abort, error, death, teardown.
+        /// Camera and control come back; unfinished blocking is canceled, not
+        /// executed. A scene that ran to its natural end has nothing left to cancel.
+        /// </summary>
         public void Stop()
         {
             if (!IsActive) return;
-            Logger.Info("Scene ended; restoring player camera and controls.");
+            bool skipping = _skipping;
+            _skipping = false;
+            Logger.Info(skipping ? "Scene skipped; finishing its blocking and restoring player camera and controls." : "Scene ended; restoring player camera and controls.");
             _lines = null;
             _dockIntro = false;
             _radioScene = false;
@@ -341,15 +360,16 @@ namespace Bloodlines.Core
             _sceneAction = null;
             _actionStarted = false;
             IsSceneRunning = false;
-            // A skipped scene must leave the same world a watched one does: finish
-            // every step that has not played. A dead player has no state to finish.
+            // Skip: finish what has not played, so watched and skipped agree.
+            // Anything else: stand the actors down where they are.
             var blocking = _blocking;
             _blocking = null;
             if (blocking != null)
                 Release("scene blocking", () =>
                 {
                     var player = Game.Player.Character;
-                    if (player != null && player.Exists() && !player.IsDead) blocking.Complete();
+                    if (skipping && player != null && player.Exists() && !player.IsDead) blocking.Complete();
+                    else if (!blocking.IsFinished) blocking.Cancel();
                 });
             Release("dialogue", _dialogue.Clear);
             Release("gameplay camera", () => World.RenderingCamera = null);

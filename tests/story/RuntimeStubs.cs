@@ -28,7 +28,7 @@ namespace GTA {
  public class Player {public Vehicle LastVehicle;public Ped Character=new Ped(); public bool IsDead; public bool CanControlCharacter=true; public int WantedLevel;public bool Targeting;public bool IsTargeting(Entity p)=>Targeting;}
  public class Entity {public bool IsFireProof,IsExplosionProof;public bool IsOnScreen;public Vector3 Rotation;public float HeightAboveGround;public bool IsDead;static int next; public int Handle=++next; public bool Present=true; public bool Exists()=>Present; public Vector3 Position,Velocity; public float Heading; public bool IsPositionFrozen,IsInvincible,IsPersistent,Released;public void Delete(){Present=false;}}
  public enum Relationship {Neutral,Hate}
- public class Weapons {public int LastAmmo;public HashSet<WeaponHash> Owned=new HashSet<WeaponHash>();public void Give(WeaponHash w,int a,bool e,bool l){Owned.Add(w);LastAmmo=a;}}
+ public class Weapons {public int LastAmmo;public HashSet<WeaponHash> Owned=new HashSet<WeaponHash>();public void Give(WeaponHash w,int a,bool e,bool l){Owned.Add(w);LastAmmo=a;}public void Remove(WeaponHash w){Owned.Remove(w);}}
  public class Ped:Entity {public bool IsCop;public int Health=300,MaxHealth=300;public bool CanSufferCriticalHits;public VehicleSeat SeatIndex {get {if(CurrentVehicle!=null)foreach(var p in CurrentVehicle.Seats)if(p.Value==this)return p.Key;return VehicleSeat.None;}}
   public bool IsRagdoll,IsCuffed,IsBeingStunned,CanBeDraggedOutOfVehicle;public DrivingStyle DrivingStyle; public void Kill(){IsDead=true;} public bool IsHeadtracking(Ped p)=>false;public bool IsAiming;public bool IsAlive=>!IsDead;public int Armor,Accuracy;public Weapons Weapons=new Weapons();public Blip AddBlip()=>new Blip();public void SetIntoVehicle(Vehicle v,VehicleSeat s){CurrentVehicle=v;Position=v.Position;v.Seats[s]=this;}
   public bool IsInCombat,IsShooting,AlwaysKeepTask,BlockPermanentEvents,Entering,Hostile;
@@ -56,7 +56,7 @@ namespace GTA {
  public enum VehicleSeat {None=-3,Any=-2,Driver=-1,Passenger=0,RightFront=0,LeftRear=1,RightRear=2}
  public enum EnterVehicleFlags {None}
  public enum DrivingStyle {Rushed,Normal,AvoidTraffic,AvoidTrafficExtremely}
- public enum LeaveVehicleFlags {None}
+ public enum LeaveVehicleFlags {None=0,WarpOut=16}
  public enum VehicleColor {MetallicBlack}
  public enum ExplosionType {Extinguisher,Boat,Tanker,Plane}
  public enum HeliMissionFlags {None} public enum VehicleMissionType {GoTo,Circle,Attack} public enum VehicleDrivingFlags {None} public enum BoatMissionFlags {None}
@@ -118,6 +118,7 @@ if(h==Hash.SET_VEHICLE_IS_WANTED)((Vehicle)args[0]).IsWanted=(bool)args[1];if(Th
    if(h==Hash.GET_NUMBER_OF_PED_TEXTURE_VARIATIONS)return (T)(object)12;
    if(h==Hash.GET_DISABLED_CONTROL_NORMAL)return (T)(object)(Axes.TryGetValue((Control)args[1],out var axis)?axis:0f);
    if(h==Hash.IS_DISABLED_CONTROL_PRESSED)value=Held.TryGetValue((Control)args[1],out var held)&&held;
+   if(h==Hash.IS_DISABLED_CONTROL_JUST_PRESSED)value=Game.Pressed.Remove((Control)(int)args[1]);
    if(h==Hash.IS_PLAYER_FREE_AIMING_AT_ENTITY&&Values.ContainsKey(h))value=Values[h];
    if(h==Hash.IS_PED_IN_COMBAT)value=((Ped)args[0]).CombatTarget==(Ped)args[1];
    if(h==Hash.IS_PED_GETTING_INTO_A_VEHICLE)value=((Ped)args[0]).Entering;
@@ -145,7 +146,7 @@ namespace Bloodlines.Crew {
  public struct PedPlacement {public Vector3 Position;public float Heading;public PedPlacement(Vector3 p,float h){Position=p;Heading=h;}}
  public enum CompanionState {Follow,Scripted}
  public class CompanionController {public bool MissionActive;public CompanionLife Life=new CompanionLife();public bool RequireSharedVehicle;public void ReleaseAll(){Controlled.Clear();RequireSharedVehicle=false;}public CompanionState StateOf(CrewSlot s)=>Controlled.Contains(s)?CompanionState.Scripted:CompanionState.Follow;public System.Collections.Generic.HashSet<CrewSlot> Controlled=new System.Collections.Generic.HashSet<CrewSlot>();public void TakeControl(CrewSlot s){Controlled.Add(s);}public void ReleaseControl(CrewSlot s){Controlled.Remove(s);}}
- public class CrewRoster {public bool DeploySolo(CrewSlot slot,Vector3 p,float h){IsSolo=true;Peds.Clear();Peds[slot]=new Ped{Position=p};ActiveSlot=slot;Game.Player.Character=Peds[slot];return true;}public bool Deploy(CrewSlot s,Vector3 p,float h){var d=new Dictionary<CrewSlot,PedPlacement>();foreach(var hero in Protagonist.All)d[hero.Slot]=new PedPlacement(p,h);return Deploy(s,d);}public CompanionController CompanionAI=new CompanionController();
+ public class CrewRoster {public WeaponProgression Arsenal;public bool DeploySolo(CrewSlot slot,Vector3 p,float h){IsSolo=true;Peds.Clear();Peds[slot]=new Ped{Position=p};ActiveSlot=slot;Game.Player.Character=Peds[slot];return true;}public bool Deploy(CrewSlot s,Vector3 p,float h){var d=new Dictionary<CrewSlot,PedPlacement>();foreach(var hero in Protagonist.All)d[hero.Slot]=new PedPlacement(p,h);return Deploy(s,d);}public CompanionController CompanionAI=new CompanionController();
   public bool Deploy(CrewSlot slot,IDictionary<CrewSlot,PedPlacement> positions){foreach(var pair in positions)Peds[pair.Key]=new GTA.Ped{Position=pair.Value.Position};ActiveSlot=slot;GTA.Game.Player.Character=Peds[slot];return true;}
   public void AssignCompanionAI(){}public void OrderCompanionsToFight(){}public int CrewGroup;public bool IsSolo; public bool IsDeployed=true,CompanionsHoldPosition,CanRevive=true;public int Dismissals,Regroups;public CrewSlot ActiveSlot;public Protagonist Active=>Protagonist.Of(ActiveSlot);public GTA.Ped ActivePed;
   public PedPlacement? RecoveryOrigin=new PedPlacement(new Vector3(10,20,30),0);public PedPlacement? DeployOrigin;
@@ -174,7 +175,7 @@ namespace Bloodlines.Missions {
  public enum Act {I=1,II=2,III=3}
 
  public class MissionDefinition {public Core.MissionInfo Info;public System.Func<Mission> Factory;public bool IsPlayable=true;public bool IsSolo=>Info.IsSolo;public string Id=>Info.Id;public string Title=>Info.Title;public Act Act=>Act.I;}
- public class MissionCatalog {public List<MissionDefinition> All=new List<MissionDefinition>();public IEnumerable<MissionDefinition> Playable=>All;}
+ public class MissionCatalog {public List<MissionDefinition> All=new List<MissionDefinition>();public IEnumerable<MissionDefinition> Playable=>System.Linq.Enumerable.Where(All,m=>m.IsPlayable);}
  public class CheckpointManager {public void Clear(){}public void Commit(string s,int n){}public int Restore(string s)=>-1;public bool HasCheckpointFor(string s)=>false;}
  public class MissionContext {public HandoffLedger Handoffs=new HandoffLedger();public CampaignState State;public Core.ModConfig Config;public Crew.CrewRoster Crew;public Crew.SwitchController Switching;public Core.CampaignData Data;public Core.LocationBook Locations;public Core.CutsceneDirector Cutscenes;public Core.DialogueDirector Dialogue;public Abilities.AbilityController Abilities=new Abilities.AbilityController();public CheckpointManager Checkpoints=new CheckpointManager();}
 }

@@ -40,8 +40,27 @@ namespace Bloodlines.Core
         /// <summary>True once the action is visibly done — in the vehicle, at the mark, phone away.</summary>
         public abstract bool IsComplete { get; }
 
-        /// <summary>Put the world in this step's end state right now (skip, timeout, teardown).</summary>
+        /// <summary>
+        /// Put the world in this step's documented end state right now. "Finished"
+        /// means the state is already true when this returns, not that a task has
+        /// been requested. Used for a deliberate skip and for a timed-out step.
+        /// </summary>
         public abstract void Finish();
+
+        /// <summary>
+        /// Stop safely without reaching the end state: a mission abort, an error, or
+        /// teardown. The actor keeps its current position and simply stops doing
+        /// what the step asked.
+        /// </summary>
+        public virtual void Cancel()
+        {
+            if (HasStarted && Usable(Actor)) Actor.Task.ClearAll();
+        }
+
+        protected static void SettleGround(Vector3 point)
+        {
+            GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_COLLISION_AT_COORD, point.X, point.Y, point.Z);
+        }
 
         protected static bool Usable(Entity entity) => entity != null && entity.Exists();
         protected static bool Usable(Ped ped) => ped != null && ped.Exists() && !ped.IsDead;
@@ -72,7 +91,10 @@ namespace Bloodlines.Core
         public override void Finish()
         {
             if (!Usable(Actor)) return;
-            if (Actor.Position.DistanceTo(_point) > _radius) { Actor.Task.ClearAllImmediately(); Actor.Position = _point; }
+            if (Actor.Position.DistanceTo(_point) <= _radius) return;
+            Actor.Task.ClearAllImmediately();
+            SettleGround(_point);
+            Actor.Position = _point;
         }
     }
 
@@ -106,12 +128,26 @@ namespace Bloodlines.Core
         }
     }
 
-    /// <summary>Get out. Finishing leaves the actor standing beside the vehicle.</summary>
+    /// <summary>
+    /// Get out. Finishing leaves the actor already standing beside the vehicle —
+    /// warped out, placed on free ground on the driver's side, facing the way the
+    /// car faces — not partway through a door animation.
+    /// </summary>
     public sealed class ExitVehicleStep : SceneStep
     {
         public ExitVehicleStep(Ped actor)
         {
             Actor = actor;
+        }
+
+        /// <summary>Where a skip puts the actor: beside the vehicle, on ground the navmesh accepts.</summary>
+        public static Vector3 SafeSpotBeside(Vehicle vehicle)
+        {
+            var forward = vehicle.ForwardVector;
+            var left = new Vector3(-forward.Y, forward.X, 0f);
+            var beside = vehicle.Position + left * 2.2f;
+            var safe = World.GetSafeCoordForPed(beside, false, 0);
+            return safe != Vector3.Zero && safe.DistanceTo(beside) <= 8f ? safe : beside;
         }
 
         protected override void OnStart()
@@ -128,8 +164,15 @@ namespace Bloodlines.Core
         public override void Finish()
         {
             if (!Usable(Actor) || !Actor.IsInVehicle()) return;
+            var vehicle = Actor.CurrentVehicle;
+            var spot = vehicle != null && vehicle.Exists() ? SafeSpotBeside(vehicle) : Actor.Position;
+            float heading = vehicle != null && vehicle.Exists() ? vehicle.Heading : Actor.Heading;
             Actor.Task.ClearAllImmediately();
-            Actor.Task.LeaveVehicle();
+            Actor.Task.LeaveVehicle(LeaveVehicleFlags.WarpOut);
+            SettleGround(spot);
+            Actor.Position = spot;
+            Actor.Heading = heading;
+            if (Actor.IsInVehicle()) Logger.Error("ExitVehicleStep.Finish: the actor is still seated after a warp-out; the next step may misbehave.");
         }
     }
 
@@ -153,7 +196,8 @@ namespace Bloodlines.Core
 
         public override void Finish()
         {
-            if (Usable(Actor) && !IsComplete) Actor.Task.ClearAll();
+            // Phone away, now: the immediate clear, not the queued one.
+            if (Usable(Actor) && !IsComplete) Actor.Task.ClearAllImmediately();
         }
     }
 
@@ -216,6 +260,9 @@ namespace Bloodlines.Core
         private readonly List<SceneStep> _steps = new List<SceneStep>();
         private int _index;
 
+        /// <summary>Set by <see cref="Cancel"/>: the blocking stopped without reaching its end state.</summary>
+        public bool Canceled { get; private set; }
+
         public SceneBlocking Then(SceneStep step)
         {
             if (step != null) _steps.Add(step);
@@ -252,6 +299,24 @@ namespace Bloodlines.Core
                 try { if (!step.HasStarted || !step.IsComplete) step.Finish(); }
                 catch (Exception ex) { Logger.Error("Scene step finish failed: " + step.GetType().Name, ex); }
             }
+        }
+
+        /// <summary>
+        /// Stop without finishing. The running step is told to stand down; nothing
+        /// after it runs. This is what an abort, an error or a teardown calls — a
+        /// scene that broke halfway through a walk must not warp the actor into the
+        /// car as if the player had chosen to skip it.
+        /// </summary>
+        public void Cancel()
+        {
+            var step = Current;
+            if (step != null)
+            {
+                try { step.Cancel(); }
+                catch (Exception ex) { Logger.Error("Scene step cancel failed: " + step.GetType().Name, ex); }
+            }
+            Canceled = true;
+            _index = _steps.Count;
         }
     }
 }

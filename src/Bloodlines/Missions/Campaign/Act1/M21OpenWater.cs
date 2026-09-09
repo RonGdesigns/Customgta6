@@ -63,9 +63,25 @@ namespace Bloodlines.Missions.Campaign
             Station(CrewSlot.Gohan, _launch, VehicleSeat.Driver);
             Station(CrewSlot.Ice, _launch, VehicleSeat.Passenger);
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.MicroSMG, 500, true, true);
-            // Hold the airborne lift while the player reads the briefing and boards.
-            StartCargobob();
+            // The lift waits, airborne and rotors turning, until the escort is actually
+            // on the water. Nothing flies toward the breakwater while Gohan is still
+            // boarding the launch.
+            HoldLift();
             return true;
+        }
+
+        private void HoldLift()
+        {
+            if (_cargobob == null || !_cargobob.Exists()) return;
+            _cargobob.IsPositionFrozen = true;
+            _cargobob.IsEngineRunning = true;
+            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, _cargobob);
+        }
+
+        private void ReleaseLift()
+        {
+            if (_cargobob == null || !_cargobob.Exists()) return;
+            _cargobob.IsPositionFrozen = false;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -80,7 +96,7 @@ namespace Bloodlines.Missions.Campaign
                     new ShadowTargetObjective("Stay on the Cargobob's wing.", () => _cargobob, 240f, 15,
                         "The launch lost contact with the Cargobob.", acquireSeconds: 60),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .OnEnter(context => { StartCargobob(); SpawnHostileBoats(); })
+                .OnEnter(context => { ReleaseLift(); StartCargobob(); SpawnHostileBoats(); })
                 .WithCues("M21_S1_01_GOHAN");
 
             yield return new MissionStage("Kill the speedboats",
@@ -236,6 +252,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            // A held lift that outlives the attempt (occupied transports are released,
+            // not deleted) must not stay pinned in the air.
+            ReleaseLift();
             if (_container != null && _container.Exists()) Function.Call(Hash.DETACH_ENTITY, _container, true, true);
             _hostileCrews.Clear();
         }

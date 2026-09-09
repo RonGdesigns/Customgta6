@@ -115,7 +115,7 @@
     "line": "Transfer confirmed. The money's accessible. It isn't invisible, so we still need to get out."
   },
   "M70_S1_02_GOHAN": {
-    "line": "Third wave! Ice, we're still here! I'm not losing either of you after finding you again!"
+    "line": "Third wave! Ice, still with me?"
   },
   "SM08_S2_04_GOHAN": {
     "line": "The evidence proving they framed me is out. Clearing my name comes next. First, Ice and Guess need me."
@@ -268,7 +268,7 @@
     "trigger": "Gameplay stage 1 entry"
   },
   "M08_S1_02_GOHAN": {
-    "line": "Camera loop is active. Ice, clear the marked sentries so Guess can load the engines.",
+    "line": "Camera loop is active. Ice, the sentries are yours. Then Guess loads the engines.",
     "trigger": "Gameplay stage 1 completion"
   },
   "M09_S2_04_GUESS": {
@@ -284,7 +284,7 @@
     "trigger": "Gameplay stage 3 completion"
   },
   "M09_S1_02_GUESS": {
-    "line": "I'm taking the Frogger toward the convoy. Ice, hold the ambush point. Keep the rear escort marked.",
+    "line": "I'm taking the Frogger toward the convoy. Ice, hold the ambush point and keep the rear escort in your sights.",
     "trigger": "Gameplay stage 2 entry"
   },
   "M09_S1_01_ICE": {
@@ -340,11 +340,11 @@
     "trigger": "Gameplay stage 3 completion"
   },
   "M12_S1_02_ICE": {
-    "line": "Patrols are near the hull. Keep the sub at the marked depth and break their sight line.",
+    "line": "Patrols are near the hull. Keep the sub deep and break their sight line.",
     "trigger": "Gameplay stage 2 entry"
   },
   "M12_S1_01_GOHAN": {
-    "line": "I'm launching the sub from the jetty. First the sonar marker, then the hull scan.",
+    "line": "I'm launching the sub from the jetty. Sonar sweep first, then the hull scan.",
     "trigger": "Gameplay stage 1 entry"
   },
   "M13_S1_03_ICE": {
@@ -622,5 +622,11 @@
   },
   "M05_S2_06_ICE": {
     "line": "Then we find out who."
+  },
+  "M70_S1_01_ICE": {
+    "line": "Fifteen years on our own roads. Tonight we hold this ground."
+  },
+  "M70_S1_06_GUESS": {
+    "line": "Told y'all it still had engines."
   }
 }
