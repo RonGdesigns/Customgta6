@@ -156,5 +156,7 @@ SM05.Boat	-2308	2645	0	0	water	estimate
 SM05.Buoy	-2435	2635	0	0	water	estimate	
 SM06.Approach	-1108	2700	19	0	land	estimate	
 SM06.Truck	-1130	2692	19	90	land	estimate	
+Prologue.LSIACurb	-1034.6	-2731.9	13.76	330	land	estimate	Los Santos International Airport
+Prologue.LSIACar	-1043.9	-2723.5	13.76	240	land	estimate	Los Santos International Airport
 SM06.Bend	-1466	4433	18	0	land	estimate	
 SM06.Delivery	2126	4780	41	0	land	estimate	

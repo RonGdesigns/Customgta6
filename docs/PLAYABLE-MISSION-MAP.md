@@ -323,7 +323,7 @@ Prerequisite: M19. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.PierWatch, M18.SaltHangar, M20.ClimbOut, M20.DeckGunners, M20.HoverPoint.
+Survey references: M12.PierWatch, M18.SaltHangar, M19.Surface, M20.ClimbOut, M20.DeckGunners, M20.HoverPoint.
 
 ## M21 — THE PORT HEIST: OPEN WATER
 
@@ -438,11 +438,12 @@ Prerequisite: M27. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Gohan | **Identify the relay** — ReachZoneObjective: Gohan: reach the yellow relay-yard entrance. Ice covers the opposite approach. |
-| 2 | Ice | **Clear the transformer yard** — KillTargetsObjective: Ice: clear the four red-marked relay guards before Gohan enters. |
-| 3 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the surge unit at the relay service cabinet |
-| 4 | Ice | **Cover the splice** — AssignedWorkObjective: Gohan continues the splice. Ice: defeat the responding squads.<br>SurviveWavesObjective: Ice: clear both response squads marked red. |
-| 5 | Guess | **Extraction** — EnterVehicleObjective: Guess: take the Granger driver seat. Wait for both brothers to board. |
-| 6 | Guess | **Back to shelter** — DeliverVehicleObjective: Guess: bring the crew's Granger back to the radar bunker. |
+| 2 | Ice | **Clear the transformer yard** — KillTargetsObjective: Ice: clear the four red-marked relay guards before Gohan enters.<br>TechnicalChoiceObjective: Gohan: choose which relay system to cut first |
+| 3 | Gohan | **Read the cabinet** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 4 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the surge unit at the relay service cabinet |
+| 5 | Ice | **Cover the splice** — AssignedWorkObjective: Gohan continues the splice. Ice: defeat the responding squads.<br>SurviveWavesObjective: Ice: clear both response squads marked red. |
+| 6 | Guess | **Extraction** — EnterVehicleObjective: Guess: take the Granger driver seat. Wait for both brothers to board. |
+| 7 | Guess | **Back to shelter** — DeliverVehicleObjective: Guess: bring the crew's Granger back to the radar bunker. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

@@ -9,7 +9,7 @@ GOHAN|The dock cameras tagged all three of us. An Aegis van is carrying the uplo
 GUESS|Fifteen years without a call. Now we're sharing a wanted poster. Nobody disappears before we talk.
 
 M02
-GOHAN|The van has the dock recording. I can hack it from the passenger seat. Stay within thirty-five metres while I cut the upload.
+GOHAN|The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.
 ICE|Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 GUESS|You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
 ICE|Can you get us somewhere safe, Guess? And Gohan... keep that drive. I want to hear what it says.
@@ -60,7 +60,7 @@ M10
 GUESS|The engines are back on the hauler. Aegis knows they're missing. Keep their bikes off me and I'll keep us moving.
 GOHAN|I'm watching the route. Call the danger you see; I'll keep the way out on your map.
 ICE|You stopped joking on that bridge. I should've noticed how close we were before you had to tell me.
-GUESS|I joke when I'm scared too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
+GUESS|I joke when I'm nervous too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
 
 M11
 GUESS|Nobody fires a shot today unless this engine starts shooting first. Ice, hold the throttle where I put it.
@@ -101,7 +101,7 @@ GOHAN|Now the submerged load needs a way to float. Bring that lifting capacity t
 M17
 GOHAN|The Kraken needs cutters and ballast grapples. A hole in a ship means nothing if the cargo stays on the bottom.
 GUESS|You build like you expect nobody to come get you. Put a release on this thing that another person can reach.
-GOHAN|All right. External release, marked yellow. I learned to work alone. That doesn't mean I want to die that way.
+GOHAN|All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 ICE|We rehearse the pickups at staging. Everybody knows how to bring the other two back.
 
 M18
@@ -130,7 +130,7 @@ GUESS|I want one minute on the beach where nobody asks me to keep moving.
 
 M22
 ICE|The container goes into the shallows. Nobody takes the whole shipment home in one night. We recover it in pieces.
-GOHAN|I want to check the foundry link before we head back. Aegis still knows there were three faces at the docks.
+GOHAN|That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 GUESS|That shop was going to be ours. Not a hideout. A place you two might actually stay.
 ICE|I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
 
@@ -149,11 +149,11 @@ ICE|Those deputies knew too much. Assume every isolated road can turn into a bou
 M25
 ICE|Aegis put five million on us. The deputies in Raton aren't making an arrest. I'm taking the high ground.
 GOHAN|Send the route before you move. You don't have to keep the danger to yourself to keep us out of it.
-ICE|I nearly did it again. Went quiet so neither of you would hear me scared. Next time, I'll make the call.
+ICE|I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.
 GUESS|Make it early. Their spotters are over the Alamo now. We protect the water together.
 
 M26
-GUESS|Those planes are searching for the submerged gold. I'll take the Lazer. Gohan, keep them from calling in a fix.
+GUESS|Those planes are searching for the submerged gold. The Lazer we towed out of Zancudo under the M16 clearance is fueled in the McKenzie hangar. I'll take it. Gohan, keep them from calling in a fix.
 ICE|I'm listening to your channel. If you need me, you get an answer. That's the part I can promise.
 GOHAN|The spotters' traffic points to an Aegis charter. Its flight ledger may show where their arms pipeline goes.
 GUESS|Then we intercept it with an actual pickup plan. Ice isn't jumping into a promise with no boat underneath.
@@ -251,7 +251,7 @@ GOHAN|We deploy the sub next. Thanks for saying you're coming back instead of ju
 M42
 GUESS|The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I open the cargo ramp.
 GOHAN|I'm trusting you with the part I can't check from inside the hull. If I'm quiet, it's concentration, not permission.
-GUESS|Sub deployed. I'm still shaking. Nobody put that in the flight log.
+GUESS|Sub deployed. That one had my nerves up. Nobody put that in the flight log.
 ICE|Put it in. Then somebody reading the plan knows what it asks of a person. We regroup at staging.
 
 M43
@@ -269,7 +269,7 @@ GUESS|Now I bring Ice to the helipad. Hold a channel open. We finally learned to
 M45
 GUESS|Sea defenses are down, but the helipad guns still see us. Ice, you get one landing. Say if it isn't yours.
 ICE|Bring me inside the rail. I'll clear the route to Gohan. No hero jump to save five seconds.
-ICE|Helipad secure. Command deck next. Gohan, bring Bradley's card. Guess, keep that extraction aircraft breathing.
+ICE|Helipad's secure. Gohan, I need Bradley's card up here. Guess, how's our bird?
 GOHAN|I'm on my way. When this door opens, we copy the evidence before we count the bonds.
 
 M46
@@ -420,13 +420,14 @@ M70
 GUESS|The engines still turn. We use the aircraft to reach the seawall, then abandon it for the boats and sub. No flying miracle.
 ICE|I hold the ramp until you call. Then I leave with you. Nobody has to drag me away from this one.
 GOHAN|The copies are out. The money is routed. For once there's nothing on that burning machine we have to go back for.
-GUESS|Darius. Devin. Answer with your names. I want to know who made it out, not which job you were doing.
-ICE|Darius. Still here. I should have called when I came home. I let shame decide you didn't want to hear from me.
-GOHAN|Devin. I thought if you saw what happened to me, you'd only see the failure. I should have let you decide.
-GUESS|Ron. I kept acting like leaving didn't hurt. Then every time somebody stayed, I made a joke instead of saying thanks.
-ICE|We're not fixing fifteen years on one boat. But tomorrow, when you call, I'm answering.
-GOHAN|Tomorrow sounds good. Tell me where we're going before Ron invents another shortcut.
-GUESS|Breakfast. Three seats. After that, we figure it out together.
+GUESS|Darius. Devin. Answer in words. I want to know who made it out.
+ICE|Here. Wet. Fine.
+GUESS|Devin?
+GOHAN|Hold on. The relay's still pinging and I want to know why.
+GUESS|Man's got a burning airplane behind him and he's already on a device. You gonna answer your phone tomorrow?
+GOHAN|Probably.
+ICE|That's a no.
+GUESS|Breakfast. Three seats. I'm driving.
 
 SM01
 ICE|Sergei sold me bad ammunition. I'll recover the proper crates alone. The crew needs a supply line we can trust.
@@ -456,25 +457,31 @@ SM05
 GOHAN|The swamp buoy can feed us military flight telemetry. I'll make the splice alone while its patrol passes.
 GUESS|I'll keep a return window open. You don't have to use it to prove it was worth setting up.
 GOHAN|Telemetry received. It supplements our recon; it doesn't tell us every pilot's next thought. I'm heading back.
-ICE|Copy. Work's done for tonight. You can stop being useful long enough to eat with us.
+ICE|Job's done. Come eat before Ron starts calling your phone again.
 
 SM06
 GUESS|McKenzie's aircraft need fuel. I'll take the tanker through Raton. Heavy truck, narrow route; nobody calls this a race.
 ICE|I won't. Call the location if the route closes. We can recover you even if we can't recover the fuel.
-GUESS|Tanker delivered. I had to choose between a clean run and backing off a blind corner. Backing off worked.
-GOHAN|Remember that when you tell the story. Let the younger version of you hear that slowing down can be skill too.
+GUESS|Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
+GOHAN|You actually slowed down.
+GUESS|Don't sound so surprised.
+GOHAN|I am.
 
 SM07
 ICE|Sterling sold out my unit. He's at Aegis now. I'm going after him for myself, and I won't hide that behind the campaign.
-GUESS|Then come back for yourself too. We can't make this decision for you, but we're here after it.
-ICE|He's dead. The men I lost are still dead. I said the debt was settled because I wanted it to feel finished.
-GOHAN|You don't have to arrive healed. Come sit down. We can hear their names if you want to say them.
+GUESS|That's your call. Just come back when it's done.
+ICE|Sterling's dead.
+GUESS|You good?
+ICE|Nah.
+GUESS|Aight. Come back.
 
 SM08
 GOHAN|Vanderbilt & Cole forged the fraud case against me. I'm taking their files before I destroy the archive they used to control me.
-ICE|Keep a copy outside the building. Your name is more than what an employer wrote beside it.
-GOHAN|Their archive burned. The files prove what they did; they don't make fifteen years disappear. I overstated it when I said I was clear.
-GUESS|You don't owe us a clean record to belong here. Bring what happened to you, not a version you think we'll accept.
+ICE|Take whatever proves what they did. And don't disappear for two days after.
+GOHAN|Files are out. Archive is gone.
+GUESS|Cool. You coming back?
+GOHAN|Yeah.
+GUESS|That's all I needed.
 
 SM09
 KJ|Guess, that captain will trade documents and passage for the impounded hypercar. I checked his ship, not his soul. Confirm the passenger count yourself.

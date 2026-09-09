@@ -63,7 +63,7 @@ not, no amount of remaining missions will fix it.
 
 | # | Mission | Approach | Notes |
 |---|---|---|---|
-| M03 | Cypress Foundry | fake | Uncoupling a 40-car freight train is not exposed to script. Freeze a train at a junction and blip it as "blockade"; the depot raid and hauler defence are Green. |
+| M03 | Cypress Foundry | fake | Uncoupling a 40-car freight train is not exposed to script. Freeze a train at a junction and blip it as "blockade"; the depot raid and hauler defense are Green. |
 | M05 | Tidal Lock | fake | Sea-cave interior needs an MLO or a substitute (existing Paleto cave). Cliff sniping, flare drops and the boat chase are Green. |
 | M07 | Wiretap Waltz | fake | Climbing a mast has no animation set; use a ladder-and-teleport with a camera cut. Drone is a Buzzard at altitude. BASE jump is Green. |
 | M09 | Rolling Thunder | fake | Landing skids on a moving truck roof is unreliable physics. Slow the convoy to a stop off-camera, or attach the heli to the truck for the beat. |
@@ -78,16 +78,16 @@ not, no amount of remaining missions will fix it.
 | M39 | The Paleto Cable | fake | Deep-water cable cutting: hold-zone at depth with limited air as the tension. |
 | M44 | Paleto Deep-Sea: Sub-Surface | fake | Underwater charges on rig pylons; the rig itself needs a prop or an existing platform. |
 | M45 | Paleto Deep-Sea: Helipad Breach | fake | Helipad drop in a storm onto a structure that has to exist first. Everything above deck is Green once it does. |
-| M46 | Paleto Deep-Sea: Vault Crack | fake | Vault interior — MLO or a substitute interior. |
+| M46 | Paleto Deep-Sea: Vault Crack | fake | Vault interior - MLO or a substitute interior. |
 | M50 | The Redacted Vault | fake | Archive interior needs an MLO; the sentry takedowns and the wipe are Green. |
-| M54 | The Pillbox Redoubt | fake | Penthouse interior — MLO. The balcony roost and antenna are dressing. |
+| M54 | The Pillbox Redoubt | fake | Penthouse interior - MLO. The balcony roost and antenna are dressing. |
 | M61 | The Black Box | fake | Flooded gunship interior needs a wreck prop; the underwater fight is Green. |
 | M64 | The 80Th Floor | fake | Elevator-shaft ascent with falling cars. Stairwell fights are Green; the falling car is a scripted prop on a path. |
 | M65 | Executive Privilege | fake | Boardroom confrontation needs the top-floor interior (an MLO exists in some map packs). |
 | M69 | Blood Brothers: Runway 30L | fake | Runway rampage dodging landing airliners. Spawn planes on scripted approach paths rather than relying on ambient air traffic. |
 | SM02 | Zero-Day Injection | fake | Server annex interior; laser sweeps are scripted trigger volumes with a visual effect. |
 | SM05 | Black Box Estuary | fake | Swamp kayak and dive; the buoy is a prop, the splice a hold-zone. |
-| SM07 | Blood Debt | fake | Hotel suite interior — MLO or a substitute. The floor-by-floor fight is Green. |
+| SM07 | Blood Debt | fake | Hotel suite interior - MLO or a substitute. The floor-by-floor fight is Green. |
 | SM08 | Burner Protocol | fake | Office tower interior; the incendiary burn is a particle-and-fade sequence. |
 
 ## Green — 46 missions
@@ -99,7 +99,7 @@ not, no amount of remaining missions will fix it.
 | M04 | Severed Wire | direct | Garage firefight plus subway pursuit. Trains on the line are a hazard, not a system. |
 | M06 | Clean Sweep | direct | Depot breach, alley hold, reverse extraction. Interior is an MLO or a walled-off exterior yard. |
 | M08 | Supply & Sever | direct | Forklift is drivable; crate load is a hold-zone objective plus a prop attach. |
-| M10 | Open Throttle | direct | Escort with a speed floor, RPG from the bed, PIT manoeuvres. The campaign's best Green set piece. |
+| M10 | Open Throttle | direct | Escort with a speed floor, RPG from the bed, PIT maneuvers. The campaign's best Green set piece. |
 | M11 | Ironclad Dyno | direct | Static workshop scene; dyno is a UI meter over a frozen vehicle. |
 | M13 | Smuggler'S Cut | direct | Limpet charges on boats, then detonate. Straight explosive work. |
 | M14 | Airspace Blackout | direct | Hangar theft and a low-altitude run. SAMs are scripted rockets from fixed points. |
@@ -126,11 +126,11 @@ not, no amount of remaining missions will fix it.
 | M51 | Blackout Protocol | direct | Transformer yard sabotage; the blackout is a scripted light change over Downtown. |
 | M52 | Judicial Strike | direct | Rooftop sniper shot on a scripted walk path, then a bike escape. |
 | M53 | Subterranean Sweep | direct | Subway tunnel ambush with mines and night vision. |
-| M56 | Iron In The Drain | direct | Canal armour clash. The aqueduct is one of the best drivable spaces in the game. |
+| M56 | Iron In The Drain | direct | Canal armor clash. The aqueduct is one of the best drivable spaces in the game. |
 | M57 | Vespucci Flak | direct | Jet-ski anti-air run. |
 | M58 | Cartel Decapitation | direct | Compound assault in Mirror Park. |
 | M59 | The Wire Cutters | direct | Radio-mast climb and broadcast, with sniper cover on the Vinewood sign. |
-| M60 | Siege Of Davis | direct | Neighbourhood defence in waves. Reuses SurviveWavesObjective wholesale. |
+| M60 | Siege Of Davis | direct | Neighborhood defense in waves. Reuses SurviveWavesObjective wholesale. |
 | M63 | Tower Of Glass | direct | Lobby breach by ramming. Maze Bank's ground floor is enterable. |
 | M66 | The Spire Evacuation | direct | Antenna BASE jump into a storm. Stock parachute mechanics. |
 | M67 | Scorched Grid | direct | Dialogue scene inside a moving truck. |
@@ -143,4 +143,4 @@ not, no amount of remaining missions will fix it.
 
 ---
 
-Generated from `data/feasibility.tsv` by `tools/render_feasibility_doc.py`. The tiers are judgement calls made from the bible text, not from testing — revise them as missions are actually built, and treat a Green that turns out Yellow as information about the next twenty missions, not just this one.
+Generated from `data/feasibility.tsv` by `tools/render_feasibility_doc.py`. The tiers are judgment calls made from the bible text, not from testing — revise them as missions are actually built, and treat a Green that turns out Yellow as information about the next twenty missions, not just this one.

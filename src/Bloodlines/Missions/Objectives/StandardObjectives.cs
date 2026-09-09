@@ -198,6 +198,9 @@ namespace Bloodlines.Missions.Objectives
             _gapMs = gapMs;
         }
 
+        /// <summary>Optional late-bound gap, for a mission whose earlier decision changes the response clock.</summary>
+        public Func<int> GapProvider { get; set; }
+
         public override void Update(MissionContext context)
         {
             if (_current.Any(p => p == null || !p.Exists())) { Fail("A wave lost a required hostile. Restart the mission."); return; }
@@ -219,7 +222,7 @@ namespace Bloodlines.Missions.Objectives
 
             // A beat between waves, so the player gets to reload and breathe.
             if (_clearedAt == 0) _clearedAt = Game.GameTime;
-            if (Game.GameTime - _clearedAt < _gapMs) return;
+            if (Game.GameTime - _clearedAt < (GapProvider?.Invoke() ?? _gapMs)) return;
 
             _wave++;
             _clearedAt = 0;

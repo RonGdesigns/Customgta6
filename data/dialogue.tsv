@@ -8,38 +8,38 @@ M01_S2_06_GUESS	M01	2	GUESS	Engine roaring through comms	Yo! Why am I hearing my
 M01_S3_07_ICE	M01	3	ICE	Frustrated; rallying the others	Mateo reached the launch. We have his ledger; we can follow the money. Get to the car!	Mateo escapes after the firefight
 M01_S3_08_GUESS	M01	3	GUESS	Tires screaming, passenger door kicked open	Get in! The entire port authority is rolling! Fifteen years and this is how we catch up?!	Gate smash extraction
 M01_S3_09_GOHAN	M01	3	GOHAN	Panting, slamming drive on dash	The copy is here, but half the entries are encrypted. Their security recorded all three of us. We need somewhere to open this.	Freeway getaway
-M02_S1_01_GOHAN	M02	1	GOHAN		That van has the dock footage. I'll work from back here. Keep us close - less than three minutes before the upload lands!	Pursuit begins; Gohan already seated
-M02_S1_02_GUESS	M02	1	GUESS		Black Rumpo, satellite dome. Gohan, you have a signal? I'll keep us inside thirty-five metres.	Chase car closes to the van
+M02_S1_01_GOHAN	M02	1	GOHAN		That van has the dock footage. Keep me close enough to punch into their signal and I can kill the upload. Three minutes before our faces land.	Pursuit begins; Gohan already seated
+M02_S1_02_GUESS	M02	1	GUESS		Black Rumpo. Satellite dome. I see it. Just keep doing whatever the hell you're doing back there.	Chase car closes to the van
 M02_S2_03_ICE	M02	2	ICE		Halfway. They found the intrusion - guns in the windows! Keep working, Gohan. I'll cover our side.	Remote hack reaches 50 percent
 M02_S2_04_GOHAN	M02	2	GOHAN		I'm in. Upload cut, ignition disabled. The server's intact. Ice, take the drives.	Remote hack reaches 100 percent
 M02_S2_05_ICE	M02	2	ICE	Kicking rear doors off hinges	Hands on your neck! Unplug that rack or I ventilate your chest!	Hard drive seizure
 M02_S2_06_GUESS	M02	2	GUESS		Aegis chopper overhead! Dive down the storm canal ramp-hold on!	Aqueduct escape
 M03_S1_01_GUESS	M03	1	GUESS		Rail junction locked. Their backup route is delayed. Ice, the depot approach is yours.	Matching playable objective event in M03
-M03_S1_02_ICE	M03	1	ICE		Switch to me. Walk into the yellow entry marker at the depot. No ability needed. Once we cross it, clear the guards marked red; then Gohan can load the truck.	Matching playable objective event in M03
-M03_S2_03_ICE	M03	2	ICE	Firing Combat MG in bursts	Clear the marked guards first. Nobody starts loading while they're shooting at the terminal.	Matching playable objective event in M03
-M03_S2_04_GOHAN	M03	2	GOHAN		Weapons loaded. Guess, bring yourself to the depot and take the orange-marked Benson. We need that truck, not another car.	Matching playable objective event in M03
+M03_S1_02_ICE	M03	1	ICE		Rail route's blocked. I'm moving on the depot. Gohan, stay ready for that truck.	Matching playable objective event in M03
+M03_S2_03_ICE	M03	2	ICE	Firing Combat MG in bursts	Guards first. Nobody starts loading while they're shooting at the terminal.	Matching playable objective event in M03
+M03_S2_04_GOHAN	M03	2	GOHAN		Weapons loaded. Guess, the Benson's ours. We need that truck, not another car.	Matching playable objective event in M03
 M03_S2_05_GUESS	M03	2	GUESS		I've got the weapons truck. Taking it to the foundry. Ice and Gohan, keep the depot clear until I'm out.	Matching playable objective event in M03
-M04_S1_01_GOHAN	M04	1	GOHAN		Miller's meeting is in this surface lot. Follow the yellow breaker marker, then press E or D-pad Right. My special ability is optional.	Matching playable objective event in M04
-M04_S1_02_ICE	M04	1	ICE		Breaker cut. Switch to me and clear the marked escort. Guess is waiting in our chase car.	Matching playable objective event in M04
-M04_S2_03_GUESS	M04	2	GUESS		Escort's down. Switch to me in the orange-marked car. Once we're ready, we go after Miller on the surface streets.	Matching playable objective event in M04
-M04_S2_04_ICE	M04	2	ICE		He's moving. Follow his red marker, disable the car or stop Miller, then get out for the drive. Don't let him pull away.	Matching playable objective event in M04
+M04_S1_01_GOHAN	M04	1	GOHAN		Miller's meeting is in this surface lot. I'll take the breaker. Lights go out, the escort gets nervous.	Matching playable objective event in M04
+M04_S1_02_ICE	M04	1	ICE		Breaker cut. Escort's mine. Guess is waiting in the chase car.	Matching playable objective event in M04
+M04_S2_03_GUESS	M04	2	GUESS		Escort's down. I've got the car. Once we're ready, we go after Miller on the surface streets.	Matching playable objective event in M04
+M04_S2_04_ICE	M04	2	ICE		He's moving. Stop the car or stop Miller, then get me that drive. Don't let him pull away.	Matching playable objective event in M04
 M04_S2_05_ICE	M04	2	ICE		Drive secured. We have the meeting records. Let's see where Miller sent the money.	Matching playable objective event in M04
-M05_S1_01_ICE	M05	1	ICE		I'm covering the coast. Clear the marked shore guards, then switch to Guess in the dinghy. Gohan is already riding with him.	Matching playable objective event in M05
-M05_S1_02_GUESS	M05	1	GUESS		Flare away. Gohan, stay aboard. Switch to Gohan for the approach and I'll drive, or take the wheel yourself first.	Matching playable objective event in M05
-M05_S1_03_GOHAN	M05	1	GOHAN		Mateo's running. Stay in the dinghy and close within twenty-five metres for five seconds. We need him alive.	Matching playable objective event in M05
-M05_S2_04_ENEMY	M05	2	MATEO	Bleeding against boat dashboard	Aegis bought city council... they needed a three-man ghost squad to justify a forty-million-dollar defense contract!	Beach revelation
-M05_S2_05_GOHAN	M05	2	GOHAN		The whole damn state government is funding the private army hunting us.	Trio realization
-M05_S2_06_ICE	M05	2	ICE		Then we don't run. We take this war to Blaine County and bleed them dry.	Act I climax
-M06_S1_01_GOHAN	M06	1	GOHAN		Feeder cut. Ice, take the yellow sally-port marker. Guess stays with the getaway car.	Matching playable objective event in M06
-M06_S1_02_ICE	M06	1	ICE		Switch to Ice and walk into the yellow entrance marker. No ability needed. Gohan handles the racks while I cover the alley.	Matching playable objective event in M06
-M06_S2_03_ICE	M06	2	ICE		Stay on me and take out the red-marked SWAT. Gohan is working on the racks himself. We leave when the burn is done and the waves are clear.	Matching playable objective event in M06
+M05_S1_01_ICE	M05	1	ICE		I'm covering the coast. Shore guards first, then the dinghy. Gohan's already riding with Guess.	Matching playable objective event in M05
+M05_S1_02_GUESS	M05	1	GUESS		Flare away. Gohan, stay aboard. Either of us can drive; whoever's got hands free takes the wheel.	Matching playable objective event in M05
+M05_S1_03_GOHAN	M05	1	GOHAN		Mateo's running. Stay on him with the dinghy and get us alongside. We need him alive.	Matching playable objective event in M05
+M05_S2_04_ENEMY	M05	2	MATEO	Bleeding against boat dashboard	Aegis paid us to keep that dock hot. Three crews. Three contracts. They wanted all three of you there.	Beach revelation
+M05_S2_05_GOHAN	M05	2	GOHAN		Why us? He doesn't know. But whoever signed it has city money behind them. Police, port authority... somebody put us in that dock on purpose.	Trio realization
+M05_S2_06_ICE	M05	2	ICE		Then we find out who.	Act I climax
+M06_S1_01_GOHAN	M06	1	GOHAN		Feeder's dead. Ice, entrance is yours. Guess stays with the getaway.	Matching playable objective event in M06
+M06_S1_02_ICE	M06	1	ICE		Moving in. Gohan, get to those racks. I'll hold the alley.	Matching playable objective event in M06
+M06_S2_03_ICE	M06	2	ICE		SWAT's stacking up outside. Keep working, Gohan. We leave when the burn is done and the alley's quiet.	Matching playable objective event in M06
 M06_S2_04_GOHAN	M06	2	GOHAN	Coughing through smoke	Burn complete. The backup is gone. We're ready to leave.	Matching playable objective event in M06
-M06_S2_05_GUESS	M06	2	GUESS		Granger's waiting at the orange marker. Switch to me in the driver's seat and let both of you board before we leave.	Matching playable objective event in M06
-M07_S1_01_GOHAN	M07	1	GOHAN		Ice, reach the marked antenna platform. Fit the receiver and pull the shipping manifest.	Gameplay stage 1 entry
+M06_S2_05_GUESS	M06	2	GUESS		Granger's ready. Finish the burn and get your asses back here. Both of you.	Matching playable objective event in M06
+M07_S1_01_GOHAN	M07	1	GOHAN		Get me that receiver on the antenna and I'll pull whatever Aegis is moving.	Gameplay stage 1 entry
 M07_S1_02_ICE	M07	1	ICE		Receiver clamped. Pulling manifests... Gohan, what are these engines?	Gameplay stage 2 completion
 M07_S1_03_GOHAN	M07	1	GOHAN		Aegis is shipping two military turbine engines to Paleto. That's our target.	Gameplay stage 2 completion
 M07_S2_04_ICE	M07	2	ICE		Aegis helicopter incoming. I need a way off this roof.	Gameplay stage 3 entry
-M07_S2_05_GUESS	M07	2	GUESS		Your pickup is marked, Ice. Get down safely. I'm holding the car for you.	Gameplay stage 3 entry
+M07_S2_05_GUESS	M07	2	GUESS		I'm underneath you, Ice. Find a safe way down and I'll be there.	Gameplay stage 3 entry
 M08_S1_01_GUESS	M08	1	GUESS		Seven hundred horsepower, bulletproof casings, all-fuel intake. Nothing in San Andreas catches us.	Gameplay stage 1 entry
 M08_S1_02_GOHAN	M08	1	GOHAN		Camera loop is active. Ice, clear the marked sentries so Guess can load the engines.	Gameplay stage 1 completion
 M08_S2_03_GUESS	M08	2	GUESS		Crate one seated! Ice, armored technical coming up the boat ramp!	Gameplay stage 4 entry
@@ -50,11 +50,11 @@ M09_S1_02_GUESS	M09	1	GUESS		I'm taking the Frogger toward the convoy. Ice, hold
 M09_S2_03_ICE	M09	2	ICE	Suppressed crack	Escort driver down. The transponder is still in his cab.	Gameplay stage 3 completion
 M09_S2_04_GUESS	M09	2	GUESS		Ice, approach the stopped escort on foot. Pull its IFF unit. I'll keep watch from the Frogger.	Gameplay stage 4 entry
 M09_S2_05_ICE	M09	2	ICE		Transponder secured. Code 7-Echo-Victor. We got military clearance tomorrow.	Gameplay stage 4 completion
-M10_S1_01_GUESS	M10	1	GUESS		Keep the loaded flatbed moving above thirty-five. We have a little room to accelerate, but no room to get boxed in.	Gameplay stage 2 entry
-M10_S1_02_ICE	M10	1	ICE		Bikes closing on us. Guess, use your drive-by weapon. I have the passenger side.	Gameplay stage 2 entry
+M10_S1_01_GUESS	M10	1	GUESS		Don't let me get boxed in. This truck stops, we're done.	Gameplay stage 2 entry
+M10_S1_02_ICE	M10	1	ICE		Bikes coming up both sides. I've got right. Take left!	Gameplay stage 2 entry
 M10_S1_03_GOHAN	M10	1	GOHAN		I'm watching the route from here. Keep the truck intact; those engines are our way forward.	Gameplay stage 2 entry
 M10_S2_04_ICE	M10	2	ICE		Buzzard is out. Guess, get us moving again.	Gameplay stage 3 completion
-M10_S2_05_GUESS	M10	2	GUESS		Back to the flatbed. Next stop is the tunnel marker.	Gameplay stage 4 entry
+M10_S2_05_GUESS	M10	2	GUESS		Back in the truck. Tunnel's our way out.	Gameplay stage 4 entry
 M10_S2_06_GOHAN	M10	2	GOHAN		Clear! Tunnel mouth ahead! Engines delivered!	Gameplay stage 4 completion
 M11_S1_01_GUESS	M11	1	GUESS	Wrench ratcheting, air compressor hum	Torque converter locked. Roll on dyno! Let's see if this military turbine tears our gearbox in half!	Gameplay stage 1 completion
 M11_S1_02_ICE	M11	1	ICE	Hands on steering wheel, throttle revving	Manifold pressure passing 25 PSI! RPM at 6,200! Exhaust temps holding green!	Gameplay stage 3 completion
@@ -67,15 +67,15 @@ M12_S1_03_GOHAN	M12	1	GOHAN		Breach coordinates tagged. Hull thickness eight inc
 M13_S1_01_ICE	M13	1	ICE		Charge three armed on barge hull. Guess, be ready on western canal slipway.	Gameplay stage 2 completion
 M13_S1_02_GUESS	M13	1	GUESS		I'm holding the Granger at the slipway. Get aboard, then trigger the charges.	Gameplay stage 3 entry
 M13_S1_03_ICE	M13	1	ICE		Charges blown! Basin is an inferno! Patrol boats burning at moorings!	Gameplay stage 4 completion
-M14_S1_01_GUESS	M14	1	GUESS		The marked aircraft carries the jammer hardware. Getting in, then taking it to McKenzie.	Gameplay stage 3 entry
-M14_S1_02_ICE	M14	1	ICE		Radar coverage ahead. Stay under fifty metres above terrain and land at the marked airfield.	Gameplay stage 4 entry
+M14_S1_01_GUESS	M14	1	GUESS		That's the aircraft with the jammer hardware. Getting in, then taking it to McKenzie.	Gameplay stage 3 entry
+M14_S1_02_ICE	M14	1	ICE		Radar coverage ahead. Stay in the dirt, under their sweep, and put it down at the airfield.	Gameplay stage 4 entry
 M14_S1_03_GUESS	M14	1	GUESS		Cleared the pass! Pod jammer secured in McKenzie hangar.	Gameplay stage 4 completion
 M15_S1_01_GOHAN	M15	1	GOHAN		I'm at the fiber point. Starting the optical bypass; cover the approach.	Gameplay stage 3 entry
 M15_S1_02_ICE	M15	1	ICE		All three watchmen stunned. Still breathing. Gohan, finish the connection.	Gameplay stage 2 completion
 M15_S1_03_GOHAN	M15	1	GOHAN		Lock gate controls mapped to my laptop. We control port access.	Gameplay stage 3 completion
 M16_S1_01_ICE	M16	1	ICE		Helipad perimeter clear! Cargobob twin turbines spooled! Take the controls, Guess!	Gameplay stage 2 completion
-M16_S1_02_GUESS	M16	1	GUESS		Taking the Cargobob through the canyon. Keeping below sixty metres above terrain.	Gameplay stage 4 entry
-M16_S1_03_ICE	M16	1	ICE		Canyon segment clear. Bring the lift to Terminal Island and set it down.	Gameplay stage 5 entry
+M16_S1_02_GUESS	M16	1	GUESS		Taking the Cargobob through the canyon. Low enough to read the license plates.	Gameplay stage 4 entry
+M16_S1_03_ICE	M16	1	ICE		Canyon's clear. Bring the lift to Terminal Island and set it down.	Gameplay stage 5 entry
 M17_S1_01_GOHAN	M17	1	GOHAN		Plasma-arc torches calibrated. Can slice through eight-inch naval bulkhead in four minutes.	Gameplay stage 1 completion
 M17_S1_02_GUESS	M17	1	GUESS		Hydraulic ballast grapples tested. Fifty-ton magnetic lock verified.	Gameplay stage 2 completion
 M17_S1_03_ICE	M17	1	ICE		The sub is ready. Tomorrow night we hit Berth 44.	Gameplay stage 3 entry
@@ -109,10 +109,10 @@ M25_S1_03_ICE	M25	1	ICE		In the boat. Getting out of this gorge before another w
 M26_S1_01_GUESS	M26	1	GUESS		Two spotters over the Alamo. Taking the Lazer up to stop them finding our stash.	Gameplay stage 2 entry
 M26_S1_02_GOHAN	M26	1	GOHAN		Spotter one splashed! Spotter two is diving for Grapeseed-kill him!	Gameplay stage 3 entry
 M26_S1_03_GUESS	M26	1	GUESS		Both spotters down in the lake! Our Alamo stash remains a ghost.	Gameplay stage 4 completion
-M27_S1_01_GUESS	M27	1	GUESS	Shouting over roaring radial biplane engine and 160-knot gale	Taking the stunt plane up. I need to hold between twelve and sixty metres from the Shamal for the transfer.	Gameplay stage 2 entry
+M27_S1_01_GUESS	M27	1	GUESS	Shouting over roaring radial biplane engine and 160-knot gale	Taking the stunt plane up. I'll sit on the Shamal's wing close enough for the transfer. Say if it isn't close enough.	Gameplay stage 2 entry
 M27_S1_02_ICE	M27	1	ICE	Breathing through oxygen mask	Transfer complete. In the cabin. Going for the flight locker.	Gameplay stage 2 completion
 M27_S2_03_ICE	M27	2	ICE	Plasma torch hissing, hull metal ripping	The ledger is in this locker. Hold the jet steady while I secure it.	Gameplay stage 3 entry
-M27_S2_04_GOHAN	M27	2	GOHAN	Monitoring black box telemetry on ground	The jet is losing its nose. Ice, bail out now and deploy your parachute. The boat is marked below.	Gameplay stage 4 entry
+M27_S2_04_GOHAN	M27	2	GOHAN	Monitoring black box telemetry on ground	The jet is losing its nose. Ice, bail out now and pull the chute. I've got the boat under you.	Gameplay stage 4 entry
 M27_S2_05_ICE	M27	2	ICE	Kicking emergency door out into open sky	Ledger secured. Clear of the jet. Gohan, keep the boat where I can see it.	Gameplay stage 4 completion
 M27_S2_06_GUESS	M27	2	GUESS	Diving plane alongside chute	You made the pickup. That ledger tells us who keeps Aegis in the air.	Gameplay stage 5 completion
 M28_S1_01_GOHAN	M28	1	GOHAN		Surge unit connected. Hold them off while I bring the relay down.	Gohan begins the timed relay splice
@@ -122,7 +122,7 @@ M29_S1_01_GUESS	M29	1	GUESS		Depot's clear. I'll take the road tanker. Ice, open
 M29_S1_02_ICE	M29	1	ICE		Fuel transferred. Valve closed. Guess, get it to the bunker before another patrol arrives.	Ice completes the transfer at the depot
 M29_S1_03_GUESS	M29	1	GUESS		Tanker parked at the bunker. Keep the generator running; I'll keep track of the gauge.	Specified tanker delivered and unloaded
 M30_S1_01_GUESS	M30	1	GUESS		Loose shale and a gunship behind me. Gohan, I need that sheltered route now.	Armed helicopter begins pursuit
-M30_S1_02_GOHAN	M30	1	GOHAN		Take the marked bend into the canyon. The rock walls will give you cover.	Truck reaches ridge descent checkpoint
+M30_S1_02_GOHAN	M30	1	GOHAN		Take the next bend into the canyon. The rock walls will give you cover.	Truck reaches ridge descent checkpoint
 M30_S1_03_GUESS	M30	1	GUESS		Parts are at the bunker, intact. Next delivery needs a bigger travel allowance.	Specified parts truck delivered and unloaded
 M31_S1_01_ICE	M31	1	ICE		Claymores live on access gulley. Let them walk into the kill zone.	Minefield set
 M31_S1_02_GOHAN	M31	1	GOHAN		CIWS tracking four incoming technicals. Engaging auto-fire!	Turret fire
@@ -259,12 +259,12 @@ SM01_S1_02_ICE	SM01	1	ICE	Kicking side door open, racking heavy shotgun	Six guar
 SM01_S2_03_ENEMY	SM01	2	SERGEI		Vance! Put the gun down! We can work something out, brother!	Gameplay stage 3 entry
 SM01_S2_04_ICE	SM01	2	ICE		We aren't brothers, Sergei. And your credit just expired.	Gameplay stage 3 entry
 SM01_S2_05_ICE	SM01	2	ICE		Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.	Gameplay stage 4 completion
-SM02_S1_01_GOHAN	SM02	1	GOHAN	Whispering through comm headset	Lifeinvader annex. Reach the roof marker, then stun both guards. Nobody needs to die for a camera archive.	Gameplay stage 1 entry
-SM02_S1_02_GOHAN	SM02	1	GOHAN		Two marked guards. Stun gun first; the thermal pulse can help me track them.	Gameplay stage 2 entry
+SM02_S1_01_GOHAN	SM02	1	GOHAN	Whispering through comm headset	Lifeinvader annex. Roof first, then both guards go down quiet. Nobody needs to die for a camera archive.	Gameplay stage 1 entry
+SM02_S1_02_GOHAN	SM02	1	GOHAN		Two guards between me and the server room. Stun gun first; the thermal pulse finds them for me.	Gameplay stage 2 entry
 SM02_S2_03_GOHAN	SM02	2	GOHAN	Keystrokes clicking rapidly	Worm installed. Camera archive access is ours. Getting out before IT traces the connection.	Gameplay stage 3 completion
 SM02_S2_04_GOHAN	SM02	2	GOHAN		Slip down the fire escape before internal IT notices the packet spike. Clean and invisible.	Gameplay stage 4 entry
 SM03_S1_01_GUESS	SM03	1	GUESS	Twin-turbo revving at 7,000 RPM, two-step popping	Marabunta thinks their tuned Elegy has the top end. They don't know who is behind this wheel.	Gameplay stage 1 entry
-SM03_S1_02_GUESS	SM03	1	GUESS	Slipstream Reflex activated, slow-mo engine roar	Three laps through the yellow checkpoints. KJ, keep an eye on their line.	Gameplay stage 2 entry
+SM03_S1_02_GUESS	SM03	1	GUESS	Slipstream Reflex activated, slow-mo engine roar	Three laps. KJ, keep an eye on their line.	Gameplay stage 2 entry
 SM03_S2_03_ENEMY	SM03	2	RIVAL RACER		We lost the race! Shoot his tires before he leaves!	Gameplay stage 3 entry
 SM03_S2_04_GUESS	SM03	2	GUESS	Laughing wildly, ducking below dashboard	They pulled guns after losing. I can stop them or get the coupe back to the finish.	Gameplay stage 3 entry
 SM03_S2_05_GUESS	SM03	2	GUESS		Checkered flag! Title is in my pocket and the racing transmission is loaded on the truck.	Gameplay stage 3 completion

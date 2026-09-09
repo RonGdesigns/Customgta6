@@ -148,7 +148,7 @@ Trigger: outro
 ### Intro
 
 **GOHAN** `M02_SCENE_INTRO_01_GOHAN`
-The van has the dock recording. I can hack it from the passenger seat. Stay within thirty-five metres while I cut the upload.
+The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -160,12 +160,12 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M02_S1_01_GOHAN`
-That van has the dock footage. I'll work from back here. Keep us close - less than three minutes before the upload lands!
+That van has the dock footage. Keep me close enough to punch into their signal and I can kill the upload. Three minutes before our faces land.
 Delivery: 
 Trigger: Pursuit begins; Gohan already seated
 
 **GUESS** `M02_S1_02_GUESS`
-Black Rumpo, satellite dome. Gohan, you have a signal? I'll keep us inside thirty-five metres.
+Black Rumpo. Satellite dome. I see it. Just keep doing whatever the hell you're doing back there.
 Delivery: 
 Trigger: Chase car closes to the van
 
@@ -223,17 +223,17 @@ Delivery:
 Trigger: Matching playable objective event in M03
 
 **ICE** `M03_S1_02_ICE`
-Switch to me. Walk into the yellow entry marker at the depot. No ability needed. Once we cross it, clear the guards marked red; then Gohan can load the truck.
+Rail route's blocked. I'm moving on the depot. Gohan, stay ready for that truck.
 Delivery: 
 Trigger: Matching playable objective event in M03
 
 **ICE** `M03_S2_03_ICE`
-Clear the marked guards first. Nobody starts loading while they're shooting at the terminal.
+Guards first. Nobody starts loading while they're shooting at the terminal.
 Delivery: Firing Combat MG in bursts
 Trigger: Matching playable objective event in M03
 
 **GOHAN** `M03_S2_04_GOHAN`
-Weapons loaded. Guess, bring yourself to the depot and take the orange-marked Benson. We need that truck, not another car.
+Weapons loaded. Guess, the Benson's ours. We need that truck, not another car.
 Delivery: 
 Trigger: Matching playable objective event in M03
 
@@ -271,22 +271,22 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M04_S1_01_GOHAN`
-Miller's meeting is in this surface lot. Follow the yellow breaker marker, then press E or D-pad Right. My special ability is optional.
+Miller's meeting is in this surface lot. I'll take the breaker. Lights go out, the escort gets nervous.
 Delivery: 
 Trigger: Matching playable objective event in M04
 
 **ICE** `M04_S1_02_ICE`
-Breaker cut. Switch to me and clear the marked escort. Guess is waiting in our chase car.
+Breaker cut. Escort's mine. Guess is waiting in the chase car.
 Delivery: 
 Trigger: Matching playable objective event in M04
 
 **GUESS** `M04_S2_03_GUESS`
-Escort's down. Switch to me in the orange-marked car. Once we're ready, we go after Miller on the surface streets.
+Escort's down. I've got the car. Once we're ready, we go after Miller on the surface streets.
 Delivery: 
 Trigger: Matching playable objective event in M04
 
 **ICE** `M04_S2_04_ICE`
-He's moving. Follow his red marker, disable the car or stop Miller, then get out for the drive. Don't let him pull away.
+He's moving. Stop the car or stop Miller, then get me that drive. Don't let him pull away.
 Delivery: 
 Trigger: Matching playable objective event in M04
 
@@ -324,32 +324,32 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M05_S1_01_ICE`
-I'm covering the coast. Clear the marked shore guards, then switch to Guess in the dinghy. Gohan is already riding with him.
+I'm covering the coast. Shore guards first, then the dinghy. Gohan's already riding with Guess.
 Delivery: 
 Trigger: Matching playable objective event in M05
 
 **GUESS** `M05_S1_02_GUESS`
-Flare away. Gohan, stay aboard. Switch to Gohan for the approach and I'll drive, or take the wheel yourself first.
+Flare away. Gohan, stay aboard. Either of us can drive; whoever's got hands free takes the wheel.
 Delivery: 
 Trigger: Matching playable objective event in M05
 
 **GOHAN** `M05_S1_03_GOHAN`
-Mateo's running. Stay in the dinghy and close within twenty-five metres for five seconds. We need him alive.
+Mateo's running. Stay on him with the dinghy and get us alongside. We need him alive.
 Delivery: 
 Trigger: Matching playable objective event in M05
 
 **MATEO** `M05_S2_04_ENEMY`
-Aegis bought city council... they needed a three-man ghost squad to justify a forty-million-dollar defense contract!
+Aegis paid us to keep that dock hot. Three crews. Three contracts. They wanted all three of you there.
 Delivery: Bleeding against boat dashboard
 Trigger: Beach revelation
 
 **GOHAN** `M05_S2_05_GOHAN`
-The whole damn state government is funding the private army hunting us.
+Why us? He doesn't know. But whoever signed it has city money behind them. Police, port authority... somebody put us in that dock on purpose.
 Delivery: 
 Trigger: Trio realization
 
 **ICE** `M05_S2_06_ICE`
-Then we don't run. We take this war to Blaine County and bleed them dry.
+Then we find out who.
 Delivery: 
 Trigger: Act I climax
 
@@ -382,17 +382,17 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M06_S1_01_GOHAN`
-Feeder cut. Ice, take the yellow sally-port marker. Guess stays with the getaway car.
+Feeder's dead. Ice, entrance is yours. Guess stays with the getaway.
 Delivery: 
 Trigger: Matching playable objective event in M06
 
 **ICE** `M06_S1_02_ICE`
-Switch to Ice and walk into the yellow entrance marker. No ability needed. Gohan handles the racks while I cover the alley.
+Moving in. Gohan, get to those racks. I'll hold the alley.
 Delivery: 
 Trigger: Matching playable objective event in M06
 
 **ICE** `M06_S2_03_ICE`
-Stay on me and take out the red-marked SWAT. Gohan is working on the racks himself. We leave when the burn is done and the waves are clear.
+SWAT's stacking up outside. Keep working, Gohan. We leave when the burn is done and the alley's quiet.
 Delivery: 
 Trigger: Matching playable objective event in M06
 
@@ -402,7 +402,7 @@ Delivery: Coughing through smoke
 Trigger: Matching playable objective event in M06
 
 **GUESS** `M06_S2_05_GUESS`
-Granger's waiting at the orange marker. Switch to me in the driver's seat and let both of you board before we leave.
+Granger's ready. Finish the burn and get your asses back here. Both of you.
 Delivery: 
 Trigger: Matching playable objective event in M06
 
@@ -435,7 +435,7 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M07_S1_01_GOHAN`
-Ice, reach the marked antenna platform. Fit the receiver and pull the shipping manifest.
+Get me that receiver on the antenna and I'll pull whatever Aegis is moving.
 Delivery: 
 Trigger: Gameplay stage 1 entry
 
@@ -455,7 +455,7 @@ Delivery:
 Trigger: Gameplay stage 3 entry
 
 **GUESS** `M07_S2_05_GUESS`
-Your pickup is marked, Ice. Get down safely. I'm holding the car for you.
+I'm underneath you, Ice. Find a safe way down and I'll be there.
 Delivery: 
 Trigger: Gameplay stage 3 entry
 
@@ -594,12 +594,12 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M10_S1_01_GUESS`
-Keep the loaded flatbed moving above thirty-five. We have a little room to accelerate, but no room to get boxed in.
+Don't let me get boxed in. This truck stops, we're done.
 Delivery: 
 Trigger: Gameplay stage 2 entry
 
 **ICE** `M10_S1_02_ICE`
-Bikes closing on us. Guess, use your drive-by weapon. I have the passenger side.
+Bikes coming up both sides. I've got right. Take left!
 Delivery: 
 Trigger: Gameplay stage 2 entry
 
@@ -614,7 +614,7 @@ Delivery:
 Trigger: Gameplay stage 3 completion
 
 **GUESS** `M10_S2_05_GUESS`
-Back to the flatbed. Next stop is the tunnel marker.
+Back in the truck. Tunnel's our way out.
 Delivery: 
 Trigger: Gameplay stage 4 entry
 
@@ -631,7 +631,7 @@ Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `M10_SCENE_OUTRO_02_GUESS`
-I joke when I'm scared too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
+I joke when I'm nervous too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -791,12 +791,12 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M14_S1_01_GUESS`
-The marked aircraft carries the jammer hardware. Getting in, then taking it to McKenzie.
+That's the aircraft with the jammer hardware. Getting in, then taking it to McKenzie.
 Delivery: 
 Trigger: Gameplay stage 3 entry
 
 **ICE** `M14_S1_02_ICE`
-Radar coverage ahead. Stay under fifty metres above terrain and land at the marked airfield.
+Radar coverage ahead. Stay in the dirt, under their sweep, and put it down at the airfield.
 Delivery: 
 Trigger: Gameplay stage 4 entry
 
@@ -882,12 +882,12 @@ Delivery:
 Trigger: Gameplay stage 2 completion
 
 **GUESS** `M16_S1_02_GUESS`
-Taking the Cargobob through the canyon. Keeping below sixty metres above terrain.
+Taking the Cargobob through the canyon. Low enough to read the license plates.
 Delivery: 
 Trigger: Gameplay stage 4 entry
 
 **ICE** `M16_S1_03_ICE`
-Canyon segment clear. Bring the lift to Terminal Island and set it down.
+Canyon's clear. Bring the lift to Terminal Island and set it down.
 Delivery: 
 Trigger: Gameplay stage 5 entry
 
@@ -937,7 +937,7 @@ Trigger: Gameplay stage 3 entry
 ### Aftermath
 
 **GOHAN** `M17_SCENE_OUTRO_01_GOHAN`
-All right. External release, marked yellow. I learned to work alone. That doesn't mean I want to die that way.
+All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -1128,7 +1128,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GOHAN** `M22_SCENE_INTRO_02_GOHAN`
-I want to check the foundry link before we head back. Aegis still knows there were three faces at the docks.
+That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1296,7 +1296,7 @@ Trigger: Gameplay stage 5 completion
 ### Aftermath
 
 **ICE** `M25_SCENE_OUTRO_01_ICE`
-I nearly did it again. Went quiet so neither of you would hear me scared. Next time, I'll make the call.
+I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -1310,7 +1310,7 @@ Trigger: outro
 ### Intro
 
 **GUESS** `M26_SCENE_INTRO_01_GUESS`
-Those planes are searching for the submerged gold. I'll take the Lazer. Gohan, keep them from calling in a fix.
+Those planes are searching for the submerged gold. The Lazer we towed out of Zancudo under the M16 clearance is fueled in the McKenzie hangar. I'll take it. Gohan, keep them from calling in a fix.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1365,7 +1365,7 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M27_S1_01_GUESS`
-Taking the stunt plane up. I need to hold between twelve and sixty metres from the Shamal for the transfer.
+Taking the stunt plane up. I'll sit on the Shamal's wing close enough for the transfer. Say if it isn't close enough.
 Delivery: Shouting over roaring radial biplane engine and 160-knot gale
 Trigger: Gameplay stage 2 entry
 
@@ -1380,7 +1380,7 @@ Delivery: Plasma torch hissing, hull metal ripping
 Trigger: Gameplay stage 3 entry
 
 **GOHAN** `M27_S2_04_GOHAN`
-The jet is losing its nose. Ice, bail out now and deploy your parachute. The boat is marked below.
+The jet is losing its nose. Ice, bail out now and pull the chute. I've got the boat under you.
 Delivery: Monitoring black box telemetry on ground
 Trigger: Gameplay stage 4 entry
 
@@ -1514,7 +1514,7 @@ Delivery:
 Trigger: Armed helicopter begins pursuit
 
 **GOHAN** `M30_S1_02_GOHAN`
-Take the marked bend into the canyon. The rock walls will give you cover.
+Take the next bend into the canyon. The rock walls will give you cover.
 Delivery: 
 Trigger: Truck reaches ridge descent checkpoint
 
@@ -2052,7 +2052,7 @@ Trigger: Chopper ready
 ### Aftermath
 
 **GUESS** `M42_SCENE_OUTRO_01_GUESS`
-Sub deployed. I'm still shaking. Nobody put that in the flight log.
+Sub deployed. That one had my nerves up. Nobody put that in the flight log.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -2181,7 +2181,7 @@ Trigger: Moonpool breach
 ### Aftermath
 
 **ICE** `M45_SCENE_OUTRO_01_ICE`
-Helipad secure. Command deck next. Gohan, bring Bradley's card. Guess, keep that extraction aircraft breathing.
+Helipad's secure. Gohan, I need Bradley's card up here. Guess, how's our bird?
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3301,37 +3301,42 @@ Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `M70_SCENE_OUTRO_02_GUESS`
-Darius. Devin. Answer with your names. I want to know who made it out, not which job you were doing.
+Darius. Devin. Answer in words. I want to know who made it out.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **ICE** `M70_SCENE_OUTRO_03_ICE`
-Darius. Still here. I should have called when I came home. I let shame decide you didn't want to hear from me.
+Here. Wet. Fine.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-**GOHAN** `M70_SCENE_OUTRO_04_GOHAN`
-Devin. I thought if you saw what happened to me, you'd only see the failure. I should have let you decide.
+**GUESS** `M70_SCENE_OUTRO_04_GUESS`
+Devin?
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-**GUESS** `M70_SCENE_OUTRO_05_GUESS`
-Ron. I kept acting like leaving didn't hurt. Then every time somebody stayed, I made a joke instead of saying thanks.
+**GOHAN** `M70_SCENE_OUTRO_05_GOHAN`
+Hold on. The relay's still pinging and I want to know why.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-**ICE** `M70_SCENE_OUTRO_06_ICE`
-We're not fixing fifteen years on one boat. But tomorrow, when you call, I'm answering.
+**GUESS** `M70_SCENE_OUTRO_06_GUESS`
+Man's got a burning airplane behind him and he's already on a device. You gonna answer your phone tomorrow?
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GOHAN** `M70_SCENE_OUTRO_07_GOHAN`
-Tomorrow sounds good. Tell me where we're going before Ron invents another shortcut.
+Probably.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-**GUESS** `M70_SCENE_OUTRO_08_GUESS`
-Breakfast. Three seats. After that, we figure it out together.
+**ICE** `M70_SCENE_OUTRO_08_ICE`
+That's a no.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GUESS** `M70_SCENE_OUTRO_09_GUESS`
+Breakfast. Three seats. I'm driving.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3405,12 +3410,12 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `SM02_S1_01_GOHAN`
-Lifeinvader annex. Reach the roof marker, then stun both guards. Nobody needs to die for a camera archive.
+Lifeinvader annex. Roof first, then both guards go down quiet. Nobody needs to die for a camera archive.
 Delivery: Whispering through comm headset
 Trigger: Gameplay stage 1 entry
 
 **GOHAN** `SM02_S1_02_GOHAN`
-Two marked guards. Stun gun first; the thermal pulse can help me track them.
+Two guards between me and the server room. Stun gun first; the thermal pulse finds them for me.
 Delivery: 
 Trigger: Gameplay stage 2 entry
 
@@ -3458,7 +3463,7 @@ Delivery: Twin-turbo revving at 7,000 RPM, two-step popping
 Trigger: Gameplay stage 1 entry
 
 **GUESS** `SM03_S1_02_GUESS`
-Three laps through the yellow checkpoints. KJ, keep an eye on their line.
+Three laps. KJ, keep an eye on their line.
 Delivery: Slipstream Reflex activated, slow-mo engine roar
 Trigger: Gameplay stage 2 entry
 
@@ -3571,7 +3576,7 @@ Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **ICE** `SM05_SCENE_OUTRO_02_ICE`
-Copy. Work's done for tonight. You can stop being useful long enough to eat with us.
+Job's done. Come eat before Ron starts calling your phone again.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3614,12 +3619,22 @@ Trigger: Specified tanker delivered and unloaded
 ### Aftermath
 
 **GUESS** `SM06_SCENE_OUTRO_01_GUESS`
-Tanker delivered. I had to choose between a clean run and backing off a blind corner. Backing off worked.
+Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GOHAN** `SM06_SCENE_OUTRO_02_GOHAN`
-Remember that when you tell the story. Let the younger version of you hear that slowing down can be skill too.
+You actually slowed down.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GUESS** `SM06_SCENE_OUTRO_03_GUESS`
+Don't sound so surprised.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GOHAN** `SM06_SCENE_OUTRO_04_GOHAN`
+I am.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3633,7 +3648,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `SM07_SCENE_INTRO_02_GUESS`
-Then come back for yourself too. We can't make this decision for you, but we're here after it.
+That's your call. Just come back when it's done.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -3667,12 +3682,22 @@ Trigger: Hotel exit
 ### Aftermath
 
 **ICE** `SM07_SCENE_OUTRO_01_ICE`
-He's dead. The men I lost are still dead. I said the debt was settled because I wanted it to feel finished.
+Sterling's dead.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-**GOHAN** `SM07_SCENE_OUTRO_02_GOHAN`
-You don't have to arrive healed. Come sit down. We can hear their names if you want to say them.
+**GUESS** `SM07_SCENE_OUTRO_02_GUESS`
+You good?
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**ICE** `SM07_SCENE_OUTRO_03_ICE`
+Nah.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GUESS** `SM07_SCENE_OUTRO_04_GUESS`
+Aight. Come back.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3686,7 +3711,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **ICE** `SM08_SCENE_INTRO_02_ICE`
-Keep a copy outside the building. Your name is more than what an employer wrote beside it.
+Take whatever proves what they did. And don't disappear for two days after.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -3715,12 +3740,22 @@ Trigger: Elevator escape
 ### Aftermath
 
 **GOHAN** `SM08_SCENE_OUTRO_01_GOHAN`
-Their archive burned. The files prove what they did; they don't make fifteen years disappear. I overstated it when I said I was clear.
+Files are out. Archive is gone.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `SM08_SCENE_OUTRO_02_GUESS`
-You don't owe us a clean record to belong here. Bring what happened to you, not a version you think we'll accept.
+Cool. You coming back?
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GOHAN** `SM08_SCENE_OUTRO_03_GOHAN`
+Yeah.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GUESS** `SM08_SCENE_OUTRO_04_GUESS`
+That's all I needed.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 

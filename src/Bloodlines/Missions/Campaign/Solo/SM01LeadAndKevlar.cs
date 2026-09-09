@@ -89,7 +89,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("The crates",
                     new MissionInteraction("Load the AP crates.", () => _trunk, 4, 3f))
                 .PlayedBy(CrewSlot.Ice)
-                .OnExit(context => GameUtils.Subtitle("~g~Armour-piercing tungsten-core 7.62 secured.", 4000))
+                .OnExit(context => GameUtils.Subtitle("~g~Armor-piercing 7.62 secured. Ice's locker restocks now issue double rifle ammunition.", 5000))
                 .AfterCues("SM01_S2_05_ICE");
         }
 

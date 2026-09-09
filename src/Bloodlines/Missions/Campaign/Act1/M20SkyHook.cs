@@ -27,6 +27,7 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _gunners = new List<Ped>();
 
         private Vehicle _cargobob;
+        private Vehicle _kraken;
         private Prop _container;
         private Vector3 _hover;
         private Vector3 _deck;
@@ -57,10 +58,37 @@ namespace Bloodlines.Missions.Campaign
             SpawnContainer();
             SpawnDeckGunners();
             if (!RequireAssets(_cargobob, _container)) return false;
+            RequireAsset(_cargobob, "The Cargobob went down.");
+            RequireAsset(_container, "The bullion container was lost.");
             Station(CrewSlot.Ice, Ctx.Locations.Position("M12.PierWatch"));
-            Station(CrewSlot.Gohan, apron + new Vector3(-15f, 0f, 0f));
+            // Chapter continuity: if M19 just ended, Gohan is still in the Kraken on
+            // the surface, not standing on the apron beside Guess.
+            var handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
+            if (handoff != null && SpawnKraken(handoff)) Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
+            else Station(CrewSlot.Gohan, apron + new Vector3(-15f, 0f, 0f));
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.HeavySniper, 100, true, true);
             return true;
+        }
+
+        private bool SpawnKraken(OperationHandoff handoff)
+        {
+            var model = new Model("submersible2");
+            if (!GameUtils.RequestModel(model)) return false;
+            var point = handoff.VehicleModel.Length > 0 ? handoff.VehiclePosition : Ctx.Locations.Position("M19.Surface");
+            _kraken = Track(World.CreateVehicle(model, point, handoff.VehicleHeading));
+            model.MarkAsNoLongerNeeded();
+            if (_kraken == null || !_kraken.Exists()) return false;
+            _kraken.IsPersistent = true;
+            return true;
+        }
+
+        /// <summary>The lift is airborne with the container under it: that is what M21 must show.</summary>
+        protected override void OnPassed()
+        {
+            var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M21", Ctx.Crew, _cargobob);
+            record.CargoAttached = _container != null && _container.Exists();
+            record.CargoModel = "prop_container_01a";
+            Ctx.Handoffs.Record(record);
         }
 
         protected override IEnumerable<MissionStage> BuildStages()

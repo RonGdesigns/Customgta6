@@ -45,8 +45,11 @@ namespace Bloodlines.Missions.Campaign
             }
 
             ApplyBibleSetting();
+            var handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
             SpawnLift();
             if (!RequireAssets(_cargobob, _container)) return false;
+            if (handoff != null && !handoff.CargoAttached) Logger.Warn("M22: M21 recorded the lift without cargo; the Alamo drop still uses a container.");
+            RequireAsset(_cargobob, "The Cargobob went down. The bullion never reached the Alamo.");
             Station(CrewSlot.Ice, _beach + new Vector3(-15f, 0f, 0f));
             Station(CrewSlot.Gohan, _beach + new Vector3(0f, 15f, 0f));
             return true;

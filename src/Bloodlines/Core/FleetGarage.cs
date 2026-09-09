@@ -78,6 +78,27 @@ namespace Bloodlines.Core
             if (count > 0) vehicle.Mods[type].Index = System.Math.Min(requested, count - 1);
         }
 
+        /// <summary>
+        /// SM03's prize. The save flag existed with nothing reading it, so the benefit
+        /// is now concrete: any car or motorcycle repaired at Guess's chop bay leaves
+        /// with the race transmission fitted. Returns what was done for the
+        /// notification, or null when the flag is not earned or the vehicle cannot take it.
+        /// </summary>
+        public string FitChopBay(Vehicle vehicle)
+        {
+            if (vehicle == null || !vehicle.Exists()) return null;
+            if (!_state.FleetUpgrades.TryGetValue("racingTransmissionInstalled", out bool racing) || !racing) return null;
+            if (!(vehicle.Model.IsCar || vehicle.Model.IsBike)) return null;
+            vehicle.Mods.InstallModKit();
+            int count = vehicle.Mods[VehicleModType.Transmission].Count;
+            if (count <= 0) return null;
+            int target = System.Math.Min(2, count - 1);
+            if (vehicle.Mods[VehicleModType.Transmission].Index >= target) return null;
+            vehicle.Mods[VehicleModType.Transmission].Index = target;
+            Logger.Info("Fitted the SM03 race transmission to " + vehicle.DisplayName + ".");
+            return "Race transmission fitted (Midnight Drift prize).";
+        }
+
         /// <summary>Forgets which vehicles were upgraded — used when the crew stands down.</summary>
         public void Reset()
         {

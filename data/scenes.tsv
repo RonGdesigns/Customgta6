@@ -1,4 +1,10 @@
 cue_id	mission	phase	speaker	direction	line
+M01_SCENE_PROLOGUE_01_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Los Santos. Same heat coming off the runway. Fifteen years and the city didn't wait for me.
+M01_SCENE_PROLOGUE_02_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Two numbers in this phone I haven't dialed since graduation. Not tonight. Tonight I find out where I'm sleeping.
+M01_SCENE_PROLOGUE_03_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Car's where the man said it would be. Half a tank. That'll get me across town.
+M01_SCENE_ARRIVAL_01_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Home. Or the closest thing I've got to one until I'm working again.
+M01_SCENE_ARRIVAL_02_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+M01_SCENE_ARRIVAL_03_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Somebody knew I was back before I did. I'm going anyway.
 M01_SCENE_INTRO_01_GUESS	M01	intro	GUESS	Private channel; no recognition or shared conversation	Terminal Island. Two in the morning. They sent me a gate code, a photograph and half the money. That's usually the part where I should ask more questions.
 M01_SCENE_INTRO_02_GUESS	M01	intro	GUESS	Private channel; no recognition or shared conversation	I'm outside the freight entrance in my own car. One pickup inside the yard. Keep it quiet, get paid, go home.
 M01_SCENE_INTRO_03_GOHAN	M01	intro	GOHAN	Private channel; no recognition or shared conversation	Different client, same dockyard. The laptop at the west service station holds Mateo's payment ledger. It's separate from his meeting point. I'm at the service entrance; I need to reach it before the security shift.
@@ -18,7 +24,7 @@ M01_SCENE_RECOGNITION_08_GUESS	M01	recognition	GUESS	Face-to-face reunion; anger
 M01_SCENE_RECOGNITION_09_ICE	M01	recognition	ICE	Face-to-face reunion; anger interrupted by danger	Mateo's running for the slipway. Let him lead us to the buyers. Cover each other and get to Guess's car.
 M01_SCENE_OUTRO_01_GOHAN	M01	outro	GOHAN	Reflective; allow the response to land	The dock cameras tagged all three of us. An Aegis van is carrying the upload. We have to catch it.
 M01_SCENE_OUTRO_02_GUESS	M01	outro	GUESS	Reflective; allow the response to land	Fifteen years without a call. Now we're sharing a wanted poster. Nobody disappears before we talk.
-M02_SCENE_INTRO_01_GOHAN	M02	intro	GOHAN	Briefing; intent before tactics	The van has the dock recording. I can hack it from the passenger seat. Stay within thirty-five metres while I cut the upload.
+M02_SCENE_INTRO_01_GOHAN	M02	intro	GOHAN	Briefing; intent before tactics	The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.
 M02_SCENE_INTRO_02_ICE	M02	intro	ICE	Briefing; intent before tactics	Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 M02_SCENE_OUTRO_01_GUESS	M02	outro	GUESS	Reflective; allow the response to land	You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
 M02_SCENE_OUTRO_02_ICE	M02	outro	ICE	Reflective; allow the response to land	Can you get us somewhere safe, Guess? And Gohan... keep that drive. I want to hear what it says.
@@ -53,7 +59,7 @@ M09_SCENE_OUTRO_02_GUESS	M09	outro	GUESS	Reflective; allow the response to land	
 M10_SCENE_INTRO_01_GUESS	M10	intro	GUESS	Briefing; intent before tactics	The engines are back on the hauler. Aegis knows they're missing. Keep their bikes off me and I'll keep us moving.
 M10_SCENE_INTRO_02_GOHAN	M10	intro	GOHAN	Briefing; intent before tactics	I'm watching the route. Call the danger you see; I'll keep the way out on your map.
 M10_SCENE_OUTRO_01_ICE	M10	outro	ICE	Reflective; allow the response to land	You stopped joking on that bridge. I should've noticed how close we were before you had to tell me.
-M10_SCENE_OUTRO_02_GUESS	M10	outro	GUESS	Reflective; allow the response to land	I joke when I'm scared too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
+M10_SCENE_OUTRO_02_GUESS	M10	outro	GUESS	Reflective; allow the response to land	I joke when I'm nervous too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
 M11_SCENE_INTRO_01_GUESS	M11	intro	GUESS	Briefing; intent before tactics	Nobody fires a shot today unless this engine starts shooting first. Ice, hold the throttle where I put it.
 M11_SCENE_INTRO_02_ICE	M11	intro	ICE	Briefing; intent before tactics	Your shop, your call. I owe you a day where keeping us alive doesn't mean driving through a roadblock.
 M11_SCENE_OUTRO_01_GOHAN	M11	outro	GOHAN	Reflective; allow the response to land	Berth 44 has gold and bonds on the manifest. Three billion is the shipment's claim, not money we can spend.
@@ -80,7 +86,7 @@ M16_SCENE_OUTRO_01_ICE	M16	outro	ICE	Reflective; allow the response to land	I he
 M16_SCENE_OUTRO_02_GOHAN	M16	outro	GOHAN	Reflective; allow the response to land	Now the submerged load needs a way to float. Bring that lifting capacity to the dry dock.
 M17_SCENE_INTRO_01_GOHAN	M17	intro	GOHAN	Briefing; intent before tactics	The Kraken needs cutters and ballast grapples. A hole in a ship means nothing if the cargo stays on the bottom.
 M17_SCENE_INTRO_02_GUESS	M17	intro	GUESS	Briefing; intent before tactics	You build like you expect nobody to come get you. Put a release on this thing that another person can reach.
-M17_SCENE_OUTRO_01_GOHAN	M17	outro	GOHAN	Reflective; allow the response to land	All right. External release, marked yellow. I learned to work alone. That doesn't mean I want to die that way.
+M17_SCENE_OUTRO_01_GOHAN	M17	outro	GOHAN	Reflective; allow the response to land	All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 M17_SCENE_OUTRO_02_ICE	M17	outro	ICE	Reflective; allow the response to land	We rehearse the pickups at staging. Everybody knows how to bring the other two back.
 M18_SCENE_INTRO_01_ICE	M18	intro	ICE	Briefing; intent before tactics	Sub, Cargobob, hauler. Check the fuel and the exits now. Once Gohan cuts the hull, this stops being preparation.
 M18_SCENE_INTRO_02_GUESS	M18	intro	GUESS	Briefing; intent before tactics	One rule from me: if somebody calls abort, we answer before we argue. A container isn't a fourth brother.
@@ -99,7 +105,7 @@ M21_SCENE_INTRO_02_GUESS	M21	intro	GUESS	Briefing; intent before tactics	Stay wh
 M21_SCENE_OUTRO_01_ICE	M21	outro	ICE	Reflective; allow the response to land	We have a route to the Alamo. Drop the load shallow enough to recover. Everybody lands before we count it.
 M21_SCENE_OUTRO_02_GUESS	M21	outro	GUESS	Reflective; allow the response to land	I want one minute on the beach where nobody asks me to keep moving.
 M22_SCENE_INTRO_01_ICE	M22	intro	ICE	Briefing; intent before tactics	The container goes into the shallows. Nobody takes the whole shipment home in one night. We recover it in pieces.
-M22_SCENE_INTRO_02_GOHAN	M22	intro	GOHAN	Briefing; intent before tactics	I want to check the foundry link before we head back. Aegis still knows there were three faces at the docks.
+M22_SCENE_INTRO_02_GOHAN	M22	intro	GOHAN	Briefing; intent before tactics	That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 M22_SCENE_OUTRO_01_GUESS	M22	outro	GUESS	Reflective; allow the response to land	That shop was going to be ours. Not a hideout. A place you two might actually stay.
 M22_SCENE_OUTRO_02_ICE	M22	outro	ICE	Reflective; allow the response to land	I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
 M23_SCENE_INTRO_01_ICE	M23	intro	ICE	Briefing; intent before tactics	The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
@@ -112,9 +118,9 @@ M24_SCENE_OUTRO_01_GUESS	M24	outro	GUESS	Reflective; allow the response to land	
 M24_SCENE_OUTRO_02_ICE	M24	outro	ICE	Reflective; allow the response to land	Those deputies knew too much. Assume every isolated road can turn into a bounty trap.
 M25_SCENE_INTRO_01_ICE	M25	intro	ICE	Briefing; intent before tactics	Aegis put five million on us. The deputies in Raton aren't making an arrest. I'm taking the high ground.
 M25_SCENE_INTRO_02_GOHAN	M25	intro	GOHAN	Briefing; intent before tactics	Send the route before you move. You don't have to keep the danger to yourself to keep us out of it.
-M25_SCENE_OUTRO_01_ICE	M25	outro	ICE	Reflective; allow the response to land	I nearly did it again. Went quiet so neither of you would hear me scared. Next time, I'll make the call.
+M25_SCENE_OUTRO_01_ICE	M25	outro	ICE	Reflective; allow the response to land	I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.
 M25_SCENE_OUTRO_02_GUESS	M25	outro	GUESS	Reflective; allow the response to land	Make it early. Their spotters are over the Alamo now. We protect the water together.
-M26_SCENE_INTRO_01_GUESS	M26	intro	GUESS	Briefing; intent before tactics	Those planes are searching for the submerged gold. I'll take the Lazer. Gohan, keep them from calling in a fix.
+M26_SCENE_INTRO_01_GUESS	M26	intro	GUESS	Briefing; intent before tactics	Those planes are searching for the submerged gold. The Lazer we towed out of Zancudo under the M16 clearance is fueled in the McKenzie hangar. I'll take it. Gohan, keep them from calling in a fix.
 M26_SCENE_INTRO_02_ICE	M26	intro	ICE	Briefing; intent before tactics	I'm listening to your channel. If you need me, you get an answer. That's the part I can promise.
 M26_SCENE_OUTRO_01_GOHAN	M26	outro	GOHAN	Reflective; allow the response to land	The spotters' traffic points to an Aegis charter. Its flight ledger may show where their arms pipeline goes.
 M26_SCENE_OUTRO_02_GUESS	M26	outro	GUESS	Reflective; allow the response to land	Then we intercept it with an actual pickup plan. Ice isn't jumping into a promise with no boat underneath.
@@ -180,7 +186,7 @@ M41_SCENE_OUTRO_01_ICE	M41	outro	ICE	Reflective; allow the response to land	Brad
 M41_SCENE_OUTRO_02_GOHAN	M41	outro	GOHAN	Reflective; allow the response to land	We deploy the sub next. Thanks for saying you're coming back instead of just going silent.
 M42_SCENE_INTRO_01_GUESS	M42	intro	GUESS	Briefing; intent before tactics	The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I open the cargo ramp.
 M42_SCENE_INTRO_02_GOHAN	M42	intro	GOHAN	Briefing; intent before tactics	I'm trusting you with the part I can't check from inside the hull. If I'm quiet, it's concentration, not permission.
-M42_SCENE_OUTRO_01_GUESS	M42	outro	GUESS	Reflective; allow the response to land	Sub deployed. I'm still shaking. Nobody put that in the flight log.
+M42_SCENE_OUTRO_01_GUESS	M42	outro	GUESS	Reflective; allow the response to land	Sub deployed. That one had my nerves up. Nobody put that in the flight log.
 M42_SCENE_OUTRO_02_ICE	M42	outro	ICE	Reflective; allow the response to land	Put it in. Then somebody reading the plan knows what it asks of a person. We regroup at staging.
 M43_SCENE_INTRO_01_ICE	M43	intro	ICE	Briefing; intent before tactics	Sub below, gunboats on the surface, helicopter on extraction. Confirm all three before anybody crosses the perimeter.
 M43_SCENE_INTRO_02_GOHAN	M43	intro	GOHAN	Briefing; intent before tactics	Ramos gave us codes because we brought him out alive. We keep proving that was the right decision.
@@ -192,7 +198,7 @@ M44_SCENE_OUTRO_01_GOHAN	M44	outro	GOHAN	Reflective; allow the response to land	
 M44_SCENE_OUTRO_02_GUESS	M44	outro	GUESS	Reflective; allow the response to land	Now I bring Ice to the helipad. Hold a channel open. We finally learned to wait for each other.
 M45_SCENE_INTRO_01_GUESS	M45	intro	GUESS	Briefing; intent before tactics	Sea defenses are down, but the helipad guns still see us. Ice, you get one landing. Say if it isn't yours.
 M45_SCENE_INTRO_02_ICE	M45	intro	ICE	Briefing; intent before tactics	Bring me inside the rail. I'll clear the route to Gohan. No hero jump to save five seconds.
-M45_SCENE_OUTRO_01_ICE	M45	outro	ICE	Reflective; allow the response to land	Helipad secure. Command deck next. Gohan, bring Bradley's card. Guess, keep that extraction aircraft breathing.
+M45_SCENE_OUTRO_01_ICE	M45	outro	ICE	Reflective; allow the response to land	Helipad's secure. Gohan, I need Bradley's card up here. Guess, how's our bird?
 M45_SCENE_OUTRO_02_GOHAN	M45	outro	GOHAN	Reflective; allow the response to land	I'm on my way. When this door opens, we copy the evidence before we count the bonds.
 M46_SCENE_INTRO_01_GOHAN	M46	intro	GOHAN	Briefing; intent before tactics	The command vault has the political escrow ledger. Bradley's card gets us in. The files explain who paid for all this.
 M46_SCENE_INTRO_02_ICE	M46	intro	ICE	Briefing; intent before tactics	Take a copy we can prove is theirs. Mateo's word started us moving. It won't finish the fight.
@@ -293,13 +299,14 @@ M69_SCENE_OUTRO_02_ICE	M69	outro	ICE	Reflective; allow the response to land	No l
 M70_SCENE_INTRO_01_GUESS	M70	intro	GUESS	Briefing; intent before tactics	The engines still turn. We use the aircraft to reach the seawall, then abandon it for the boats and sub. No flying miracle.
 M70_SCENE_INTRO_02_ICE	M70	intro	ICE	Briefing; intent before tactics	I hold the ramp until you call. Then I leave with you. Nobody has to drag me away from this one.
 M70_SCENE_OUTRO_01_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	The copies are out. The money is routed. For once there's nothing on that burning machine we have to go back for.
-M70_SCENE_OUTRO_02_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Darius. Devin. Answer with your names. I want to know who made it out, not which job you were doing.
-M70_SCENE_OUTRO_03_ICE	M70	outro	ICE	Reflective; allow the response to land	Darius. Still here. I should have called when I came home. I let shame decide you didn't want to hear from me.
-M70_SCENE_OUTRO_04_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	Devin. I thought if you saw what happened to me, you'd only see the failure. I should have let you decide.
-M70_SCENE_OUTRO_05_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Ron. I kept acting like leaving didn't hurt. Then every time somebody stayed, I made a joke instead of saying thanks.
-M70_SCENE_OUTRO_06_ICE	M70	outro	ICE	Reflective; allow the response to land	We're not fixing fifteen years on one boat. But tomorrow, when you call, I'm answering.
-M70_SCENE_OUTRO_07_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	Tomorrow sounds good. Tell me where we're going before Ron invents another shortcut.
-M70_SCENE_OUTRO_08_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Breakfast. Three seats. After that, we figure it out together.
+M70_SCENE_OUTRO_02_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Darius. Devin. Answer in words. I want to know who made it out.
+M70_SCENE_OUTRO_03_ICE	M70	outro	ICE	Reflective; allow the response to land	Here. Wet. Fine.
+M70_SCENE_OUTRO_04_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Devin?
+M70_SCENE_OUTRO_05_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	Hold on. The relay's still pinging and I want to know why.
+M70_SCENE_OUTRO_06_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Man's got a burning airplane behind him and he's already on a device. You gonna answer your phone tomorrow?
+M70_SCENE_OUTRO_07_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	Probably.
+M70_SCENE_OUTRO_08_ICE	M70	outro	ICE	Reflective; allow the response to land	That's a no.
+M70_SCENE_OUTRO_09_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Breakfast. Three seats. I'm driving.
 SM01_SCENE_INTRO_01_ICE	SM01	intro	ICE	Briefing; intent before tactics	Sergei sold me bad ammunition. I'll recover the proper crates alone. The crew needs a supply line we can trust.
 SM01_SCENE_INTRO_02_GUESS	SM01	intro	GUESS	Briefing; intent before tactics	You can work alone without pretending you don't have anyone to call. Tell us when you're leaving the warehouse.
 SM01_SCENE_OUTRO_01_ICE	SM01	outro	ICE	Reflective; allow the response to land	Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.
@@ -319,19 +326,25 @@ SM04_SCENE_OUTRO_02_GUESS	SM04	outro	GUESS	Reflective; allow the response to lan
 SM05_SCENE_INTRO_01_GOHAN	SM05	intro	GOHAN	Briefing; intent before tactics	The swamp buoy can feed us military flight telemetry. I'll make the splice alone while its patrol passes.
 SM05_SCENE_INTRO_02_GUESS	SM05	intro	GUESS	Briefing; intent before tactics	I'll keep a return window open. You don't have to use it to prove it was worth setting up.
 SM05_SCENE_OUTRO_01_GOHAN	SM05	outro	GOHAN	Reflective; allow the response to land	Telemetry received. It supplements our recon; it doesn't tell us every pilot's next thought. I'm heading back.
-SM05_SCENE_OUTRO_02_ICE	SM05	outro	ICE	Reflective; allow the response to land	Copy. Work's done for tonight. You can stop being useful long enough to eat with us.
+SM05_SCENE_OUTRO_02_ICE	SM05	outro	ICE	Reflective; allow the response to land	Job's done. Come eat before Ron starts calling your phone again.
 SM06_SCENE_INTRO_01_GUESS	SM06	intro	GUESS	Briefing; intent before tactics	McKenzie's aircraft need fuel. I'll take the tanker through Raton. Heavy truck, narrow route; nobody calls this a race.
 SM06_SCENE_INTRO_02_ICE	SM06	intro	ICE	Briefing; intent before tactics	I won't. Call the location if the route closes. We can recover you even if we can't recover the fuel.
-SM06_SCENE_OUTRO_01_GUESS	SM06	outro	GUESS	Reflective; allow the response to land	Tanker delivered. I had to choose between a clean run and backing off a blind corner. Backing off worked.
-SM06_SCENE_OUTRO_02_GOHAN	SM06	outro	GOHAN	Reflective; allow the response to land	Remember that when you tell the story. Let the younger version of you hear that slowing down can be skill too.
+SM06_SCENE_OUTRO_01_GUESS	SM06	outro	GUESS	Reflective; allow the response to land	Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
+SM06_SCENE_OUTRO_02_GOHAN	SM06	outro	GOHAN	Reflective; allow the response to land	You actually slowed down.
+SM06_SCENE_OUTRO_03_GUESS	SM06	outro	GUESS	Reflective; allow the response to land	Don't sound so surprised.
+SM06_SCENE_OUTRO_04_GOHAN	SM06	outro	GOHAN	Reflective; allow the response to land	I am.
 SM07_SCENE_INTRO_01_ICE	SM07	intro	ICE	Briefing; intent before tactics	Sterling sold out my unit. He's at Aegis now. I'm going after him for myself, and I won't hide that behind the campaign.
-SM07_SCENE_INTRO_02_GUESS	SM07	intro	GUESS	Briefing; intent before tactics	Then come back for yourself too. We can't make this decision for you, but we're here after it.
-SM07_SCENE_OUTRO_01_ICE	SM07	outro	ICE	Reflective; allow the response to land	He's dead. The men I lost are still dead. I said the debt was settled because I wanted it to feel finished.
-SM07_SCENE_OUTRO_02_GOHAN	SM07	outro	GOHAN	Reflective; allow the response to land	You don't have to arrive healed. Come sit down. We can hear their names if you want to say them.
+SM07_SCENE_INTRO_02_GUESS	SM07	intro	GUESS	Briefing; intent before tactics	That's your call. Just come back when it's done.
+SM07_SCENE_OUTRO_01_ICE	SM07	outro	ICE	Reflective; allow the response to land	Sterling's dead.
+SM07_SCENE_OUTRO_02_GUESS	SM07	outro	GUESS	Reflective; allow the response to land	You good?
+SM07_SCENE_OUTRO_03_ICE	SM07	outro	ICE	Reflective; allow the response to land	Nah.
+SM07_SCENE_OUTRO_04_GUESS	SM07	outro	GUESS	Reflective; allow the response to land	Aight. Come back.
 SM08_SCENE_INTRO_01_GOHAN	SM08	intro	GOHAN	Briefing; intent before tactics	Vanderbilt & Cole forged the fraud case against me. I'm taking their files before I destroy the archive they used to control me.
-SM08_SCENE_INTRO_02_ICE	SM08	intro	ICE	Briefing; intent before tactics	Keep a copy outside the building. Your name is more than what an employer wrote beside it.
-SM08_SCENE_OUTRO_01_GOHAN	SM08	outro	GOHAN	Reflective; allow the response to land	Their archive burned. The files prove what they did; they don't make fifteen years disappear. I overstated it when I said I was clear.
-SM08_SCENE_OUTRO_02_GUESS	SM08	outro	GUESS	Reflective; allow the response to land	You don't owe us a clean record to belong here. Bring what happened to you, not a version you think we'll accept.
+SM08_SCENE_INTRO_02_ICE	SM08	intro	ICE	Briefing; intent before tactics	Take whatever proves what they did. And don't disappear for two days after.
+SM08_SCENE_OUTRO_01_GOHAN	SM08	outro	GOHAN	Reflective; allow the response to land	Files are out. Archive is gone.
+SM08_SCENE_OUTRO_02_GUESS	SM08	outro	GUESS	Reflective; allow the response to land	Cool. You coming back?
+SM08_SCENE_OUTRO_03_GOHAN	SM08	outro	GOHAN	Reflective; allow the response to land	Yeah.
+SM08_SCENE_OUTRO_04_GUESS	SM08	outro	GUESS	Reflective; allow the response to land	That's all I needed.
 SM09_SCENE_INTRO_01_KJ	SM09	intro	KJ	Briefing; intent before tactics	Guess, that captain will trade documents and passage for the impounded hypercar. I checked his ship, not his soul. Confirm the passenger count yourself.
 SM09_SCENE_INTRO_02_GUESS	SM09	intro	GUESS	Briefing; intent before tactics	I will. You make the introduction, then step back, KJ. This is my run. You don't owe my enemies a look at your face.
 SM09_SCENE_OUTRO_01_KJ	SM09	outro	KJ	Reflective; allow the response to land	He confirmed the documents and passage. Keep your other exit too. One captain's schedule isn't something I'd stake a family on.

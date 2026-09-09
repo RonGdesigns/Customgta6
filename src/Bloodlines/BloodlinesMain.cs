@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using Bloodlines.Abilities;
 using Bloodlines.Core;
@@ -42,6 +43,7 @@ namespace Bloodlines
         private readonly SurveyMode _survey;
         private readonly LocationBook _locations;
         private readonly CampaignState _state;
+        private readonly PrologueSequence _prologue;
 
         private int _abortHeldSince;
         private CrewSlot? _controllerSelection;
@@ -97,8 +99,15 @@ namespace Bloodlines
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
             _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
             _homes.OpenMenu = _menu.OpenHomePage;
+            _prologue = new PrologueSequence(_crew, _cutscenes, _locations, _state, () => _homes.Position(CrewSlot.Guess));
+            _prologue.Finished = StartAfterPrologue;
             _homes.RouteNextLead = _missionMarkers.RouteNextAvailable;
-            _homes.ApplyFleetUpgrade = _garage.Update;
+            _homes.ApplyFleetUpgrade = vehicle =>
+            {
+                _garage.Update();
+                string fitted = _garage.FitChopBay(vehicle);
+                if (fitted != null) GameUtils.Notify("~o~" + fitted);
+            };
             _homes.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive;
 
             Interval = 0;
@@ -146,28 +155,29 @@ namespace Bloodlines
             if (_handoff.IsWaiting) Step("stop ability during handoff", _abilities.Stop);
                 return;
             }
+            Step("prologue", _prologue.Update);
             _crew.CompanionAI.MissionActive = _missions.IsRunning;
-            Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning));
+            Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
             Step("crew", _crew.Update);
             Step("military response", () => _crew.CompanionAI.Military.Update(_crew.ActiveSlot, _crew.IsDeployed && !_missions.IsRunning && !_survey.IsActive, _crew.CrewGroup, _menu.IsOpen));
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
             Step("world speed", () => _worldTuning.Update(_crew));
             Step("tactical response", () => _tactics.Update(_crew));
-            Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive));
-            Step("weapon ownership", () => _weapons.Update(_crew));
-            Step("homes", () => _homes.Update(!_missions.IsRunning && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
+            Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
+            Step("weapon ownership", () => _weapons.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
+            Step("homes", () => _homes.Update(!_missions.IsRunning && !_prologue.IsActive && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
             ObjectiveMarkers.ActiveSlot = _crew.ActiveSlot;
-            ObjectiveMarkers.BeginFrame(_missions.IsRunning);
+            ObjectiveMarkers.BeginFrame(_missions.IsRunning || _prologue.IsActive);
             Step("missions", _missions.Update);
             ObjectiveMarkers.EndFrame();
             if (_cutscenes.IsActive) { _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             Step("dialogue", _dialogue.Update);
-            Step("crew dispatches", () => _dispatches.Update(_crew.IsDeployed && !_missions.IsRunning && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen && !_dialogue.HasPending));
+            Step("crew dispatches", () => _dispatches.Update(_crew.IsDeployed && !_missions.IsRunning && !_prologue.IsActive && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen && !_dialogue.HasPending));
             Step("controller menu", _menu.HandleControllerToggle);
             Step("menu", _menu.Update);
             Step("survey", _survey.Update);
-            Step("mission markers", () => _missionMarkers.Update(_menu.IsOpen));
+            Step("mission markers", () => _missionMarkers.Update(_menu.IsOpen || _prologue.IsActive));
             if (!_menu.IsOpen && _missionMarkers.Nearby != null && Game.IsControlJustPressed(GTA.Control.Context))
                 StartMission(_missionMarkers.Nearby);
             if (_missions.IsRunning && !_menu.IsOpen)
@@ -271,7 +281,8 @@ namespace Bloodlines
             if (Game.GameTime - _abortHeldSince > 1200)
             {
                 _abortHeldSince = 0;
-                if (_missions.IsRunning) _missions.Abort();
+                if (_prologue.IsActive) _prologue.Skip();
+                else if (_missions.IsRunning) _missions.Abort();
                 else if (_crew.IsDeployed) StandDown();
             }
         }
@@ -357,7 +368,7 @@ namespace Bloodlines
         private void StartMission(MissionDefinition requested = null)
         {
             if (_homes.Apartment.Inside || _homes.Apartment.Busy) { GameUtils.Notify("~y~Exit the apartment before starting a job."); return; }
-            if (_missions.IsRunning) return;
+            if (_missions.IsRunning || _prologue.IsActive) return;
 
             if (!_data.IsLoaded)
             {
@@ -368,13 +379,24 @@ namespace Bloodlines
             var next = requested ?? (_missions.RetryAvailable ? _missions.LastAttempted : _state.NextPlayable(_catalog));
             if (next == null)
             {
-                GameUtils.Notify("~y~No scripted missions available.");
+                // Never M01 by default: the end of the scripted content is a state of
+                // its own and the player is told which one they are in.
+                GameUtils.Notify((_state.Progress(_catalog) == CampaignProgress.ImplementedContentComplete ? "~g~" : "~y~") + _state.DescribeProgress(_catalog));
                 return;
             }
+            if (requested == null && _missions.RetryAvailable) GameUtils.Notify("~y~Retrying " + next.Id + "~s~ from the beginning. Walk to another marker to choose a different job.");
 
             // Missions own their own deployment; a free-roam crew would fight the
             // mission's spawn, so stand it down first.
             if (_crew.IsDeployed) StandDown();
+
+            // A fresh campaign opens on Ron's arrival, not on the dockyard. The
+            // prologue hands off to M01 itself when it ends.
+            if (next.Id == "M01" && _state.PrologueDue && _prologue.Begin())
+            {
+                GameUtils.Notify("~o~Los Santos International.~s~ Ron is home.");
+                return;
+            }
 
             if (_missions.Start(next))
             {
@@ -383,11 +405,46 @@ namespace Bloodlines
             }
         }
 
+        /// <summary>
+        /// The arrival scene has ended at the apartment door. Cut to Terminal Island:
+        /// the dockyard is across the city and M01's placement check wants its
+        /// surfaces streamed, so Ron is moved there under a fade before the cold
+        /// open, which then frames its own three approaches.
+        /// </summary>
+        private void StartAfterPrologue()
+        {
+            var m01 = _catalog.All.FirstOrDefault(m => m.Id == "M01");
+            if (m01 == null) return;
+            var player = Game.Player.Character;
+            var dock = _locations.Position("M01.RegroupPoint");
+            GameUtils.FadeOut(900);
+            Script.Wait(950);
+            if (player != null && player.Exists())
+            {
+                if (player.IsInVehicle()) player.Task.LeaveVehicle();
+                player.Position = dock;
+                for (int attempt = 0; attempt < 20; attempt++)
+                {
+                    GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
+                    if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player)) break;
+                    Script.Wait(100);
+                }
+            }
+            GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
+            StartMission(m01);
+            GameUtils.FadeIn(1200);
+        }
+
         private void ToggleDeployment()
         {
             if (_survey.IsActive)
             {
                 GameUtils.Subtitle("~y~Stop the survey before deploying the crew.", 3000);
+                return;
+            }
+            if (_prologue.IsActive)
+            {
+                GameUtils.Subtitle("~y~Get home first.", 2000);
                 return;
             }
             if (_missions.IsRunning)
@@ -403,13 +460,24 @@ namespace Bloodlines
             }
 
             var player = Game.Player.Character;
-            if (!_crew.Deploy(Protagonist.StartingSlot, player.Position, player.Heading))
+            // Before the dockyard, Ron has not found his brothers. Free roam is his
+            // alone; the QA build keeps the full sandbox behind [Dev] Enabled.
+            bool preReunion = !_state.IsComplete("M01") && !_config.DevToolsEnabled;
+            bool deployed = preReunion
+                ? _crew.DeploySolo(Protagonist.StartingSlot, player.Position, player.Heading)
+                : _crew.Deploy(Protagonist.StartingSlot, player.Position, player.Heading);
+            if (!deployed)
             {
                 GameUtils.Notify("~r~Crew failed to deploy — see Bloodlines.log.");
                 return;
             }
 
             _memory.Restore(_crew);
+            if (preReunion)
+            {
+                GameUtils.Notify("~o~Guess is back in Los Santos.~s~ Ice and Gohan are not in his life yet. Finish Ghost in the Dockyard to bring the crew together.");
+                return;
+            }
             GameUtils.Notify("~b~Crew up.~s~ " +
                              _config.SwitchIceKey + "/" + _config.SwitchGohanKey + "/" + _config.SwitchGuessKey +
                              " to switch, " + _config.AbilityKey + " for ability.");
@@ -427,6 +495,7 @@ namespace Bloodlines
             }
 
             Step("close character wheel", _characterWheel.Close);
+            Step("cancel prologue", _prologue.Cancel);
             Step("stop scene", _cutscenes.Stop);
             Step("stop ability", _abilities.Stop);
             Step("stop switching", _switching.Cancel);
@@ -446,6 +515,7 @@ namespace Bloodlines
         {
             Logger.Info("Script aborting - tearing down.");
             Step("save free-roam crew memory", () => { if (!_missions.IsRunning && !_death.IsHandling) { _memory.Capture(_crew); _state.Save(); } });
+            Step("cancel prologue", _prologue.Cancel);
             Step("close character wheel", _characterWheel.Close);
             Step("stop scene", _cutscenes.Stop);
             Step("stop home markers", _homes.Clear);

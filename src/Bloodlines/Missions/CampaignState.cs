@@ -18,6 +18,15 @@ namespace Bloodlines.Missions
     /// playthrough; a flat text file next to the mod can be inspected, edited, backed
     /// up and deleted without touching anything Rockstar owns.
     /// </summary>
+    /// <summary>The four things "what next" can mean, so none of them falls back to M01.</summary>
+    public enum CampaignProgress
+    {
+        StoryAvailable,
+        SideContentOnly,
+        StoryBlocked,
+        ImplementedContentComplete
+    }
+
     public sealed class CampaignState
     {
         private readonly string _path;
@@ -33,6 +42,13 @@ namespace Bloodlines.Missions
         public HashSet<string> Completed { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public CrewSlot LastHero { get; private set; } = Protagonist.StartingSlot;
         public Vector3 LastLocation { get; private set; }
+
+        /// <summary>
+        /// Ron's arrival drive before M01. A save that already finished M01 counts as
+        /// having played it, so existing campaigns are never sent back to the airport.
+        /// </summary>
+        public bool PrologueComplete { get; set; }
+        public bool PrologueDue => !PrologueComplete && !IsComplete("M01");
 
         // --- economy (bible §2 and the heist payouts) ---
         public int CashOnHand { get; set; }
@@ -56,7 +72,8 @@ namespace Bloodlines.Missions
             { "grangerTurbineInstalled", false },
             { "halfTrackAcquired", false },
             { "krakenSubmarineReinforced", false },
-            { "racingTransmissionInstalled", false }
+            { "racingTransmissionInstalled", false },
+            { "armorPiercingSupply", false }
         };
 
         public Dictionary<string, HashSet<uint>> Weapons { get; } = new Dictionary<string, HashSet<uint>>(StringComparer.OrdinalIgnoreCase);
@@ -102,6 +119,7 @@ namespace Bloodlines.Missions
                 var campaign = Json.Object(root.TryGetValue("campaign", out var c) ? c : null);
                 state.CurrentMissionId = Json.String(campaign, "currentMissionId");
                 state.ActiveAct = Math.Max(1, Json.Int(campaign, "activeAct", 1));
+                state.PrologueComplete = campaign.TryGetValue("prologueComplete", out var prologue) && prologue is bool played && played;
                 foreach (var entry in Json.Array(campaign, "completedMissions"))
                 {
                     if (entry != null) state.Completed.Add(entry.ToString());
@@ -181,8 +199,37 @@ namespace Bloodlines.Missions
             var next = NextPlayable(catalog);
             CurrentMissionId = next?.Id ?? "";
             if (next != null) ActiveAct = (int)next.Act;
+            else Logger.Info("Every scripted mission is complete. The save now reports end of implemented content, not M01.");
 
             Save();
+        }
+
+        /// <summary>
+        /// What the campaign can offer next. Kept separate from <see cref="NextPlayable"/>
+        /// because "no next mission" used to be indistinguishable from "start over": the
+        /// player who finished the last scripted job must be told the build has run out
+        /// of story, never pointed back at M01.
+        /// </summary>
+        public CampaignProgress Progress(MissionCatalog catalog)
+        {
+            var story = catalog.Playable.FirstOrDefault(m => !m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
+            if (story != null) return CampaignProgress.StoryAvailable;
+            var side = catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
+            if (side != null) return CampaignProgress.SideContentOnly;
+            bool anyStoryLeft = catalog.Playable.Any(m => !m.IsSolo && !IsComplete(m.Id));
+            return anyStoryLeft ? CampaignProgress.StoryBlocked : CampaignProgress.ImplementedContentComplete;
+        }
+
+        /// <summary>Human-readable form of <see cref="Progress"/> for the mission key and the menu.</summary>
+        public string DescribeProgress(MissionCatalog catalog)
+        {
+            switch (Progress(catalog))
+            {
+                case CampaignProgress.StoryAvailable: return "Next story mission: " + NextPlayable(catalog)?.Id;
+                case CampaignProgress.SideContentOnly: return "Story is caught up for this build. Optional solo jobs remain: " + NextPlayable(catalog)?.Id;
+                case CampaignProgress.StoryBlocked: return "A story mission is waiting on a prerequisite that cannot be met in this build.";
+                default: return "All " + catalog.Playable.Count() + " scripted missions are complete. Later chapters are not in this build; replay any job from the mission menu.";
+            }
         }
 
         private void AwardCompletion(string id)
@@ -206,6 +253,7 @@ namespace Bloodlines.Missions
                 case "SM04": CashOnHand += 15000; FleetUpgrades["quarryRadiosRecovered"] = true; break;
                 case "SM05": CashOnHand += 15000; FleetUpgrades["estuaryTelemetry"] = true; break;
                 case "SM06": CashOnHand += 25000; FleetUpgrades["airfieldFuelReserves"] = true; break;
+                case "SM01": FleetUpgrades["armorPiercingSupply"] = true; break;
                 case "SM02": FleetUpgrades["surveillanceWormInstalled"] = true; break;
                 case "SM03": CashOnHand += 25000; FleetUpgrades["racingTransmissionInstalled"] = true; break;
             }
@@ -243,6 +291,7 @@ namespace Bloodlines.Missions
             CharacterMemory.Clear();
             CurrentMissionId = "";
             ActiveAct = 1;
+            PrologueComplete = false;
             CashOnHand = 0;
             AlamoGoldDredgedTons = 0f;
             OffshoreEscrowBalance = 0;
@@ -266,6 +315,7 @@ namespace Bloodlines.Missions
                         { "currentMissionId", CurrentMissionId },
                         { "completedMissions", Completed.OrderBy(id => id, StringComparer.Ordinal).ToList() },
                         { "activeAct", ActiveAct },
+                        { "prologueComplete", PrologueComplete },
                         {
                             "lastKnownLocation", new Dictionary<string, object>
                             {

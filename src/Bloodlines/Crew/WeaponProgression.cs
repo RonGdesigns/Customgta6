@@ -110,6 +110,18 @@ namespace Bloodlines.Crew
                     changed |= Owned(slot).Add((uint)weapon);
             return changed;
         }
+        /// <summary>
+        /// SM01's tungsten-core 7.62 is a supply line, not a new gun: once Ice has it,
+        /// every locker restock issues his rifles double the usual count. The story
+        /// promised the ammunition would matter, so the benefit is real and bounded.
+        /// </summary>
+        public bool HasArmorPiercingSupply(CrewSlot slot) =>
+            slot == CrewSlot.Ice && _state.FleetUpgrades.TryGetValue("armorPiercingSupply", out bool stocked) && stocked;
+        public int RestockCount(CrewSlot slot, uint weapon, bool restock)
+        {
+            int count = Core.WeaponMarket.AmmoCount(weapon);
+            return restock && count > 3 && HasArmorPiercingSupply(slot) ? count * 2 : count;
+        }
         public void Apply(CrewSlot slot, Ped ped, bool restock = false)
         {
             UnlockRewards();
@@ -117,15 +129,21 @@ namespace Bloodlines.Crew
             foreach (uint weapon in Owned(slot))
                 if (Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) &&
                     (restock || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)))
-                    ped.Weapons.Give((WeaponHash)weapon, Core.WeaponMarket.AmmoCount(weapon), false, true);
+                    ped.Weapons.Give((WeaponHash)weapon, RestockCount(slot, weapon, restock), false, true);
         }
-        public void Update(CrewRoster crew)
+        /// <summary>
+        /// Ownership capture runs only in free roam. A weapon a mission hands out is a
+        /// loan for that job; recording it here would make every mission-issued MG a
+        /// permanent locker item and quietly pre-empt the milestone that is supposed
+        /// to unlock it.
+        /// </summary>
+        public void Update(CrewRoster crew, bool captureAllowed = true)
         {
             if (Game.GameTime < _nextCapture || !crew.IsDeployed) return;
             _nextCapture = Game.GameTime + 1700;
             bool changed = UnlockRewards();
             var hero = Protagonist.All[_captureSlot++ % Protagonist.All.Length];
-            changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
+            if (captureAllowed) changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
             Apply(hero.Slot, crew.PedFor(hero.Slot));
             if (changed) _state.Save();
         }

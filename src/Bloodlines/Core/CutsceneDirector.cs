@@ -30,6 +30,7 @@ namespace Bloodlines.Core
         private Ped _actionActor;
         private Action _sceneAction;
         private bool _actionStarted;
+        private SceneBlocking _blocking;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
         private List<DialogueCue> _lines;
@@ -53,7 +54,15 @@ namespace Bloodlines.Core
             }
         }
 
-        public bool Play(string missionId, string phase, string title, Ped actionActor = null, Action sceneAction = null)
+        /// <summary>
+        /// Plays a scene. <paramref name="blocking"/> is the moving part: actors it
+        /// names are left unfrozen and walk, enter vehicles and use phones while the
+        /// lines play; the camera follows whichever step is running; the scene does
+        /// not end until both the dialogue and the blocking have finished, and a skip
+        /// completes the remaining blocking instantly so gameplay resumes in the
+        /// same state either way.
+        /// </summary>
+        public bool Play(string missionId, string phase, string title, Ped actionActor = null, Action sceneAction = null, SceneBlocking blocking = null)
         {
             if (IsActive || !_scenes.TryGetValue(missionId + ":" + phase, out var lines) || lines.Count == 0) return false;
             var player = Game.Player.Character;
@@ -68,6 +77,7 @@ namespace Bloodlines.Core
             _actionActor = actionActor;
             _sceneAction = sceneAction;
             _actionStarted = false;
+            _blocking = blocking;
             _hadControl = Game.Player.CanControlCharacter;
             try
             {
@@ -181,6 +191,11 @@ namespace Bloodlines.Core
                 _camera = World.CreateCamera(player.Position + new Vector3(0, -3, 2), Vector3.Zero, 48f);
                 if (_camera == null || !_camera.Exists()) throw new InvalidOperationException("Camera creation failed.");
                 World.RenderingCamera = _camera;
+                // Moving actors stay movable. Their held entry still restores the
+                // original frozen/invincible flags when the scene ends.
+                if (_blocking != null)
+                    foreach (var mover in _blocking.Actors)
+                        if (mover != null && mover.Exists()) mover.IsPositionFrozen = false;
                 NextLine();
                 return true;
             }
@@ -236,7 +251,9 @@ namespace Bloodlines.Core
 
         private void NextLine()
         {
-            if (_index >= _lines.Count) { Stop(); return; }
+            // Lines finished but someone is still walking to a car: hold the scene
+            // on the blocking, then end. Skip still completes it instantly.
+            if (_index >= _lines.Count) { if (_blocking != null && !_blocking.IsFinished) return; Stop(); return; }
             var cue = _lines[_index++];
             Ped actor = null;
             if (Enum.TryParse(cue.Speaker, true, out CrewSlot slot)) _actors.TryGetValue(slot, out actor);
@@ -284,6 +301,19 @@ namespace Bloodlines.Core
                 new GTA.UI.TextElement(_title + (_radioScene ? " — phone / radio" : "") + "   |   Enter / controller A: skip", new PointF(35, 15), 0.32f, Color.White).Draw();
                 if (Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Stop(); return; }
                 _dialogue.Update();
+                if (_blocking != null)
+                {
+                    _blocking.Update();
+                    var subject = _blocking.Current?.CameraTarget;
+                    if (subject != null && subject.Exists())
+                    {
+                        // Tracking shot: behind and above the subject, looking through it.
+                        var forward = subject is Ped mover ? mover.ForwardVector : subject is Vehicle ride ? ride.ForwardVector : new Vector3(0f, 1f, 0f);
+                        _camera.Position = subject.Position - forward * 4.5f + new Vector3(1.2f, 0f, 1.6f);
+                        _camera.PointAt(subject.Position + new Vector3(0f, 0f, 0.7f));
+                        Function.Call(Hash.SET_FOCUS_POS_AND_VEL, subject.Position.X, subject.Position.Y, subject.Position.Z, 0f, 0f, 0f);
+                    }
+                }
                 if (_actionStarted && _actionActor != null && _actionActor.Exists())
                 {
                     var point = _actionActor.Position;
@@ -311,6 +341,16 @@ namespace Bloodlines.Core
             _sceneAction = null;
             _actionStarted = false;
             IsSceneRunning = false;
+            // A skipped scene must leave the same world a watched one does: finish
+            // every step that has not played. A dead player has no state to finish.
+            var blocking = _blocking;
+            _blocking = null;
+            if (blocking != null)
+                Release("scene blocking", () =>
+                {
+                    var player = Game.Player.Character;
+                    if (player != null && player.Exists() && !player.IsDead) blocking.Complete();
+                });
             Release("dialogue", _dialogue.Clear);
             Release("gameplay camera", () => World.RenderingCamera = null);
             Release("previous scripted camera", () =>
