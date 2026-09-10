@@ -69,7 +69,7 @@ namespace Bloodlines.Core
                         mission.Info.Owner == "GOHAN" ? BlipColor.Green : BlipColor.Orange;
                     blip.IsShortRange = false;
                     blip.ShowRoute = false;
-                    blip.Name = (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "Bloodlines: ") + mission.Title;
+                    blip.Name = mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
                 }
                 blip.Position = point.Position;
                 if (player == null || !player.Exists() || player.IsDead) continue;

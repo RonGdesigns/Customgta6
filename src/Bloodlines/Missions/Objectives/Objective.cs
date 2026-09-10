@@ -63,6 +63,9 @@ namespace Bloodlines.Missions.Objectives
             if (Status == ObjectiveStatus.Active) Status = ObjectiveStatus.Complete;
         }
 
+        /// <summary>QA only: declare this objective done. The stage's own exit effects still run through the normal tick.</summary>
+        public void ForceComplete() => Complete();
+
         protected void Fail(string reason)
         {
             if (Status != ObjectiveStatus.Active) return;

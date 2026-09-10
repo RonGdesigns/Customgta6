@@ -21,5 +21,11 @@ namespace Bloodlines.Abilities
 
         /// <summary>Must undo everything Activate touched, including on mission abort.</summary>
         public abstract void Deactivate(Ped player);
+
+        /// <summary>
+        /// Called every frame after Deactivate until it returns false. For an ability
+        /// that must blend its effect out rather than drop it. Default: nothing to do.
+        /// </summary>
+        public virtual bool Settle(Ped player) => false;
     }
 }

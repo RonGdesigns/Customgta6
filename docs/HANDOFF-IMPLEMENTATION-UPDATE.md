@@ -139,6 +139,21 @@ Live-test additions:
 21. **Homecoming failure.** Die during the homecoming scene: after recovery the drive resumes at the door, the next stop places Ron at the door directly, then M01's cold open. No double hand-off.
 22. **M28 cameras.** Choose "Yard cameras first": responders should walk in on guard and open fire only on sight.
 
+## Packages A and B (playthrough repair)
+
+From `PLAYTHROUGH-REPAIR-PLAN.md`, on Ron's direction: steering and weight before speed, the speed target unchanged, Guess's ability Franklin-style. Package A: briefing cast, control diagnostics, marker ids, QA objective completion, top-right readout. Package B: per-class road handling baseline, the Guess press-and-grip overlay, aircraft diagnostics and helicopter cruise assist, the calibration sheet in `HANDLING-CALIBRATION.md`. Details per item are in `CHANGE-REGISTER.md`. Packages C (M01, M02, police) and D (M03, M04, apartment call) are not started.
+
+Live-test additions:
+
+23. **Briefing cast.** Start M03 or M04 before deploying the crew (dev tools off): the two speakers stand in front of you facing the start point; Franklin is not in the shot; after the scene you are visible and in control. Deploy the crew, stand far from a brother and start a mission: still a radio call.
+24. **Control lines.** After any scene and at every mission start, `Bloodlines.log` has a `CONTROL [...]` line. If control is missing, quote that line in the notes.
+25. **Readout.** Dev tools on: coordinates and heading sit at the top right and stay visible under objective text; in a car the line adds km/h and mph. Capture P18's Y and Ice's checkpoint Y with it.
+26. **Complete objective.** Dev menu → "Running mission" → "Complete current objective" during M02: the objective passes, the stage advances, the next objective's setup runs.
+27. **Road loop, handling first.** Run the loop in `HANDLING-CALIBRATION.md` for the Primo, Schafter, Granger and Benson, ability off, and fill in the sheet. This is the decision on the speed target; nothing here pulls it down.
+28. **Guess press.** Same loop, ability on for the two freeway curves; end the ability mid-corner once: no drop. Jump the Del Perro ramp with it on: the car still leaves the ground.
+29. **Buzzard pair.** Stock versus this build, same altitude and route, both directions; note the `flight handling:` line from the log.
+30. **Stand-down.** `F10` off after a loop: the same car drives stock again (grip, brakes, gearing) and `Bloodlines.log` shows no restore errors.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -146,4 +161,6 @@ Live-test additions:
 - Cypress post-strike presentation (§15).
 - A visible hangar Lazer between M16 and M26; the dialogue now claims it, the world does not show it yet.
 - Optional SM10–SM13; not registered pending pacing review.
+- Packages C and D of the playthrough repair plan (drive-from-start restructuring, M01/M02 staging, the police policy, M03 ambush and locked Benson, M04 forced switch, the apartment call).
+- The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

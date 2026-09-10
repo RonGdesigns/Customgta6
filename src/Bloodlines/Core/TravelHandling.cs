@@ -17,6 +17,9 @@ namespace Bloodlines.Core
             public object Original, Applied;
         }
         private readonly List<Change> _changes=new List<Change>();
+        private readonly List<string> _report=new List<string>();
+        /// <summary>What Apply found: each property as applied (original -> new) or "unsupported on this runtime".</summary>
+        public string Report => _report.Count == 0 ? "flight handling: nothing requested" : "flight handling: " + string.Join("; ", _report);
         public void Apply(HandlingData data,Model model)
         {
             if(model.IsPlane||model.IsHelicopter)
@@ -29,17 +32,18 @@ namespace Bloodlines.Core
         private void Adjust(HandlingData data,string parent,string name,bool vector)
         {
             var getter=typeof(HandlingData).GetProperty(parent);var child=getter?.GetValue(data,null);
-            if(child==null)return;
+            if(child==null){_report.Add(parent+"."+name+" unsupported on this runtime");return;}
             var type=child.GetType();var valid=type.GetProperty("IsValid");var address=type.GetProperty("MemoryAddress");var field=type.GetProperty(name);
-            if(valid==null||address==null||field==null||!field.CanWrite||!(bool)valid.GetValue(child,null))return;
+            if(valid==null||address==null||field==null||!field.CanWrite||!(bool)valid.GetValue(child,null)){_report.Add(parent+"."+name+" unsupported on this runtime");return;}
             object original=field.GetValue(child,null),applied;
             if(vector)
             {
-                if(!(original is Vector3 v)||!Positive(v.Y))return;
+                if(!(original is Vector3 v)||!Positive(v.Y)){_report.Add(name+" skipped (value "+original+")");return;}
                 // Keep lateral and vertical damping, lift, thrust and steering.
                 applied=new Vector3(v.X,v.Y*.5f,v.Z);
             }
-            else {if(!(original is float f)||!Positive(f))return;applied=(float)original*.5f;}
+            else {if(!(original is float f)||!Positive(f)){_report.Add(name+" skipped (value "+original+")");return;}applied=(float)original*.5f;}
+            _report.Add(name+" "+original+" -> "+applied);
             var change=new Change{Parent=getter,Field=field,Valid=valid,Address=address,Pointer=(IntPtr)address.GetValue(child,null),Original=original,Applied=applied};
             _changes.Add(change); // Retain baseline even if a setter throws after writing.
             field.SetValue(child,applied,null);

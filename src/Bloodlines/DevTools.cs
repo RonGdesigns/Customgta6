@@ -42,10 +42,14 @@ namespace Bloodlines
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 
+            // Top right, out from under the objective line: the subtitle strip hid
+            // the Y of a parking bay Ron was trying to read.
             var position = player.Position;
-            GTA.UI.Screen.ShowSubtitle(
-                string.Format("~s~X {0:0.00}  Y {1:0.00}  Z {2:0.00}  H {3:0.0}",
-                    position.X, position.Y, position.Z, player.Heading), 100);
+            string text = string.Format("X {0:0.00}  Y {1:0.00}  Z {2:0.00}  H {3:0.0}", position.X, position.Y, position.Z, player.Heading);
+            var vehicle = player.CurrentVehicle;
+            if (vehicle != null && vehicle.Exists())
+                text += string.Format("   {0:0} km/h  {1:0} mph", vehicle.Speed * 3.6f, vehicle.Speed * 2.23694f);
+            new GTA.UI.TextElement(text, new System.Drawing.PointF(1270f, 8f), 0.32f, System.Drawing.Color.White) { Alignment = GTA.UI.Alignment.Right }.Draw();
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)

@@ -265,6 +265,18 @@ namespace Bloodlines.Missions
                 catch (System.Exception ex) { Logger.Error(Id + " objective cleanup: " + objective.Label, ex); }
         }
 
+        public override string CompleteCurrentObjective()
+        {
+            var stage = CurrentStageOrNull();
+            if (stage == null) return null;
+            var objective = stage.Objectives.FirstOrDefault(o => !o.IsPassive && !o.IsFinished && (!o.RequiredCharacter.HasValue || o.RequiredCharacter.Value == Ctx.Crew.ActiveSlot))
+                ?? stage.Objectives.FirstOrDefault(o => !o.IsPassive && !o.IsFinished);
+            if (objective == null) return null;
+            objective.ForceComplete();
+            Logger.Info(Id + " QA completed objective: " + objective.Label);
+            return objective.Label;
+        }
+
         /// <summary>A checkpoint restore or QA warp re-enters the stage cleanly.</summary>
         protected override void OnStageEntered(int stage)
         {

@@ -30,6 +30,10 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 17 | **Story gate** | Finish M18 with SM01–SM03 unfinished, press the mission key at M19's marker | The three jobs are named; M19 does not start; Gohan's lead routes to SM01; a save already past M19 shows no gate |
 | 18 | **Weapon loan** | Start M20, abort, open Guess's weapon wheel and the save's `weaponLockers` | No MG on Guess or in the locker; his pre-mission guns and starting rifle are all still there |
 | 19 | **Skip vs cancel** | Enter during the prologue arrival, then on a fresh save die during the homecoming | Enter: Ron seated. Death: no warp, recovery runs, the drive resumes |
+| 20 | **Briefing cast** | Dev tools off, crew not deployed, start M03 | Both speakers stand facing the start point; the story character is hidden for the scene and visible with control afterward |
+| 21 | **Control line** | Finish any scene, read `Bloodlines.log` | A `CONTROL [scene ended: ...]` line and a `CONTROL [gameplay begins]` line with control=True |
+| 22 | **Road loop** | `HANDLING-CALIBRATION.md` loop, four cars, ability off, then `F10` off | Sheet filled per car; after stand-down the car drives stock and the log has no restore errors |
+| 23 | **Guess press** | Same loop with the ability through the freeway curves; end it mid-corner; take the ramp with it on | No drop at the end; the car still leaves the ground on the ramp; a same-model car nearby returns to baseline within a second |
 
 ## Before you launch: the static checks
 
