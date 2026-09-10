@@ -31,6 +31,7 @@ namespace Bloodlines
         private readonly MissionMarkers _missionMarkers;
         private readonly DeathController _death;
         private readonly FleetGarage _garage;
+        private readonly CrewVan _vans;
         private readonly WorldTuning _worldTuning = new WorldTuning();
         private readonly VisualAtmosphere _visuals;
         private readonly TacticalResponse _tactics = new TacticalResponse();
@@ -90,16 +91,19 @@ namespace Bloodlines
             _dialogue = new DialogueDirector(_data, root);
             _checkpoints = new CheckpointManager(_crew);
             _garage = new FleetGarage(_state);
+            _vans = new CrewVan(_state, _locations);
 
             var context = new MissionContext(_config, _locations, _data, _crew, _switching,
                 _abilities, _dialogue, _checkpoints, _state);
             context.Cutscenes = _cutscenes = new CutsceneDirector(_crew, _dialogue, _locations, dataDirectory);
+            context.Vans = _vans;
             _missions = new MissionManager(context, _state, _catalog);
             _missionMarkers = new MissionMarkers(_catalog, _state, _missions, _locations, dataDirectory, _config.MissionStartKey.ToString());
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
                 _state, _dialogue, _data, _survey, _death, _homes, _dispatches);
             _shops = new ShopService(_crew, _state, _weapons, _memory);
+            _shops.Vans = _vans;
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
             _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
             _homes.OpenMenu = _menu.OpenHomePage;
@@ -174,6 +178,7 @@ namespace Bloodlines
             Step("military response", () => _crew.CompanionAI.Military.Update(_crew.ActiveSlot, _crew.IsDeployed && !_missions.IsRunning && !_survey.IsActive, _crew.CrewGroup, _menu.IsOpen));
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
+            Step("crew van", () => _vans.Update(_crew, !_missions.IsRunning && !_prologue.IsActive && !_cutscenes.IsActive && !_survey.IsActive));
             Step("world speed", () => _worldTuning.Update(_crew));
             Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));
@@ -533,6 +538,7 @@ namespace Bloodlines
             Step("stop switching", _switching.Cancel);
             Step("clear dialogue", _dialogue.Clear);
             Step("reset garage", _garage.Reset);
+            Step("release crew van", _vans.Release);
             Step("leave apartment", _homes.StopApartment);
             Step("release DLC cars", _menu.ReleaseVehicles);
             Step("clear shops", _shops.Clear);

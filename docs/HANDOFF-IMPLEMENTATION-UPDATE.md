@@ -194,6 +194,12 @@ M19's dive had no vessel and markers Gohan could not reach; the four chapters st
 45. **The dive.** Start M19: a tug sits on the water with a "Titan Star" blip; the breach marker is under its keel and the two clamp marks are under its bow and stern; the Kraken fits under it. If the log says the site moved, note by how much.
 46. **One operation.** Pass M19: after the aftermath lines, M20 starts on its own with "The operation continues"; the same Kraken is floating where Gohan surfaced. Fail M20: the mission key retries M20 alone.
 
+## Crew van and the prologue car (September 10)
+
+47. **Arrival car.** Fresh save, J: the Primo is on the street at the LSIA curb, not on the terminal roof. If it is still up there, quote the log's "No walkable mission surface" or the coordinates from the readout; the curb keys are `Prologue.LSIACurb` and `Prologue.LSIACar`.
+48. **The van.** Deploy the crew near the Cypress base: a Granger with a blue "Crew van" blip sits at the stash. Drive it to a mod shop, fit a spoiler and paint it, get out, stand down, redeploy: the same spoiler and paint. Start M02: the chase car is that van.
+49. **Upgrades.** After M11, get into the van: the fleet package applies as before; reinforce the tires at the chop bay; they stay reinforced on the next spawn.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -204,5 +210,6 @@ M19's dive had no vessel and markers Gohan could not reach; the four chapters st
 - Packages C and D of the playthrough repair plan (drive-from-start restructuring, M01/M02 staging, the police policy, M03 ambush and locked Benson, M04 forced switch, the apartment call).
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
+- The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

@@ -55,6 +55,7 @@ SM03.Checkpoint2	760.0	-1590.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
 SM03.Checkpoint3	620.0	-1520.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
 SM03.Checkpoint4	540.0	-1610.0	28.0	0	land	estimate	Olympic Fwy Industrial Basin
 Base.CypressFlats	866.0	-2110.0	30.5	175	land	estimate	
+Stash.CrewVan	874.00	-2116.00	30.50	175	land	estimate	
 M09.HeliSpawn	1520.00	3140.00	40.00	180	land	estimate	Grand Senora Desert
 M09.ConvoyStart	1180.00	2650.00	38.00	270	land	estimate	Grand Senora Desert
 M09.AmbushPoint	480.00	2760.00	42.00	270	land	estimate	Harmony

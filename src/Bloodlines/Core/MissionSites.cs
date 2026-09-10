@@ -35,16 +35,22 @@ namespace Bloodlines.Core
                     for (int attempt=0;attempt<12;attempt++)
                     {
                         Function.Call(Hash.REQUEST_COLLISION_AT_COORD, point.X,point.Y,point.Z);
-                        // An estimate's height is a guess; a hillside perch can sit 40 m
-                        // above it and the navmesh check would call that "no surface".
-                        // Ask the map where the ground is first, once collision answers.
+                        // The authored height first: a curb under a terminal roof must
+                        // stay a curb. Only when nothing walkable is near that height
+                        // does an estimate ask the map for the ground, which is how a
+                        // hillside perch 40 m above its guess still resolves.
+                        safe=World.GetSafeCoordForPed(point,false,0);
+                        if (Walkable(safe, point)) break;
                         if (location.Status != LocationStatus.Surveyed)
                         {
                             float ground = World.GetGroundHeight(new Vector3(point.X, point.Y, location.Position.Z + 150f));
-                            if (ground > 0.5f && Math.Abs(ground - location.Position.Z) <= 150f) point = new Vector3(point.X, point.Y, ground + 0.5f);
+                            if (ground > 0.5f && Math.Abs(ground - location.Position.Z) <= 150f && Math.Abs(ground - point.Z) > 0.5f)
+                            {
+                                var snapped = new Vector3(point.X, point.Y, ground + 0.5f);
+                                safe = World.GetSafeCoordForPed(snapped, false, 0);
+                                if (Walkable(safe, snapped)) { point = snapped; break; }
+                            }
                         }
-                        safe=World.GetSafeCoordForPed(point,false,0);
-                        if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe,point,35f) && Math.Abs(safe.Z-point.Z)<25f) break;
                         safe=Vector3.Zero; Script.Wait(50);
                     }
                     if (safe == Vector3.Zero)
@@ -60,6 +66,9 @@ namespace Bloodlines.Core
             }
             finally { Function.Call(Hash.CLEAR_FOCUS); }
         }
+        private static bool Walkable(Vector3 safe, Vector3 point) =>
+            safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, point, 35f) && Math.Abs(safe.Z - point.Z) < 25f;
+
         public static bool Water(LocationBook book, params string[] keys)
         {
             var resolved=new Dictionary<MissionLocation,Vector3>();

@@ -52,9 +52,9 @@ public static partial class StoryTests
   Check(m4.Status==MissionStatus.Passed&&chase.Present&&chase.Released&&millerCar.Present,"Passing leaves the chase car and Miller's car in the world instead of deleting them");
 
   // ---- 3. M05: an estimated perch snaps to the real ground before the walkable check.
-  Reset();crew=Roster();c=Context(crew);var perch=c.Locations.Get("M05.CliffPerch");float authored=perch.Position.Z;World.GroundHeight=authored+40f;
+  Reset();crew=Roster();c=Context(crew);var perch=c.Locations.Get("M05.CliffPerch");float authored=perch.Position.Z;World.GroundHeight=authored+40f;World.FailNavigationNear=perch.Position;
   Check(MissionSites.Ground(c.Locations,"M05.CliffPerch")&&Math.Abs(c.Locations.Position("M05.CliffPerch").Z-(authored+40.6f))<0.2f,"An estimated perch is placed on the real ground even 40 m above the authored guess");
-  World.GroundHeight=0f;
+  World.GroundHeight=0f;World.FailNavigationNear=null;
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;
   Check(!MissionSites.Ground(c.Locations,"M05.CliffPerch")&&GameUtils.Message.Contains("F11"),"No walkable ground still refuses the mission and tells the player to survey the key");World.FailNavigation=false;
 

@@ -69,6 +69,8 @@ namespace Bloodlines.Missions
             { "pillboxPenthouse", false }
         };
 
+        /// <summary>What the crew has done to their Granger. See <see cref="CrewVan"/>.</summary>
+        public CrewVanRecord CrewVan { get; } = new CrewVanRecord();
         public Dictionary<string, bool> FleetUpgrades { get; } = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
             { "grangerTurbineInstalled", false },
@@ -145,6 +147,7 @@ namespace Bloodlines.Missions
 
                 Merge(state.Safehouses, Json.Object(root.TryGetValue("unlockedSafehouses", out var s) ? s : null));
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
+                state.CrewVan.FromJson(Json.Object(root.TryGetValue("crewVan", out var van) ? van : null));
 
                 var memory = Json.Object(root.TryGetValue("characterMemory", out var m) ? m : null);
                 foreach (var hero in Protagonist.All)
@@ -439,6 +442,7 @@ namespace Bloodlines.Missions
                 },
                 { "unlockedSafehouses", Safehouses.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "crewVan", CrewVan.ToJson() },
                 { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },
                 { "characterMemory", CharacterMemory },
                 { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }

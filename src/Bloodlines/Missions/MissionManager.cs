@@ -92,7 +92,10 @@ namespace Bloodlines.Missions
         /// chapter alone and a fresh session resumes at the next chapter's marker.
         /// </summary>
         public static readonly System.Collections.Generic.Dictionary<string, string> Continuations =
-            new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase) { { "M19", "M20" }, { "M20", "M21" }, { "M21", "M22" } };
+            new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase) {
+                { "M19", "M20" }, { "M20", "M21" }, { "M21", "M22" },
+                { "M44", "M45" }, { "M45", "M46" }, { "M46", "M47" }, { "M47", "M48" },
+                { "M63", "M64" }, { "M64", "M65" }, { "M65", "M66" }, { "M66", "M67" }, { "M67", "M68" }, { "M68", "M69" }, { "M69", "M70" } };
 
         /// <summary>The chapter that starts as soon as the current aftermath ends, or null.</summary>
         public MissionDefinition PendingContinuation { get; private set; }

@@ -24,6 +24,9 @@
 > - Visuals and vehicle damage are on by default (`[Visuals]`, `[VehicleDamage]`);
 >   `VISUALS.md` says what each key costs and how to check a modifier name. The
 >   package now ships the ini files as `.example`, so an install cannot replace yours.
+> - The crew's Granger lives at the stash beside the Cypress base and is the van the
+>   missions use; what you do to it at a shop is saved. The Port Heist runs M19–M22
+>   as one operation; `OPERATIONS.md` lists the others.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

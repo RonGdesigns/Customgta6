@@ -19,7 +19,7 @@ namespace Bloodlines.Missions.Campaign
     ///
     /// Positions here are approximate (see LocationBook) — the van drives a live
     /// traffic route rather than a scripted spline, so the mission tolerates the
-    /// start point being a few metres off in a way a waypoint list would not.
+    /// start point being a few meters off in a way a waypoint list would not.
     /// </summary>
     public sealed class M02LooseStrands : Mission
     {
@@ -319,11 +319,9 @@ namespace Bloodlines.Missions.Campaign
 
         private bool SpawnChaseCar(Vector3 start, float heading)
         {
-            var model = new Model("granger");
-            if (!GameUtils.RequestModel(model)) return false;
-
-            _chase = Track(World.CreateVehicle(model, start + new Vector3(0f, -6f, 0f), heading));
-            model.MarkAsNoLongerNeeded();
+            // The crew's own Granger, with whatever they have done to it at the shops.
+            var spot = start + new Vector3(0f, -6f, 0f);
+            _chase = Track(Ctx.Vans != null ? Ctx.Vans.Spawn(spot, heading) : StockGranger(spot, heading));
             if (_chase == null || !_chase.Exists()) return false;
 
             _chase.IsPersistent = true;
@@ -339,6 +337,15 @@ namespace Bloodlines.Missions.Campaign
             ice?.Task.WarpIntoVehicle(_chase, VehicleSeat.RightFront);
             gohan?.Task.WarpIntoVehicle(_chase, VehicleSeat.LeftRear);
             return true;
+        }
+
+        private static Vehicle StockGranger(Vector3 position, float heading)
+        {
+            var model = new Model("granger");
+            if (!GameUtils.RequestModel(model)) return null;
+            var van = World.CreateVehicle(model, position, heading);
+            model.MarkAsNoLongerNeeded();
+            return van;
         }
 
         private bool SpawnVan(Vector3 start, float heading)
