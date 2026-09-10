@@ -103,13 +103,16 @@ copy /Y "%SRC%\Bloodlines.dll" "%GAME%\scripts\" >nul && echo  [ok] Bloodlines.d
 copy /Y "%SRC%\Bloodlines\data\*.tsv" "%GAME%\scripts\Bloodlines\data\" >nul && echo  [ok] campaign data
 copy /Y "%SRC%\Bloodlines\data\*.json" "%GAME%\scripts\Bloodlines\data\" >nul 2>&1
 
-REM Your files: only placed the first time.
+REM Your files: only placed the first time, from the shipped .example copies.
+REM The package never contains a bare Bloodlines.ini, so even a raw folder copy
+REM over an existing install leaves your keybinds and flags alone.
 for %%F in (Bloodlines.ini Bloodlines.Locations.ini) do (
   if exist "!GAME!\scripts\Bloodlines\%%F" (
     echo  [keep] %%F ^(yours, left alone^)
   ) else (
-    copy /Y "%SRC%\Bloodlines\%%F" "!GAME!\scripts\Bloodlines\" >nul && echo  [ok] %%F ^(fresh^)
+    copy /Y "%SRC%\Bloodlines\%%F.example" "!GAME!\scripts\Bloodlines\%%F" >nul && echo  [ok] %%F ^(fresh, from the example^)
   )
+  if exist "!GAME!\scripts\Bloodlines\%%F.example" del /Q "!GAME!\scripts\Bloodlines\%%F.example" >nul 2>&1
 )
 
 echo.

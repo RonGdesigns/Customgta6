@@ -32,6 +32,7 @@ namespace Bloodlines
         private readonly DeathController _death;
         private readonly FleetGarage _garage;
         private readonly WorldTuning _worldTuning = new WorldTuning();
+        private readonly VisualAtmosphere _visuals;
         private readonly TacticalResponse _tactics = new TacticalResponse();
         private readonly MissionHandoff _handoff = new MissionHandoff();
         private readonly ShopService _shops;
@@ -56,6 +57,8 @@ namespace Bloodlines
             Directory.CreateDirectory(root);
 
             _config = ModConfig.Load(Path.Combine(root, "Bloodlines.ini"));
+            _worldTuning.Config = _config;
+            _visuals = new VisualAtmosphere(_config);
             Logger.Configure(Path.Combine(root, "Bloodlines.log"), _config.VerboseLogging);
             Logger.Info("Los Santos: Bloodlines loading. Build " + typeof(BloodlinesMain).Assembly.ManifestModule.ModuleVersionId);
 
@@ -172,6 +175,7 @@ namespace Bloodlines
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
             Step("world speed", () => _worldTuning.Update(_crew));
+            Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));
             Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
             Step("weapon ownership", () => _weapons.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
@@ -561,6 +565,7 @@ namespace Bloodlines
             Step("clear shops", _shops.Clear);
             Step("restore world tuning", _worldTuning.Reset);
             Step("reset pursuit tuning", _tactics.Reset);
+            Step("reset visuals", _visuals.Reset);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
             Step("restore time", () => Game.TimeScale = 1f);

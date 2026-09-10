@@ -169,6 +169,18 @@ Live-test additions:
 37. **Rewards.** Finish M02: Ice, Gohan and Guess each get a new weapon at the next locker restock, and the shop shows it locked before the job and unlocked after.
 38. **QA order.** Dev menu → Missions → any job: it starts, with a yellow QA note about the unfinished prerequisite.
 
+## Visuals and vehicle damage (reviewed hand-over)
+
+The visuals and deformation work from the other session, rebased onto the merged main and corrected per the review in `CHANGE-REGISTER.md`. Costs and keys are in `VISUALS.md`.
+
+Live-test additions:
+
+39. **Grade by time.** Free roam at 13:00, 18:00 and 23:00: the look changes at each band and `Bloodlines.log` prints the modifier name. If a band looks vanilla, that name is not in the game's timecycle data; verify it as `VISUALS.md` describes.
+40. **Stand-down.** `F10` off, then Insert: no lingering grade, shadow reach, swell or reflection flag. The world should look vanilla.
+41. **Streaming at speed.** Del Perro Freeway at top speed with `LODBoost` on, then off. Note stutter and any mission start where collision loaded late.
+42. **Crew protection.** Get into a car, get out, get back in: the log's damage-scale lines follow you, and after stand-down a crash in the story character's car hurts as much as vanilla.
+43. **Ini safety.** Copy `build\deploy\scripts` over the game's `scripts` folder by hand: your `Bloodlines.ini` is unchanged and a `.example` sits beside it.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -178,5 +190,6 @@ Live-test additions:
 - Optional SM10–SM13; not registered pending pacing review.
 - Packages C and D of the playthrough repair plan (drive-from-start restructuring, M01/M02 staging, the police policy, M03 ambush and locked Benson, M04 forced switch, the apartment call).
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
+- Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.
