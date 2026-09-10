@@ -67,7 +67,7 @@ namespace Bloodlines.Missions
             if (definition == null) { reason = "No mission selected."; return false; }
             if (SurveyMode.IsSurveyRunning) { reason = "Stop the survey before starting a mission."; return false; }
             if (IsRunning || _current != null) { reason = "A mission is already running. Hold Backspace to abort."; return false; }
-            if (!_state.PrerequisiteMet(definition)) { reason = definition.Id + " needs " + definition.Info.Prerequisite + " finished first."; return false; }
+            if (!bypassGates && !_state.PrerequisiteMet(definition)) { reason = definition.Id + " needs " + definition.Info.Prerequisite + " finished first."; return false; }
             if (!definition.IsPlayable) { reason = definition.Id + " — " + definition.Title + " is on the campaign spine but has no script yet."; return false; }
             if (!bypassGates && !_state.GateSatisfied(definition, _catalog)) { reason = _state.DescribeGate(definition, _catalog); return false; }
             return true;
@@ -85,7 +85,7 @@ namespace Bloodlines.Missions
         public bool RetryAvailable { get; private set; }
         public string LastFailureReason { get; private set; } = "";
 
-        /// <param name="bypassGates">QA only: start a gated story mission with its solo jobs unfinished.</param>
+        /// <param name="bypassGates">QA only: start any scripted mission out of order, prerequisites and story gates unmet.</param>
         public bool Start(MissionDefinition definition, bool bypassGates = false)
         {
             if (!CanStart(definition, out string refusal, bypassGates))
@@ -95,6 +95,7 @@ namespace Bloodlines.Missions
                 return false;
             }
             if (bypassGates && !_state.GateSatisfied(definition, _catalog)) Logger.Warn("QA bypassed a story gate: " + _state.DescribeGate(definition, _catalog));
+            if (bypassGates && !_state.PrerequisiteMet(definition)) Logger.Warn("QA started " + definition.Id + " with " + definition.Info.Prerequisite + " unfinished.");
 
             RetryAvailable = false;
             LastFailureReason = "";

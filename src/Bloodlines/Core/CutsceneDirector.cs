@@ -47,6 +47,8 @@ namespace Bloodlines.Core
         private bool _skipping;
         private Ped _hiddenPlayer;
         private int _staged;
+        private Vehicle _arrivalCar;
+        private Vector3 _arrivalFrom;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
         private List<DialogueCue> _lines;
@@ -109,7 +111,25 @@ namespace Bloodlines.Core
                 Game.Player.CanControlCharacter = false;
                 // Briefings use temporary cast before mission setup. The M01 cold open
                 // shows three separate jobs; they must not meet before recognition.
-                foreach (var protagonist in Protagonist.All.Where(p => lines.Any(l => l.Speaker.Equals(p.Handle, StringComparison.OrdinalIgnoreCase))))
+                var speakers = Protagonist.All.Where(p => lines.Any(l => l.Speaker.Equals(p.Handle, StringComparison.OrdinalIgnoreCase))).ToList();
+                var staged = new Dictionary<CrewSlot, Ped>();
+                if (!_dockIntro && !_crew.IsDeployed)
+                {
+                    // Nobody is deployed yet, so the speakers are temporary actors. Ron
+                    // (Guess) is the one already at the start point; the others pull up
+                    // in the crew's four-door and talk from the curb. If there is no
+                    // street to arrive by, they are staged on foot instead.
+                    var missing = speakers.Where(p => { var ped = _crew.PedFor(p.Slot); return ped == null || !ped.Exists() || ped.IsDead; }).ToList();
+                    if (missing.Count > 0)
+                    {
+                        var host = missing.FirstOrDefault(p => p.Slot == CrewSlot.Guess) ?? missing[0];
+                        var riders = missing.Where(p => p != host).ToList();
+                        if (phase == "intro" && riders.Count > 0 && _blocking == null) StageArrival(riders, player, staged);
+                        var hostActor = StageHost(host, player, _arrivalCar != null ? (Vector3?)_arrivalFrom : null);
+                        if (hostActor != null) staged[host.Slot] = hostActor;
+                    }
+                }
+                foreach (var protagonist in speakers)
                 {
                     Ped actor = _dockIntro ? null : _crew.PedFor(protagonist.Slot);
                     if (actor != null && (!actor.Exists() || actor.IsDead)) actor = null;
@@ -122,7 +142,7 @@ namespace Bloodlines.Core
                         // hide the story ped for the scene; a deployed crew that is merely
                         // far away is still a radio call.
                         if (_crew.IsDeployed) { _radioScene = true; continue; }
-                        actor = StageHero(protagonist, player, _staged++);
+                        if (!staged.TryGetValue(protagonist.Slot, out actor)) actor = StageHero(protagonist, player, _staged++);
                         if (actor == null) { _radioScene = true; continue; }
                         if (_hiddenPlayer == null) { _hiddenPlayer = player; player.IsVisible = false; }
                     }
@@ -160,7 +180,7 @@ namespace Bloodlines.Core
                     Hold(actor);
                     Hold(actor.CurrentVehicle);
                 }
-                if (!_dockIntro)
+                if (!_dockIntro && _arrivalCar == null)
                 {
                     foreach (var a in _actors.Values)
                         foreach (var b in _actors.Values)
@@ -224,7 +244,7 @@ namespace Bloodlines.Core
                 if (_blocking != null)
                     foreach (var mover in _blocking.Actors)
                         if (mover != null && mover.Exists()) mover.IsPositionFrozen = false;
-                NextLine();
+                if (_blocking == null || !_blocking.HoldsDialogue) NextLine();
                 return true;
             }
             catch (Exception ex)
@@ -243,6 +263,66 @@ namespace Bloodlines.Core
             _scenes[missionId + ":moment"] = new List<DialogueCue> { new DialogueCue {
                 CueId = missionId + "_MOMENT", MissionId = missionId, Speaker = speaker, Line = line } };
             return Play(missionId, "moment", title, actor, () => { });
+        }
+
+        /// <summary>The hero already at the start point: beside where the story character stood, facing the arrival.</summary>
+        private Ped StageHost(Protagonist protagonist, Ped player, Vector3? facing)
+        {
+            var model = protagonist.Model;
+            if (!GameUtils.RequestModel(model, 1000)) return null;
+            var forward = player.ForwardVector;
+            var right = new Vector3(forward.Y, -forward.X, 0f);
+            var position = player.Position + right * 1.4f;
+            float heading = facing.HasValue ? DriveUpStep.HeadingBetween(position, facing.Value) : player.Heading;
+            var actor = World.CreatePed(model, position, heading);
+            model.MarkAsNoLongerNeeded();
+            if (actor == null || !actor.Exists()) return null;
+            CrewAppearance.Apply(actor, protagonist.Slot);
+            _temporary.Add(actor);
+            actor.IsPersistent = true;
+            actor.BlockPermanentEvents = true;
+            actor.Task.StandStill(-1);
+            return actor;
+        }
+
+        /// <summary>
+        /// The other speakers arrive in the crew's four-door: spawned on the street
+        /// behind the start point, driven to the nearest curb, dialogue held until
+        /// the car has pulled up. Nothing is staged if the start point has no street
+        /// within reach; the caller then stages them on foot.
+        /// </summary>
+        private void StageArrival(List<Protagonist> riders, Ped player, Dictionary<CrewSlot, Ped> staged)
+        {
+            var destination = World.GetNextPositionOnStreet(player.Position);
+            if (destination == Vector3.Zero || destination.DistanceTo(player.Position) > 40f) return;
+            var spawn = World.GetNextPositionOnStreet(destination - player.ForwardVector * 90f);
+            float run = spawn == Vector3.Zero ? 0f : spawn.DistanceTo(destination);
+            if (run < 40f || run > 220f) return;
+            float heading = DriveUpStep.HeadingBetween(spawn, destination);
+            var car = SceneVehicle("schafter3", spawn, heading);
+            if (car == null) return;
+            var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
+            Ped driver = null;
+            for (int i = 0; i < riders.Count && i < seats.Length; i++)
+            {
+                var model = riders[i].Model;
+                if (!GameUtils.RequestModel(model, 1000)) continue;
+                var actor = World.CreatePed(model, spawn, heading);
+                model.MarkAsNoLongerNeeded();
+                if (actor == null || !actor.Exists()) continue;
+                CrewAppearance.Apply(actor, riders[i].Slot);
+                _temporary.Add(actor);
+                actor.IsPersistent = true;
+                actor.BlockPermanentEvents = true;
+                actor.SetIntoVehicle(car, seats[i]);
+                staged[riders[i].Slot] = actor;
+                if (i == 0) driver = actor;
+            }
+            if (driver == null) return;
+            _arrivalCar = car;
+            _arrivalFrom = spawn;
+            _blocking = new SceneBlocking { DialogueAfterStep = 1 }.Then(new DriveUpStep(driver, car, destination, heading));
+            Logger.Info("Briefing arrival staged: " + riders.Count + " rider(s) driving " + run.ToString("0") + " m to the start point.");
         }
 
         /// <summary>A hero as a temporary actor for a briefing, in a short arc facing the start point.</summary>
@@ -368,7 +448,7 @@ namespace Bloodlines.Core
                     _camera.PointAt(point + new Vector3(0f, 0f, .8f));
                     Function.Call(Hash.SET_FOCUS_POS_AND_VEL, point.X, point.Y, point.Z, 0f, 0f, 0f);
                 }
-                if (!_dialogue.HasPending) NextLine();
+                if (!_dialogue.HasPending && (_blocking == null || !_blocking.HoldsDialogue)) NextLine();
             }
             catch (Exception ex)
             {
@@ -442,6 +522,7 @@ namespace Bloodlines.Core
             _actors.Clear();
             _support.Clear();
             _staged = 0;
+            _arrivalCar = null;
             var hidden = _hiddenPlayer;
             _hiddenPlayer = null;
             if (hidden != null) Release("player visibility", () => { if (hidden.Exists()) hidden.IsVisible = true; });

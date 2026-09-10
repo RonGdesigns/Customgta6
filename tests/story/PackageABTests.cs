@@ -79,10 +79,11 @@ public static partial class StoryTests
   Check(silent.Report.Contains("unsupported on this runtime"),"A runtime without the flight handling type is reported as unsupported");
 
   // ---- A1. Briefing cast: no crew deployed -> temporary heroes, story ped hidden, no radio framing.
-  Reset();crew=Roster();var c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;var story=Game.Player.Character;World.Created.Clear();
+  Reset();crew=Roster();var c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;var story=Game.Player.Character;World.Created.Clear();story.ForwardVector=new Vector3(0,1,0);story.Position=new Vector3(120,80,12);World.Vehicles.Clear();
   Check(c.Cutscenes.Play("M03","intro","Cypress"),"M03's briefing plays with no crew deployed");
-  Check(World.Created.Count==2&&!story.IsVisible&&World.Created.All(p=>p.Position.DistanceTo(story.Position)<5f),"Both speakers are staged as temporary heroes beside the start point and the story character is hidden");
-  c.Cutscenes.Update();Check(GTA.UI.Screen.Subtitle.Contains("GUESS"),"The first line is framed on a real actor");
+  Check(World.Created.Count==2&&!story.IsVisible&&World.Created.Any(p=>p.Position.DistanceTo(story.Position)<3f)&&World.Created.Any(p=>p.CurrentVehicle!=null),"Guess is staged at the start point in place of the hidden story character and Gohan is in the arriving car");
+  var arriving=World.Vehicles.Last();arriving.Position=story.Position;arriving.Speed=0f;c.Cutscenes.Update();c.Cutscenes.Update();c.Cutscenes.Update();
+  Check(GTA.UI.Screen.Subtitle.Contains("GUESS"),"The first line is framed on a real actor once the car has pulled up");
   var radio=typeof(CutsceneDirector).GetField("_radioScene",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
   Check(!(bool)radio.GetValue(c.Cutscenes),"The scene is not a radio call");
   c.Cutscenes.Stop();Check(story.IsVisible&&World.Created.All(p=>!p.Present),"The story character is visible again and the temporary cast is gone");

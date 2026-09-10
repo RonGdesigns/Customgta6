@@ -18,6 +18,9 @@
 >   are named by mission id. The dev menu's "Running mission" page has "Complete
 >   current objective". Driving: run the loop in `HANDLING-CALIBRATION.md` before judging
 >   the speed target; the handling baseline and Guess's press are opening values.
+> - Round two (September 10): briefings drive up to Guess, M04's Miller runs, M06's
+>   later SWAT waves rappel from Mavericks, the apartment loads from inside the room,
+>   most jobs pay a weapon, and the dev menu starts any job. Live-test items 31–38.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

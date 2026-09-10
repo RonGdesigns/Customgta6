@@ -154,6 +154,21 @@ Live-test additions:
 29. **Buzzard pair.** Stock versus this build, same altitude and route, both directions; note the `flight handling:` line from the log.
 30. **Stand-down.** `F10` off after a loop: the same car drives stock again (grip, brakes, gearing) and `Bloodlines.log` shows no restore errors.
 
+## Round two (September 10 playthrough)
+
+From Ron's notes on the September 10 session: M04's chase and pickup, the M04 briefing arrival, the apartment interior, weapon unlocks through missions, M05 refusing to start, M06 SWAT arriving by helicopter, and the debug menu's mission order. Details per item are in `CHANGE-REGISTER.md`.
+
+Live-test additions:
+
+31. **Arrival.** Crew not deployed, start M04 at its marker: Guess stands where you stood, Ice and Gohan pull up in the four-door from behind you, the first line waits for the car, and Enter during the drive lands the car at the curb. Try the same at M03. On a start point with no street nearby they stand on foot instead.
+32. **Chase.** In M04, when Miller pulls out he should run: through traffic, wrong way if it helps, not stopping at lights. Note whether the red marker gets away past the lose distance in a stock Buffalo.
+33. **Pickup.** Get out and collect the drive: Guess turns to the car and reaches in for the three seconds. Afterward the Buffalo and Miller's Fugitive are both still on the street.
+34. **M05.** Press J at the M05 marker: the mission starts. If it refuses, quote the "No walkable mission surface" line; it now carries the probed point.
+35. **Air waves.** In M06 hold the alley through wave one; wave two brings two Mavericks over the roofs, a short shot on the first pilot, four troopers on ropes and one by the street; wave three the same without the shot. If an aircraft hangs, the troopers are placed after 20 s and the wave still ends.
+36. **Apartment.** Enter the starter apartment: black screen, then inside with control. If it still times out, quote the "Apartment:" lines; they now say which check was waiting while you were already inside.
+37. **Rewards.** Finish M02: Ice, Gohan and Guess each get a new weapon at the next locker restock, and the shop shows it locked before the job and unlocked after.
+38. **QA order.** Dev menu → Missions → any job: it starts, with a yellow QA note about the unfinished prerequisite.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -162,5 +177,6 @@ Live-test additions:
 - A visible hangar Lazer between M16 and M26; the dialogue now claims it, the world does not show it yet.
 - Optional SM10–SM13; not registered pending pacing review.
 - Packages C and D of the playthrough repair plan (drive-from-start restructuring, M01/M02 staging, the police policy, M03 ambush and locked Benson, M04 forced switch, the apartment call).
+- The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

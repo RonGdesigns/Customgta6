@@ -125,23 +125,62 @@ namespace Bloodlines.Crew
                 _state.Weapons[slot.ToString()] = weapons = new HashSet<uint>();
             return weapons;
         }
-        public static readonly string[] RewardMissions = { "M03", "M06", "M15", "M23", "M27", "SM01", "SM04", "SM05", "SM06" };
+        /// <summary>
+        /// Nearly every job pays in hardware. Each hero's reward line is unique to him
+        /// and fits the work: Ice carries the fight, Gohan the precision and the
+        /// gadgets, Guess the close-quarters and the wheel. A weapon on this table is
+        /// earned, not bought: the shop keeps it locked until the job is done and sells
+        /// only its ammunition afterward. The shop's stock guns, the starting rifles and
+        /// the premium ray weapons stay purchasable.
+        /// </summary>
+        public static readonly string[] RewardMissions = {
+            "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18",
+            "M19", "M20", "M22", "M23", "M24", "M25", "M27", "M28", "M29", "M30", "SM01", "SM02", "SM03", "SM04", "SM05", "SM06" };
         public static bool ReceivesReward(string mission, CrewSlot slot) => !mission.StartsWith("SM") ||
             ((mission == "SM01" || mission == "SM04") && slot == CrewSlot.Ice) ||
-            (mission == "SM05" && slot == CrewSlot.Gohan) || (mission == "SM06" && slot == CrewSlot.Guess);
+            ((mission == "SM02" || mission == "SM05") && slot == CrewSlot.Gohan) ||
+            ((mission == "SM03" || mission == "SM06") && slot == CrewSlot.Guess);
+        private static WeaponHash Dlc(string key) => (WeaponHash)Game.GenerateHash(key);
         public static WeaponHash[] Rewards(string mission)
         {
             switch (mission)
             {
+                // Act I: sidearms and street guns, one job at a time.
+                case "M02": return new[] { WeaponHash.MicroSMG, WeaponHash.SNSPistol, WeaponHash.SawnOffShotgun };
                 case "M03": return new[] { WeaponHash.PumpShotgun, WeaponHash.StunGun, WeaponHash.CombatPistol };
+                case "M04": return new[] { WeaponHash.HeavyPistol, WeaponHash.MachinePistol, WeaponHash.CombatPDW };
+                case "M05": return new[] { WeaponHash.SniperRifle, WeaponHash.FlareGun, WeaponHash.MiniSMG };
                 case "M06": return new[] { WeaponHash.CombatMG, WeaponHash.CarbineRifle, WeaponHash.AssaultSMG };
-                case "SM04": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_HEAVYSNIPER_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
-                case "SM05": return new[] { WeaponHash.PumpShotgun, (WeaponHash)Game.GenerateHash("WEAPON_PISTOL_MK2"), WeaponHash.CombatPistol };
-                case "SM06": return new[] { WeaponHash.PumpShotgun, WeaponHash.StunGun, (WeaponHash)Game.GenerateHash("WEAPON_SMG_MK2") };
-                case "M23": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_ASSAULTRIFLE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_BULLPUPRIFLE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_CARBINERIFLE_MK2") };
-                case "M27": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_COMBATMG_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_SPECIALCARBINE_MK2"), (WeaponHash)Game.GenerateHash("WEAPON_TECPISTOL") };
-                case "SM01": return new[] { (WeaponHash)Game.GenerateHash("WEAPON_PUMPSHOTGUN_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
+                case "M07": return new[] { WeaponHash.APPistol, WeaponHash.Pistol50, WeaponHash.VintagePistol };
+                case "M08": return new[] { WeaponHash.BullpupShotgun, WeaponHash.SmokeGrenade, WeaponHash.HeavyShotgun };
+                case "M09": return new[] { WeaponHash.MG, WeaponHash.StickyBomb, WeaponHash.CompactRifle };
+                case "M10": return new[] { WeaponHash.AdvancedRifle, WeaponHash.CompactGrenadeLauncher, WeaponHash.Gusenberg };
+                case "M11": return new[] { WeaponHash.Grenade, WeaponHash.ProximityMine, WeaponHash.DoubleBarrelShotgun };
+                case "M12": return new[] { WeaponHash.MarksmanRifle, WeaponHash.Revolver, WeaponHash.BullpupRifle };
+                case "M13": return new[] { WeaponHash.SweeperShotgun, WeaponHash.CombatPDW, WeaponHash.Revolver };
+                case "M14": return new[] { WeaponHash.HomingLauncher, Dlc("WEAPON_MILITARYRIFLE"), WeaponHash.DoubleActionRevolver };
                 case "M15": return new[] { WeaponHash.HeavySniper, WeaponHash.SpecialCarbine, WeaponHash.AssaultShotgun };
+                // Act II: the modern and the exotic.
+                case "M16": return new[] { WeaponHash.GrenadeLauncher, Dlc("WEAPON_CERAMICPISTOL"), Dlc("WEAPON_NAVYREVOLVER") };
+                case "M17": return new[] { Dlc("WEAPON_HEAVYRIFLE"), Dlc("WEAPON_PRECISIONRIFLE"), Dlc("WEAPON_COMBATSHOTGUN") };
+                case "M18": return new[] { WeaponHash.RPG, Dlc("WEAPON_PISTOLXM3"), Dlc("WEAPON_BATTLERIFLE") };
+                case "M19": return new[] { Dlc("WEAPON_MARKSMANRIFLE_MK2"), Dlc("WEAPON_SNSPISTOL_MK2"), Dlc("WEAPON_REVOLVER_MK2") };
+                case "M20": return new[] { WeaponHash.Minigun, Dlc("WEAPON_GADGETPISTOL"), WeaponHash.SweeperShotgun };
+                case "M22": return new[] { WeaponHash.Railgun, Dlc("WEAPON_EMPLAUNCHER"), WeaponHash.MachinePistol };
+                case "M23": return new[] { Dlc("WEAPON_ASSAULTRIFLE_MK2"), Dlc("WEAPON_BULLPUPRIFLE_MK2"), Dlc("WEAPON_CARBINERIFLE_MK2") };
+                case "M24": return new[] { Dlc("WEAPON_REVOLVER_MK2"), WeaponHash.HeavySniper, WeaponHash.MicroSMG };
+                case "M25": return new[] { Dlc("WEAPON_MILITARYRIFLE"), WeaponHash.AdvancedRifle, WeaponHash.Pistol50 };
+                case "M27": return new[] { Dlc("WEAPON_COMBATMG_MK2"), Dlc("WEAPON_SPECIALCARBINE_MK2"), Dlc("WEAPON_TECPISTOL") };
+                case "M28": return new[] { Dlc("WEAPON_SMG_MK2"), Dlc("WEAPON_MARKSMANRIFLE_MK2"), Dlc("WEAPON_PUMPSHOTGUN_MK2") };
+                case "M29": return new[] { WeaponHash.StickyBomb, WeaponHash.HeavyPistol, WeaponHash.APPistol };
+                case "M30": return new[] { WeaponHash.Gusenberg, WeaponHash.AssaultSMG, WeaponHash.SpecialCarbine };
+                // Solo jobs pay their owner only.
+                case "SM01": return new[] { Dlc("WEAPON_PUMPSHOTGUN_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
+                case "SM02": return new[] { WeaponHash.StunGun, WeaponHash.MarksmanRifle, WeaponHash.CombatPistol };
+                case "SM03": return new[] { WeaponHash.StunGun, WeaponHash.CombatPistol, WeaponHash.HeavyPistol };
+                case "SM04": return new[] { Dlc("WEAPON_HEAVYSNIPER_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
+                case "SM05": return new[] { WeaponHash.PumpShotgun, Dlc("WEAPON_PISTOL_MK2"), WeaponHash.CombatPistol };
+                case "SM06": return new[] { WeaponHash.PumpShotgun, WeaponHash.StunGun, Dlc("WEAPON_SMG_MK2") };
                 default: return new WeaponHash[0];
             }
         }

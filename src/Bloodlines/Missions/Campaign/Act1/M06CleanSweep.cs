@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Bloodlines.Core;
@@ -23,6 +24,8 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M06CleanSweep : ComposedMission
     {
         private readonly List<Ped> _swat = new List<Ped>();
+        private readonly List<HeliInsertion> _insertions = new List<HeliInsertion>();
+        private bool _airMomentPlayed;
 
         private Vehicle _granger;
         private Vector3 _feeder;
@@ -98,6 +101,18 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context => GameUtils.Subtitle("~g~Depot clean. Nothing left to match a face to.", 5000));
         }
 
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            foreach (var insertion in _insertions) insertion.Update();
+            _insertions.RemoveAll(insertion => insertion.Current == HeliInsertion.Phase.Done);
+        }
+
+        /// <summary>
+        /// The first wave is already at the depot. The second and third come in over
+        /// the roofs: two Mavericks each, two troopers on ropes per aircraft, the rest
+        /// of the wave on the street. The first aircraft's arrival is shown once.
+        /// </summary>
         private IEnumerable<Ped> SpawnSwatWave(int wave)
         {
             var model = new Model("s_m_y_swat_01");
@@ -105,7 +120,9 @@ namespace Bloodlines.Missions.Campaign
 
             var police = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             var spawned = new List<Ped>();
+            var airborne = new List<Ped>();
             int count = 3 + wave;
+            int byAir = wave >= 2 ? Math.Min(count, 2 * HeliInsertion.Capacity) : 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -119,13 +136,31 @@ namespace Bloodlines.Missions.Campaign
                 trooper.Accuracy = 30 + wave * 5;
                 trooper.Armor = 50;
                 trooper.Weapons.Give(wave >= 2 ? WeaponHash.CarbineRifle : WeaponHash.SMG, 200, true, true);
-                trooper.Task.FightAgainstHatedTargets(90f);
+                if (i < byAir) airborne.Add(trooper);
+                else trooper.Task.FightAgainstHatedTargets(90f);
 
                 spawned.Add(Track(trooper));
                 _swat.Add(trooper);
             }
-
             model.MarkAsNoLongerNeeded();
+
+            for (int group = 0; group * HeliInsertion.Capacity < airborne.Count; group++)
+            {
+                var load = airborne.Skip(group * HeliInsertion.Capacity).Take(HeliInsertion.Capacity).ToList();
+                var insertion = HeliInsertion.Launch(_alley, 200f + group * 70f, load, entity => Track(entity));
+                if (insertion == null)
+                {
+                    // No aircraft: these troopers are already standing at their street spawn.
+                    foreach (var trooper in load) trooper.Task.FightAgainstHatedTargets(90f);
+                    continue;
+                }
+                _insertions.Add(insertion);
+                if (!_airMomentPlayed)
+                {
+                    _airMomentPlayed = true;
+                    Ctx.Cutscenes.PlayMoment(Id, "SWAT air support", "ICE", "Rotors. They're putting the next team down from the roofline. Keep the alley.", insertion.Pilot);
+                }
+            }
             return spawned;
         }
 
@@ -151,6 +186,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _swat.Clear();
+            _insertions.Clear();
         }
     }
 }

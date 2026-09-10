@@ -34,6 +34,12 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 21 | **Control line** | Finish any scene, read `Bloodlines.log` | A `CONTROL [scene ended: ...]` line and a `CONTROL [gameplay begins]` line with control=True |
 | 22 | **Road loop** | `HANDLING-CALIBRATION.md` loop, four cars, ability off, then `F10` off | Sheet filled per car; after stand-down the car drives stock and the log has no restore errors |
 | 23 | **Guess press** | Same loop with the ability through the freeway curves; end it mid-corner; take the ramp with it on | No drop at the end; the car still leaves the ground on the ramp; a same-model car nearby returns to baseline within a second |
+| 24 | **Briefing arrival** | Crew not deployed, mission key at M04's marker; once watching, once pressing Enter during the drive | The four-door pulls up beside Guess before the first line; the skip lands it at the curb; the story character is hidden during and visible after |
+| 25 | **M04 chase and pickup** | Play M04 through | Miller runs at speed and ignores lights; Guess reaches into the car for the drive; both cars remain after the pass |
+| 26 | **M06 air waves** | Play M06 through the siege | Waves two and three: two Mavericks each, ropes over the alley, one short shot on the first pilot only; the wave ends even if an aircraft never settles |
+| 27 | **Apartment** | Enter the starter apartment from its door | Inside with control within a few seconds; no "Apartment timeout" in the log |
+| 28 | **Rewards** | Finish M02, restock at the locker, open the shop | Three new weapons, one per hero; the shop lists each as locked until its job |
+| 29 | **QA order** | Dev menu → Missions → a job whose prerequisite is unfinished | It starts with a QA note; the mission key on its marker still refuses |
 
 ## Before you launch: the static checks
 
