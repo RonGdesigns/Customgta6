@@ -121,6 +121,19 @@ def main():
     locations = {row['key'] for row in location_rows}
     location_kinds = {row['key']: row.get('kind', 'land') for row in location_rows}
     anchors = {row['key'] for row in read_tsv('anchors.tsv')}
+    # The per-install override template must ship empty: any key in it is
+    # installed once as the player's "survey" and then overrides every later
+    # correction to that key forever (that is how the bible-era M01 positions
+    # outlived the M01 hotfix on every install).
+    template = os.path.join(REPO, 'config', 'Bloodlines.Locations.ini')
+    if os.path.exists(template):
+        with io.open(template, encoding='utf-8') as handle:
+            for number, line in enumerate(handle, 1):
+                stripped = line.strip()
+                if stripped and not stripped.startswith((';', '#', '[')) and '=' in stripped:
+                    errors.append('config/Bloodlines.Locations.ini:{}: the shipped override template must not '
+                                  'contain positions or headings ("{}"); it is the player\'s file'.format(number, stripped))
+
     cues = read_tsv('dialogue.tsv')
     cue_ids = {row['cue_id'] for row in cues}
 

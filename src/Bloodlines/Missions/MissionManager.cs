@@ -39,11 +39,38 @@ namespace Bloodlines.Missions
         /// <summary>Dev menu: finish the running mission as a failure.</summary>
         public void ForceFail(string reason)
         {
+            bool briefingOnly = _pending != null && _current == null;
             _context.Cutscenes.Stop();
             _pending = null;
             LastFailureReason = reason;
-            _current?.Fail(reason);
+            if (_current != null) _current.Fail(reason);
+            else if (briefingOnly)
+            {
+                // Failed during the briefing: no mission object exists to fail, but the
+                // attempt was accepted and its weapon loan opened. Close it now; the
+                // ordinary Update path would never see a mission to finish.
+                Logger.Info("Mission failed during its briefing: " + reason);
+                Finish();
+            }
             RetryAvailable = _currentDefinition != null;
+        }
+
+        /// <summary>
+        /// Whether a start would be accepted, with no side effects at all. The host
+        /// asks this before it stands the crew down or touches the world, and
+        /// <see cref="Start"/> asks it again. <paramref name="reason"/> is the
+        /// player-facing refusal, null when the mission can start.
+        /// </summary>
+        public bool CanStart(MissionDefinition definition, out string reason, bool bypassGates = false)
+        {
+            reason = null;
+            if (definition == null) { reason = "No mission selected."; return false; }
+            if (SurveyMode.IsSurveyRunning) { reason = "Stop the survey before starting a mission."; return false; }
+            if (IsRunning || _current != null) { reason = "A mission is already running. Hold Backspace to abort."; return false; }
+            if (!_state.PrerequisiteMet(definition)) { reason = definition.Id + " needs " + definition.Info.Prerequisite + " finished first."; return false; }
+            if (!definition.IsPlayable) { reason = definition.Id + " — " + definition.Title + " is on the campaign spine but has no script yet."; return false; }
+            if (!bypassGates && !_state.GateSatisfied(definition, _catalog)) { reason = _state.DescribeGate(definition, _catalog); return false; }
+            return true;
         }
 
         public bool IsRunning => _pending != null || _context.Cutscenes.IsActive ||
@@ -61,38 +88,10 @@ namespace Bloodlines.Missions
         /// <param name="bypassGates">QA only: start a gated story mission with its solo jobs unfinished.</param>
         public bool Start(MissionDefinition definition, bool bypassGates = false)
         {
-            if (definition == null) return false;
-            if (SurveyMode.IsSurveyRunning)
+            if (!CanStart(definition, out string refusal, bypassGates))
             {
-                GameUtils.Subtitle("~y~Stop the survey before starting a mission.", 3000);
-                return false;
-            }
-
-            if (IsRunning || _current != null)
-            {
-                GameUtils.Subtitle("~r~A mission is already running. Hold Backspace to abort.", 3000);
-                return false;
-            }
-
-            if (!_state.PrerequisiteMet(definition))
-            {
-                GameUtils.Notify("~y~" + definition.Id + "~s~ needs " + definition.Info.Prerequisite +
-                                 " finished first.");
-                return false;
-            }
-
-            if (!definition.IsPlayable)
-            {
-                GameUtils.Notify("~y~" + definition.Id + " — " + definition.Title + "~s~ is on the campaign spine but has no script yet.");
-                Logger.Warn("Attempted to start unwritten mission " + definition.Id);
-                return false;
-            }
-
-            // The story mission is real and the player is told exactly what stands
-            // in front of it, rather than the gate pretending it does not exist.
-            if (!bypassGates && !_state.GateSatisfied(definition, _catalog))
-            {
-                GameUtils.Notify("~y~" + _state.DescribeGate(definition, _catalog));
+                if (definition != null && !definition.IsPlayable) Logger.Warn("Attempted to start unwritten mission " + definition.Id);
+                GameUtils.Notify("~y~" + refusal);
                 return false;
             }
             if (bypassGates && !_state.GateSatisfied(definition, _catalog)) Logger.Warn("QA bypassed a story gate: " + _state.DescribeGate(definition, _catalog));

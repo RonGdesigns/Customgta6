@@ -127,6 +127,18 @@ Additional live-test items from this pass:
 16. **Skip vs cancel.** Enter during the prologue arrival: Ron seated. Hold Backspace during it: Ron seated (skip), M01 starts. Die during the homecoming scene: no warp, recovery runs, the drive resumes.
 17. **M21 hold.** The Cargobob hangs in place with rotors turning until Gohan is in the launch; then it flies. Watch the release for a drop or a snap.
 
+## Post-merge fix branch
+
+Addresses the verified findings in `POST-MERGE-AUDIT-VERIFICATION.md`: N1 (template overrides), R01/R03/R04 (host order and loan closure), R02 (scene-outcome contract), N2 (QA keys), R05/R06 (M28 option and map generator), R10/N3 (stale instructions) and R07 (CI `verify` job on Windows). Details per item are in `CHANGE-REGISTER.md`.
+
+Live-test additions:
+
+18. **Stale overrides.** Launch and read `Bloodlines.log`: one "stale template override" line per pre-September-9 key, then "157 still estimates". M01's lookout is now a short walk from Ice's start.
+19. **Prologue GPS.** After the arrival, the map draws a route to the apartment, not just the cylinder.
+20. **Refused start.** With SM01–SM03 unfinished, press J at M19's marker with the crew deployed: the crew stays, the gate message shows.
+21. **Homecoming failure.** Die during the homecoming scene: after recovery the drive resumes at the door, the next stop places Ron at the door directly, then M01's cold open. No double hand-off.
+22. **M28 cameras.** Choose "Yard cameras first": responders should walk in on guard and open fire only on sight.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

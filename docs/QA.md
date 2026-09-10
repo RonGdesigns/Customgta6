@@ -10,7 +10,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 2 | **Audio pipeline** | Generate M01's lines (`tools/generate_voice.py --mission M01`), drop them in `scripts/Bloodlines/audio/`, start M01 | WAVs play cleanly, subtitles carry the speaker's color (Ice `~b~`, Gohan `~g~`, Guess `~o~`), and lines never overlap |
 | 3 | **Sky-cam switch** | `Numpad 1/2/3` during a deployment | Camera lifts and descends into the target ped without hitching or clipping; the ped you left keeps its weapons and starts fighting |
 | 4 | **Companion leash** | Drive >180m from the crew | Companions reposition on the active character rather than pathfinding across the map; the leash distance is `CompanionLeashDistance` |
-| 5 | **Checkpoint guard** | Insert then Delete in a current mission | A clear full-restart message; no false restore of destroyed vehicles or stale objectives |
+| 5 | **Checkpoint guard** | `[` then `]` in a current mission (not Insert: that is ScriptHookVDotNet's reload-all-scripts key) | A clear full-restart message; no false restore of destroyed vehicles or stale objectives |
 | 5b | **Death recovery** | Die as each brother, including with an active ability | Visible screen, normal time, live controllable player, mission fails once and can be retried from the beginning |
 | 5c | **Arrest** | Let police arrest a deployed brother | Recovery clears the arrest; no permanent loss of controls |
 | 5d | **Death handed back** | Stand the crew down (`F10`), then die as your own story character | Vanilla Wasted screen and hospital respawn, exactly as without the mod. If dying does nothing, `ReleaseSuppression` did not run and that is a blocker |

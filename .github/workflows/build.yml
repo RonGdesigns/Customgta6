@@ -34,3 +34,44 @@ jobs:
           python3 tools/render_campaign_doc.py
           python3 tools/render_feasibility_doc.py
           git diff --exit-code docs/CAMPAIGN.md docs/FEASIBILITY.md
+
+  # The behavior suites compile production classes against GTA stand-ins with
+  # Roslyn's csc, which Visual Studio on the Windows runner provides. A green
+  # badge only ever meant "it compiles and the data lints" until this job
+  # existed; now it also means the story, regression and parser suites ran.
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Story and runtime tests
+        run: python tools/run_story_tests.py
+
+      - name: Behavior regression tests
+        run: python tools/run_regression_tests.py
+
+      - name: Dialogue parser tests
+        run: python test_dialogue_parser.py
+        working-directory: tools
+
+      - name: Authored scene freshness
+        run: python tools/build_story.py --check
+
+      - name: Playable map freshness
+        run: python tools/audit_campaign.py --check
+
+      # The shipped binary is what installs; it must at least be a real .NET
+      # assembly of the expected shape. Byte identity with a fresh build depends on
+      # the compiler version and is checked locally, not here.
+      - name: Prebuilt DLL is a Bloodlines assembly
+        shell: python
+        run: |
+          import struct, sys
+          data = open('prebuilt/Bloodlines.dll', 'rb').read()
+          assert data[:2] == b'MZ', 'not a PE file'
+          assert b'BloodlinesMain' in data and b'ScriptHookVDotNet3' in data, 'not the Bloodlines assembly'
+          print('prebuilt/Bloodlines.dll: %d bytes, Bloodlines assembly referencing ScriptHookVDotNet3' % len(data))

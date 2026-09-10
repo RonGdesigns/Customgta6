@@ -16,6 +16,10 @@ namespace Bloodlines.Missions.Campaign
         // decides how many come and how soon. Defaults match the pre-choice mission.
         private int _responseGapMs = 6000;
         private int _responseSize = 3;
+        // With the yard cameras cut first the response does not know where Ice is:
+        // squads arrive on guard and engage only when they actually see the crew,
+        // instead of being sent straight at the yard's defenders.
+        private bool _responseAlerted = true;
         private TechnicalChoiceObjective _choice;
         protected override bool Setup()
         {
@@ -38,8 +42,8 @@ namespace Bloodlines.Missions.Campaign
                     c => { _responseGapMs = 12000; _responseSize = 3; }),
                 new TechnicalOption("Dispatch channel first", "Fewer responders get the call, but the ones who do already know where you are.",
                     c => { _responseGapMs = 3000; _responseSize = 2; }),
-                new TechnicalOption("Yard cameras first", "Ice's cover position stays unseen. Standard response on the standard clock.",
-                    c => { _responseGapMs = 6000; _responseSize = 3; })
+                new TechnicalOption("Yard cameras first", "Ice's cover stays unseen: the response arrives searching, not shooting, on the standard clock.",
+                    c => { _responseGapMs = 6000; _responseSize = 3; _responseAlerted = false; })
             });
             yield return new MissionStage("Read the cabinet", _choice).OwnedBy(CrewSlot.Gohan);
             yield return new MissionStage("Connect the surge unit", new MissionInteraction("Gohan: connect the surge unit at the relay service cabinet", ()=>At("M28.Relay"), 5)).OwnedBy(CrewSlot.Gohan).AfterCues("M28_S1_01_GOHAN");
@@ -50,6 +54,6 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Extraction", new EnterVehicleObjective("Guess: take the Granger driver seat. Wait for both brothers to board.", ()=>_pickup, VehicleSeat.Driver, true)).OwnedBy(CrewSlot.Guess).OnEnter(c=>ReleaseForPickup());
             yield return new MissionStage("Back to shelter", new DeliverVehicleObjective("Guess: bring the crew's Granger back to the radar bunker.", ()=>_pickup, ()=>At("M23.DomeApproach"), 25), new ProtectObjective("", ()=>_pickup,"The extraction Granger was destroyed.")).OwnedBy(CrewSlot.Guess);
         }
-        private IEnumerable<Ped> Wave(int wave) { var p=Squad(At("M28.Response"),_responseSize+wave);Attack(p);return p; }
+        private IEnumerable<Ped> Wave(int wave) { var p=Squad(At("M28.Response"),_responseSize+wave);if(_responseAlerted)Attack(p);return p; }
     }
 }

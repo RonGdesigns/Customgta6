@@ -1,5 +1,20 @@
 # Playtest script — first session
 
+> **Current entry point (September 9, 2026).** The steps below this note are the
+> original first-session script and are kept as history: they describe thirty
+> missions, Numpad switching, an Ice-first deployment, a crane at 42 m, a yacht
+> bilge and a T20, none of which match the build. For the build you have:
+>
+> - Read `HANDOFF-IMPLEMENTATION-UPDATE.md` (live-test list) and `QA.md` (harness table).
+> - A fresh save opens on Ron's arrival: press `J` as your story character; do not
+>   use the F8 menu, which starts M01 directly and skips the prologue by design.
+> - Test the story path once with `[Dev] Enabled = False`: before M01, `F10` then
+>   deploys Ron alone. With dev tools on it deploys the trio, which is QA behavior.
+> - The QA checkpoint keys are `[` and `]`, not Insert/Delete.
+> - Your `scripts\Bloodlines\Bloodlines.Locations.ini` from before September 9
+>   carried template positions; the mod now ignores those exact values and says so
+>   in `Bloodlines.log` ("stale template override").
+
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.
 
