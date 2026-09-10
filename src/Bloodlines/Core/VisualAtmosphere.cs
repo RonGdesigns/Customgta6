@@ -1,143 +1,174 @@
 using System;
+using System.Collections.Generic;
 using GTA;
 using GTA.Native;
 
 namespace Bloodlines.Core
 {
     /// <summary>
-    /// Native Visual Atmosphere, De-Smog and Cinematic Graphics Engine.
-    /// Manages real-time timecycle grading, volumetric fog density, dynamic shadow
-    /// cascades, and vehicle headlight shadows directly through RAGE engine registers
-    /// with zero third-party downloads, zero ReShade hooks, and zero FPS overhead.
+    /// Native visual atmosphere: time-of-day grading through the game's own
+    /// timecycle modifiers, longer shadow cascades, headlight shadows, a longer
+    /// level-of-detail range, camera blur off, water reflection distance on the
+    /// player and their car, and a deeper ocean swell outside missions. Every
+    /// register it touches is put back by <see cref="Reset"/>, which the host runs
+    /// on abort, on stand-down and on script reload, because the engine keeps this
+    /// state across a reload and nothing else would ever clear it.
+    ///
+    /// Costs, stated honestly: the timecycle and blur settings are free. The
+    /// cascade scale, headlight shadows and the level-of-detail range are real
+    /// GPU and streaming work; they are the keys to turn off first when the game
+    /// stutters at speed. Grading is released during scenes and inside the
+    /// apartment so authored lighting stays as authored.
     /// </summary>
     public sealed class VisualAtmosphere
     {
+        public const float OceanSwell = 1.25f;
+        public const float MaxLodScale = 2.0f;
+
         private readonly ModConfig _config;
-        private string _activeModifier = null;
-        private float _activeStrength = 0f;
-        private int _lastUpdateTick = 0;
-        private bool _shadowsConfigured = false;
+        private readonly Dictionary<int, Entity> _reflecting = new Dictionary<int, Entity>();
+        private string _activeModifier;
+        private float _activeStrength;
+        private int _lastClockCheck;
+        private bool _shadowsConfigured, _lodConfigured, _oceanApplied;
+
+        public string ActiveModifier => _activeModifier;
+        public float ActiveStrength => _activeStrength;
+        public bool OceanApplied => _oceanApplied;
+        public bool LodConfigured => _lodConfigured;
 
         public VisualAtmosphere(ModConfig config)
         {
             _config = config ?? new ModConfig();
         }
 
-        public void Update(bool suppressGrading)
+        /// <param name="suppressGrading">A scene or the apartment: release the grade, keep the rest.</param>
+        /// <param name="missionRunning">Any mission or the prologue: no ocean swell, so boat objectives keep their authored water.</param>
+        public void Update(bool suppressGrading, bool missionRunning)
         {
-            if (_config == null || !_config.VisualsEnabled)
+            if (!_config.VisualsEnabled)
             {
-                if (_activeModifier != null) Reset();
+                if (_activeModifier != null || _shadowsConfigured || _lodConfigured || _oceanApplied) Reset();
                 return;
             }
 
-            // Configure dynamic shadow bounds once or when needed
             if (!_shadowsConfigured)
             {
-                if (_config.ShadowDistanceScale > 1.0f)
-                {
-                    Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, _config.ShadowDistanceScale);
-                }
+                Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, _config.ShadowDistanceScale);
                 Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, _config.HeadlightShadowsEnabled);
                 _shadowsConfigured = true;
             }
 
-            // Per-frame rendering enhancements
             if (_config.LODBoostEnabled)
             {
-                Function.Call(Hash.OVERRIDE_LODSCALE_THIS_FRAME, _config.LODScale);
-                Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, 2.0f);
-                Function.Call(Hash.SET_PED_LOD_MULTIPLIER, 2.0f);
+                float scale = Math.Min(MaxLodScale, _config.LODScale);
+                if (!_lodConfigured)
+                {
+                    // Persistent settings: set once, put back in Reset.
+                    Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, scale);
+                    Function.Call(Hash.SET_PED_LOD_MULTIPLIER, scale);
+                    _lodConfigured = true;
+                }
+                // The scene override is per frame; the host's tick already skips
+                // this step while the apartment or a recovery is streaming.
+                Function.Call(Hash.OVERRIDE_LODSCALE_THIS_FRAME, scale);
             }
 
             if (_config.RemoveBlurEnabled)
             {
-                Function.Call(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE, 0.0f);
-                Function.Call(Hash.SET_DISTANCE_BLUR_STRENGTH_OVERRIDE, 0.0f);
+                Function.Call(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE, 0f);
+                Function.Call(Hash.SET_DISTANCE_BLUR_STRENGTH_OVERRIDE, 0f);
             }
 
-            if (_config.WaterReflectionsEnabled)
+            if (_config.WaterReflectionsEnabled) UpdateWaterReflections();
+
+            if (_config.OceanSwellEnabled && !missionRunning)
             {
-                Function.Call(Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION, true);
-                Function.Call(Hash.SET_DEEP_OCEAN_SCALER, 1.25f);
+                if (!_oceanApplied) { Function.Call(Hash.SET_DEEP_OCEAN_SCALER, OceanSwell); _oceanApplied = true; }
             }
-
-            if (_config.CeramicReflectionsEnabled)
+            else if (_oceanApplied)
             {
-                var player = Game.Player.Character;
-                if (player != null && player.Exists() && player.IsInVehicle())
-                {
-                    var car = player.CurrentVehicle;
-                    if (car != null && car.Exists())
-                    {
-                        Function.Call(Hash.SET_VEHICLE_ENVEFF_SCALE, car, 1.20f);
-                    }
-                }
+                Function.Call(Hash.RESET_DEEP_OCEAN_SCALER);
+                _oceanApplied = false;
             }
 
-            // Cutscenes and interiors: gently clear custom grading to preserve authored lighting
-            if (suppressGrading)
-            {
-                if (_activeModifier != null)
-                {
-                    Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
-                    _activeModifier = null;
-                    _activeStrength = 0f;
-                }
-                return;
-            }
+            if (suppressGrading) { ClearGrade(); return; }
 
-            // Throttle clock checks to once every 250ms
             int now = Game.GameTime;
-            if (now - _lastUpdateTick < 250 && _activeModifier != null) return;
-            _lastUpdateTick = now;
+            if (_activeModifier != null && now - _lastClockCheck < 250) return;
+            _lastClockCheck = now;
 
-            double timeFraction = World.CurrentTimeOfDay.TotalHours;
+            string target = ModifierFor(World.CurrentTimeOfDay.TotalHours, out float strength);
+            if (string.IsNullOrEmpty(target)) { ClearGrade(); return; }
+            if (_activeModifier != target)
+            {
+                Function.Call(Hash.SET_TIMECYCLE_MODIFIER, target);
+                _activeModifier = target;
+                _activeStrength = -1f;
+                Logger.Info("Visuals: timecycle modifier '" + target + "' at " + strength.ToString("0.00") + " (a name the game does not know applies nothing; see docs/VISUALS.md).");
+            }
+            if (Math.Abs(_activeStrength - strength) > 0.01f)
+            {
+                Function.Call(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH, strength);
+                _activeStrength = strength;
+            }
+        }
 
-            string targetModifier;
-            float baseStrength = _config.ContrastStrength;
+        /// <summary>
+        /// The modifier for an hour of the day under the configured preset, or null
+        /// for none. Daytime is the de-smog grade and honors the DeSmog key; the
+        /// four ini overrides win over the preset when set.
+        /// </summary>
+        public string ModifierFor(double hours, out float strength)
+        {
+            float contrast = _config.ContrastStrength;
+            if (hours >= 10.0 && hours < 17.0)
+            {
+                strength = contrast;
+                if (!_config.DeSmogEnabled) return null;
+                if (!string.IsNullOrWhiteSpace(_config.DayModifier)) return _config.DayModifier;
+                return _config.VisualPreset == "SunnyCoast" ? "New_Chinatown_sky" : _config.VisualPreset == "ModernCrisp" ? "color_neutral" : "cinema_default";
+            }
+            if (hours >= 17.0 && hours < 20.5)
+            {
+                strength = contrast * 0.85f;
+                return string.IsNullOrWhiteSpace(_config.DuskModifier) ? "rply_saturation" : _config.DuskModifier;
+            }
+            if (hours >= 20.5 || hours < 5.5)
+            {
+                strength = contrast * 0.75f;
+                return string.IsNullOrWhiteSpace(_config.NightModifier) ? "cinema" : _config.NightModifier;
+            }
+            strength = contrast * 0.80f;
+            return string.IsNullOrWhiteSpace(_config.DawnModifier) ? "cinema_default" : _config.DawnModifier;
+        }
 
-            // Pick profile based on time of day and chosen preset
-            if (timeFraction >= 10.0 && timeFraction < 17.0)
-            {
-                // High Noon / Daytime De-Smog: cuts the milky gray fog and saturates skies
-                targetModifier = _config.VisualPreset == "SunnyCoast"
-                    ? "New_Chinatown_sky"
-                    : _config.VisualPreset == "ModernCrisp"
-                        ? "color_neutral"
-                        : "cinema_default";
-            }
-            else if (timeFraction >= 17.0 && timeFraction < 20.5)
-            {
-                // Golden Hour / Sunset: warm amber hues, glowing reflections
-                targetModifier = "rply_saturation";
-                baseStrength *= 0.85f;
-            }
-            else if (timeFraction >= 20.5 || timeFraction < 5.5)
-            {
-                // Midnight: deep navy contrast, crisp streetlights and neon
-                targetModifier = "cinema";
-                baseStrength *= 0.75f;
-            }
-            else
-            {
-                // Dawn / Morning: crisp early air, soft golden light
-                targetModifier = "cinema_default";
-                baseStrength *= 0.80f;
-            }
+        private void ClearGrade()
+        {
+            if (_activeModifier == null) return;
+            Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
+            _activeModifier = null;
+            _activeStrength = 0f;
+        }
 
-            // Apply modifier if changed or update strength
-            if (_activeModifier != targetModifier)
-            {
-                Function.Call(Hash.SET_TIMECYCLE_MODIFIER, targetModifier);
-                _activeModifier = targetModifier;
-            }
+        /// <summary>The reflection-distance flag is per entity: the player and whatever they are driving, once each.</summary>
+        private void UpdateWaterReflections()
+        {
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists()) return;
+            Reflect(player);
+            var car = player.CurrentVehicle;
+            if (car != null && car.Exists()) Reflect(car);
+            if (_reflecting.Count > 24)
+                foreach (var stale in new List<int>(_reflecting.Keys))
+                    if (!_reflecting[stale].Exists()) _reflecting.Remove(stale);
+        }
 
-            if (Math.Abs(_activeStrength - baseStrength) > 0.01f)
-            {
-                Function.Call(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH, baseStrength);
-                _activeStrength = baseStrength;
-            }
+        private void Reflect(Entity entity)
+        {
+            if (_reflecting.ContainsKey(entity.Handle)) return;
+            Function.Call(Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION, entity, true);
+            _reflecting[entity.Handle] = entity;
         }
 
         public void Reset()
@@ -145,9 +176,17 @@ namespace Bloodlines.Core
             Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
             Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, 1.0f);
             Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, false);
+            Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, 1.0f);
+            Function.Call(Hash.SET_PED_LOD_MULTIPLIER, 1.0f);
+            Function.Call(Hash.RESET_DEEP_OCEAN_SCALER);
+            foreach (var entity in _reflecting.Values)
+                if (entity != null && entity.Exists()) Function.Call(Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION, entity, false);
+            _reflecting.Clear();
             _activeModifier = null;
             _activeStrength = 0f;
             _shadowsConfigured = false;
+            _lodConfigured = false;
+            _oceanApplied = false;
         }
     }
 }

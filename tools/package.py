@@ -112,8 +112,14 @@ def main():
         else:
             print('WARNING: missing data file {} — run tools/parse_bible.py'.format(name))
 
+    # Shipped as examples: copying a package over an existing install must never
+    # replace the player's keybinds, dev flags or surveyed coordinates. The mod
+    # turns Bloodlines.ini.example into Bloodlines.ini on first run; the installer
+    # does the same for both files only when the real one is absent.
     for name in CONFIG_FILES:
-        copy_into(os.path.join(REPO, 'config', name), root)
+        shutil.copy2(os.path.join(REPO, 'config', name), os.path.join(root, name + '.example'))
+        stale = os.path.join(root, name)
+        if os.path.exists(stale): os.remove(stale)  # a deploy packaged before the .example rule
 
     if args.audio:
         if not os.path.isdir(args.audio):
@@ -140,7 +146,7 @@ def main():
         for name in sorted(files):
             print('  ' * (depth + 1) + name)
 
-    print('\nCopy the contents of scripts/ into "Grand Theft Auto V/scripts/".')
+    print('\nCopy the contents of scripts/ into "Grand Theft Auto V/scripts/" (the .example files never overwrite yours).')
     print('Import _openiv_import/bloodlines_assets with OpenIV (see assets/README.md).')
 
 

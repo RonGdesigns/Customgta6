@@ -175,7 +175,7 @@ namespace Bloodlines
             Step("abilities", _abilities.Update);
             Step("garage", _garage.Update);
             Step("world speed", () => _worldTuning.Update(_crew));
-            Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside));
+            Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));
             Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
             Step("weapon ownership", () => _weapons.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));

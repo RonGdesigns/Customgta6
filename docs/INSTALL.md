@@ -140,7 +140,7 @@ before trusting them:
 | Script | Does |
 |---|---|
 | `check-setup.bat ["<GTA V path>"]` | **Read-only.** Reports the build (Legacy/Enhanced), which hook DLLs are present, what is in `scripts\`, and whether a script hook has ever run there. Run this first when anything is unclear. |
-| `install-bloodlines.bat "<GTA V path>"` | Copies the built DLL and campaign data in. Re-runnable: your `Bloodlines.ini`, surveyed coordinates and `savegame.json` are never overwritten once they exist. |
+| `install-bloodlines.bat "<GTA V path>"` | Copies the built DLL and campaign data in. Re-runnable: your `Bloodlines.ini`, surveyed coordinates and `savegame.json` are never overwritten once they exist. The package ships the two ini files as `.example` copies, so even copying the folder by hand cannot replace yours; the mod turns the example into the real file on first run. |
 | `bloodlines-toggle.bat "<GTA V path>"` | Renames `Bloodlines.dll` on/off, for A/B testing against your other scripts. Not an Online-safety tool. |
 | `playtest-isolate.bat "<GTA V path>"` | Parks every other script into `scripts\_parked` so a playtest is unambiguous; run again with `restore` to put them back. |
 

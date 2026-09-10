@@ -40,6 +40,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 27 | **Apartment** | Enter the starter apartment from its door | Inside with control within a few seconds; no "Apartment timeout" in the log |
 | 28 | **Rewards** | Finish M02, restock at the locker, open the shop | Three new weapons, one per hero; the shop lists each as locked until its job |
 | 29 | **QA order** | Dev menu → Missions → a job whose prerequisite is unfinished | It starts with a QA note; the mission key on its marker still refuses |
+| 30 | **Visuals restore** | Deploy, drive at 13:00 and 23:00, `F10` off, press Insert | Grade changes per band with a log line each; after stand-down and reload the world is vanilla |
+| 31 | **Crew protection** | Enter and leave a car with the crew deployed, then stand down and crash the story character's car | Damage-scale calls follow entry and exit in the log; vanilla damage after stand-down |
+| 32 | **Ini safety** | Copy the packaged `scripts` folder over the install by hand | `Bloodlines.ini` unchanged; `Bloodlines.ini.example` beside it |
 
 ## Before you launch: the static checks
 

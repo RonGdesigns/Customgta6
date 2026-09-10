@@ -21,6 +21,9 @@
 > - Round two (September 10): briefings drive up to Guess, M04's Miller runs, M06's
 >   later SWAT waves rappel from Mavericks, the apartment loads from inside the room,
 >   most jobs pay a weapon, and the dev menu starts any job. Live-test items 31–38.
+> - Visuals and vehicle damage are on by default (`[Visuals]`, `[VehicleDamage]`);
+>   `VISUALS.md` says what each key costs and how to check a modifier name. The
+>   package now ships the ini files as `.example`, so an install cannot replace yours.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

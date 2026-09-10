@@ -11,6 +11,10 @@ namespace Bloodlines.Core
     public sealed class WorldTuning
     {
         public ModConfig Config { get; set; }
+        private readonly HashSet<int> _protected = new HashSet<int>();
+        private bool _playerProtected;
+        /// <summary>Vehicles currently carrying the crew's damage protection, for tests and the log.</summary>
+        public IEnumerable<int> ProtectedVehicles => _protected;
 
         public WorldTuning(ModConfig config = null)
         {
@@ -90,7 +94,7 @@ namespace Bloodlines.Core
                     profile.Travel.Apply(handling,car.Model);
                     if (car.Model.IsPlane || car.Model.IsHelicopter || car.Model.IsBoat) Logger.Info(car.DisplayName + ": " + profile.Travel.Report);
                     // The grip, damping, weight, brakes and realistic deformation the doubled gearing needs.
-                    if(gearing)profile.Road.Apply(handling, car, Config, IsCrewVehicle(car, crew));
+                    if(gearing)profile.Road.Apply(handling, car, Config);
                 }
                 else
                 {
@@ -150,12 +154,7 @@ namespace Bloodlines.Core
             {
                 var car = pair.Value;
                 if (!car.Exists() || car.Model.Hash!=_models[pair.Key]) continue;
-                if (Config != null && Config.VehicleDamageEnabled && IsCrewVehicle(car, crew))
-                {
-                    Function.Call(Hash.SET_VEHICLE_DAMAGE_SCALE, car, Config.CrewProtectionMultiplier);
-                    if (Game.Player.Character != null && Game.Player.Character.CurrentVehicle == car)
-                        Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, Config.CrewProtectionMultiplier);
-                }
+                UpdateProtection(car, crew);
                 float target = 1f;
                 if (CanAssist(car))
                 {
@@ -182,9 +181,47 @@ namespace Bloodlines.Core
                 }
             }
         }
+        /// <summary>
+        /// The crew's damage protection, per vehicle instance: applied when a brother
+        /// is aboard, removed the moment the car is empty of them, and the player's
+        /// own modifier follows the car the player is in. Nothing here touches the
+        /// model's shared handling.
+        /// </summary>
+        private void UpdateProtection(Vehicle car, CrewRoster crew)
+        {
+            bool enabled = Config != null && Config.VehicleDamageEnabled;
+            bool occupied = enabled && IsCrewVehicle(car, crew);
+            if (occupied && !_protected.Contains(car.Handle))
+            {
+                Function.Call(Hash.SET_VEHICLE_DAMAGE_SCALE, car, Config.CrewProtectionMultiplier);
+                _protected.Add(car.Handle);
+            }
+            else if (!occupied && _protected.Contains(car.Handle))
+            {
+                Function.Call(Hash.SET_VEHICLE_DAMAGE_SCALE, car, 1f);
+                _protected.Remove(car.Handle);
+            }
+            var player = Game.Player.Character;
+            bool playerAboard = occupied && player != null && player.Exists() && player.CurrentVehicle == car;
+            if (playerAboard && !_playerProtected)
+            {
+                Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, Config.CrewProtectionMultiplier);
+                _playerProtected = true;
+            }
+            else if (_playerProtected && !playerAboard && (player == null || !player.Exists() || player.CurrentVehicle == null || !_protected.Contains(player.CurrentVehicle.Handle)))
+            {
+                Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, 1f);
+                _playerProtected = false;
+            }
+        }
+
         public void Reset()
         {
             Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
+            if (_playerProtected) { Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, 1f); _playerProtected = false; }
+            foreach (var car in _cars.Values)
+                if (car.Exists() && _protected.Contains(car.Handle)) Function.Call(Hash.SET_VEHICLE_DAMAGE_SCALE, car, 1f);
+            _protected.Clear();
             var restored = new List<IntPtr>();
             foreach (var pair in _profiles)
                 try

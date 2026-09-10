@@ -97,7 +97,7 @@ namespace Bloodlines.Core
         /// vehicle takes no profile or the handling is not usable. Safe to call once per
         /// profile only; the caller owns that rule.
         /// </summary>
-        public bool Apply(HandlingData handling, Vehicle car, ModConfig config = null, bool isCrewVehicle = false)
+        public bool Apply(HandlingData handling, Vehicle car, ModConfig config = null)
         {
             if (handling == null || !handling.IsValid || Applied != Class.None) return false;
             var cls = Classify(car);
@@ -110,6 +110,10 @@ namespace Bloodlines.Core
             Scale(handling, "SuspensionReboundDamping", h => h.SuspensionReboundDamping, (h, v) => h.SuspensionReboundDamping = v, DampingFactor(cls));
             Scale(handling, "BrakeForce", h => h.BrakeForce, (h, v) => h.BrakeForce = v, BrakeFactor(cls));
 
+            // Damage is per class and shared by every car of the model. The crew's
+            // protection is per vehicle instance and lives in WorldTuning; writing it
+            // here would hand it to every car of that model, or to none, depending
+            // on who happened to be sitting in the first one registered.
             float defFactor = 1f;
             float colFactor = 1f;
             float engFactor = 1f;
@@ -118,12 +122,6 @@ namespace Bloodlines.Core
                 defFactor = DeformationFactor(cls, config.DeformationMultiplier);
                 colFactor = CollisionFactor(cls, config.CollisionDamageMultiplier);
                 engFactor = EngineFactor(cls, config.EngineDamageMultiplier);
-
-                if (isCrewVehicle)
-                {
-                    colFactor *= config.CrewProtectionMultiplier;
-                    engFactor *= config.CrewProtectionMultiplier;
-                }
 
                 Scale(handling, "DeformationDamageMultiplier", h => h.DeformationDamageMultiplier, (h, v) => h.DeformationDamageMultiplier = v, defFactor);
                 Scale(handling, "CollisionDamageMultiplier", h => h.CollisionDamageMultiplier, (h, v) => h.CollisionDamageMultiplier = v, colFactor);

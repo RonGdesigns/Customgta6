@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using GTA;
@@ -34,7 +35,7 @@ namespace Bloodlines.Core
         public bool CompanionsRespawnOnDeath { get; private set; } = true;
 
         /// <summary>
-        /// Metres a companion may fall behind before it is repositioned on the active
+        /// Meters a companion may fall behind before it is repositioned on the active
         /// character. The toolkit calls this the companion leash.
         /// </summary>
         public float CompanionLeashDistance { get; private set; } = 180f;
@@ -90,7 +91,12 @@ namespace Bloodlines.Core
         public bool LODBoostEnabled { get; private set; } = true;
         public float LODScale { get; private set; } = 1.75f;
         public bool RemoveBlurEnabled { get; private set; } = true;
-        public bool CeramicReflectionsEnabled { get; private set; } = true;
+        public bool OceanSwellEnabled { get; private set; } = true;
+        /// <summary>Timecycle modifier names; empty means the preset's default. See docs/VISUALS.md for how to verify a name.</summary>
+        public string DayModifier { get; private set; } = "";
+        public string DawnModifier { get; private set; } = "";
+        public string DuskModifier { get; private set; } = "";
+        public string NightModifier { get; private set; } = "";
         public bool WaterReflectionsEnabled { get; private set; } = true;
 
         /// <summary>Seconds of ability time; the meter refills at <see cref="AbilityRechargeRate"/> per second.</summary>
@@ -101,6 +107,15 @@ namespace Bloodlines.Core
         public static ModConfig Load(string path)
         {
             var config = new ModConfig();
+            // A fresh install ships the documented file as Bloodlines.ini.example so
+            // that copying a package over an existing install can never replace the
+            // player's own keybinds and flags. The first run turns the example into
+            // the real file; after that the example is never read again.
+            try
+            {
+                if (!File.Exists(path) && File.Exists(path + ".example")) File.Copy(path + ".example", path);
+            }
+            catch (Exception ex) { Logger.Error("Could not seed " + Path.GetFileName(path) + " from its example", ex); }
             var settings = ScriptSettings.Load(path);
 
             config.SwitchIceKey = ReadKey(settings, "SwitchIce", config.SwitchIceKey);
@@ -160,9 +175,13 @@ namespace Bloodlines.Core
 
             config.LODBoostEnabled = settings.GetValue<bool>("Visuals", "LODBoost", config.LODBoostEnabled);
             config.LODScale = settings.GetValue<float>("Visuals", "LODScale", config.LODScale);
-            config.LODScale = Math.Max(1.0f, Math.Min(3.0f, config.LODScale));
+            config.LODScale = Math.Max(1.0f, Math.Min(2.0f, config.LODScale));
             config.RemoveBlurEnabled = settings.GetValue<bool>("Visuals", "RemoveBlur", config.RemoveBlurEnabled);
-            config.CeramicReflectionsEnabled = settings.GetValue<bool>("Visuals", "CeramicReflections", config.CeramicReflectionsEnabled);
+            config.OceanSwellEnabled = settings.GetValue<bool>("Visuals", "OceanSwell", config.OceanSwellEnabled);
+            config.DayModifier = settings.GetValue<string>("Visuals", "DayModifier", config.DayModifier) ?? "";
+            config.DawnModifier = settings.GetValue<string>("Visuals", "DawnModifier", config.DawnModifier) ?? "";
+            config.DuskModifier = settings.GetValue<string>("Visuals", "DuskModifier", config.DuskModifier) ?? "";
+            config.NightModifier = settings.GetValue<string>("Visuals", "NightModifier", config.NightModifier) ?? "";
             config.WaterReflectionsEnabled = settings.GetValue<bool>("Visuals", "WaterReflections", config.WaterReflectionsEnabled);
 
             // Writes back any key the ini was missing, so the file self-documents after first run.
@@ -193,7 +212,7 @@ namespace Bloodlines.Core
 
         /// <summary>
         /// Parses a key name ourselves rather than through the type converter, which
-        /// only recognises its own localised display names -- "D1" and
+        /// only recognizes its own localised display names -- "D1" and
         /// "OemOpenBrackets" are perfectly good <see cref="Keys"/> values that it
         /// rejects. A name we cannot parse is logged and the default kept, because a
         /// typo in an ini should cost one binding, not the whole mod.
