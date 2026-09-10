@@ -37,7 +37,7 @@ public static partial class StoryTests
   Check(c.Locations.Position("M04.Breaker").Z>0&&c.Locations.Position("M04.RampGuards").Z>0,"M04 no longer depends on the absent B3 interior");
   var miller=World.Created[0];Interact(m4,c,CrewSlot.Gohan,c.Locations.Position("M04.Breaker"),5);Check(m4.CurrentStage==1&&miller.Task.Cruises==0,"Miller waits while Ice handles the escort instead of escaping during the fight");
   Use(crew,CrewSlot.Ice);foreach(var enemy in World.Created.Where(p=>p!=miller))enemy.IsDead=true;m4.Tick();Check(m4.CurrentStage==2&&miller.Task.Cruises==0,"M04 offers Guess the chase before starting the getaway");
-  Use(crew,CrewSlot.Guess);m4.Tick();Check(m4.CurrentStage==3&&miller.Task.Cruises==1,"Miller starts driving only when Guess is in the chase car");
+  Use(crew,CrewSlot.Guess);m4.Tick();Check(m4.CurrentStage==3&&miller.Task.VehicleMissions==1&&miller.Task.Cruises==0,"Miller starts running only when Guess is in the chase car");
   World.Vehicles[0].IsDriveable=false;m4.Tick();Check(m4.CurrentStage==4,"Disabling Miller's car unlocks the physical drive pickup");
   Interact(m4,c,CrewSlot.Guess,miller.Position,3);Check(m4.Status==MissionStatus.Passed,"M04 completes after the on-foot context-button drive pickup");
 

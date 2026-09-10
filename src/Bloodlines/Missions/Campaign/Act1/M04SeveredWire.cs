@@ -4,6 +4,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -16,7 +17,7 @@ namespace Bloodlines.Missions.Campaign
     ///
     /// The subway plunge in the bible is a chase along the surface streets here: the
     /// tunnels are drivable but the entrances are not reliably enterable at speed, and
-    /// a chase that ends on a kerb is worse than one that never claimed to be
+    /// a chase that ends on a curb is worse than one that never claimed to be
     /// underground. The beat that matters — Miller runs, Guess catches him — survives.
     /// </summary>
     public sealed class M04SeveredWire : ComposedMission
@@ -52,7 +53,34 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_chaseCar, VehicleSeat.Driver);
             _miller.IsInvincible = true;
             _miller.SetIntoVehicle(_millerCar, VehicleSeat.Driver);
+            // A getaway driver, not a commuter.
+            Function.Call(Hash.SET_DRIVER_ABILITY, _miller, 1f);
+            Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, _miller, 1f);
             return true;
+        }
+
+        /// <summary>
+        /// Miller runs: a flee mission away from Guess at speed, through traffic and
+        /// the wrong way down a street if that is what it takes, kept when the task
+        /// system would otherwise drop it. The old cruise task obeyed lights.
+        /// </summary>
+        private void StartFlight()
+        {
+            if (_miller == null || !_miller.Exists() || _millerCar == null || !_millerCar.Exists()) return;
+            var pursuer = Ctx.Crew.PedFor(CrewSlot.Guess);
+            if (pursuer == null || !pursuer.Exists()) pursuer = Game.Player.Character;
+            _millerCar.IsEngineRunning = true;
+            _miller.Task.StartVehicleMission(_millerCar, pursuer, VehicleMissionType.Flee, 40f,
+                VehicleDrivingFlags.DrivingModeAvoidVehiclesReckless | VehicleDrivingFlags.AllowGoingWrongWay | VehicleDrivingFlags.UseShortCutLinks, 8f, 40f, true);
+            Function.Call(Hash.SET_PED_KEEP_TASK, _miller, true);
+        }
+
+        protected override void OnPassed()
+        {
+            // The chase car is Guess's ride out of Textile City and Miller's wreck is
+            // part of the street now; neither vanishes with the mission's teardown.
+            if (_chaseCar != null && _chaseCar.Exists()) Release(_chaseCar);
+            if (_millerCar != null && _millerCar.Exists()) Release(_millerCar);
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -87,10 +115,10 @@ namespace Bloodlines.Missions.Campaign
                     new PursueTargetObjective("Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive.", () => _miller,
                         "Miller reached his handler and the forensics went with him."))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => { Game.Player.WantedLevel = 2; _miller.IsInvincible = false; _miller.Task.CruiseWithVehicle(_millerCar, 24f, DrivingStyle.Normal); Ctx.Cutscenes.PlayMoment(Id,"Miller breaks cover","GUESS","He is pulling out. Disable the car, then get the drive. I have the wheel.",_miller); Say("M04_S2_04_ICE"); });
+                .OnEnter(context => { Game.Player.WantedLevel = 2; _miller.IsInvincible = false; StartFlight(); Ctx.Cutscenes.PlayMoment(Id,"Miller breaks cover","GUESS","He is pulling out. Disable the car, then get the drive. I have the wheel.",_miller); Say("M04_S2_04_ICE"); });
 
             yield return new MissionStage("Recover the drive",
-                    new MissionInteraction("Guess: collect Miller's drive", () => MillerPosition(), 3, 6f))
+                    new MissionInteraction("Guess: collect Miller's drive", () => MillerPosition(), 3, 6f, animation: MissionInteraction.ReachInside))
                 .OnExit(context =>
                 {
                     Say("M04_S2_05_ICE");

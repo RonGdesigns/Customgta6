@@ -14,7 +14,7 @@ public static partial class StoryTests
   Reset();var crew=Roster();var access=new ApartmentAccess(crew);var player=Game.Player.Character;
   var before=player.Position;var inside=new Vector3(347,-999,-99);Function.InteriorId=123;Function.InteriorReady=false;
   Check(access.Begin(inside,null,true)&&access.Busy&&!Game.Player.CanControlCharacter,"Apartment entry begins with bounded loading and held controls");
-  Game.GameTime+=300;access.Update();Check(player.Position==before&&!access.Inside,"Unready interior does not move the player into an unloaded room");
+  Game.GameTime+=300;access.Update();Check(player.Position==inside&&player.IsPositionFrozen&&GameUtils.Faded&&!access.Inside&&access.Busy,"An unready interior holds the player inside it, frozen and behind the fade, while it streams");
   Game.GameTime+=12100;access.Update();Check(!access.Busy&&!access.Inside&&Game.Player.CanControlCharacter&&!player.IsPositionFrozen&&!GameUtils.Faded&&crew.CompanionAI.Controlled.Count==0,"Apartment timeout restores position, input, fade and companion ownership");
   Function.InteriorReady=true;World.CollisionReady=false;access.Begin(inside,null,true);Game.GameTime+=300;access.Update();access.Update();
   Check(access.Busy&&player.IsPositionFrozen,"Player stays held until apartment collision loads");

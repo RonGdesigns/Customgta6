@@ -35,11 +35,24 @@ namespace Bloodlines.Core
                     for (int attempt=0;attempt<12;attempt++)
                     {
                         Function.Call(Hash.REQUEST_COLLISION_AT_COORD, point.X,point.Y,point.Z);
+                        // An estimate's height is a guess; a hillside perch can sit 40 m
+                        // above it and the navmesh check would call that "no surface".
+                        // Ask the map where the ground is first, once collision answers.
+                        if (location.Status != LocationStatus.Surveyed)
+                        {
+                            float ground = World.GetGroundHeight(new Vector3(point.X, point.Y, location.Position.Z + 150f));
+                            if (ground > 0.5f && Math.Abs(ground - location.Position.Z) <= 150f) point = new Vector3(point.X, point.Y, ground + 0.5f);
+                        }
                         safe=World.GetSafeCoordForPed(point,false,0);
                         if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe,point,35f) && Math.Abs(safe.Z-point.Z)<25f) break;
                         safe=Vector3.Zero; Script.Wait(50);
                     }
-                    if (safe == Vector3.Zero) { Logger.Error("No walkable mission surface: " + key); GameUtils.Subtitle("~r~Cannot load " + key + ". Use Survey to check this mission location, then retry.",6000); return false; }
+                    if (safe == Vector3.Zero)
+                    {
+                        Logger.Error("No walkable mission surface: " + key + " at " + point + " (authored " + location.Position + ", " + location.Status + ")");
+                        GameUtils.Subtitle("~r~Cannot load " + key + ": no walkable ground near its coordinates. Survey it (F11) and retry.",6000);
+                        return false;
+                    }
                     resolved[location]=safe+new Vector3(0,0,.1f);
                 }
                 foreach(var pair in resolved)pair.Key.Position=pair.Value;

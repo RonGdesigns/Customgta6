@@ -256,7 +256,7 @@ namespace Bloodlines.Core
 
         private Page BuildMissionList()
         {
-            var page = new Page("Missions — Enter starts unlocked jobs");
+            var page = new Page("Missions — Enter starts any scripted job (QA)");
 
             foreach (var mission in _catalog.All)
             {
@@ -271,8 +271,8 @@ namespace Bloodlines.Core
                             return;
                         }
 
-                        if (!_state.PrerequisiteMet(captured)) { GameUtils.Notify("Finish " + captured.Info.Prerequisite + " first."); return; }
-                        if (!_state.GateSatisfied(captured, _catalog)) GameUtils.Notify("~y~QA bypass: " + _state.DescribeGate(captured, _catalog));
+                        if (!_state.PrerequisiteMet(captured)) GameUtils.Notify("~y~QA: starting " + captured.Id + " with " + captured.Info.Prerequisite + " unfinished.");
+                        else if (!_state.GateSatisfied(captured, _catalog)) GameUtils.Notify("~y~QA bypass: " + _state.DescribeGate(captured, _catalog));
                         if (_missions.IsRunning) _missions.Abort();
                         if (_crew.IsDeployed) _crew.Dismiss();
                         _missions.Start(captured, bypassGates: true);

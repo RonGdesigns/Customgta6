@@ -282,6 +282,67 @@ namespace Bloodlines.Core
     }
 
     /// <summary>
+    /// Drive a car up to a curb-side point and stop. Finishing places the car on the
+    /// mark, stopped, with the driver's task cleared, so a skipped arrival and a
+    /// watched one end with the same car in the same place.
+    /// </summary>
+    public sealed class DriveUpStep : SceneStep
+    {
+        private readonly Vehicle _vehicle;
+        private readonly Vector3 _destination;
+        private readonly float _heading;
+
+        public DriveUpStep(Ped driver, Vehicle vehicle, Vector3 destination, float arrivalHeading)
+        {
+            Actor = driver; _vehicle = vehicle; _destination = destination; _heading = arrivalHeading; TimeoutMs = 22000;
+        }
+
+        public Vector3 Destination => _destination;
+        public override Entity CameraTarget => Usable(_vehicle) ? (Entity)_vehicle : Actor;
+
+        protected override void OnStart()
+        {
+            if (!Usable(Actor) || !Usable(_vehicle)) return;
+            _vehicle.IsPositionFrozen = false;
+            foreach (var occupant in _vehicle.Occupants)
+                if (occupant != null && occupant.Exists()) occupant.IsPositionFrozen = false;
+            _vehicle.IsEngineRunning = true;
+            Actor.Task.DriveTo(_vehicle, _destination, 5f, 16f, DrivingStyle.Rushed);
+        }
+
+        public override bool IsComplete
+        {
+            get
+            {
+                if (!Usable(Actor) || !Usable(_vehicle)) return true;
+                if (GameUtils.IsWithinFlat(_vehicle.Position, _destination, 6f) && _vehicle.Speed < 1.5f) return true;
+                // Pulled up short behind traffic or a parked car: close enough, stopped, and not just started.
+                return HasStarted && Game.GameTime - StartedAt > 4000 && _vehicle.Speed < 0.5f && GameUtils.IsWithinFlat(_vehicle.Position, _destination, 14f);
+            }
+        }
+
+        public override void Finish()
+        {
+            if (!Usable(_vehicle)) return;
+            if (Usable(Actor)) Actor.Task.ClearAllImmediately();
+            if (!GameUtils.IsWithinFlat(_vehicle.Position, _destination, 6f))
+            {
+                SettleGround(_destination);
+                _vehicle.Position = _destination;
+                _vehicle.Heading = _heading;
+            }
+            _vehicle.Speed = 0f;
+        }
+
+        /// <summary>GTA heading (0 north, counterclockwise) from one point toward another.</summary>
+        public static float HeadingBetween(Vector3 from, Vector3 to)
+        {
+            float heading = (float)(Math.Atan2(-(to.X - from.X), to.Y - from.Y) * 180.0 / Math.PI);
+            return heading < 0f ? heading + 360f : heading;
+        }
+    }
+
+    /// <summary>
     /// A queue of steps the scene director runs beside the dialogue. Steps start
     /// when the previous one completes or times out; the scene camera follows the
     /// current step's subject. <see cref="Complete"/> finishes every remaining step
@@ -294,6 +355,16 @@ namespace Bloodlines.Core
 
         /// <summary>Set by <see cref="Cancel"/>: the blocking stopped without reaching its end state.</summary>
         public bool Canceled { get; private set; }
+
+        /// <summary>
+        /// How many steps must finish before the first line plays. Zero (the default)
+        /// starts the dialogue with the scene; one lets an arrival land before anyone
+        /// speaks. A skip completes the steps, so the lines follow at once.
+        /// </summary>
+        public int DialogueAfterStep { get; set; }
+
+        /// <summary>True while the dialogue is still waiting on <see cref="DialogueAfterStep"/>.</summary>
+        public bool HoldsDialogue => _index < DialogueAfterStep;
 
         public SceneBlocking Then(SceneStep step)
         {

@@ -80,8 +80,11 @@ namespace Bloodlines.Core
                         Function.Call(Hash.PIN_INTERIOR_IN_MEMORY, _interior);
                         Function.Call(Hash.REFRESH_INTERIOR, _interior);
                     }
-                    if (!Function.Call<bool>(Hash.IS_INTERIOR_READY, _interior)) { Waiting("interior readiness"); return; }
                 }
+                // The room streams around the player, not around a focus point on the
+                // street: waiting for readiness from outside never ended. The player is
+                // frozen, invincible and behind a black screen, so standing inside an
+                // interior that is still loading costs nothing.
                 if (!_moved)
                 {
                     _moved = true; _ped.Position = _target;
@@ -92,6 +95,9 @@ namespace Bloodlines.Core
                 if (_entering)
                 {
                     int entityInterior = Function.Call<int>(Hash.GET_INTERIOR_FROM_ENTITY, _ped);
+                    // Ready by the interior's own report, or by the player already being
+                    // in that room with its collision loaded; either is a loaded room.
+                    if (!Function.Call<bool>(Hash.IS_INTERIOR_READY, _interior) && entityInterior != _interior) { Waiting("interior readiness"); return; }
                     // Frozen entities can temporarily retain no room association.
                     // Accept the ready, collision-loaded room at the actual target
                     // coordinates; never accept a mismatched nonzero room.

@@ -22,8 +22,28 @@ namespace Bloodlines.Missions.Objectives
         private readonly int _duration;
         private int _started = -1;
         private readonly bool _stopVehicle;
-        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false) : base(action)
-        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; }
+        private readonly string _animation;
+        private bool _animating;
+        /// <summary>Bent over, both hands inside something at waist height: a car window, a bin, a crate.</summary>
+        public const string ReachInside = "amb@prop_human_bum_bin@idle_a|idle_a";
+        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null) : base(action)
+        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; }
+        private void StopAnimation(Ped ped)
+        {
+            if (!_animating) return;
+            _animating = false;
+            if (ped != null && ped.Exists()) ped.Task.ClearAll();
+        }
+        private void StartAnimation(Ped ped, Vector3 point)
+        {
+            if (string.IsNullOrEmpty(_animation) || ped == null || !ped.Exists()) return;
+            var parts = _animation.Split('|');
+            if (parts.Length != 2) return;
+            ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, point);
+            ped.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
+            _animating = true;
+        }
+        public override void Exit(MissionContext c) { StopAnimation(Game.Player.Character); base.Exit(c); }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
         public override void Enter(MissionContext c) { base.Enter(c); _started = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right."; }
         public override void Update(MissionContext c)
@@ -34,20 +54,21 @@ namespace Bloodlines.Missions.Objectives
             var point = _position(); var ped = Game.Player.Character;
             ObjectiveMarkers.Navigation(point, _vehicle == null ? RequiredCharacter : null, _vehicle?.Invoke());
             GameUtils.DrawObjectiveMarker(point, Color.Yellow, Math.Max(1f, _radius * .4f));
-            if (!IsOwnerActive(c)) { _started = -1; Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
+            if (!IsOwnerActive(c)) { _started = -1; StopAnimation(ped); Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
             bool seated = _vehicle != null && ped != null && ped.IsInVehicle(_vehicle());
             bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && ped.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
-            if (!near) { _started = -1; Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : " — take the marked vehicle to the yellow marker."); return; }
+            if (!near) { _started = -1; StopAnimation(ped); Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : " — take the marked vehicle to the yellow marker."); return; }
             if (_stopVehicle && requiredVehicle != null && requiredVehicle.Speed > 1f) { _started = -1; Label = _action + " — stop the vehicle to begin unloading."; return; }
             if (_started < 0)
             {
                 Label = _action + " — press E / D-pad Right to start.";
                 if (!Game.IsControlJustPressed(GTA.Control.Context)) return;
                 _started = Game.GameTime;
+                if (_vehicle == null) StartAnimation(ped, point);
             }
             int remaining = Math.Max(0, (_duration - (Game.GameTime - _started) + 999) / 1000);
             Label = _action + " — stay in the marker: " + remaining + "s.";
-            if (remaining == 0) Complete();
+            if (remaining == 0) { StopAnimation(ped); Complete(); }
         }
     }
 
