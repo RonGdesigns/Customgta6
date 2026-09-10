@@ -155,7 +155,6 @@ namespace Bloodlines
             if (_handoff.IsWaiting) Step("stop ability during handoff", _abilities.Stop);
                 return;
             }
-            Step("prologue", _prologue.Update);
             _crew.CompanionAI.MissionActive = _missions.IsRunning;
             Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
             Step("crew", _crew.Update);
@@ -169,6 +168,10 @@ namespace Bloodlines
             Step("homes", () => _homes.Update(!_missions.IsRunning && !_prologue.IsActive && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
             ObjectiveMarkers.ActiveSlot = _crew.ActiveSlot;
             ObjectiveMarkers.BeginFrame(_missions.IsRunning || _prologue.IsActive);
+            // Every producer of a navigation route runs between BeginFrame and
+            // EndFrame; the prologue's drive-home route is a producer like any
+            // mission objective, so it lives here and nowhere earlier in the tick.
+            Step("prologue", _prologue.Update);
             Step("missions", _missions.Update);
             ObjectiveMarkers.EndFrame();
             if (_cutscenes.IsActive) { _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
@@ -353,8 +356,10 @@ namespace Bloodlines
             {
                 case Keys.PageUp: _missions.WarpStage(1); break;
                 case Keys.PageDown: _missions.WarpStage(-1); break;
-                case Keys.Insert: _missions.CommitCheckpoint(); break;
-                case Keys.Delete: _missions.RestoreCheckpoint(); break;
+                // Not Insert/Delete: Insert is ScriptHookVDotNet's reload-all-scripts
+                // key, which tears the mod down mid-mission.
+                case Keys.OemOpenBrackets: _missions.CommitCheckpoint(); break;
+                case Keys.OemCloseBrackets: _missions.RestoreCheckpoint(); break;
                 case Keys.End: _survey.Skip(); break;
                 case Keys.Home: _survey.Previous(); break;
             }
@@ -382,6 +387,14 @@ namespace Bloodlines
                 // Never M01 by default: the end of the scripted content is a state of
                 // its own and the player is told which one they are in.
                 GameUtils.Notify((_state.Progress(_catalog) == CampaignProgress.ImplementedContentComplete ? "~g~" : "~y~") + _state.DescribeProgress(_catalog));
+                return;
+            }
+            // Eligibility first, with no side effects: a refused start must not cost
+            // the player a deployed crew, their position, the weather or a wanted
+            // level. The manager repeats the check when it actually starts.
+            if (!_missions.CanStart(next, out string refusal))
+            {
+                GameUtils.Notify("~y~" + refusal);
                 return;
             }
             if (requested == null && _missions.RetryAvailable) GameUtils.Notify("~y~Retrying " + next.Id + "~s~ from the beginning. Walk to another marker to choose a different job.");
@@ -419,12 +432,24 @@ namespace Bloodlines
             var dock = _locations.Position("M01.RegroupPoint");
             GameUtils.FadeOut(900);
             Script.Wait(950);
-            // Out of the car first, deterministically, then across the city. A normal
-            // leave-vehicle task followed by a teleport would move a ped still seated.
-            PrologueSequence.PlaceForColdOpen(player, dock);
-            GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
-            StartMission(m01);
-            GameUtils.FadeIn(1200);
+            try
+            {
+                // Out of the car first, deterministically, then across the city. If
+                // either half cannot be done, nothing is moved: the arrival is already
+                // saved, Ron keeps his state, and M01 waits for the mission key.
+                var placement = PrologueSequence.PlaceForColdOpen(player, dock);
+                if (placement != PrologueSequence.Placement.Placed)
+                {
+                    Logger.Warn("Prologue hand-off did not place Ron at the dock (" + placement + "); M01 waits for the mission key.");
+                    GameUtils.Notify(placement == PrologueSequence.Placement.StillSeated
+                        ? "~y~Get out of the vehicle, then press " + _config.MissionStartKey + " to start the dockyard job."
+                        : "~y~Terminal Island did not load. Press " + _config.MissionStartKey + " near its marker to start the dockyard job.");
+                    return;
+                }
+                GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
+                StartMission(m01);
+            }
+            finally { GameUtils.FadeIn(1200); }
         }
 
         private void ToggleDeployment()

@@ -201,8 +201,8 @@ classes still derive from GTA.Script; the directors and marker services do not.
 Switches within 80m avoid the aerial camera. Distant switches use a bounded collision
 check and short fade; missionTransition preserves an already-owned mission fade.
 Occupied crew transport must survive mission cleanup. M11 owns turbine installation;
-M23 owns the permanent bunker unlock. Keep optional solo consequences out of mandatory
-main-scene prerequisites.
+M23 owns the permanent bunker unlock. Solo outcomes never gate a main mission's *scenes*;
+progression gates live only in CampaignState.StoryGates (M19, M44, M63, M68).
 
 Run the existing regression suite plus `python tools/run_story_tests.py`.
 See `docs/STORY-AUDIT.md` for coverage, limitations and the live playtest sequence.

@@ -297,7 +297,7 @@ Survey references: M18.ChannelMark, M18.HaulerMark, M18.SaltHangar.
 
 ## M19 — THE PORT HEIST: UNDERWATER BREACH
 
-Prerequisite: M18. Retry: full mission restart.
+Prerequisite: M18. Story gate: SM01, SM02, SM03 must be complete first (QA may bypass). Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
@@ -438,8 +438,8 @@ Prerequisite: M27. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Gohan | **Identify the relay** — ReachZoneObjective: Gohan: reach the yellow relay-yard entrance. Ice covers the opposite approach. |
-| 2 | Ice | **Clear the transformer yard** — KillTargetsObjective: Ice: clear the four red-marked relay guards before Gohan enters.<br>TechnicalChoiceObjective: Gohan: choose which relay system to cut first |
-| 3 | Gohan | **Read the cabinet** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | Ice | **Clear the transformer yard** — KillTargetsObjective: Ice: clear the four red-marked relay guards before Gohan enters. |
+| 3 | Gohan | **Read the cabinet** — TechnicalChoiceObjective: Gohan: choose which relay system to cut first |
 | 4 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the surge unit at the relay service cabinet |
 | 5 | Ice | **Cover the splice** — AssignedWorkObjective: Gohan continues the splice. Ice: defeat the responding squads.<br>SurviveWavesObjective: Ice: clear both response squads marked red. |
 | 6 | Guess | **Extraction** — EnterVehicleObjective: Guess: take the Granger driver seat. Wait for both brothers to board. |

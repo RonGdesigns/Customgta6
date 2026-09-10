@@ -156,7 +156,7 @@ Bloodlines uses a lot of keys, and so do trainers. These are the likely clashes:
 | `NumPad 1/2/3` | switch character | **Simple Trainer** navigates on the numpad |
 | `Caps Lock` | special ability | some ability and sprint mods |
 | `F11` | survey capture | a few map/teleport mods |
-| `Insert` / `Delete` | checkpoint commit / restore | Enhanced Native Trainer variants |
+| `[` / `]` | checkpoint commit / restore (Insert would reload every script through ScriptHookVDotNet) | — |
 
 ### No numpad
 
@@ -238,7 +238,7 @@ rewinds a player who didn't ask for a QA build:
 |---|---|
 | `F8` | open the developer menu — missions, stages, crew, world, dialogue, save state |
 | `Page Up` / `Page Down` | warp the running mission forward / back one stage |
-| `Insert` | commit a checkpoint |
+| `[` | commit a checkpoint |
 | `Delete` | restore only supported mission checkpoints; current missions require a full retry |
 | `F11` | capture coordinates to `Bloodlines.Captures.ini` |
 

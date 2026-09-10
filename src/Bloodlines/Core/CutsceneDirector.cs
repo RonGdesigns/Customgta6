@@ -10,9 +10,22 @@ using GTA.Native;
 
 namespace Bloodlines.Core
 {
+    /// <summary>How the last scene ended. Only Completed and Skipped mean its blocking reached the end state.</summary>
+    public enum SceneOutcome
+    {
+        None,
+        Completed,
+        Skipped,
+        Canceled,
+        Failed
+    }
+
     /// <summary>Small, skippable in-engine scenes. No mission timers run during a briefing.</summary>
     public sealed class CutsceneDirector
     {
+        /// <summary>Outcome of the most recently ended scene; callers that must not treat a cancellation as success read this.</summary>
+        public SceneOutcome LastOutcome { get; private set; } = SceneOutcome.None;
+        private bool _naturalEnd;
         private sealed class HeldEntity
         {
             public Entity Entity;
@@ -254,7 +267,7 @@ namespace Bloodlines.Core
         {
             // Lines finished but someone is still walking to a car: hold the scene
             // on the blocking, then end. Skip still completes it instantly.
-            if (_index >= _lines.Count) { if (_blocking != null && !_blocking.IsFinished) return; Stop(); return; }
+            if (_index >= _lines.Count) { if (_blocking != null && !_blocking.IsFinished) return; _naturalEnd = true; Stop(); return; }
             var cue = _lines[_index++];
             Ped actor = null;
             if (Enum.TryParse(cue.Speaker, true, out CrewSlot slot)) _actors.TryGetValue(slot, out actor);
@@ -351,7 +364,11 @@ namespace Bloodlines.Core
         {
             if (!IsActive) return;
             bool skipping = _skipping;
+            bool natural = _naturalEnd;
             _skipping = false;
+            _naturalEnd = false;
+            var blockingForOutcome = _blocking;
+            LastOutcome = skipping ? SceneOutcome.Skipped : natural ? SceneOutcome.Completed : SceneOutcome.Canceled;
             Logger.Info(skipping ? "Scene skipped; finishing its blocking and restoring player camera and controls." : "Scene ended; restoring player camera and controls.");
             _lines = null;
             _dockIntro = false;
@@ -371,6 +388,9 @@ namespace Bloodlines.Core
                     if (skipping && player != null && player.Exists() && !player.IsDead) blocking.Complete();
                     else if (!blocking.IsFinished) blocking.Cancel();
                 });
+            // A blocking that could not reach its end state is a failure whatever
+            // the player pressed; a natural end with a failed step is one too.
+            if (blockingForOutcome != null && !blockingForOutcome.Succeeded && LastOutcome != SceneOutcome.Canceled) LastOutcome = SceneOutcome.Failed;
             Release("dialogue", _dialogue.Clear);
             Release("gameplay camera", () => World.RenderingCamera = null);
             Release("previous scripted camera", () =>

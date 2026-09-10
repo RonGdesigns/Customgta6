@@ -111,10 +111,17 @@ namespace Bloodlines.Missions.Objectives
 
         private void Commit(MissionContext context, TechnicalOption option)
         {
-            Chosen = option;
             Logger.Info("Technical choice: " + _action + " -> " + option.Title);
             try { option.Apply?.Invoke(context); }
-            catch (Exception ex) { Logger.Error("Technical choice consequence failed: " + option.Title, ex); }
+            catch (Exception ex)
+            {
+                // A choice whose consequence did not apply is not a choice that was
+                // made. The mission fails loudly rather than continuing on a promise.
+                Logger.Error("Technical choice consequence failed: " + option.Title, ex);
+                Fail("The panel could not apply \"" + option.Title + "\". Restart the mission.");
+                return;
+            }
+            Chosen = option;
             GameUtils.Subtitle("~g~" + option.Title + "~s~ — " + option.Consequence, 5000);
             Complete();
         }

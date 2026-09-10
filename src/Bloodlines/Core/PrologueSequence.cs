@@ -43,6 +43,11 @@ namespace Bloodlines.Core
         private Vector3 _homePoint;
         private int _lastHint;
         private bool _carWarned;
+        private bool _sceneStarted, _finished;
+        private int _homecomingFailures;
+
+        /// <summary>Result of <see cref="PlaceForColdOpen"/>. Only Placed means the player is at the dock.</summary>
+        public enum Placement { Placed, StillSeated, NoGround }
 
         public PrologueSequence(CrewRoster crew, CutsceneDirector cutscenes, LocationBook locations, CampaignState state, Func<Vector3?> home)
         {
@@ -91,6 +96,8 @@ namespace Bloodlines.Core
             }
             _homePoint = home.Value;
             _carWarned = false;
+            _finished = false;
+            _homecomingFailures = 0;
             GameUtils.SetClock(23, 10);
             GameUtils.SetWeather("Clear");
 
@@ -106,7 +113,8 @@ namespace Bloodlines.Core
                 .Then(new EnterVehicleStep(guess, _car, VehicleSeat.Driver));
 
             Current = Phase.Arrival;
-            if (!_cutscenes.Play("M01", "prologue", "Los Santos", null, null, blocking))
+            _sceneStarted = _cutscenes.Play("M01", "prologue", "Los Santos", null, null, blocking);
+            if (!_sceneStarted)
             {
                 Logger.Warn("Prologue: arrival scene unavailable; placing Ron in the car directly.");
                 blocking.Complete();
@@ -124,6 +132,12 @@ namespace Bloodlines.Core
             switch (Current)
             {
                 case Phase.Arrival:
+                    // However the scene ended, the drive is self-healing: a Ron who is
+                    // not in the car is told to get back in it. Only the log records
+                    // that the arrival did not play out.
+                    if (_sceneStarted && _cutscenes.LastOutcome != SceneOutcome.Completed && _cutscenes.LastOutcome != SceneOutcome.Skipped)
+                        Logger.Warn("Prologue: arrival scene ended by " + _cutscenes.LastOutcome + "; the drive continues from where Ron stands.");
+                    _sceneStarted = false;
                     Current = Phase.Drive;
                     GameUtils.Notify("~o~Drive home.~s~ The apartment is marked on the map.");
                     break;
@@ -133,6 +147,19 @@ namespace Bloodlines.Core
                     break;
 
                 case Phase.Homecoming:
+                    // A scene that was canceled or failed is not a homecoming. Go back
+                    // to the drive; arriving at the door again retries, and the second
+                    // attempt places Ron directly rather than trusting the scene.
+                    if (_sceneStarted && _cutscenes.LastOutcome != SceneOutcome.Completed && _cutscenes.LastOutcome != SceneOutcome.Skipped)
+                    {
+                        _homecomingFailures++;
+                        _sceneStarted = false;
+                        Logger.Warn("Prologue: homecoming scene ended by " + _cutscenes.LastOutcome + "; the drive resumes at the door (attempt " + _homecomingFailures + ").");
+                        Current = Phase.Drive;
+                        _lastHint = 0;
+                        break;
+                    }
+                    _sceneStarted = false;
                     Finish();
                     break;
             }
@@ -164,17 +191,31 @@ namespace Bloodlines.Core
             var blocking = new SceneBlocking();
             if (ride != null && ride.Exists()) blocking.Then(new ExitVehicleStep(player));
             blocking.Then(new WalkToStep(player, _homePoint, 1.4f)).Then(new UsePhoneStep(player, 3200));
-            Current = Phase.Homecoming;
-            if (!_cutscenes.Play("M01", "arrival", "Home", null, null, blocking))
+            // After a canceled or failed homecoming the scene is not trusted again:
+            // the end state is placed directly, and if even that cannot unseat Ron
+            // the drive keeps asking him to get out at the door.
+            bool direct = _homecomingFailures > 0;
+            _sceneStarted = !direct && _cutscenes.Play("M01", "arrival", "Home", null, null, blocking);
+            if (!_sceneStarted)
             {
-                Logger.Warn("Prologue: homecoming scene unavailable; finishing its blocking directly.");
+                if (!direct) Logger.Warn("Prologue: homecoming scene unavailable; finishing its blocking directly.");
                 blocking.Complete();
+                if (!blocking.Succeeded)
+                {
+                    Logger.Warn("Prologue: Ron could not be placed at the door; the drive waits for him to get out.");
+                    GameUtils.Subtitle("~y~Get out at the apartment door.", 3500);
+                    _lastHint = Game.GameTime;
+                    return;
+                }
             }
+            Current = Phase.Homecoming;
         }
 
         /// <summary>Marks the arrival played and hands the campaign to M01's cold open.</summary>
         private void Finish()
         {
+            if (_finished) return;
+            _finished = true;
             Current = Phase.Finished;
             _state.PrologueComplete = true;
             _state.Save();
@@ -210,30 +251,33 @@ namespace Bloodlines.Core
 
         /// <summary>
         /// Put the player at the dock for M01's cold open: out of any vehicle first,
-        /// deterministically, then repositioned with collision requested. If the
-        /// engine will not unseat the ped, the vehicle goes to the dock with the ped
-        /// still in it — a known state, and one M01's own deployment replaces — and
-        /// the return is false so the caller can log it.
+        /// deterministically, then repositioned with collision confirmed. Nothing is
+        /// moved unless both halves succeed: a player the engine will not unseat
+        /// stays exactly where they are, and a dock that never streams collision
+        /// puts them back where they started. The caller decides what to say.
         /// </summary>
-        public static bool PlaceForColdOpen(Ped player, Vector3 dock)
+        public static Placement PlaceForColdOpen(Ped player, Vector3 dock)
         {
-            if (player == null || !player.Exists()) return false;
-            bool unseated = ExitVehicleStep.ForceOut(player);
-            var ride = unseated ? null : player.CurrentVehicle;
-            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
-            if (ride != null && ride.Exists())
+            if (player == null || !player.Exists()) return Placement.NoGround;
+            if (!ExitVehicleStep.ForceOut(player))
             {
-                Logger.Warn("Prologue: the player could not be unseated before the cold open; moving the vehicle to the dock with them.");
-                ride.Position = dock;
+                Logger.Warn("Prologue: the player could not be unseated before the cold open; nothing was moved.");
+                return Placement.StillSeated;
             }
+            var origin = player.Position;
+            float heading = player.Heading;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
             player.Position = dock;
             for (int attempt = 0; attempt < 20; attempt++)
             {
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
-                if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player)) break;
+                if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player)) return Placement.Placed;
                 Script.Wait(100);
             }
-            return unseated;
+            Logger.Warn("Prologue: no collision streamed in at the dock; the player was returned to " + origin + ".");
+            player.Position = origin;
+            player.Heading = heading;
+            return Placement.NoGround;
         }
 
         private void ReleaseCar()

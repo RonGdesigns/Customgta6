@@ -318,9 +318,15 @@ namespace Bloodlines.Core
             {
                 Logger.Warn("Scene step timed out; finishing it instantly: " + step.GetType().Name);
                 step.Finish();
+                // A watched step that could not reach its end state stops the
+                // blocking exactly as a skip would; nothing later may assume it.
+                if (step.Failed) { Cancel(); return; }
             }
             _index++;
         }
+
+        /// <summary>Finished, not canceled, and every step reached its end state.</summary>
+        public bool Succeeded => IsFinished && !Canceled && !_steps.Any(step => step.Failed);
 
         /// <summary>Finish everything that has not happened yet, in order, so a skip lands on the same state.</summary>
         public void Complete()
