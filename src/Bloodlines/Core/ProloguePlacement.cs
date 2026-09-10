@@ -21,7 +21,12 @@ namespace Bloodlines.Core
             var resolved = new Dictionary<MissionLocation, Vector3>();
             try
             {
-                foreach (string key in new[] { "M01.IceApproach", "M01.GuessApproach", "M01.GohanApproach", "M01.CraneNest", "M01.ServiceTerminal", "M01.PrototypeCar", "M01.CapoSpawn", "M01.RegroupPoint", "M01.ExitPoint" })
+                // The exit is not here: it is a drive-to marker at the far gate, reached
+                // in a car in the last stage, and nothing stands on it. Requiring its
+                // navmesh at the cold open refused M01 after the prologue hand-off,
+                // when the player had just been placed at the dock and nothing 200 m
+                // up the road had streamed yet.
+                foreach (string key in new[] { "M01.IceApproach", "M01.GuessApproach", "M01.GohanApproach", "M01.CraneNest", "M01.ServiceTerminal", "M01.PrototypeCar", "M01.CapoSpawn", "M01.RegroupPoint" })
                 {
                     var location = book.Get(key);
                     if (location == null || !TryLand(location.Position, out var point))

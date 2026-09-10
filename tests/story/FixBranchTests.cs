@@ -24,7 +24,7 @@ public static partial class StoryTests
   var book=LocationBook.Load(dataDir,ini);
   Check(book.Get("M01.CraneNest").Position==new Vector3(976.6f,-3239.5f,6f)&&book.Get("M01.CraneNest").Status==LocationStatus.Estimate,"A template-identical lookout override is ignored; the repository position stands");
   Check(Math.Abs(book.Get("M01.CraneNest").Heading-35f)<0.01f,"The template's lookout heading is ignored with its position");
-  Check(book.Get("M01.ExitPoint").Position==new Vector3(720.5f,-2400.1f,15.2f),"The template's old exit point does not override the bible exit");
+  Check(book.Get("M01.ExitPoint").Position==new Vector3(1180f,-2990f,5.9f)&&book.Get("M01.ExitPoint").Status==LocationStatus.Estimate&&book.IgnoredStaleOverrides>0,"The template's exit override is still counted as stale; the repository row now places the exit at the gate itself");
   Check(book.Get("M01.IceApproach").Position==new Vector3(900f,-3200f,6f)&&book.Get("M01.IceApproach").Status==LocationStatus.Surveyed&&Math.Abs(book.Get("M01.IceApproach").Heading-77f)<0.01f,"A value the player actually captured still overrides, with its heading");
   Check(book.IgnoredStaleOverrides==2,"Both stale keys were counted and logged (got "+book.IgnoredStaleOverrides+")");
   var template=Source("config/Bloodlines.Locations.ini").Split('\n').Select(l=>l.Trim()).Where(l=>l.Length>0&&!l.StartsWith(";")&&!l.StartsWith("["));
