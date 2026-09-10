@@ -172,19 +172,22 @@ namespace Bloodlines.Core
         });
         public int ModCount(ShopSite site,VehicleModType type)
         {var car=Car(site);if(car==null)return 0;car.Mods.InstallModKit();return car.Mods[type].Count;}
+        /// <summary>Set by the host: work done to the crew's Granger is saved with the campaign.</summary>
+        public CrewVan Vans { get; set; }
+        private void Remember(Vehicle car) { if (Vans != null && Vans.IsVan(car)) Vans.Capture(car); }
         public bool Fit(ShopSite site,VehicleModType type,int index) => Purchase(site,Price(site,1000),()=> {
             var car=Car(site);if(car==null)return false;car.Mods.InstallModKit();var mod=car.Mods[type];
-            if(index < -1||index>=mod.Count||mod.Index==index)return false;mod.Index=index;return mod.Index==index;
+            if(index < -1||index>=mod.Count||mod.Index==index)return false;mod.Index=index;bool ok=mod.Index==index;if(ok)Remember(car);return ok;
         });
         public bool Paint(ShopSite site,VehicleColor color) => Purchase(site,Price(site,400),()=> {
             var car=Car(site);if(car==null)return false;
             if(car.Mods.PrimaryColor==color&&car.Mods.SecondaryColor==color)return false;
             car.Mods.PrimaryColor=color;car.Mods.SecondaryColor=color;
-            return car.Mods.PrimaryColor==color&&car.Mods.SecondaryColor==color;
+            bool ok=car.Mods.PrimaryColor==color&&car.Mods.SecondaryColor==color;if(ok)Remember(car);return ok;
         });
         public bool ReinforceTires(ShopSite site) => Purchase(site,Price(site,2000),()=> {
             var car=Car(site);if(car==null||site.Kind!=ShopKind.Guess||!car.CanTiresBurst||!_state.IsComplete("M11"))return false;
-            car.CanTiresBurst=false;return !car.CanTiresBurst;
+            car.CanTiresBurst=false;bool ok=!car.CanTiresBurst;if(ok)Remember(car);return ok;
         });
         private sealed class Door {public Prop Prop;public int System;public int State;public float Ratio,Heading;public bool Locked;}
         private static readonly HashSet<int> DoorModels=new HashSet<int>(new[]{"v_ilev_gc_door01","v_ilev_gc_door03","v_ilev_gc_door04","v_ilev_gc_door05",

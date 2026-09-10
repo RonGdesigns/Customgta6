@@ -26,6 +26,8 @@ namespace Bloodlines.Missions
 
         /// <summary>Chapter-to-chapter state for continuous operations (Port Heist first).</summary>
         public HandoffLedger Handoffs { get; } = new HandoffLedger();
+        /// <summary>The crew's own Granger; null in hosts without one (missions then spawn a stock Granger).</summary>
+        public CrewVan Vans { get; set; }
         public ModConfig Config { get; }
         public LocationBook Locations { get; }
         public CampaignData Data { get; }

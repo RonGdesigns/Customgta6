@@ -166,12 +166,17 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnGranger()
         {
-            var model = new Model("granger");
-            if (!GameUtils.RequestModel(model)) return;
-
-            _granger = Track(World.CreateVehicle(model, Ctx.Locations.Position("M06.GrangerSpawn"),
-                Ctx.Locations.Heading("M06.GrangerSpawn")));
-            model.MarkAsNoLongerNeeded();
+            // The crew's own Granger, customized as they left it; the M11 package goes on top.
+            var spot = Ctx.Locations.Position("M06.GrangerSpawn"); float heading = Ctx.Locations.Heading("M06.GrangerSpawn");
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, heading) : null;
+            if (granger == null)
+            {
+                var model = new Model("granger");
+                if (!GameUtils.RequestModel(model)) return;
+                granger = World.CreateVehicle(model, spot, heading);
+                model.MarkAsNoLongerNeeded();
+            }
+            _granger = Track(granger);
             if (_granger == null || !_granger.Exists()) return;
 
             _granger.IsPersistent = true;
