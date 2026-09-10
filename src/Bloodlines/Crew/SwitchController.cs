@@ -188,6 +188,7 @@ namespace Bloodlines.Crew
                 CrewDurability.RestoreAfterSwitch(currentPed, departingHealth, departingArmor);
                 CrewDurability.RestoreAfterSwitch(targetPed, health, armor);
                 if (Game.Player.Character.Handle != targetPed.Handle) return false;
+                GameUtils.AssertPlayerControl("the switch to " + protagonist.DisplayName);
 
                 if (personalHeat) _crew.CompanionAI.Life.Wanted.Capture(departingSlot, departingWanted);
                 _crew.SetActive(target);
@@ -211,6 +212,7 @@ namespace Bloodlines.Crew
                     {
                         // Roll back the player instead of leaving a failed aerial handover in free fall.
                         Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, currentPed, true, true);
+                        GameUtils.AssertPlayerControl("a rolled-back switch");
                         CrewDurability.RestoreAfterSwitch(currentPed, departingHealth, departingArmor);
                         CrewDurability.RestoreAfterSwitch(targetPed, health, armor);
                         _crew.SetActive(departingSlot); Game.Player.WantedLevel = departingWanted;

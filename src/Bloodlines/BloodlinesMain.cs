@@ -469,6 +469,9 @@ namespace Bloodlines
                     return;
                 }
                 GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
+                // The briefing captures and restores whatever control state it finds;
+                // hand it "on", not whatever the fade and the ped change left behind.
+                Game.Player.CanControlCharacter = true;
                 StartMission(m01);
                 ControlDiagnostics.Snapshot("prologue hand-off", _crew, _cutscenes, _handoff, _homes, "M01");
             }

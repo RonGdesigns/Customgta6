@@ -147,5 +147,19 @@ namespace Bloodlines.Core
         {
             return Function.Call<bool>(Hash.IS_SCREEN_FADED_OUT);
         }
+
+        /// <summary>
+        /// Player control on, stated. Right after a player-ped change the engine can
+        /// report control as off; a scene that starts in that same tick captures
+        /// "off" and faithfully restores it, and the player stands in a mission they
+        /// cannot move in. Every ped change asserts control; callers that hold it off
+        /// on purpose (death recovery, the apartment fade) do not go through here.
+        /// </summary>
+        public static void AssertPlayerControl(string where)
+        {
+            if (Game.Player.CanControlCharacter) return;
+            Game.Player.CanControlCharacter = true;
+            Logger.Info("Player control was off after " + where + "; restored.");
+        }
     }
 }

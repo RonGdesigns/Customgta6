@@ -29,7 +29,7 @@ namespace Bloodlines.Missions
         ImplementedContentComplete
     }
 
-    public enum EvidenceState { None, Alleged, CopyHeld, Proven, Distributed }
+    public enum EvidenceState { None, Alleged, CopyHeld, Proven, Distributed, Destroyed }
 
     public sealed class CampaignState
     {

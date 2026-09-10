@@ -385,8 +385,9 @@ namespace Bloodlines.Missions.Campaign
             bool launchReady = _launch != null && _launch.Exists() && _mateo != null && _mateo.Exists();
             bool aboard = launchReady && _mateo.IsInVehicle(_launch);
 
-            if (!_mateoFleeing)
-                GameUtils.Subtitle("~y~Hostiles: " + _guards.Count + "   ~s~" + (aboard ? "Mateo is in the launch." : "Mateo is running for the launch."), 500);
+            // The count only. Where Mateo is belongs to the objective line and his
+            // blip, not to a HUD line that reads as the hostiles announcing him.
+            if (!_mateoFleeing) GameUtils.Subtitle("~y~Hostiles: " + _guards.Count, 500);
 
             // No clock: the yard has to be cleared. The escape then plays once Mateo is
             // at the boat, and a Mateo the navmesh has stranded is brought to it after

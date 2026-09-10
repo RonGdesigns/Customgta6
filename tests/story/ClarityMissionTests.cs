@@ -64,23 +64,33 @@ public static partial class StoryTests
   Check(c.Locations.Position("M04.Breaker").Z>0&&c.Locations.Position("M04.RampGuards").Z>0,"M04 no longer depends on the absent B3 interior");
   m4.Abort(); // The M04 flow is covered end to end by StoryToPlayTests.RunM04.
 
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity5.json"));var m5=new M05TidalLock();Check(m5.Begin(c),"M05 validates coast staging and creates both boats");
-  var mateo=World.Created.Last();var dinghy=World.Vehicles[1];Check(crew.PedFor(CrewSlot.Guess).IsInVehicle(dinghy)&&crew.PedFor(CrewSlot.Gohan).IsInVehicle(dinghy),"M05 gives Guess and Gohan actual boat transport while Ice holds shore overwatch");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity5.json"));var m5=new M05TidalLock();Check(m5.Begin(c)&&c.Cutscenes.IsActive,"M05 validates coast staging, creates both boats and opens on the cove");
+  var mateo=m5.Mateo;var dinghy=m5.Dinghy;Check(crew.PedFor(CrewSlot.Guess).IsInVehicle(dinghy)&&crew.PedFor(CrewSlot.Gohan).IsInVehicle(dinghy)&&mateo.IsInvincible,"M05 gives Guess and Gohan actual boat transport while Ice holds shore overwatch; Mateo cannot be killed");
+  c.Cutscenes.Skip();
   foreach(var enemy in World.Created.Where(p=>p!=mateo))enemy.IsDead=true;m5.Tick();Check(m5.CurrentStage==1,"Shore clearance opens Guess's explicit flare interaction");
   Interact(m5,c,CrewSlot.Guess,c.Locations.Position("M05.CoveAir"),1,true);Check(m5.CurrentStage==2&&GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS),"M05 launches an actual flare after the player interaction");
   dinghy.Position=c.Locations.Position("M05.GrottoMouth");Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=dinghy.Position;m5.Tick();Check(m5.CurrentStage==3&&mateo.Task.BoatTasks==1,"Gohan's boat approach starts Mateo's boat escape");
-  dinghy.Position=World.Vehicles[0].Position;Game.Player.Character.Position=dinghy.Position;m5.Tick();Game.GameTime+=5001;m5.Tick();Check(m5.CurrentStage==4&&mateo.IsAlive,"Sustained close pursuit captures Mateo without killing him");
-  Interact(m5,c,CrewSlot.Gohan,mateo.Position,3,true);Check(m5.CurrentStage==5&&m5.Status==MissionStatus.Running&&mateo.Exists(),"Mateo remains present while his revelation dialogue plays");
-  c.Dialogue.Clear();m5.Tick();Check(m5.Status==MissionStatus.Passed&&mateo.Exists()&&!mateo.IsInvincible,"M05 ends after the dialogue and releases the surviving witness");
+  var tropic=World.Vehicles.First(v=>v.Model.Name=="tropic");dinghy.Position=tropic.Position;Game.Player.Character.Position=dinghy.Position;m5.Tick();Game.GameTime+=5001;m5.Tick();
+  Check(m5.CurrentStage==4&&mateo.IsAlive&&m5.IceDown&&m5.Roles.For(CrewSlot.Ice).State==RoleState.Extracting&&c.Dialogue.HasPending,"Sustained close pursuit stops Mateo alive; Ice starts down to the shore and says so");
+  GTA.UI.Screen.Subtitle=null;Interact(m5,c,CrewSlot.Gohan,mateo.Position,2,true);
+  Check(m5.CurrentStage==5&&c.Cutscenes.IsActive&&m5.Status==MissionStatus.Running,"Taking him aboard plays the account as a scene from the bible's own stage-two lines");
+  c.Cutscenes.Update();Check(string.IsNullOrEmpty(GTA.UI.Screen.Subtitle),"Nobody speaks until Mateo is in the boat");
+  c.Cutscenes.Skip();Check(mateo.IsInVehicle(dinghy)&&c.Cutscenes.LastOutcome==SceneOutcome.Skipped,"Skipping the account leaves Mateo aboard the dinghy");
+  m5.Tick();Check(m5.Status==MissionStatus.Passed&&c.State.EvidenceOf("mateoAllegation")==EvidenceState.Alleged&&mateo.Exists()&&!mateo.IsInvincible&&mateo.IsInVehicle(dinghy),"M05 ends on an allegation recorded as one, with Mateo alive in the crew's boat: custody is seen");
   var capture=new CaptureBoatObjective(()=>mateo,()=>World.Vehicles[0],()=>dinghy);capture.Enter(c);mateo.IsDead=true;capture.Update(c);Check(capture.Status==ObjectiveStatus.Failed,"A dead witness cannot incorrectly satisfy the capture objective");
 
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c),"M06 validates and deploys its separate work stations");
-  Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2,"M06 power interaction and Ice's breach open the parallel burn and siege");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c)&&c.Cutscenes.IsActive,"M06 validates and deploys its separate work stations and opens on the three positions");
+  c.Cutscenes.Skip();var granger=m6.Granger;
+  Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2&&!m6.CurrentObjective.Contains("No ability"),"M06 power interaction and Ice's breach open the parallel burn and siege, with no ability wording");
   crew.PedFor(CrewSlot.Gohan).Position=c.Locations.Position("M06.ServerRacks");
   for(int i=0;i<45&&m6.CurrentStage==2;i++){foreach(var enemy in World.Created)enemy.IsDead=true;Game.GameTime+=1000;m6.Tick();}
-  Check(m6.CurrentStage==3,"M06 requires both the completed burn and all response waves before extraction");
-  Use(crew,CrewSlot.Guess);m6.Tick();Check(m6.CurrentStage==3,"Guess cannot leave the extraction stage without his teammates");
-  crew.PedFor(CrewSlot.Ice).SetIntoVehicle(World.Vehicles[0],VehicleSeat.RightFront);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(World.Vehicles[0],VehicleSeat.LeftRear);m6.Tick();Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed,"M06 completes with both teammates aboard and the police lost");
+  Check(m6.CurrentStage==3&&m6.PickupCalled&&crew.PedFor(CrewSlot.Guess).Task.Drives>=1,"M06 requires both the completed burn and all response waves; the rotors turned Ron's wait into a pickup and his own AI moved the truck");
+  Check(m6.FireBurning&&c.State.EvidenceOf("vespucciBackup")==EvidenceState.Destroyed,"The burn leaves a real fire at the racks and the record's destruction on the books");
+  Use(crew,CrewSlot.Guess);m6.Tick();Check(m6.CurrentStage==3&&m6.Roles.For(CrewSlot.Ice).State==RoleState.Extracting,"Guess has to bring the Granger to the alley mouth; Ice and Gohan are coming to it");
+  granger.Position=m6.Pickup;Game.Player.Character.Position=m6.Pickup;m6.Tick();Check(m6.CurrentStage==4,"At the alley mouth the boarding opens");
+  m6.Tick();Check(m6.CurrentStage==4,"Guess cannot leave without his teammates");
+  crew.PedFor(CrewSlot.Ice).SetIntoVehicle(granger,VehicleSeat.RightFront);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(granger,VehicleSeat.LeftRear);m6.Tick();Game.Player.WantedLevel=2;m6.Tick();Check(m6.CurrentStage==5&&m6.Status==MissionStatus.Running,"With everyone aboard the escape is on the crew: the police are not cleared");
+  Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed&&!m6.FireBurning,"M06 completes with both teammates aboard and the police lost, and the fire is put out with the mission");
 
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;Check(!new M04SeveredWire().Begin(c)&&World.Created.Count==0,"Unavailable walkable surfaces reject setup before spawning actors underground");World.FailNavigation=false;
   var interaction=new MissionInteraction("Terminal",()=>new Vector3(5,0,0),3);interaction.RequiredCharacter=CrewSlot.Gohan;interaction.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,0,0);Game.Accept=true;interaction.Update(c);Game.GameTime+=1500;Game.Player.Character.Position=Vector3.Zero;interaction.Update(c);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=5000;interaction.Update(c);Check(!interaction.IsFinished&&interaction.Label.Contains("press"),"Leaving an interaction resets its timer and requires a new button press");

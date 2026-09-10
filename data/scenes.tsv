@@ -54,10 +54,14 @@ M05_SCENE_INTRO_01_GOHAN	M05	intro	GOHAN	Briefing; intent before tactics	Mateo i
 M05_SCENE_INTRO_02_ICE	M05	intro	ICE	Briefing; intent before tactics	I cover the shore. Guess and Gohan take the dinghy: signal the cove, close on Mateo, bring him in breathing. I missed my shot when I heard your voice. Don't make me regret it.
 M05_SCENE_OUTRO_01_GUESS	M05	outro	GUESS	Reflective; allow the response to land	You said take the war to Blaine. Fine, later. Our faces are still sitting in a police evidence vault here.
 M05_SCENE_OUTRO_02_GOHAN	M05	outro	GOHAN	Reflective; allow the response to land	Mateo's accusation isn't proof yet. First the backup servers. Then we follow the money he was protecting.
+M05_SCENE_SHORE_01_GUESS	M05	shore	GUESS	From the cliff and the dinghy; the cove, the lamps, his boat	That's his boat at the cave mouth, lights on the water. Ice is above us on the cliff. Gohan, when the flare goes up, they'll look at it and not at us.
+M05_SCENE_SHORE_02_GOHAN	M05	shore	GOHAN	From the cliff and the dinghy; the cove, the lamps, his boat	Four on the lamps, one in the boat. He runs when he sees us and we run him down. Nobody shoots at the man we came to talk to.
 M06_SCENE_INTRO_01_GOHAN	M06	intro	GOHAN	Briefing; intent before tactics	The mobile upload was one copy. Vespucci has the backup. Burning it buys us time; it doesn't erase who saw us.
 M06_SCENE_INTRO_02_GUESS	M06	intro	GUESS	Briefing; intent before tactics	I wait in the Granger. Gohan cuts the feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
 M06_SCENE_OUTRO_01_ICE	M06	outro	ICE	Reflective; allow the response to land	You called the window and I took it. We made it because you were watching something I couldn't see.
 M06_SCENE_OUTRO_02_GOHAN	M06	outro	GOHAN	Reflective; allow the response to land	Now we need their traffic, not their cameras. The microwave dish should tell us what Aegis is moving.
+M06_SCENE_POSITIONS_01_GOHAN	M06	positions	GOHAN	The depot from three places; nobody has moved yet	I'm in the culvert under the feeder. Ice, the sally port is up the alley from you. Ron, keep the engine warm and your eyes on the roofline.
+M06_SCENE_POSITIONS_02_ICE	M06	positions	ICE	The depot from three places; nobody has moved yet	Say when the lights go. After that the alley is mine until you're done.
 M07_SCENE_INTRO_01_GOHAN	M07	intro	GOHAN	Briefing; intent before tactics	Mateo named Aegis. This tap lets us test his story against their own manifests. Don't destroy the dish.
 M07_SCENE_INTRO_02_ICE	M07	intro	ICE	Briefing; intent before tactics	I used to trust a uniform to tell me whose side I was on. Give me something I can verify.
 M07_SCENE_OUTRO_01_GUESS	M07	outro	GUESS	Reflective; allow the response to land	Two engines, bound for Paleto. Steal their speed and maybe we stop finishing every job with holes in the doors.

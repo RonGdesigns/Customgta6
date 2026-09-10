@@ -90,8 +90,8 @@ Prerequisite: M04. Retry: full mission restart.
 | 2 | Guess | **Light the cove** — MissionInteraction: Guess: launch the signal flare from the dinghy |
 | 3 | Gohan | **Breach the grotto** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 4 | Gohan | **Run him to the sandbar** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 5 | Gohan | **The revelation** — MissionInteraction: Gohan: question Mateo alive from the dinghy |
-| 6 | Gohan | **Mateo's account** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 5 | Gohan | **Take him aboard** — MissionInteraction: Gohan: bring the dinghy alongside and take Mateo aboard |
+| 6 | Gohan | **Mateo's account** — DialogueFinishedObjective: Hold the dinghy. Mateo is aboard. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -104,10 +104,11 @@ Prerequisite: M05. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Gohan | **Cut the power** — MissionInteraction: Gohan: cut the marked power feeder |
-| 2 | Ice | **Sally port** — ReachZoneObjective: Ice: walk into the yellow depot ENTRANCE marker. No ability or button is needed. |
+| 2 | Ice | **Sally port** — ReachZoneObjective: Ice: walk into the yellow depot entrance marker. |
 | 3 | Ice | **Burn the racks** — AssignedWorkObjective: Gohan is preparing the thermite. Ice: hold the alley while he works.<br>SurviveWavesObjective: Ice: defeat the RED-marked SWAT waves while Gohan finishes the burn. Stay on Ice. |
-| 4 | Guess | **Reverse extraction** — EnterVehicleObjective: Switch to Guess in the Granger and wait for Ice and Gohan to board. |
-| 5 | Guess | **Out of Vespucci** — LoseWantedObjective: Lose the police. |
+| 4 | Guess | **The pickup** — ReachZoneObjective: Guess: bring the Granger to the alley mouth for Ice and Gohan. |
+| 5 | Guess | **Everyone aboard** — EnterVehicleObjective: Guess: hold at the alley mouth until Ice and Gohan are in the Granger. |
+| 6 | Guess | **Out of Vespucci** — LoseWantedObjective: Lose the police. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

@@ -47,7 +47,7 @@ public static partial class StoryTests
   Check(!MissionSites.Ground(c.Locations,"M05.CliffPerch")&&GameUtils.Message.Contains("F11"),"No walkable ground still refuses the mission and tells the player to survey the key");World.FailNavigation=false;
 
   // ---- 4. M06: the second and third waves come in by helicopter; the first aircraft is on camera once.
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"round2-m6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c),"M06 sets up");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"round2-m6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c)&&c.Cutscenes.IsActive,"M06 sets up and opens on its positions");c.Cutscenes.Skip();
   var alley=c.Locations.Position("M06.AlleyHold");
   Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2,"The burn and the siege open together");
   crew.PedFor(CrewSlot.Gohan).Position=c.Locations.Position("M06.ServerRacks");

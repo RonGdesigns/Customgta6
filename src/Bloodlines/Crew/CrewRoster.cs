@@ -181,6 +181,7 @@ namespace Bloodlines.Crew
 
             StashStoryCharacter();
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, ped, true, true);
+            GameUtils.AssertPlayerControl("solo deployment");
             ProtectCrew(ped);
             CrewDurability.RestoreAfterSwitch(ped, CrewDurability.Health, StartingArmor);
 
@@ -236,7 +237,7 @@ namespace Bloodlines.Crew
             StashStoryCharacter();
 
             var lead = PedFor(startAs);
-            if (lead != null) { Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, lead, true, true); ProtectCrew(lead); CrewDurability.RestoreAfterSwitch(lead, CrewDurability.Health, StartingArmor); }
+            if (lead != null) { Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, lead, true, true); GameUtils.AssertPlayerControl("crew deployment"); ProtectCrew(lead); CrewDurability.RestoreAfterSwitch(lead, CrewDurability.Health, StartingArmor); }
 
             RefreshCompanionBlips();
             AssignCompanionAI();
@@ -629,6 +630,7 @@ namespace Bloodlines.Crew
             _storyPed.BlockPermanentEvents = false;
 
             Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, _storyPed, true, true);
+            GameUtils.AssertPlayerControl("the story character's return");
             _storyPed.Task.ClearAllImmediately();
             Logger.Info("Story character restored at " + handOverPoint + ".");
             _storyPed = null;

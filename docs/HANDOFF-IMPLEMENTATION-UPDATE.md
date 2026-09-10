@@ -235,6 +235,13 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 69. **The truck home.** Take the Benson as Ron with two stars: arriving at the foundry with stars is not delivery; lose them first. On delivery the truck locks (try the door) and the aftermath plays with Ron out of it.
 70. **What remains.** After the pass: the locked Benson at the foundry, the van outside the depot, the Primo at the junction.
 
+## Control after a ped change, and the witness slice (P3a: M05, M06)
+
+71. **You can move.** Fresh save through the prologue to M01: control is yours the moment the dockyard starts. In M01, finish Gohan's copy: after the recognition scene you can move as the brother you were handed. The log says "Player control was off after …; restored" if the guard fired.
+72. **The count.** In M01's firefight the HUD reads "Hostiles: N" and nothing about Mateo; his blip and the objective line say where he is.
+73. **M05, the cove.** Start M05: three shots (the cove from the perch, the dinghy with Ron and Gohan, Mateo's boat under the lamps) with two lines; skip once. Clear the lamps, flare, close on him. When he stops: Ice's line and Ice running down to the shore. Bring the dinghy alongside and press E: Mateo climbs into the dinghy and says it over Gohan's shoulder; skip once and he is still aboard. The mission ends with him alive in the boat.
+74. **M06, positions and the pickup.** Start M06: three shots on the three positions with two lines; skip once. Cut the feeder, walk Ice in, hold the alley. On the first rotors: Ron's radio line, and if you are Ice, watch the map: the Granger moves to the alley mouth on its own. When the burn ends a fire burns at the racks. Switch to Guess: bring the truck to the alley-mouth marker if it is not there; Ice and Gohan come to it; nothing clears the police for you.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -246,6 +253,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
+- P3 continues: M07–M08 (the dish and the engines), M09–M11 (the IFF, the truck, the shop) and the first-window solos SM01–SM03 are not started; see the plan's P3 table.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
