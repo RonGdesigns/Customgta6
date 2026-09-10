@@ -226,6 +226,15 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 63. **M02 at the curb.** Start M02: the prototype (locked) and the Granger at the curb, the crew on foot, three lines while they board. The clock starts after. The van moves off on its own and does not sit at lights; if it stalls, the log says the route was re-issued.
 64. **Custody and the canal.** After the rear doors: the case is in Ice's hand; it disappears when he boards ("Drives stowed"). Pick up a wanted level in the chase: the canal will not pass until it is gone; nothing clears it for you.
 
+## Story to play, third slice: M03 as designed (P2d)
+
+65. **The split.** Start M03 at the base: Ice and Gohan get into the crew van and pull away with two lines; skip once. The map then shows them outside the depot and you are in the Primo. Halfway to Davis, Ice's call.
+66. **The junction.** Stop in the zone: nothing happens while you sit in the car. Get out onto the marker: a six-second hold with no button; the dogs come for you as you arrive; five seconds into the hold the block comes out of the houses with a short moment on the first of them. Drive through the zone at speed once: nothing ejects you.
+67. **Ice's entry.** Switch to Ice: the guards are patrolling, not shooting. Fire a shot near the depot before the marker: the mission fails and says why. Reach the marker without firing: the yard wakes. As Ron, shoot at the junction with Ice's stage open: no failure.
+68. **Loading, seen.** Clear the yard, switch to Gohan, press E at the rear of the Benson: the doors open and he carries three crates from the pallet into the bed, two lines, doors close after. Skip once: the crates are in the bed anyway.
+69. **The truck home.** Take the Benson as Ron with two stars: arriving at the foundry with stars is not delivery; lose them first. On delivery the truck locks (try the door) and the aftermath plays with Ron out of it.
+70. **What remains.** After the pass: the locked Benson at the foundry, the van outside the depot, the Primo at the junction.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -237,7 +246,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
-- Story to play P2d (M03) is not started. M03 and M16 still clear the wanted level at their end markers; the endpoint helper exists, they do not use it yet. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
+- M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

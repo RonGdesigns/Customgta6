@@ -43,7 +43,7 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            // Vehicle.Speed is metres per second.
+            // Vehicle.Speed is meters per second.
             float mph = vehicle.Speed * 2.23694f;
             bool slow = mph < _floorMph;
 

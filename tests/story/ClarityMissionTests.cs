@@ -20,18 +20,45 @@ public static partial class StoryTests
  }
  static void ClarityMissionChecks()
  {
-  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity3.json"));var m3=new M03CypressFoundry();
-  Check(m3.Begin(c),"M03 setup requires its guards and weapons truck");
-  Check(crew.PedFor(CrewSlot.Guess).Position.DistanceTo(crew.PedFor(CrewSlot.Ice).Position)>500&&crew.PedFor(CrewSlot.Guess).IsInVehicle(),"M03 starts Guess with approach transport and stages the depot team separately");
-  Use(crew,CrewSlot.Guess);Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.Position=c.Locations.Position("M03.RailJunction");m3.Tick();Game.GameTime+=7000;m3.Tick();
-  Check(m3.CurrentStage==0&&m3.CurrentObjective.Contains("D-pad Right"),"M03 waits for explicit interaction and names the controller and keyboard buttons");
-  Interact(m3,c,CrewSlot.Guess,c.Locations.Position("M03.RailJunction"),6);Check(m3.CurrentStage==1,"M03 rail interaction advances after six seconds");
-  Use(crew,CrewSlot.Ice);m3.Tick();Check(m3.CurrentObjective.Contains("yellow ENTRY")&&m3.CurrentObjective.Contains("No ability"),"Switching to Ice explains the walking trigger and rules out an ability requirement");Game.Player.Character.Position=c.Locations.Position("M03.DepotGate");m3.Tick();Check(m3.CurrentStage==2,"M03 depot approach leads into the yard fight");
-  m3.Tick();Check(m3.CurrentObjective.Contains("RED")&&m3.CurrentObjective.Contains("Remaining: 8"),"M03 yard combat names the red targets and keeps the count in the objective HUD");foreach(var enemy in World.Created)enemy.IsDead=true;m3.Tick();Check(m3.CurrentStage==3,"M03 loading unlocks only after the yard is clear");
-  Interact(m3,c,CrewSlot.Gohan,c.Locations.Position("M03.CraneControls"),8);Check(m3.CurrentStage==4,"Gohan cargo-terminal interaction performs the eight-second load");
-  var hauler=World.Vehicles[0];Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==5,"Guess takes the required Benson before delivery");
-  var destination=c.Locations.Position("Base.CypressFlats");Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
-  hauler.Position=destination;Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Passed,"M03 complete production flow delivers the weapons truck");
+  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity3.json"));c.Vans=new CrewVan(c.State,c.Locations);var m3=new M03CypressFoundry();
+  Check(m3.Begin(c)&&c.Cutscenes.IsActive&&m3.EndpointKind==MissionEndpoint.SafehouseArrival,"M03 sets up at the base with its guards, truck, dogs and van, and opens on the split");
+  var car=m3.Car;var van=m3.Van;var hauler=m3.Hauler;var ice=crew.PedFor(CrewSlot.Ice);var gohan=crew.PedFor(CrewSlot.Gohan);var guess=crew.PedFor(CrewSlot.Guess);var junction=c.Locations.Position("M03.RailJunction");var depot=c.Locations.Position("M03.DepotGate");
+  Check(m3.Dogs.Count==3&&m3.Dogs.All(d=>d.Model.Name=="a_c_rottweiler"&&d.Position.DistanceTo(junction)<25f)&&m3.Crates.Count==3,"Three dogs are in the junction block before Ron arrives and three crates wait beside the Benson");
+  c.Cutscenes.Skip();Check(ice.IsInVehicle(van)&&gohan.IsInVehicle(van),"Skipping the split seats the depot team in the van");
+  m3.Tick();
+  Check(!ice.IsInVehicle()&&ice.Position.DistanceTo(depot)<60f&&gohan.Position.DistanceTo(hauler.Position)<20f&&m3.Roles.For(CrewSlot.Ice).State==RoleState.Observing&&guess.IsInVehicle(car)&&m3.CurrentStage==0,"The cut lands Ice and Gohan outside the depot on their tracks; Ron is in his car at the base");
+  Use(crew,CrewSlot.Guess);var basePoint=c.Locations.Position("Base.CypressFlats");var half=basePoint+(junction-basePoint)*0.6f;guess.Position=half;car.Position=half;m3.Tick();m3.Tick();
+  Check(c.Dialogue.HasPending,"Halfway there Ice calls that the depot team is set");
+  guess.Position=junction;car.Position=junction;car.Speed=8f;m3.Tick();Check(m3.CurrentStage==0,"Rolling through the junction is not arrival");
+  car.Speed=0f;m3.Tick();m3.Tick();Check(m3.CurrentStage==1&&!m3.CurrentObjective.Contains("D-pad"),"Stopped in the zone the work is next, and it needs no button");
+  Game.GameTime+=3000;m3.Tick();Check(m3.CurrentStage==1&&!m3.AmbushSprung,"In the car on the mark the work does not start");
+  Check(m3.Dogs.All(d=>d.Task.Fights==1&&d.Task.LastTarget==guess),"The dogs go for Ron the moment he is on the block, car or not");
+  guess.Task.LeaveVehicle();guess.Position=junction;m3.Tick();Game.GameTime+=1000;m3.Tick();Check(!m3.AmbushSprung,"The block waits a beat after the work starts");
+  Game.GameTime+=M03CypressFoundry.AmbushDelayMs-1000;m3.Tick();
+  Check(m3.AmbushSprung&&m3.Ambush.Count==4&&m3.Ambush.All(t=>t.Task.HatedFights==1)&&c.Cutscenes.IsActive&&m3.CurrentStage==1,"Five seconds into the work the street crew comes out of the houses, with a moment on the first of them, and the hold is not done");
+  c.Cutscenes.Stop();Game.GameTime+=2000;m3.Tick();Check(m3.CurrentStage==2,"Holding the junction through it locks the rail");
+  var guards=World.Created.Where(g=>g.Model.Name.StartsWith("g_m_y_mex")||g.Model.Name=="g_m_m_armboss_01").ToList();
+  Game.Player.Character.Position=depot-new Vector3(0,50,0);Game.Player.Character.IsShooting=true;m3.Tick();
+  Check(m3.Status==MissionStatus.Running&&guards.All(g=>g.Task.HatedFights==0),"Ron shooting near the depot is not Ice's shot: the quiet rule is scoped to Ice and the guards keep patrolling");
+  Game.Player.Character.IsShooting=false;Use(crew,CrewSlot.Ice);m3.Tick();
+  Check(m3.CurrentObjective.Contains("entry marker")&&m3.CurrentObjective.Contains("Quiet")&&!m3.CurrentObjective.Contains("No ability")&&guards.Count==8&&guards.All(g=>g.Task.HatedFights==0),"Switching to Ice explains the walk and the quiet rule with no ability wording; the guards patrol until his entry fires");
+  Game.Player.Character.Position=depot-new Vector3(0,22,0);m3.Tick();
+  Check(m3.CurrentStage==3&&m3.EntryFired&&guards.All(g=>g.Task.HatedFights==1),"Ice reaching the entry marker is what wakes the yard");
+  m3.Tick();Check(m3.CurrentObjective.Contains("RED")&&m3.CurrentObjective.Contains("Remaining: 8"),"M03 yard combat names the red targets and keeps the count in the objective HUD");
+  foreach(var guard in guards)guard.IsDead=true;m3.Tick();Check(m3.CurrentStage==4,"M03 loading unlocks only after the yard is clear");
+  Interact(m3,c,CrewSlot.Gohan,hauler.Position-hauler.ForwardVector*4f,1);
+  Check(c.Cutscenes.IsActive&&m3.CurrentStage==5&&GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SET_VEHICLE_DOOR_OPEN),"Gohan opening the Benson starts the loading, seen: the doors are open and the crates go in on camera");
+  c.Cutscenes.Skip();Check(m3.Crates.All(crate=>crate.AttachedTo==hauler),"Skipping the loading leaves all three crates in the bed");
+  m3.Tick();Check(GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SET_VEHICLE_DOOR_SHUT)&&c.Dialogue.HasPending,"After the loading the doors close and Gohan calls Ron to the truck");
+  Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==6&&Game.Player.WantedLevel==2,"Guess takes the required Benson and the police come");
+  var destination=basePoint;Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
+  hauler.Position=destination;Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running&&m3.CurrentObjective.Contains("Lose the police"),"Arriving with the police on the truck is not delivery: the foundry is a safehouse, the heat is lost on the way");
+  var outro=m3.OutroBlocking();Check(outro!=null&&outro.Steps.Count==2&&outro.Steps[0] is ExitVehicleStep,"The aftermath gets Ron out of the truck before the lines");
+  Game.Player.WantedLevel=0;m3.Tick();
+  Check(m3.Status==MissionStatus.Passed&&hauler.LockStatus==VehicleLockStatus.CannotEnter&&hauler.Present&&hauler.Released&&van.Present&&car.Present,"Delivered with the police lost: the Benson locks at the foundry and the crew's vehicles remain");
+  Reset();crew=Roster();c=Context(crew);bool scope=false;var quiet=new QuietRuleObjective("Quiet","Heard",()=>scope);quiet.Enter(c);Game.Player.Character.IsShooting=true;quiet.Update(c);
+  Check(quiet.IsPassive&&!quiet.IsFinished,"Out of its scope the quiet rule allows the shot");scope=true;quiet.Update(c);
+  Check(quiet.Status==ObjectiveStatus.Failed&&quiet.FailReason=="Heard","In scope one shot fails with the reason");
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity4.json"));var m4=new M04SeveredWire();Check(m4.Begin(c),"M04 stages its surface operation with all essential actors");
   Check(c.Locations.Position("M04.Breaker").Z>0&&c.Locations.Position("M04.RampGuards").Z>0,"M04 no longer depends on the absent B3 interior");

@@ -6,7 +6,7 @@ September 8, 2026. Prepared while the previous build is being tested. This packa
 
 The vehicle menu now has 74 entries in six categories: 40 cars, 8 motorcycles, 10 off-road vehicles, 6 boats, 6 helicopters and 4 planes. The first 24 DLC cars remain. Additional examples include Sultan RS, Elegy Retro Custom, Banshee 900R, Gauntlet Hellfire, Hakuchou Drag, Shotaro, Shinobi, Kamacho, Nightshark, Insurgent, Longfin, SuperVolito, Swift, Vestra and Nimbus.
 
-Only models available in the installed game are shown. Some entries are base-game specialty vehicles, not Online exclusives. The separate vehicle catalog lists every choice. Cars and motorcycles use nearby road positions. Boats require a clear water footprint within 75 metres of the player. Helicopters require a broad, flat open area and start grounded with engines off. Planes are requested near the Sandy Shores or McKenzie runway and start with engines off. These placement checks still need live testing for terrain, depth and nearby obstacles.
+Only models available in the installed game are shown. Some entries are base-game specialty vehicles, not Online exclusives. The separate vehicle catalog lists every choice. Cars and motorcycles use nearby road positions. Boats require a clear water footprint within 75 meters of the player. Helicopters require a broad, flat open area and start grounded with engines off. Planes are requested near the Sandy Shores or McKenzie runway and start with engines off. These placement checks still need live testing for terrain, depth and nearby obstacles.
 
 Requests remain capped at four retained vehicles. Release parked vehicles frees unoccupied requests without deleting an occupied vehicle. Vehicles are not added to random traffic or saved as personal garage cars across restarts in this update.
 
@@ -16,7 +16,7 @@ At the active character's home marker, press E / D-pad Right to open the home me
 
 - Ice's bench restocks his unlocked weapons and replaces armor without advancing time.
 - Gohan's workstation marks the next genuinely available playable mission, respecting completion and prerequisites. It does not claim to disable an unimplemented police-camera network.
-- Guess's chop bay repairs a parked car or motorcycle within 15 metres. It refuses distant or moving vehicles. The unlocked turbine upgrade now supports both the original Granger and the DLC Granger 3600LX, and tuning indices are limited to the model's available parts. Sit in the Granger for the fleet upgrade to apply.
+- Guess's chop bay repairs a parked car or motorcycle within 15 meters. It refuses distant or moving vehicles. The unlocked turbine upgrade now supports both the original Granger and the DLC Granger 3600LX, and tuning indices are limited to the model's available parts. Sit in the Granger for the fleet upgrade to apply.
 
 Home use is blocked during missions, scenes, recovery, survey, active pursuit or combat. Each hero uses their own home. Custom furnished interiors, advanced ammunition crafting and saved personal garages remain future additions.
 

@@ -26,6 +26,12 @@ GUESS|Cypress Foundry has space, but no armor or equipment. That depot gives us 
 GOHAN|Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 ICE|Miller's selling the dock forensics. We go after him next. Everybody gets the file before we move.
 GUESS|Three keys to the shop. Keep yours this time. I got tired of being the only one checking the door.
+@split
+ICE|Gohan and I take the van to the depot and wait on your call. Nobody moves on that yard until the rail is dead.
+GUESS|Then I'll make it loud. Give me twenty minutes and a straight road, and don't start without me.
+@loading
+GOHAN|Rifles, plates, ammunition. Cartel-bought and never fired. Three crates and the truck is full.
+GOHAN|Last one. She's yours, Guess. Don't scrape her on the gate.
 
 M04
 GOHAN|Miller has our forensics and an Aegis buyer. The van's drive gave us the meeting. We need his copy.

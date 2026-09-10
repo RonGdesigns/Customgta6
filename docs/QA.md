@@ -56,6 +56,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 43 | **Mateo's run** | Recognition, then watch the yard with guards alive; then clear it | He and the technician run in the open; no countdown; the launch leaves only after the last guard, and only once he is at the boat |
 | 44 | **Terminal hand-back** | Finish Gohan's copy last; finish it with a job still open | Straight to the brother you came from; straight to the brother with the job |
 | 45 | **M02 opening and custody** | Start M02; breach; board with a wanted level | Curb scene, clock after it, van on the move; case in Ice's hand, stowed on boarding; canal refuses until the police are lost |
+| 46 | **M03 junction** | Drive to Davis; roll through once; stop; sit; get out | No ejection at speed; nothing in the car; the hold starts on foot; dogs on arrival; the block after five seconds with a moment |
+| 47 | **M03 depot rules** | As Ice, fire before the marker once; reach it quietly once; as Ron, fire at the junction during Ice's stage | Failure with the reason; the yard wakes on the marker; Ron's shots are not Ice's |
+| 48 | **M03 loading and delivery** | Press E at the Benson's rear; skip once; deliver with stars, then without | Three crates carried in on camera, or in the bed on skip; no delivery with stars; the truck locks at the foundry |
 
 ## Before you launch: the static checks
 

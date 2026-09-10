@@ -127,6 +127,29 @@ namespace Bloodlines.Missions.Objectives
         }
     }
 
+    /// <summary>
+    /// A rule, not a job: while it applies, the player must not fire. Passive; it
+    /// fails with the stated reason. The scope is the caller's (which brother, how
+    /// near what), so one brother's quiet approach never punishes another's fight.
+    /// </summary>
+    public sealed class QuietRuleObjective : Objective
+    {
+        private readonly Func<bool> _applies;
+        private readonly string _failMessage;
+
+        public QuietRuleObjective(string label, string failMessage, Func<bool> applies) : base(label) { _failMessage = failMessage; _applies = applies; }
+        public override bool IsPassive => true;
+
+        public override void Update(MissionContext c)
+        {
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || !player.IsShooting) return;
+            bool applies;
+            try { applies = _applies(); } catch (Exception ex) { Logger.Error("Quiet rule scope failed", ex); return; }
+            if (applies) Fail(_failMessage);
+        }
+    }
+
     /// <summary>Hold until the named brothers' tracks reach a state, or a deadline passes (logged, not failed).</summary>
     public sealed class WaitForRolesObjective : Objective
     {

@@ -37,7 +37,7 @@ namespace Bloodlines.Missions.Campaign
             _drop = Ctx.Locations.Position("M22.AlamoDrop");
             _beach = Ctx.Locations.Position("M22.Beach");
 
-            // On the shore. Deploying sixty metres above the Alamo drops the crew
+            // On the shore. Deploying sixty meters above the Alamo drops the crew
             // into it.
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, _beach, Ctx.Locations.Heading("M22.Beach")))
             {

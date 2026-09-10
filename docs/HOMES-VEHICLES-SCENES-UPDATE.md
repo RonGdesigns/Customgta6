@@ -44,7 +44,7 @@ Retest: acquire a gun as one hero, switch away and back, then stand down/redeplo
 - Gunfire during the quiet approach fails with an explanation. Mateo is mortal: killing him fails because the crew needs to trace the buyers. His marker identifies him as a lead to keep alive.
 - Recognition no longer moves the crew together or forces them out of vehicles. They retain their positions and seats. The dialogue explains the dock security channel connecting them.
 - The final recognition line starts Mateo's real boarding/escape task, and the camera follows him. Skipping still starts the escape in gameplay. A blocked boat route fails clearly after the timeout instead of visibly teleporting him aboard.
-- Shared cutscenes use phone/radio framing for speakers separated by more than 18 metres. Nearby actors can be framed in person. No generic scene moves the crew into a conversational lineup. Other mission scripts were searched for cutscene relocation: M27 retains its explicit, mission-specific plane boarding transfer during a fade.
+- Shared cutscenes use phone/radio framing for speakers separated by more than 18 meters. Nearby actors can be framed in person. No generic scene moves the crew into a conversational lineup. Other mission scripts were searched for cutscene relocation: M27 retains its explicit, mission-specific plane boarding transfer during a fade.
 
 Retest M01 in different role orders, with Guess still seated when recognition begins. Skip once and watch the whole scene once. Verify camera/control recovery, actor positions, the actual laptop prompt, Mateo's movement and the three-person extraction.
 

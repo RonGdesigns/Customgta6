@@ -50,12 +50,13 @@ Prerequisite: M02. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Seal the response routes** — MissionInteraction: Guess: lock the rail junction |
-| 2 | Ice | **Breach the depot** — ReachZoneObjective: Ice: walk into the yellow ENTRY marker at the depot. No ability or button is needed. |
-| 3 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
-| 4 | Gohan | **Hoist the container** — MissionInteraction: Gohan: load the weapons at the yellow cargo terminal |
-| 5 | Guess | **Run it home** — EnterVehicleObjective: Guess: travel to the depot and take the orange-marked Benson truck (driver seat). |
-| 6 | Guess | **Cypress Flats** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 1 | Guess | **Drive to the junction** — TravelObjective: Guess: drive to the Davis rail junction. |
+| 2 | Guess | **Seal the response routes** — HoldZoneObjective: Guess: get out and hold the junction marker. |
+| 3 | Ice | **Breach the depot** — ReachZoneObjective: Ice: walk to the yellow entry marker at the depot gate.<br>QuietRuleObjective: Quiet until the entry marker. |
+| 4 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
+| 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
+| 6 | Guess | **Run it home** — EnterVehicleObjective: Guess: travel to the depot and take the orange-marked Benson truck (driver seat). |
+| 7 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -230,7 +231,7 @@ Prerequisite: M13. Retry: full mission restart.
 | 1 | Ice | **Overwatch** — KillTargetsObjective: Ice — clear the apron from the ridge. |
 | 2 | Guess | **The hangar** — ReachZoneObjective: Guess — get to the hangar door. |
 | 3 | Guess | **Hotwire** — EnterVehicleObjective: Guess: take the marked jammer aircraft. |
-| 4 | Guess | **Under the radar** — AltitudeCeilingObjective: Hug the terrain — stay under 50 metres above the terrain.<br>DeliverVehicleObjective: Guess: land the jammer aircraft at McKenzie and stop. |
+| 4 | Guess | **Under the radar** — AltitudeCeilingObjective: Hug the terrain — stay under 50 meters above the terrain.<br>DeliverVehicleObjective: Guess: land the jammer aircraft at McKenzie and stop. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -260,7 +261,7 @@ Prerequisite: M15. Retry: full mission restart.
 | 1 | Ice | **Walk in** — ReachZoneObjective: Ice — cross the outer depot on the transponder. |
 | 2 | Ice | **Take the helipad** — KillTargetsObjective: Clear the military police off the pad. |
 | 3 | Guess | **Spool the twins** — EnterVehicleObjective: Guess — take the Cargobob. |
-| 4 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 metres above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
+| 4 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 meters above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
 | 5 | Guess | **Terminal Island** — DeliverVehicleObjective: Put the Cargobob down at Terminal Island. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
@@ -424,7 +425,7 @@ Prerequisite: M26. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Get on his rudder** — EnterVehicleObjective: Guess — take the stunt plane up. |
-| 2 | Guess | **Match the Shamal** — ShadowTargetObjective: Climb to the Shamal and hold station inside 60 metres. |
+| 2 | Guess | **Match the Shamal** — ShadowTargetObjective: Climb to the Shamal and hold station inside 60 meters. |
 | 3 | Ice | **Zero-G** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
 | 5 | Ice | **Sea pickup** — EnterVehicleObjective: Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy. |

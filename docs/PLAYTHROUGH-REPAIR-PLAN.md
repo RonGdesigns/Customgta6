@@ -157,6 +157,8 @@ Instrument first: on every switch and restore, log wanted level, greyed-stars st
 8. Ron collects the loaded truck and delivers it; parallel pressure is held while a switch is forced, so a switch never causes an unavoidable death.
 9. Lose the pursuit before the foundry, deliver, Ron gets out of the Benson through a tested exit, and the Benson locks. Only the delivered truck.
 
+**Status (September 10):** items 1–9 are built in the story-to-play third slice (`STORY-TO-PLAY-PLAN.md`, P2d), with one reading of item 1: the "short scripted cut" is a scene at the base (the depot team boards the van and pulls away) followed by a cut that lands them outside the depot, not an AI drive across the city. Item 7's crane is loading by hand into the parked Benson. All offsets are estimates from the surveyed keys until a live pass.
+
 ### M04
 Gohan drives to a breaker moved outside the meeting. After the cut, he takes cover and can fight; Ice is offered as the tactical switch, not forced. If a switch must be mandatory, it happens before the bodyguards turn hostile, or with a protected hand-over. The right cast appears in the briefing.
 

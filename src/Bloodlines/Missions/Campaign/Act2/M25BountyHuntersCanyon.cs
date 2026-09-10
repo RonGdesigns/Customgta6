@@ -67,7 +67,7 @@ namespace Bloodlines.Missions.Campaign
                     new DestroyVehicleObjective("Detonate the fuel tanker across the southern pass.",
                         () => _tanker))
                 .PlayedBy(CrewSlot.Ice)
-                .OnEnter(context => GameUtils.Subtitle("~y~Use the RPG on the tanker from at least 30 metres away.", 4000))
+                .OnEnter(context => GameUtils.Subtitle("~y~Use the RPG on the tanker from at least 30 meters away.", 4000))
                 .WithCues("M25_S1_01_ICE");
 
             yield return new MissionStage("Hold the bridge",
@@ -80,7 +80,7 @@ namespace Bloodlines.Missions.Campaign
                         () => _riverbed, 12f, flat: false))
                 
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~A hundred and ten metres to the water. Jump.", 5000))
+                    GameUtils.Subtitle("~y~A hundred and ten meters to the water. Jump.", 5000))
                 .WithCues("M25_S1_02_GUESS");
 
             yield return new MissionStage("River extraction",
