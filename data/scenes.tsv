@@ -37,6 +37,9 @@ M04_SCENE_INTRO_01_GOHAN	M04	intro	GOHAN	Briefing; intent before tactics	Miller 
 M04_SCENE_INTRO_02_GUESS	M04	intro	GUESS	Briefing; intent before tactics	Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 M04_SCENE_OUTRO_01_ICE	M04	outro	ICE	Reflective; allow the response to land	Miller's drive points to Mateo's sea cave. Mateo can tell us who paid for this. We bring him in breathing.
 M04_SCENE_OUTRO_02_GOHAN	M04	outro	GOHAN	Reflective; allow the response to land	Then let me ask the questions. A corpse can't explain why three separate clients sent us to one dock.
+M04_SCENE_TRANSACTION_01_MILLER	M04	transaction	MILLER	Staged action; support cast on set, brothers in position	Two copies. This one's yours when the transfer clears. The other one stays with me.
+M04_SCENE_TRANSACTION_02_BUYER	M04	transaction	BUYER	Staged action; support cast on set, brothers in position	Aegis pays on delivery, Detective. Open it.
+M04_SCENE_TRANSACTION_03_GOHAN	M04	transaction	GOHAN	Staged action; support cast on set, brothers in position	Case is real, and it's in his hand. I'm at the breaker. Lights go out on my count.
 M05_SCENE_INTRO_01_GOHAN	M05	intro	GOHAN	Briefing; intent before tactics	Mateo is hiding offshore. If Aegis burns him before we reach him, we lose the only person who knows the setup.
 M05_SCENE_INTRO_02_ICE	M05	intro	ICE	Briefing; intent before tactics	I cover the shore. Guess and Gohan take the dinghy: signal the cove, close on Mateo, bring him in breathing. I missed my shot when I heard your voice. Don't make me regret it.
 M05_SCENE_OUTRO_01_GUESS	M05	outro	GUESS	Reflective; allow the response to land	You said take the war to Blaine. Fine, later. Our faces are still sitting in a police evidence vault here.

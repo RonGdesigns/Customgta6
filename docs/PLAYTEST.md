@@ -27,6 +27,9 @@
 > - The crew's Granger lives at the stash beside the Cypress base and is the van the
 >   missions use; what you do to it at a shop is saved. The Port Heist runs M19–M22
 >   as one operation; `OPERATIONS.md` lists the others.
+> - M04 now starts at the Cypress base marker and is the reference for the story-to-play
+>   work: drive in, see the sale, cut the power, take the wheel when offered, recover
+>   the drive, lose the police. Live-test items 50–55.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

@@ -46,6 +46,9 @@ namespace Bloodlines.Missions.Objectives
         /// </summary>
         public virtual bool IsPassive => false;
 
+        /// <summary>True for an objective that must start without a required character, so the stage does not force a switch the moment it begins.</summary>
+        public virtual bool KeepsOwnerOpen => false;
+
         public virtual void Enter(MissionContext context)
         {
             Status = ObjectiveStatus.Active;

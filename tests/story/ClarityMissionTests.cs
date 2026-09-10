@@ -35,11 +35,7 @@ public static partial class StoryTests
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity4.json"));var m4=new M04SeveredWire();Check(m4.Begin(c),"M04 stages its surface operation with all essential actors");
   Check(c.Locations.Position("M04.Breaker").Z>0&&c.Locations.Position("M04.RampGuards").Z>0,"M04 no longer depends on the absent B3 interior");
-  var miller=World.Created[0];Interact(m4,c,CrewSlot.Gohan,c.Locations.Position("M04.Breaker"),5);Check(m4.CurrentStage==1&&miller.Task.Cruises==0,"Miller waits while Ice handles the escort instead of escaping during the fight");
-  Use(crew,CrewSlot.Ice);foreach(var enemy in World.Created.Where(p=>p!=miller))enemy.IsDead=true;m4.Tick();Check(m4.CurrentStage==2&&miller.Task.Cruises==0,"M04 offers Guess the chase before starting the getaway");
-  Use(crew,CrewSlot.Guess);m4.Tick();Check(m4.CurrentStage==3&&miller.Task.VehicleMissions==1&&miller.Task.Cruises==0,"Miller starts running only when Guess is in the chase car");
-  World.Vehicles[0].IsDriveable=false;m4.Tick();Check(m4.CurrentStage==4,"Disabling Miller's car unlocks the physical drive pickup");
-  Interact(m4,c,CrewSlot.Guess,miller.Position,3);Check(m4.Status==MissionStatus.Passed,"M04 completes after the on-foot context-button drive pickup");
+  m4.Abort(); // The M04 flow is covered end to end by StoryToPlayTests.RunM04.
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity5.json"));var m5=new M05TidalLock();Check(m5.Begin(c),"M05 validates coast staging and creates both boats");
   var mateo=World.Created.Last();var dinghy=World.Vehicles[1];Check(crew.PedFor(CrewSlot.Guess).IsInVehicle(dinghy)&&crew.PedFor(CrewSlot.Gohan).IsInVehicle(dinghy),"M05 gives Guess and Gohan actual boat transport while Ice holds shore overwatch");

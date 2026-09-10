@@ -405,6 +405,7 @@ namespace Bloodlines.Missions.Campaign
                 return;
             }
 
+            Ctx.State?.SetEvidence("ledgerLead", EvidenceState.CopyHeld);
             Game.Player.WantedLevel = 0;
             Say("M01_S3_09_GOHAN");
             Pass();

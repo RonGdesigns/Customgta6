@@ -221,6 +221,21 @@ namespace Bloodlines.Missions
             return blip;
         }
 
+        private readonly HashSet<Entity> _preserved = new HashSet<Entity>();
+
+        /// <summary>
+        /// A tracked entity the story still needs after this mission (the crew's van,
+        /// the evidence, a wreck the scene refers to): released at cleanup instead of
+        /// deleted, whether or not anyone is in it.
+        /// </summary>
+        protected void Preserve(Entity entity) { if (entity != null) _preserved.Add(entity); }
+
+        /// <summary>A line over the radio, with no camera: the speaker's name and the text, for approaches and check-ins.</summary>
+        protected void Radio(string speaker, string line, string cueId)
+        {
+            Ctx?.Dialogue?.Play(new DialogueCue { CueId = cueId, MissionId = Id, Speaker = speaker, Line = line });
+        }
+
         /// <summary>Hands an entity back to the world — it survives mission teardown.</summary>
         protected void Release(Entity entity)
         {
@@ -265,10 +280,11 @@ namespace Bloodlines.Missions
                         }
                     if (occupied) { GameUtils.SafeRelease(entity); continue; }
                 }
-                if (entity.IsDead) GameUtils.SafeRelease(entity);
+                if (entity.IsDead || _preserved.Contains(entity)) GameUtils.SafeRelease(entity);
                 else GameUtils.SafeDelete(entity);
             }
             _entities.Clear();
+            _preserved.Clear();
             _survivors.Clear();
             _requiredAssets.Clear();
 

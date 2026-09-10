@@ -1,4 +1,8 @@
 {
+  "M04_S2_03_GUESS": {
+    "line": "He's running with the case. I've got the wheel, and I've got him.",
+    "trigger": "The player takes Guess during the switch window, or the window closes"
+  },
   "M28_S1_01_GOHAN": {
     "line": "Surge unit connected. Hold them off while I bring the relay down.",
     "trigger": "Gohan begins the timed relay splice"

@@ -2,9 +2,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Bloodlines.Core;
 using Bloodlines.Missions.Objectives;
+using GTA;
 
 namespace Bloodlines.Missions
 {
+    public enum MissionEndpoint { EscapeCheckpoint, SecuredDelivery, SafehouseArrival, ContinuousNext }
+
     /// <summary>
     /// A mission written as a list of stages of objectives rather than as a bespoke
     /// state machine.
@@ -79,6 +82,21 @@ namespace Bloodlines.Missions
 
         /// <summary>Spawn the world. Return false to reject the start.</summary>
         protected abstract bool Setup();
+
+        /// <summary>
+        /// How this mission ends. Only a safehouse arrival may clear the wanted level;
+        /// an escape checkpoint has to lose the police itself, and a continuous next
+        /// chapter carries whatever heat it has.
+        /// </summary>
+        protected virtual MissionEndpoint Endpoint => MissionEndpoint.EscapeCheckpoint;
+        public MissionEndpoint EndpointKind => Endpoint;
+
+        /// <summary>Clear the wanted level only where the story calls the place safe.</summary>
+        protected void ClearHeatIfSafe()
+        {
+            if (Endpoint == MissionEndpoint.SafehouseArrival) Game.Player.WantedLevel = 0;
+            else Logger.Info(Id + " ends at an " + Endpoint + "; the wanted level is not cleared.");
+        }
 
         /// <summary>The mission, as stages of objectives.</summary>
         protected abstract IEnumerable<MissionStage> BuildStages();
@@ -173,7 +191,7 @@ namespace Bloodlines.Missions
                     var assigned = stage.Objectives.FirstOrDefault(o => !o.IsPassive && o.RequiredCharacter.HasValue);
                     if (assigned != null) owner = assigned.RequiredCharacter.Value;
                     foreach (var objective in stage.Objectives)
-                        if (!objective.RequiredCharacter.HasValue && !objective.IsPassive) objective.RequiredCharacter = owner;
+                        if (!objective.RequiredCharacter.HasValue && !objective.IsPassive && !objective.KeepsOwnerOpen) objective.RequiredCharacter = owner;
                 }
                 if (Id.StartsWith("SM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7)) stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")));
             }

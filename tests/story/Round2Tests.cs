@@ -37,19 +37,7 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);World.Vehicles.Clear();World.Created.Clear();c.Cutscenes.Play("M04","intro","Severed Wire");
   Check(World.Vehicles.Count==0&&World.Created.Count==0,"A deployed crew acts in person: no arrival car, no temporary cast");c.Cutscenes.Stop();
 
-  // ---- 2. M04: Miller flees, Guess reaches into the car, the cars survive the pass.
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"round2-m4.json"));var m4=new M04SeveredWire();Check(m4.Begin(c),"M04 sets up its garage, escort, Miller and the chase car");
-  var miller=World.Created[0];var chase=World.Vehicles.First(v=>v.Model.Name=="buffalo3");var millerCar=World.Vehicles.First(v=>v.Model.Name=="fugitive");
-  Check(Function.Values.ContainsKey(Hash.SET_DRIVER_ABILITY)&&Function.Values.ContainsKey(Hash.SET_DRIVER_AGGRESSIVENESS),"Miller is set up as a getaway driver");
-  Interact(m4,c,CrewSlot.Gohan,c.Locations.Position("M04.Breaker"),5);
-  Use(crew,CrewSlot.Ice);foreach(var enemy in World.Created.Where(p=>p!=miller))enemy.IsDead=true;m4.Tick();
-  Check(m4.CurrentStage==2&&miller.Task.VehicleMissions==0,"Miller waits until Guess is offered the chase");
-  Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(chase,VehicleSeat.Driver);m4.Tick();m4.Tick();
-  Check(m4.CurrentStage==3&&miller.Task.VehicleMissions==1&&miller.Task.Cruises==0&&Function.Values.ContainsKey(Hash.SET_PED_KEEP_TASK),"Miller runs from Guess with a kept flee mission instead of cruising through traffic");
-  c.Cutscenes.Stop();millerCar.IsDriveable=false;m4.Tick();Check(m4.CurrentStage==4,"Disabling Miller's car opens the pickup");
-  int animations=Game.Player.Character.Task.Animations;Interact(m4,c,CrewSlot.Guess,miller.Position,3);
-  Check(Game.Player.Character.Task.Animations==animations+1,"Guess reaches into the car for the drive");
-  Check(m4.Status==MissionStatus.Passed&&chase.Present&&chase.Released&&millerCar.Present,"Passing leaves the chase car and Miller's car in the world instead of deleting them");
+  // ---- 2. M04 is exercised end to end in StoryToPlayTests.RunM04 (both Miller outcomes).
 
   // ---- 3. M05: an estimated perch snaps to the real ground before the walkable check.
   Reset();crew=Roster();c=Context(crew);var perch=c.Locations.Get("M05.CliffPerch");float authored=perch.Position.Z;World.GroundHeight=authored+40f;World.FailNavigationNear=perch.Position;
