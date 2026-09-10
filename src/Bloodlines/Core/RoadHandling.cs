@@ -79,12 +79,25 @@ namespace Bloodlines.Core
         public static float BrakeFactor(Class c) => c == Class.Truck ? 1.3f : c == Class.None ? 1f : 1.4f;
         public static float YawInertiaFactor(Class c) => c == Class.Car || c == Class.Suv ? 1.10f : 1f;
 
+        public static float DeformationFactor(Class c, float baseMultiplier)
+        {
+            if (baseMultiplier <= 0.01f) return 1f;
+            float scale = c == Class.Car ? 1.0f : c == Class.Suv ? 0.825f : c == Class.Truck ? 0.675f : 0.5f;
+            return 1f + (baseMultiplier - 1f) * scale;
+        }
+
+        public static float CollisionFactor(Class c, float baseMultiplier) =>
+            c == Class.Car ? baseMultiplier : c == Class.Suv ? Math.Min(1.0f, baseMultiplier * 1.05f) : 1.0f;
+
+        public static float EngineFactor(Class c, float baseMultiplier) =>
+            c == Class.Car ? baseMultiplier : c == Class.Suv ? Math.Min(1.0f, baseMultiplier * 1.05f) : 1.0f;
+
         /// <summary>
         /// Apply the class profile to a model's shared handling. Returns false when the
         /// vehicle takes no profile or the handling is not usable. Safe to call once per
         /// profile only; the caller owns that rule.
         /// </summary>
-        public bool Apply(HandlingData handling, Vehicle car)
+        public bool Apply(HandlingData handling, Vehicle car, ModConfig config = null, bool isCrewVehicle = false)
         {
             if (handling == null || !handling.IsValid || Applied != Class.None) return false;
             var cls = Classify(car);
@@ -96,6 +109,26 @@ namespace Bloodlines.Core
             Scale(handling, "SuspensionCompressionDamping", h => h.SuspensionCompressionDamping, (h, v) => h.SuspensionCompressionDamping = v, DampingFactor(cls));
             Scale(handling, "SuspensionReboundDamping", h => h.SuspensionReboundDamping, (h, v) => h.SuspensionReboundDamping = v, DampingFactor(cls));
             Scale(handling, "BrakeForce", h => h.BrakeForce, (h, v) => h.BrakeForce = v, BrakeFactor(cls));
+
+            float defFactor = 1f;
+            float colFactor = 1f;
+            float engFactor = 1f;
+            if (config != null && config.VehicleDamageEnabled)
+            {
+                defFactor = DeformationFactor(cls, config.DeformationMultiplier);
+                colFactor = CollisionFactor(cls, config.CollisionDamageMultiplier);
+                engFactor = EngineFactor(cls, config.EngineDamageMultiplier);
+
+                if (isCrewVehicle)
+                {
+                    colFactor *= config.CrewProtectionMultiplier;
+                    engFactor *= config.CrewProtectionMultiplier;
+                }
+
+                Scale(handling, "DeformationDamageMultiplier", h => h.DeformationDamageMultiplier, (h, v) => h.DeformationDamageMultiplier = v, defFactor);
+                Scale(handling, "CollisionDamageMultiplier", h => h.CollisionDamageMultiplier, (h, v) => h.CollisionDamageMultiplier = v, colFactor);
+                Scale(handling, "EngineDamageMultiplier", h => h.EngineDamageMultiplier, (h, v) => h.EngineDamageMultiplier = v, engFactor);
+            }
 
             var com = handling.CenterOfMassOffset;
             if (Finite(com))
@@ -115,8 +148,11 @@ namespace Bloodlines.Core
             }
 
             Applied = cls;
+            string damageInfo = (config != null && config.VehicleDamageEnabled)
+                ? ", deform x" + defFactor.ToString("0.00") + ", collision x" + colFactor.ToString("0.00")
+                : "";
             Report = car.DisplayName + ": road profile " + cls + " (traction x" + TractionFactor(cls).ToString("0.00") + ", damping x" + DampingFactor(cls).ToString("0.00") +
-                     ", brakes x" + BrakeFactor(cls).ToString("0.00") + ", CoM -" + CenterOfMassDrop(cls).ToString("0.00") + ")";
+                     ", brakes x" + BrakeFactor(cls).ToString("0.00") + ", CoM -" + CenterOfMassDrop(cls).ToString("0.00") + damageInfo + ")";
             Logger.Info(Report);
             return true;
         }

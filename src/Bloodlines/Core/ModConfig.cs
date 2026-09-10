@@ -75,6 +75,24 @@ namespace Bloodlines.Core
         public bool DevToolsEnabled { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
 
+        public bool VehicleDamageEnabled { get; private set; } = true;
+        public float DeformationMultiplier { get; private set; } = 2.0f;
+        public float CollisionDamageMultiplier { get; private set; } = 0.90f;
+        public float EngineDamageMultiplier { get; private set; } = 0.80f;
+        public float CrewProtectionMultiplier { get; private set; } = 0.55f;
+
+        public bool VisualsEnabled { get; private set; } = true;
+        public bool DeSmogEnabled { get; private set; } = true;
+        public float ContrastStrength { get; private set; } = 0.35f;
+        public bool HeadlightShadowsEnabled { get; private set; } = true;
+        public float ShadowDistanceScale { get; private set; } = 1.50f;
+        public string VisualPreset { get; private set; } = "NaturalCinematic";
+        public bool LODBoostEnabled { get; private set; } = true;
+        public float LODScale { get; private set; } = 1.75f;
+        public bool RemoveBlurEnabled { get; private set; } = true;
+        public bool CeramicReflectionsEnabled { get; private set; } = true;
+        public bool WaterReflectionsEnabled { get; private set; } = true;
+
         /// <summary>Seconds of ability time; the meter refills at <see cref="AbilityRechargeRate"/> per second.</summary>
         public float AbilityDuration { get; private set; } = 8f;
 
@@ -119,6 +137,33 @@ namespace Bloodlines.Core
 
             config.DevToolsEnabled = settings.GetValue<bool>("Dev", "Enabled", config.DevToolsEnabled);
             config.VerboseLogging = settings.GetValue<bool>("Dev", "VerboseLogging", config.VerboseLogging);
+
+            config.VehicleDamageEnabled = settings.GetValue<bool>("VehicleDamage", "Enabled", config.VehicleDamageEnabled);
+            config.DeformationMultiplier = settings.GetValue<float>("VehicleDamage", "DeformationMultiplier", config.DeformationMultiplier);
+            config.DeformationMultiplier = Math.Max(0.5f, Math.Min(4.0f, config.DeformationMultiplier));
+            config.CollisionDamageMultiplier = settings.GetValue<float>("VehicleDamage", "CollisionDamageMultiplier", config.CollisionDamageMultiplier);
+            config.CollisionDamageMultiplier = Math.Max(0.1f, Math.Min(3.0f, config.CollisionDamageMultiplier));
+            config.EngineDamageMultiplier = settings.GetValue<float>("VehicleDamage", "EngineDamageMultiplier", config.EngineDamageMultiplier);
+            config.EngineDamageMultiplier = Math.Max(0.1f, Math.Min(3.0f, config.EngineDamageMultiplier));
+            config.CrewProtectionMultiplier = settings.GetValue<float>("VehicleDamage", "CrewProtectionMultiplier", config.CrewProtectionMultiplier);
+            config.CrewProtectionMultiplier = Math.Max(0.1f, Math.Min(1.0f, config.CrewProtectionMultiplier));
+
+            config.VisualsEnabled = settings.GetValue<bool>("Visuals", "Enabled", config.VisualsEnabled);
+            config.DeSmogEnabled = settings.GetValue<bool>("Visuals", "DeSmog", config.DeSmogEnabled);
+            config.ContrastStrength = settings.GetValue<float>("Visuals", "ContrastStrength", config.ContrastStrength);
+            config.ContrastStrength = Math.Max(0.0f, Math.Min(1.0f, config.ContrastStrength));
+            config.HeadlightShadowsEnabled = settings.GetValue<bool>("Visuals", "HeadlightShadows", config.HeadlightShadowsEnabled);
+            config.ShadowDistanceScale = settings.GetValue<float>("Visuals", "ShadowDistanceScale", config.ShadowDistanceScale);
+            config.ShadowDistanceScale = Math.Max(1.0f, Math.Min(3.0f, config.ShadowDistanceScale));
+            config.VisualPreset = settings.GetValue<string>("Visuals", "Preset", config.VisualPreset);
+            if (string.IsNullOrWhiteSpace(config.VisualPreset)) config.VisualPreset = "NaturalCinematic";
+
+            config.LODBoostEnabled = settings.GetValue<bool>("Visuals", "LODBoost", config.LODBoostEnabled);
+            config.LODScale = settings.GetValue<float>("Visuals", "LODScale", config.LODScale);
+            config.LODScale = Math.Max(1.0f, Math.Min(3.0f, config.LODScale));
+            config.RemoveBlurEnabled = settings.GetValue<bool>("Visuals", "RemoveBlur", config.RemoveBlurEnabled);
+            config.CeramicReflectionsEnabled = settings.GetValue<bool>("Visuals", "CeramicReflections", config.CeramicReflectionsEnabled);
+            config.WaterReflectionsEnabled = settings.GetValue<bool>("Visuals", "WaterReflections", config.WaterReflectionsEnabled);
 
             // Writes back any key the ini was missing, so the file self-documents after first run.
             settings.Save();

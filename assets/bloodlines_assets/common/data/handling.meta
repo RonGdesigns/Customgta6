@@ -40,6 +40,7 @@
       <fSuspensionForce value="2.400000" />
       <fSuspensionCompDamp value="1.400000" />
       <fSuspensionReboundDamp value="1.800000" />
+      <fDeformationDamageMult value="1.800000" />
       <fCollisionDamageMult value="0.400000" />
       <fWeaponDamageMult value="0.300000" />
       <fEngineDamageMult value="0.500000" />
@@ -67,6 +68,7 @@
       <fTractionCurveMax value="2.100000" />
       <fTractionCurveMin value="1.950000" />
       <fSuspensionForce value="3.000000" />
+      <fDeformationDamageMult value="1.100000" />
       <fCollisionDamageMult value="0.180000" />
       <fWeaponDamageMult value="0.150000" />
       <fEngineDamageMult value="0.300000" />
@@ -82,6 +84,7 @@
       <fPercentSubmerged value="75.000000" />
       <fInitialDriveForce value="0.290000" />
       <fInitialDriveMaxFlatVel value="145.000000" />
+      <fDeformationDamageMult value="1.400000" />
       <fCollisionDamageMult value="0.150000" />
       <fWeaponDamageMult value="0.200000" />
       <fEngineDamageMult value="0.400000" />

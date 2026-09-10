@@ -10,6 +10,13 @@ namespace Bloodlines.Core
     /// <summary>Shared handling entries are adjusted once, never multiplied per car or tick.</summary>
     public sealed class WorldTuning
     {
+        public ModConfig Config { get; set; }
+
+        public WorldTuning(ModConfig config = null)
+        {
+            Config = config;
+        }
+
         private sealed class Profile
         {
             public HandlingData Data;
@@ -38,7 +45,7 @@ namespace Bloodlines.Core
                 if (ped != null && ped.Exists() && ped.IsAlive && ped != Game.Player.Character)
                     Function.Call(Hash.SET_PED_MOVE_RATE_OVERRIDE, ped, 1.3f);
             }
-            UpdatePower();
+            UpdatePower(crew);
             if (Game.GameTime < _nextScan) return;
             _nextScan = Game.GameTime + 1000;
             foreach (var key in _cars.Where(p => !p.Value.Exists() || p.Value.Model.Hash!=_models[p.Key]).Select(p => p.Key).ToArray())
@@ -46,11 +53,28 @@ namespace Bloodlines.Core
             foreach (var car in World.GetAllVehicles())
             {
                 if (car == null || !car.Exists() || car.IsDead) continue;
-                try { Register(car); }
+                try { Register(car, crew); }
                 catch (Exception ex) { Logger.Error("Vehicle travel tuning",ex); }
             }
         }
-        private void Register(Vehicle car)
+
+        private static bool IsCrewVehicle(Vehicle car, CrewRoster crew)
+        {
+            if (car == null || !car.Exists()) return false;
+            var player = Game.Player.Character;
+            if (player != null && player.Exists() && player.IsInVehicle() && player.CurrentVehicle == car) return true;
+            if (crew != null && crew.IsDeployed)
+            {
+                foreach (var hero in Protagonist.All)
+                {
+                    var ped = crew.PedFor(hero.Slot);
+                    if (ped != null && ped.Exists() && ped.IsInVehicle() && ped.CurrentVehicle == car) return true;
+                }
+            }
+            return false;
+        }
+
+        private void Register(Vehicle car, CrewRoster crew)
         {
                 var handling = car.HandlingData;
                 if (handling == null || !handling.IsValid) return;
@@ -65,8 +89,8 @@ namespace Bloodlines.Core
                     if(gearing)handling.InitialDriveMaxFlatVelocity = profile.Applied;
                     profile.Travel.Apply(handling,car.Model);
                     if (car.Model.IsPlane || car.Model.IsHelicopter || car.Model.IsBoat) Logger.Info(car.DisplayName + ": " + profile.Travel.Report);
-                    // The grip, damping, weight and brakes the doubled gearing needs.
-                    if(gearing)profile.Road.Apply(handling,car);
+                    // The grip, damping, weight, brakes and realistic deformation the doubled gearing needs.
+                    if(gearing)profile.Road.Apply(handling, car, Config, IsCrewVehicle(car, crew));
                 }
                 else
                 {
@@ -117,7 +141,7 @@ namespace Bloodlines.Core
             if(vehicle.Model.IsBoat||vehicle.Model.IsSubmarine)return Function.Call<bool>(Hash.IS_ENTITY_IN_WATER,vehicle);
             return !vehicle.IsInAir;
         }
-        private void UpdatePower()
+        private void UpdatePower(CrewRoster crew)
         {
             if (Game.GameTime - _lastPowerTime > 250)
                 foreach (var key in _power.Keys.ToArray()) _power[key] = 1f;
@@ -126,6 +150,12 @@ namespace Bloodlines.Core
             {
                 var car = pair.Value;
                 if (!car.Exists() || car.Model.Hash!=_models[pair.Key]) continue;
+                if (Config != null && Config.VehicleDamageEnabled && IsCrewVehicle(car, crew))
+                {
+                    Function.Call(Hash.SET_VEHICLE_DAMAGE_SCALE, car, Config.CrewProtectionMultiplier);
+                    if (Game.Player.Character != null && Game.Player.Character.CurrentVehicle == car)
+                        Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, Config.CrewProtectionMultiplier);
+                }
                 float target = 1f;
                 if (CanAssist(car))
                 {
