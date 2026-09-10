@@ -1,6 +1,6 @@
 # Bloodlines — Proposed Story & Dialogue Changes
 
-**Status:** Proposal only — not implemented  
+**Status:** Superseded — the approved items were implemented on September 9, 2026. See `HANDOFF-IMPLEMENTATION-UPDATE.md` for what was built and `CHANGE-REGISTER.md` for the per-item decisions. Kept for the reasoning behind each choice; do not re-apply from here.  
 **Purpose:** Capture agreed story/dialogue revisions for later implementation without changing current mission scripts, campaign data, or runtime behavior.
 
 ---
@@ -110,7 +110,7 @@ The main issue is repeated tactical information.
 The current dialogue explains the same distance/upload mechanics multiple times. The future pass should let the HUD carry the exact range requirement while spoken dialogue carries urgency and personality.
 
 ### Proposed tone target
-Instead of repeatedly stating the exact 35-metre rule, use lines closer in spirit to:
+Instead of repeatedly stating the exact 35-meter rule, use lines closer in spirit to:
 
 **GOHAN**  
 "The van has the dock footage. Keep me close enough to punch into their signal and I can kill the upload."

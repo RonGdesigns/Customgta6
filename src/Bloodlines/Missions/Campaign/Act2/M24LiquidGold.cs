@@ -48,6 +48,7 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             SpawnCrane();
             if (!RequireAssets(_crane)) return false;
+            RequireAsset(_crane, "The crane truck was destroyed. Nothing comes out of the Alamo without it.");
             Station(CrewSlot.Ice, _ridge + new Vector3(0f, -25f, 0f));
             Station(CrewSlot.Gohan, _dredge + new Vector3(15f, -10f, 0f));
             return true;

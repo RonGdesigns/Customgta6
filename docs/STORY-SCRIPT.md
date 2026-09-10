@@ -7,11 +7,31 @@ Authored expansion of the omnibus and solo bibles. These are new lines, not quot
 Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.
 Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.
 
+A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, and the job read at his door. Both prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.
+
 M01 opens on separate private channels at separate exterior approach positions (ground-resolved at runtime). Recognition follows successful approaches, not mission launch.
 
 Each WAV uses the cue ID below, in that mission's existing audio bank. Silence is supported. Enter or controller A skips a scene; hold Backspace aborts.
 
 ## M01 — GHOST IN THE DOCKYARD
+
+### Prologue
+
+**GUESS** (M01_SCENE_PROLOGUE_01_GUESS) — Los Santos. Same heat coming off the runway. Fifteen years and the city didn't wait for me.
+
+**GUESS** (M01_SCENE_PROLOGUE_02_GUESS) — Two numbers in this phone I ain't dialed since graduation. Guess I'll find out if either one still works.
+
+**GUESS** (M01_SCENE_PROLOGUE_03_GUESS) — Voicemail. Both of them. Same as it ever was.
+
+**GUESS** (M01_SCENE_PROLOGUE_04_GUESS) — Car's where the man said it would be. Half a tank. That'll get me across town.
+
+### Arrival
+
+**GUESS** (M01_SCENE_ARRIVAL_01_GUESS) — Home. Or the closest thing I've got to one until I'm working again.
+
+**GUESS** (M01_SCENE_ARRIVAL_02_GUESS) — Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+
+**GUESS** (M01_SCENE_ARRIVAL_03_GUESS) — Somebody knew I was back before I did. I'm going anyway.
 
 ### Intro
 
@@ -61,7 +81,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Intro
 
-**GOHAN** (M02_SCENE_INTRO_01_GOHAN) — The van has the dock recording. I can hack it from the passenger seat. Stay within thirty-five metres while I cut the upload.
+**GOHAN** (M02_SCENE_INTRO_01_GOHAN) — The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.
 
 **ICE** (M02_SCENE_INTRO_02_ICE) — Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 
@@ -77,7 +97,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M03_SCENE_INTRO_01_GUESS) — Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
 
-**GOHAN** (M03_SCENE_INTRO_02_GOHAN) — Guess delays the rail response. Ice clears the depot; I load its weapons. Use the yellow work markers with E or D-pad Right. Then Guess brings the Benson home. Shared base, shared information.
+**GOHAN** (M03_SCENE_INTRO_02_GOHAN) — Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 
 ### Outro
 
@@ -91,7 +111,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M04_SCENE_INTRO_01_GOHAN) — Miller has our forensics and an Aegis buyer. The van's drive gave us the meeting. We need his copy.
 
-**GUESS** (M04_SCENE_INTRO_02_GUESS) — Gohan takes the marked breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
+**GUESS** (M04_SCENE_INTRO_02_GUESS) — Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 
 ### Outro
 
@@ -119,7 +139,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M06_SCENE_INTRO_01_GOHAN) — The mobile upload was one copy. Vespucci has the backup. Burning it buys us time; it doesn't erase who saw us.
 
-**GUESS** (M06_SCENE_INTRO_02_GUESS) — I wait in the Granger. Gohan cuts the marked feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
+**GUESS** (M06_SCENE_INTRO_02_GUESS) — I wait in the Granger. Gohan cuts the feeder, Ice takes the entrance, then Gohan burns the racks while Ice holds SWAT. Both of you come back before we leave.
 
 ### Outro
 
@@ -181,7 +201,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M10_SCENE_OUTRO_01_ICE) — You stopped joking on that bridge. I should've noticed how close we were before you had to tell me.
 
-**GUESS** (M10_SCENE_OUTRO_02_GUESS) — I joke when I'm scared too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
+**GUESS** (M10_SCENE_OUTRO_02_GUESS) — I joke when I'm nervous too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
 
 ## M11 — IRONCLAD DYNO
 
@@ -277,7 +297,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GOHAN** (M17_SCENE_OUTRO_01_GOHAN) — All right. External release, marked yellow. I learned to work alone. That doesn't mean I want to die that way.
+**GOHAN** (M17_SCENE_OUTRO_01_GOHAN) — All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 
 **ICE** (M17_SCENE_OUTRO_02_ICE) — We rehearse the pickups at staging. Everybody knows how to bring the other two back.
 
@@ -343,7 +363,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M22_SCENE_INTRO_01_ICE) — The container goes into the shallows. Nobody takes the whole shipment home in one night. We recover it in pieces.
 
-**GOHAN** (M22_SCENE_INTRO_02_GOHAN) — I want to check the foundry link before we head back. Aegis still knows there were three faces at the docks.
+**GOHAN** (M22_SCENE_INTRO_02_GOHAN) — That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 
 ### Outro
 
@@ -389,7 +409,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**ICE** (M25_SCENE_OUTRO_01_ICE) — I nearly did it again. Went quiet so neither of you would hear me scared. Next time, I'll make the call.
+**ICE** (M25_SCENE_OUTRO_01_ICE) — I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.
 
 **GUESS** (M25_SCENE_OUTRO_02_GUESS) — Make it early. Their spotters are over the Alamo now. We protect the water together.
 
@@ -397,7 +417,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Intro
 
-**GUESS** (M26_SCENE_INTRO_01_GUESS) — Those planes are searching for the submerged gold. I'll take the Lazer. Gohan, keep them from calling in a fix.
+**GUESS** (M26_SCENE_INTRO_01_GUESS) — Those planes are searching for the submerged gold. The Lazer we towed out of Zancudo under the M16 clearance is fueled in the McKenzie hangar. I'll take it. Gohan, keep them from calling in a fix.
 
 **ICE** (M26_SCENE_INTRO_02_ICE) — I'm listening to your channel. If you need me, you get an answer. That's the part I can promise.
 
@@ -627,7 +647,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GUESS** (M42_SCENE_OUTRO_01_GUESS) — Sub deployed. I'm still shaking. Nobody put that in the flight log.
+**GUESS** (M42_SCENE_OUTRO_01_GUESS) — Sub deployed. That one had my nerves up. Nobody put that in the flight log.
 
 **ICE** (M42_SCENE_OUTRO_02_ICE) — Put it in. Then somebody reading the plan knows what it asks of a person. We regroup at staging.
 
@@ -669,7 +689,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**ICE** (M45_SCENE_OUTRO_01_ICE) — Helipad secure. Command deck next. Gohan, bring Bradley's card. Guess, keep that extraction aircraft breathing.
+**ICE** (M45_SCENE_OUTRO_01_ICE) — Helipad's secure. Gohan, I need Bradley's card up here. Guess, how's our bird?
 
 **GOHAN** (M45_SCENE_OUTRO_02_GOHAN) — I'm on my way. When this door opens, we copy the evidence before we count the bonds.
 
@@ -777,7 +797,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M53_SCENE_INTRO_01_GOHAN) — Aegis is sweeping the subway approaches. If they hold these tunnels, our tower plan has no sheltered way in or out.
 
-**ICE** (M53_SCENE_INTRO_02_ICE) — Stay close enough to hear the actual answer when I ask if you're hurt. No more automatic 'I'm fine.'
+**ICE** (M53_SCENE_INTRO_02_ICE) — When I ask if you're hurt, I want the real answer. Not the automatic one.
 
 ### Outro
 
@@ -805,7 +825,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M55_SCENE_INTRO_01_GOHAN) — Three terminals, one five-minute window. The breach locks their escrow routes; the final authorization is still at Maze Bank.
 
-**ICE** (M55_SCENE_INTRO_02_ICE) — Nobody changes the timing alone. I spent too long thinking I could keep you safe by keeping you uninformed.
+**ICE** (M55_SCENE_INTRO_02_ICE) — Nobody changes the timing alone. I've done enough keeping you two in the dark.
 
 ### Outro
 
@@ -833,7 +853,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M57_SCENE_INTRO_01_GUESS) — Those gunships are searching our extraction waters. Clear their patrol pattern and we keep a fallback off the coast.
 
-**ICE** (M57_SCENE_INTRO_02_ICE) — You started planning exits for us before either of us learned to ask. I see that now.
+**ICE** (M57_SCENE_INTRO_02_ICE) — You had exits planned for us before we ever asked. Keep doing that.
 
 ### Outro
 
@@ -931,13 +951,13 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M64_SCENE_INTRO_01_GOHAN) — Power is cut above us. The shafts and stairs are the route. Check the next landing before leaving the last one.
 
-**GUESS** (M64_SCENE_INTRO_02_GUESS) — We survived fifteen years apart. I'd still rather climb one miserable staircase with you than disappear again.
+**GUESS** (M64_SCENE_INTRO_02_GUESS) — Fifteen years apart, and I'd still rather climb forty floors of this with you two than do one alone.
 
 ### Outro
 
 **ICE** (M64_SCENE_OUTRO_01_ICE) — Boardroom ahead. If Vance offers one of us a way out, the others hear the offer too.
 
-**GOHAN** (M64_SCENE_OUTRO_02_GOHAN) — And the answer. No more making a decision for someone because we're afraid of what he'll choose.
+**GOHAN** (M64_SCENE_OUTRO_02_GOHAN) — And the answer. Nobody decides for the other two.
 
 ## M65 — EXECUTIVE PRIVILEGE
 
@@ -1021,19 +1041,23 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M70_SCENE_OUTRO_01_GOHAN) — The copies are out. The money is routed. For once there's nothing on that burning machine we have to go back for.
 
-**GUESS** (M70_SCENE_OUTRO_02_GUESS) — Darius. Devin. Answer with your names. I want to know who made it out, not which job you were doing.
+**GUESS** (M70_SCENE_OUTRO_02_GUESS) — Darius. Devin. Answer in words. I want to know who made it out.
 
-**ICE** (M70_SCENE_OUTRO_03_ICE) — Darius. Still here. I should have called when I came home. I let shame decide you didn't want to hear from me.
+**ICE** (M70_SCENE_OUTRO_03_ICE) — Here. Wet. Fine.
 
-**GOHAN** (M70_SCENE_OUTRO_04_GOHAN) — Devin. I thought if you saw what happened to me, you'd only see the failure. I should have let you decide.
+**GUESS** (M70_SCENE_OUTRO_04_GUESS) — Devin?
 
-**GUESS** (M70_SCENE_OUTRO_05_GUESS) — Ron. I kept acting like leaving didn't hurt. Then every time somebody stayed, I made a joke instead of saying thanks.
+**GOHAN** (M70_SCENE_OUTRO_05_GOHAN) — Hold on. The relay's still pinging and I want to know why.
 
-**ICE** (M70_SCENE_OUTRO_06_ICE) — We're not fixing fifteen years on one boat. But tomorrow, when you call, I'm answering.
+**GUESS** (M70_SCENE_OUTRO_06_GUESS) — Man's got a burning airplane behind him and he's already on a device. You gonna answer your phone tomorrow?
 
-**GOHAN** (M70_SCENE_OUTRO_07_GOHAN) — Tomorrow sounds good. Tell me where we're going before Ron invents another shortcut.
+**GOHAN** (M70_SCENE_OUTRO_07_GOHAN) — Probably.
 
-**GUESS** (M70_SCENE_OUTRO_08_GUESS) — Breakfast. Three seats. After that, we figure it out together.
+**ICE** (M70_SCENE_OUTRO_08_ICE) — That's a no.
+
+**GUESS** (M70_SCENE_OUTRO_09_GUESS) — Breakfast. Three seats. I'm driving.
+
+**GUESS** (M70_SCENE_OUTRO_10_GUESS) — Told y'all... Guess never misses an exit.
 
 ## SM01 — LEAD & KEVLAR
 
@@ -1103,7 +1127,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (SM05_SCENE_OUTRO_01_GOHAN) — Telemetry received. It supplements our recon; it doesn't tell us every pilot's next thought. I'm heading back.
 
-**ICE** (SM05_SCENE_OUTRO_02_ICE) — Copy. Work's done for tonight. You can stop being useful long enough to eat with us.
+**ICE** (SM05_SCENE_OUTRO_02_ICE) — Job's done. Come eat before Ron starts calling your phone again.
 
 ## SM06 — CANYON RUNNER
 
@@ -1115,9 +1139,13 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GUESS** (SM06_SCENE_OUTRO_01_GUESS) — Tanker delivered. I had to choose between a clean run and backing off a blind corner. Backing off worked.
+**GUESS** (SM06_SCENE_OUTRO_01_GUESS) — Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
 
-**GOHAN** (SM06_SCENE_OUTRO_02_GOHAN) — Remember that when you tell the story. Let the younger version of you hear that slowing down can be skill too.
+**GOHAN** (SM06_SCENE_OUTRO_02_GOHAN) — You actually slowed down.
+
+**GUESS** (SM06_SCENE_OUTRO_03_GUESS) — Don't sound so surprised.
+
+**GOHAN** (SM06_SCENE_OUTRO_04_GOHAN) — I am.
 
 ## SM07 — BLOOD DEBT
 
@@ -1125,13 +1153,17 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (SM07_SCENE_INTRO_01_ICE) — Sterling sold out my unit. He's at Aegis now. I'm going after him for myself, and I won't hide that behind the campaign.
 
-**GUESS** (SM07_SCENE_INTRO_02_GUESS) — Then come back for yourself too. We can't make this decision for you, but we're here after it.
+**GUESS** (SM07_SCENE_INTRO_02_GUESS) — That's your call. Just come back when it's done.
 
 ### Outro
 
-**ICE** (SM07_SCENE_OUTRO_01_ICE) — He's dead. The men I lost are still dead. I said the debt was settled because I wanted it to feel finished.
+**ICE** (SM07_SCENE_OUTRO_01_ICE) — Sterling's dead.
 
-**GOHAN** (SM07_SCENE_OUTRO_02_GOHAN) — You don't have to arrive healed. Come sit down. We can hear their names if you want to say them.
+**GUESS** (SM07_SCENE_OUTRO_02_GUESS) — You good?
+
+**ICE** (SM07_SCENE_OUTRO_03_ICE) — Nah.
+
+**GUESS** (SM07_SCENE_OUTRO_04_GUESS) — Aight. Come back.
 
 ## SM08 — BURNER PROTOCOL
 
@@ -1139,13 +1171,17 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (SM08_SCENE_INTRO_01_GOHAN) — Vanderbilt & Cole forged the fraud case against me. I'm taking their files before I destroy the archive they used to control me.
 
-**ICE** (SM08_SCENE_INTRO_02_ICE) — Keep a copy outside the building. Your name is more than what an employer wrote beside it.
+**ICE** (SM08_SCENE_INTRO_02_ICE) — Take whatever proves what they did. And don't disappear for two days after.
 
 ### Outro
 
-**GOHAN** (SM08_SCENE_OUTRO_01_GOHAN) — Their archive burned. The files prove what they did; they don't make fifteen years disappear. I overstated it when I said I was clear.
+**GOHAN** (SM08_SCENE_OUTRO_01_GOHAN) — Files are out. Archive is gone.
 
-**GUESS** (SM08_SCENE_OUTRO_02_GUESS) — You don't owe us a clean record to belong here. Bring what happened to you, not a version you think we'll accept.
+**GUESS** (SM08_SCENE_OUTRO_02_GUESS) — Cool. You coming back?
+
+**GOHAN** (SM08_SCENE_OUTRO_03_GOHAN) — Yeah.
+
+**GUESS** (SM08_SCENE_OUTRO_04_GUESS) — That's all I needed.
 
 ## SM09 — THE LONG EXIT
 

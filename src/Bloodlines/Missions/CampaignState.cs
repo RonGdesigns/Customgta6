@@ -18,6 +18,17 @@ namespace Bloodlines.Missions
     /// playthrough; a flat text file next to the mod can be inspected, edited, backed
     /// up and deleted without touching anything Rockstar owns.
     /// </summary>
+    /// <summary>The five things "what next" can mean, so none of them falls back to M01.</summary>
+    public enum CampaignProgress
+    {
+        StoryAvailable,
+        /// <summary>The next story mission exists but a story gate holds it until named solo jobs are done.</summary>
+        StoryGated,
+        SideContentOnly,
+        StoryBlocked,
+        ImplementedContentComplete
+    }
+
     public sealed class CampaignState
     {
         private readonly string _path;
@@ -33,6 +44,13 @@ namespace Bloodlines.Missions
         public HashSet<string> Completed { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         public CrewSlot LastHero { get; private set; } = Protagonist.StartingSlot;
         public Vector3 LastLocation { get; private set; }
+
+        /// <summary>
+        /// Ron's arrival drive before M01. A save that already finished M01 counts as
+        /// having played it, so existing campaigns are never sent back to the airport.
+        /// </summary>
+        public bool PrologueComplete { get; set; }
+        public bool PrologueDue => !PrologueComplete && !IsComplete("M01");
 
         // --- economy (bible §2 and the heist payouts) ---
         public int CashOnHand { get; set; }
@@ -56,7 +74,8 @@ namespace Bloodlines.Missions
             { "grangerTurbineInstalled", false },
             { "halfTrackAcquired", false },
             { "krakenSubmarineReinforced", false },
-            { "racingTransmissionInstalled", false }
+            { "racingTransmissionInstalled", false },
+            { "armorPiercingSupply", false }
         };
 
         public Dictionary<string, HashSet<uint>> Weapons { get; } = new Dictionary<string, HashSet<uint>>(StringComparer.OrdinalIgnoreCase);
@@ -102,6 +121,7 @@ namespace Bloodlines.Missions
                 var campaign = Json.Object(root.TryGetValue("campaign", out var c) ? c : null);
                 state.CurrentMissionId = Json.String(campaign, "currentMissionId");
                 state.ActiveAct = Math.Max(1, Json.Int(campaign, "activeAct", 1));
+                state.PrologueComplete = campaign.TryGetValue("prologueComplete", out var prologue) && prologue is bool played && played;
                 foreach (var entry in Json.Array(campaign, "completedMissions"))
                 {
                     if (entry != null) state.Completed.Add(entry.ToString());
@@ -181,8 +201,48 @@ namespace Bloodlines.Missions
             var next = NextPlayable(catalog);
             CurrentMissionId = next?.Id ?? "";
             if (next != null) ActiveAct = (int)next.Act;
+            else Logger.Info("Every scripted mission is complete. The save now reports end of implemented content, not M01.");
 
             Save();
+        }
+
+        /// <summary>
+        /// What the campaign can offer next. Kept separate from <see cref="NextPlayable"/>
+        /// because "no next mission" used to be indistinguishable from "start over": the
+        /// player who finished the last scripted job must be told the build has run out
+        /// of story, never pointed back at M01.
+        /// </summary>
+        public CampaignProgress Progress(MissionCatalog catalog)
+        {
+            var story = NextStory(catalog);
+            if (story != null)
+            {
+                if (GateSatisfied(story, catalog)) return CampaignProgress.StoryAvailable;
+                return UnavailableGateJobs(story, catalog).Any() ? CampaignProgress.StoryBlocked : CampaignProgress.StoryGated;
+            }
+            var side = catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
+            if (side != null) return CampaignProgress.SideContentOnly;
+            bool anyStoryLeft = catalog.Playable.Any(m => !m.IsSolo && !IsComplete(m.Id));
+            return anyStoryLeft ? CampaignProgress.StoryBlocked : CampaignProgress.ImplementedContentComplete;
+        }
+
+        /// <summary>Human-readable form of <see cref="Progress"/> for the mission key and the menu.</summary>
+        public string DescribeProgress(MissionCatalog catalog)
+        {
+            switch (Progress(catalog))
+            {
+                case CampaignProgress.StoryAvailable: return "Next story mission: " + NextPlayable(catalog)?.Id;
+                case CampaignProgress.StoryGated: return DescribeGate(NextStory(catalog), catalog);
+                case CampaignProgress.SideContentOnly: return "Story is caught up for this build. Optional solo jobs remain: " + NextPlayable(catalog)?.Id;
+                case CampaignProgress.StoryBlocked:
+                {
+                    var story = NextStory(catalog);
+                    return story != null && UnavailableGateJobs(story, catalog).Any()
+                        ? DescribeGate(story, catalog) + " The story is blocked until that content exists."
+                        : "A story mission is waiting on a prerequisite that cannot be met in this build.";
+                }
+                default: return "All " + catalog.Playable.Count() + " scripted missions are complete. Later chapters are not in this build; replay any job from the mission menu.";
+            }
         }
 
         private void AwardCompletion(string id)
@@ -206,6 +266,7 @@ namespace Bloodlines.Missions
                 case "SM04": CashOnHand += 15000; FleetUpgrades["quarryRadiosRecovered"] = true; break;
                 case "SM05": CashOnHand += 15000; FleetUpgrades["estuaryTelemetry"] = true; break;
                 case "SM06": CashOnHand += 25000; FleetUpgrades["airfieldFuelReserves"] = true; break;
+                case "SM01": FleetUpgrades["armorPiercingSupply"] = true; break;
                 case "SM02": FleetUpgrades["surveillanceWormInstalled"] = true; break;
                 case "SM03": CashOnHand += 25000; FleetUpgrades["racingTransmissionInstalled"] = true; break;
             }
@@ -225,14 +286,103 @@ namespace Bloodlines.Missions
         /// </summary>
         public MissionDefinition NextPlayable(MissionCatalog catalog)
         {
-            return catalog.Playable.FirstOrDefault(mission =>
-                       !IsComplete(mission.Id) && PrerequisiteMet(mission));
+            // Story first. A solo job becoming available does not make it "next";
+            // it becomes next only when a gate is waiting on it.
+            var story = NextStory(catalog);
+            if (story != null)
+            {
+                var outstanding = OutstandingGateJobs(story, catalog).ToList();
+                if (outstanding.Count == 0) return story;
+                // The playable required jobs come first. If only unscripted ones
+                // remain, there is nothing to offer: the story is blocked and
+                // Progress() says why, rather than handing the gate mission over.
+                return catalog.Playable.FirstOrDefault(m => outstanding.Contains(m.Id, StringComparer.OrdinalIgnoreCase));
+            }
+            return catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
         }
+
+        /// <summary>The next main mission in order, gate or no gate. Null when none is playable.</summary>
+        public MissionDefinition NextStory(MissionCatalog catalog) =>
+            catalog.Playable.FirstOrDefault(m => !m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
 
         public bool PrerequisiteMet(MissionDefinition mission)
         {
             string prerequisite = mission.Info.Prerequisite;
             return string.IsNullOrEmpty(prerequisite) || IsComplete(prerequisite);
+        }
+
+        // --- story gates ---
+
+        /// <summary>
+        /// Solo jobs are optional inside their window and mandatory before the story
+        /// event they set up. This is the whole rule, in one place: the main mission
+        /// on the left cannot start until every solo on the right is complete.
+        /// </summary>
+        public static readonly IReadOnlyDictionary<string, string[]> StoryGates = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "M19", new[] { "SM01", "SM02", "SM03" } },
+            { "M44", new[] { "SM04", "SM05", "SM06" } },
+            { "M63", new[] { "SM07", "SM08" } },
+            { "M68", new[] { "SM09" } }
+        };
+
+        /// <summary>
+        /// An older save that is already past a gate is never trapped behind it: the
+        /// gate is treated as satisfied once its own mission, or any later main
+        /// mission, is complete. The solos stay available as optional content.
+        /// </summary>
+        public bool GateGrandfathered(string gateMission)
+        {
+            if (IsComplete(gateMission)) return true;
+            if (!TryMainNumber(gateMission, out int gate)) return false;
+            return Completed.Any(id => TryMainNumber(id, out int done) && done > gate);
+        }
+
+        private static bool TryMainNumber(string id, out int number)
+        {
+            number = 0;
+            return !string.IsNullOrEmpty(id) && id.Length == 3 && (id[0] == 'M' || id[0] == 'm') && int.TryParse(id.Substring(1), out number);
+        }
+
+        /// <summary>
+        /// The required solo jobs still standing between the player and this mission,
+        /// scripted or not. A required job with no script in this build still counts:
+        /// the story is then blocked by unavailable content and says so, rather than
+        /// quietly opening a gate the design closed.
+        /// </summary>
+        public IEnumerable<string> OutstandingGateJobs(MissionDefinition mission, MissionCatalog catalog)
+        {
+            if (mission == null || !StoryGates.TryGetValue(mission.Id, out var required) || GateGrandfathered(mission.Id)) yield break;
+            foreach (string solo in required)
+                if (!IsComplete(solo)) yield return solo;
+        }
+
+        /// <summary>Outstanding required jobs that this build cannot offer because they have no script.</summary>
+        public IEnumerable<string> UnavailableGateJobs(MissionDefinition mission, MissionCatalog catalog)
+        {
+            foreach (string solo in OutstandingGateJobs(mission, catalog))
+                if (catalog == null || !catalog.Playable.Any(m => string.Equals(m.Id, solo, StringComparison.OrdinalIgnoreCase)))
+                    yield return solo;
+        }
+
+        public bool GateSatisfied(MissionDefinition mission, MissionCatalog catalog) =>
+            !OutstandingGateJobs(mission, catalog).Any();
+
+        /// <summary>
+        /// "M19 needs SM01, SM02 finished first." — or, when a required job cannot be
+        /// played in this build, "M63 needs SM08 finished first; SM07 has no script in
+        /// this build." Empty when the gate is open.
+        /// </summary>
+        public string DescribeGate(MissionDefinition mission, MissionCatalog catalog)
+        {
+            var unavailable = UnavailableGateJobs(mission, catalog).ToList();
+            var playable = OutstandingGateJobs(mission, catalog).Where(id => !unavailable.Contains(id, StringComparer.OrdinalIgnoreCase)).ToList();
+            if (playable.Count == 0 && unavailable.Count == 0) return "";
+            string text = mission.Id + " needs ";
+            if (playable.Count > 0) text += string.Join(", ", playable) + " finished first";
+            if (unavailable.Count > 0)
+                text += (playable.Count > 0 ? "; " : "") + string.Join(", ", unavailable) + (unavailable.Count == 1 ? " has" : " have") + " no script in this build";
+            return text + ".";
         }
 
         public void Reset()
@@ -243,6 +393,7 @@ namespace Bloodlines.Missions
             CharacterMemory.Clear();
             CurrentMissionId = "";
             ActiveAct = 1;
+            PrologueComplete = false;
             CashOnHand = 0;
             AlamoGoldDredgedTons = 0f;
             OffshoreEscrowBalance = 0;
@@ -266,6 +417,7 @@ namespace Bloodlines.Missions
                         { "currentMissionId", CurrentMissionId },
                         { "completedMissions", Completed.OrderBy(id => id, StringComparer.Ordinal).ToList() },
                         { "activeAct", ActiveAct },
+                        { "prologueComplete", PrologueComplete },
                         {
                             "lastKnownLocation", new Dictionary<string, object>
                             {

@@ -27,7 +27,21 @@ namespace Bloodlines.Missions
     {
         private readonly List<Entity> _entities = new List<Entity>();
         private readonly Dictionary<Ped, string> _survivors = new Dictionary<Ped, string>();
+        private readonly Dictionary<Entity, string> _requiredAssets = new Dictionary<Entity, string>();
         protected void RequireSurvivor(Ped ped, string reason) { if (ped != null) _survivors[ped] = reason; }
+
+        /// <summary>
+        /// A vehicle or prop the story needs for the whole mission, not just the stage
+        /// that happens to be protecting it. Losing it fails the attempt immediately
+        /// with a reason, instead of a later objective waiting forever on a wreck.
+        /// </summary>
+        protected void RequireAsset(Entity entity, string reason) { if (entity != null) _requiredAssets[entity] = reason; }
+
+        private static bool AssetLost(Entity entity)
+        {
+            if (entity == null || !entity.Exists() || entity.IsDead) return true;
+            return entity is Vehicle vehicle && !vehicle.IsDriveable;
+        }
         private readonly List<Blip> _blips = new List<Blip>();
 
         protected MissionContext Ctx { get; private set; }
@@ -88,6 +102,8 @@ namespace Bloodlines.Missions
             {
                 foreach (var survivor in _survivors)
                     if (!survivor.Key.Exists() || survivor.Key.IsDead) { Fail(survivor.Value); return; }
+                foreach (var asset in _requiredAssets)
+                    if (AssetLost(asset.Key)) { Fail(asset.Value); return; }
                 OnUpdate();
             }
             catch (Exception ex)
@@ -159,7 +175,16 @@ namespace Bloodlines.Missions
             if (Status != MissionStatus.Running) return;
             Status = MissionStatus.Passed;
             Logger.Info("Mission passed: " + Id);
+            // Runs while the world still exists, so a chapter can record where its
+            // vehicles, cargo and people are before cleanup takes them.
+            try { OnPassed(); }
+            catch (Exception ex) { Logger.Error("Mission " + Id + " handoff record failed", ex); }
             Cleanup();
+        }
+
+        /// <summary>Called on pass before cleanup. Override to hand state to the next chapter.</summary>
+        protected virtual void OnPassed()
+        {
         }
 
         public void Fail(string reason)
@@ -242,6 +267,7 @@ namespace Bloodlines.Missions
             }
             _entities.Clear();
             _survivors.Clear();
+            _requiredAssets.Clear();
 
             if (Ctx?.Crew != null)
             {

@@ -1,3 +1,16 @@
+# Prologue: Ron alone at LSIA, then at his apartment door. Nobody else is in his life yet.
+# HUD carries the drive; these lines carry the man.
+prologue
+GUESS|Los Santos. Same heat coming off the runway. Fifteen years and the city didn't wait for me.
+GUESS|Two numbers in this phone I ain't dialed since graduation. Guess I'll find out if either one still works.
+GUESS|Voicemail. Both of them. Same as it ever was.
+GUESS|Car's where the man said it would be. Half a tank. That'll get me across town.
+
+arrival
+GUESS|Home. Or the closest thing I've got to one until I'm working again.
+GUESS|Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+GUESS|Somebody knew I was back before I did. I'm going anyway.
+
 # M01 cold open: private channels, not a conversation between friends.
 intro
 GUESS|Terminal Island. Two in the morning. They sent me a gate code, a photograph and half the money. That's usually the part where I should ask more questions.

@@ -8,6 +8,12 @@ using GTA.Math;
 
 namespace Bloodlines.Missions.Campaign
 {
+    /// <summary>The four-chapter operation M19–M22 hands state through <see cref="HandoffLedger"/>.</summary>
+    public static class PortHeist
+    {
+        public const string Operation = "PortHeist";
+    }
+
     /// <summary>
     /// M19 — "The Port Heist: Underwater Breach". Berth 44, 03:00, storm.
     ///
@@ -49,8 +55,21 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             SpawnKraken();
             if (!RequireAssets(_kraken)) return false;
+            RequireAsset(_kraken, "The Kraken was lost. The breach cannot be cut without it.");
             Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
             return true;
+        }
+
+        /// <summary>
+        /// Chapter one of four. The next mission opens with Guess at the hangar, but
+        /// Gohan is still sitting in the surfaced Kraken; the record lets M20 put
+        /// him there instead of on the apron as if the dive never happened.
+        /// </summary>
+        protected override void OnPassed()
+        {
+            var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M20", Ctx.Crew, _kraken);
+            record.Notes["kraken"] = "surfaced at M19.Surface with Gohan aboard";
+            Ctx.Handoffs.Record(record);
         }
 
         protected override IEnumerable<MissionStage> BuildStages()

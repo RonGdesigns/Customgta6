@@ -58,7 +58,8 @@ namespace Bloodlines.Missions
         public bool RetryAvailable { get; private set; }
         public string LastFailureReason { get; private set; } = "";
 
-        public bool Start(MissionDefinition definition)
+        /// <param name="bypassGates">QA only: start a gated story mission with its solo jobs unfinished.</param>
+        public bool Start(MissionDefinition definition, bool bypassGates = false)
         {
             if (definition == null) return false;
             if (SurveyMode.IsSurveyRunning)
@@ -87,6 +88,15 @@ namespace Bloodlines.Missions
                 return false;
             }
 
+            // The story mission is real and the player is told exactly what stands
+            // in front of it, rather than the gate pretending it does not exist.
+            if (!bypassGates && !_state.GateSatisfied(definition, _catalog))
+            {
+                GameUtils.Notify("~y~" + _state.DescribeGate(definition, _catalog));
+                return false;
+            }
+            if (bypassGates && !_state.GateSatisfied(definition, _catalog)) Logger.Warn("QA bypassed a story gate: " + _state.DescribeGate(definition, _catalog));
+
             RetryAvailable = false;
             LastFailureReason = "";
             _context.Abilities.Stop();
@@ -98,6 +108,9 @@ namespace Bloodlines.Missions
             if (hour >= 0) GameUtils.SetClock(hour, minute);
             GameUtils.SetWeather(definition.Info.Weather);
             _currentDefinition = definition;
+            // Everything the crew carries from here until teardown is on loan unless
+            // the campaign says otherwise; the baseline is what they owned walking in.
+            _context.Crew.Arsenal?.BeginLoan(_context.Crew);
             if (_context.Cutscenes.Play(definition.Id, "intro", definition.Title))
             {
                 _pending = definition;
@@ -115,13 +128,15 @@ namespace Bloodlines.Missions
                 Logger.Error(definition.Id + " mission factory failed", ex);
                 _context.Switching.SetUnlocked();
                 _context.Checkpoints.Clear();
+                _context.Crew.Arsenal?.EndLoan(_context.Crew);
                 RetryAvailable = true;
                 GameUtils.Notify("~r~Mission could not load. Retry from the mission menu.");
                 return false;
             }
-            if (mission == null) { GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
+            if (mission == null) { _context.Crew.Arsenal?.EndLoan(_context.Crew); GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
             if (!mission.Begin(_context))
             {
+                _context.Crew.Arsenal?.EndLoan(_context.Crew);
                 RetryAvailable = true;
                 GameUtils.Notify("~r~" + definition.Id + " failed to start. Check Bloodlines.log.");
                 return false;
@@ -204,6 +219,9 @@ namespace Bloodlines.Missions
             _context.Abilities.Stop();
             _context.Switching.SetUnlocked();
             ObjectiveMarkers.Clear();
+            // Pass, fail or abort: loans go back. Completion was committed before
+            // this on a pass, so the mission's own permanent rewards are kept.
+            _context.Crew.Arsenal?.EndLoan(_context.Crew);
         }
 
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
@@ -265,9 +283,8 @@ namespace Bloodlines.Missions
         {
             _context.Cutscenes.Stop();
             _pending = null;
-            if (_current == null) return;
-            _current.Abort();
-            _current = null;
+            if (_current != null) { _current.Abort(); _current = null; }
+            _context.Crew.Arsenal?.EndLoan(_context.Crew);
         }
     }
 }

@@ -1,6 +1,6 @@
 # Bloodlines — Proposed Story Changes Addendum (Batches 3–5)
 
-**Status:** Proposal only — not implemented.  
+**Status:** Superseded — the approved items were implemented on September 9, 2026. See `HANDOFF-IMPLEMENTATION-UPDATE.md` for what was built and `CHANGE-REGISTER.md` for the per-item decisions. Kept for the reasoning behind each choice; do not re-apply from here.  
 **Companion to:** `docs/PROPOSED-STORY-CHANGES.md`
 
 This addendum carries the corrected real-life-inspired trio dynamic, reviewed changes through M38, and the M39–M49 review. No mission code, dialogue data, runtime behavior, or bible PDFs are changed by this document.
@@ -69,7 +69,7 @@ Good mission. Verify how the trio obtained/accessed/stored the Lazer. Major equi
 
 ## M27 — Flight Risk
 
-Strong set piece. Protect Ron wanting an argument with Ice later and Ice giving both brothers a vote on the approach. Move exact 12–60 metre formation requirements and marked-boat language to HUD.
+Strong set piece. Protect Ron wanting an argument with Ice later and Ice giving both brothers a vote on the approach. Move exact 12–60 meter formation requirements and marked-boat language to HUD.
 
 ---
 

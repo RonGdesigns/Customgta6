@@ -30,12 +30,14 @@ namespace Bloodlines.Core
 
         public void RouteNextAvailable()
         {
-            foreach (var mission in _catalog.Playable)
+            // Same answer as the mission key: story first, a solo only when a gate
+            // is waiting on it.
+            var mission = _state.NextPlayable(_catalog);
+            if (mission != null && _keys.TryGetValue(mission.Id, out var key) && _locations.Get(key) is MissionLocation point)
             {
-                if (_state.IsComplete(mission.Id) || !_state.PrerequisiteMet(mission) || !_keys.TryGetValue(mission.Id, out var key)) continue;
-                var point = _locations.Get(key); if (point == null) continue;
                 GTA.Native.Function.Call(GTA.Native.Hash.SET_NEW_WAYPOINT, point.Position.X, point.Position.Y);
-                GameUtils.Notify("~g~Gohan's intel: " + mission.Title + ". Start location marked."); return;
+                string gate = _state.Progress(_catalog) == CampaignProgress.StoryGated ? " " + _state.DescribeGate(_state.NextStory(_catalog), _catalog) : "";
+                GameUtils.Notify("~g~Gohan's intel: " + mission.Title + ". Start location marked." + gate); return;
             }
             GameUtils.Notify("~y~No new playable lead is available. Completed jobs remain in the mission menu.");
         }

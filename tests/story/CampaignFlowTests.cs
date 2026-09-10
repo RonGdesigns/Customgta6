@@ -42,6 +42,7 @@ public static partial class StoryTests
      string name=objective.GetType().Name;
      if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());
      else if(name=="MissionInteraction") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
+     else if(name=="TechnicalChoiceObjective") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());Game.Accept=true;}
      else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v); if(Field<bool>(objective,"_requireCrew")) foreach(var hero in Protagonist.All.Where(h=>h.Slot!=crew.ActiveSlot)) crew.PedFor(hero.Slot)?.SetIntoVehicle(v,hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);}
      else if(name=="DeliverVehicleObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
      else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;

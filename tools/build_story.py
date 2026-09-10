@@ -28,9 +28,10 @@ def render():
     with (ROOT/'data/missions.tsv').open(encoding='utf-8') as stream:
         missions={row['id']: row for row in csv.DictReader(stream,delimiter='\t')}
     beats=blocks(ROOT/'data/story_beats.txt',r'S?M\d\d')
-    opening=blocks(ROOT/'data/opening_scene.txt',r'intro|recognition')
+    opening=blocks(ROOT/'data/opening_scene.txt',r'prologue|arrival|intro|recognition')
     if beats.keys()!=missions.keys(): raise ValueError(f'Mission coverage mismatch: {beats.keys() ^ missions.keys()}')
-    if opening.keys()!={'intro','recognition'}: raise ValueError('Opening requires intro and recognition')
+    if opening.keys()!={'prologue','arrival','intro','recognition'}: raise ValueError('Opening requires prologue, arrival, intro and recognition')
+    if any(speaker!='GUESS' for phase in ('prologue','arrival') for speaker,_ in opening[phase]): raise ValueError('Ron is alone before M01')
     with (ROOT/'data/mission_starts.tsv').open(encoding='utf-8') as stream:
         starts=list(csv.DictReader(stream,delimiter='\t'))
     with (ROOT/'data/locations.tsv').open(encoding='utf-8') as stream:
@@ -47,18 +48,21 @@ def render():
         '36 gameplay missions exist (M01–M30, SM01–SM06). Other scenes are authored for future scripts; they are not playable missions.', '',
         'Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.',
         'Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.', '',
+        'A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, and the job read at his door. Both prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.', '',
         'M01 opens on separate private channels at separate exterior approach positions (ground-resolved at runtime). Recognition follows successful approaches, not mission launch.', '',
         'Each WAV uses the cue ID below, in that mission\'s existing audio bank. Silence is supported. Enter or controller A skips a scene; hold Backspace aborts.', '']
     for mission, lines in beats.items():
         if len(lines)<4: raise ValueError(f'{mission}: needs briefing and aftermath')
         phases={'intro': lines[:2], 'outro': lines[2:]}
-        if mission=='M01': phases={'intro':opening['intro'],'recognition':opening['recognition'],'outro':lines[2:]}
+        if mission=='M01': phases={'prologue':opening['prologue'],'arrival':opening['arrival'],'intro':opening['intro'],'recognition':opening['recognition'],'outro':lines[2:]}
         script += [f'## {mission} — {missions[mission]["title"]}', '']
         for phase, cues in phases.items():
             script += [f'### {phase.title()}', '']
             for i,(speaker,line) in enumerate(cues,1):
                 cue_id=f'{mission}_SCENE_{phase.upper()}_{i:02d}_{speaker}'
-                direction=('Private channel; no recognition or shared conversation' if mission=='M01' and phase=='intro' else
+                direction=('Alone at the terminal curb; phone, walk to the car, get in' if phase=='prologue' else
+                           'Alone at the apartment door; out of the car, read the job' if phase=='arrival' else
+                           'Private channel; no recognition or shared conversation' if mission=='M01' and phase=='intro' else
                            'Face-to-face reunion; anger interrupted by danger' if phase=='recognition' else
                            'Reflective; allow the response to land' if phase=='outro' else 'Briefing; intent before tactics')
                 rows.append(dict(cue_id=cue_id,mission=mission,phase=phase,speaker=speaker,direction=direction,line=line))
@@ -99,6 +103,6 @@ def main():
         if args.check:
             if not path.exists() or path.read_text(encoding='utf-8')!=text: raise SystemExit('Regenerate stale artifact: '+str(path))
         else: path.write_text(text,encoding='utf-8',newline='\n')
-    print(f'Story coverage: 79 missions, {count} unique cues, 159 scenes; '+('freshness verified' if args.check else 'generated'))
+    print(f'Story coverage: 79 missions, {count} unique cues, 161 scenes; '+('freshness verified' if args.check else 'generated'))
 
 if __name__=='__main__':main()

@@ -1,10 +1,12 @@
 # Progression, homes and unlocks
 
-Current build: 36 playable missions, M01–M30 and SM01–SM06. The full story outline contains 79 jobs. The next unimplemented main chapter is M31; its marker is intentionally absent. Existing saves and earned items are retained.
+Current build: 36 playable missions, M01–M30 and SM01–SM06, plus Ron's arrival prologue before M01 on a fresh save. The full story outline contains 79 jobs. The next unimplemented main chapter is M31; its marker is intentionally absent. When every scripted job is complete the mission key says so instead of offering M01 again. Existing saves and earned items are retained; a save that already finished M01 never plays the prologue.
+
+Before M01 is complete the crew key deploys Guess alone; Ice and Gohan join after the dockyard. Weapons a mission hands out are loans: when the mission ends, however it ends, anything a hero is carrying that was not in the locker before, is not his standard loadout and is not an earned milestone reward is taken back.
 
 ## How progression actually works
 
-Finish a mission to satisfy the next job's prerequisite. The three solo jobs of Act I become available after M03; the three Act II solo jobs open after M28. Optional solo jobs are never required to understand or unlock the next main mission. Replay is available through the mission menu. It does not pay the same reward twice.
+Finish a mission to satisfy the next job's prerequisite. The three solo jobs of Act I become available after M03; the three Act II solo jobs open after M28. Solo jobs are optional inside their window and mandatory before the story event they set up: M19 needs SM01–SM03, M44 needs SM04–SM06, M63 needs SM07–SM08 and M68 needs SM09. Until a gate is reached the mission key and Gohan's lead point at the next main mission; at a gate they point at the first outstanding solo, and starting the story mission tells you which jobs remain. A save that is already past a gate is never sent back. Replay is available through the mission menu. It does not pay the same reward twice.
 
 This is currently a mission-milestone system, not an XP or character-level system. There are no skill points, weapon levels, recurring rent payments or simulated businesses. The cash and gold counters record the crew's resources. Ammu-Nation and vehicle shops now spend crew cash on weapons, ammunition, armor and car work; see MARKET-AND-TRAVEL-UPDATE.md for story locks, weapon prices, customization and Guess Customs discounts. The offshore escrow remains zero in the playable chapters.
 
@@ -44,7 +46,8 @@ DLC rewards are availability-checked. Unsupported hashes stay recorded as unlock
 |---|---|
 | Start | Each brother has an exterior home marker and access to a furnished starter interior. Rest, wardrobe and personal locker are available between jobs after losing police. |
 | M03 | Cypress foundry is recorded as the crew's base. This is a story/base flag, not a new walkable foundry interior. |
-| SM03 | Racing-transmission upgrade flag becomes available to the fleet system. KJ remains a supporting NPC. |
+| SM01 | Ice's armor-piercing supply line: every locker restock issues his rifles double the usual ammunition. Ice only. |
+| SM03 | Racing transmission: any car or motorcycle repaired at Guess's chop bay leaves with the race transmission mod fitted, once per vehicle. KJ remains a supporting NPC. |
 | M11 | Granger turbine upgrade becomes available to the fleet system. The earlier engine-theft missions only acquire cargo. |
 | M14 | McKenzie hangar access is recorded. |
 | M17 | Reinforced Kraken upgrade is recorded. |
@@ -69,7 +72,7 @@ At home, Ice's workbench restocks weapons and armor, Gohan's reviews the next ve
 | M28 | $20,000 | Relay disabled flag |
 | M29 | $35,000 | Bunker fuel flag |
 | M30 | $45,000 | Satellite parts flag |
-| SM03 | $25,000 | Racing transmission flag |
+| SM03 | $25,000 | Racing transmission (chop bay) |
 | SM04 | $15,000 | Quarry radios flag |
 | SM05 | $15,000 | Estuary telemetry flag |
 | SM06 | $25,000 | Airfield fuel flag |

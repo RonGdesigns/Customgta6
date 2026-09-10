@@ -45,7 +45,7 @@ namespace Bloodlines.Core
         public void UpdateTransition() { Apartment.Update(); }
         public Action OpenMenu { get; set; }
         public Action RouteNextLead { get; set; }
-        public Action ApplyFleetUpgrade { get; set; }
+        public Action<Vehicle> ApplyFleetUpgrade { get; set; }
         public Func<bool> Allowed { get; set; }
         public string WorkbenchName => _crew.ActiveSlot == CrewSlot.Ice ? "Restock weapons and armor" :
             _crew.ActiveSlot == CrewSlot.Gohan ? "Review the next verified lead" : "Repair the nearby vehicle";
@@ -70,7 +70,7 @@ namespace Bloodlines.Core
                 if (vehicle == null || !vehicle.Exists() || vehicle.IsDead || vehicle.Position.DistanceTo(player.Position) > 15f ||
                     !(vehicle.Model.IsCar || vehicle.Model.IsBike) || vehicle.Speed > 1f)
                 { GameUtils.Notify("~y~Park a car or motorcycle beside the chop bay first."); return; }
-                vehicle.Repair(); vehicle.Wash(); ApplyFleetUpgrade?.Invoke();
+                vehicle.Repair(); vehicle.Wash(); ApplyFleetUpgrade?.Invoke(vehicle);
                 GameUtils.Notify("~o~Repaired at Guess's chop bay.");
             }
         }

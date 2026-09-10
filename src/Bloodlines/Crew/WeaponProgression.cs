@@ -57,6 +57,63 @@ namespace Bloodlines.Crew
         }
         private readonly CampaignState _state;
         private int _nextCapture, _captureSlot;
+        private readonly Dictionary<CrewSlot, HashSet<uint>> _loanBaseline = new Dictionary<CrewSlot, HashSet<uint>>();
+
+        /// <summary>True from mission start until its teardown returns the loans.</summary>
+        public bool LoanActive => _loanBaseline.Count > 0;
+
+        /// <summary>
+        /// Snapshot what each hero owns as the mission starts. Anything found on a hero
+        /// afterward that is not in this set, and not a permanent reward the campaign
+        /// has committed, was issued by the mission and goes back with it.
+        /// </summary>
+        public void BeginLoan(CrewRoster crew)
+        {
+            _loanBaseline.Clear();
+            foreach (var hero in Protagonist.All) _loanBaseline[hero.Slot] = new HashSet<uint>(Owned(hero.Slot));
+            Core.Logger.Info("Weapon loan opened; locker baseline captured for the crew.");
+        }
+
+        /// <summary>
+        /// Return the loans. Runs after a pass has been committed, so rewards for the
+        /// mission just finished count as owned. Never removes a weapon that was in the
+        /// locker before the mission or that a completed milestone grants. Returns how
+        /// many weapons were taken back.
+        /// </summary>
+        public int EndLoan(CrewRoster crew)
+        {
+            if (!LoanActive) return 0;
+            UnlockRewards();
+            int returned = 0;
+            foreach (var hero in Protagonist.All)
+            {
+                var allowed = new HashSet<uint>(_loanBaseline[hero.Slot]);
+                foreach (uint reward in RewardHashes(hero.Slot)) allowed.Add(reward);
+                foreach (var weapon in hero.Loadout) allowed.Add((uint)weapon);
+                // A capture that slipped through during the mission is undone here.
+                Owned(hero.Slot).RemoveWhere(hash => !allowed.Contains(hash));
+                var ped = crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                foreach (WeaponHash weapon in ValidWeapons)
+                {
+                    if (allowed.Contains((uint)weapon) || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, (uint)weapon, false)) continue;
+                    ped.Weapons.Remove(weapon);
+                    returned++;
+                }
+            }
+            _loanBaseline.Clear();
+            _state.Save();
+            Core.Logger.Info("Weapon loan closed; " + returned + " mission-issued weapon(s) returned.");
+            return returned;
+        }
+
+        /// <summary>Every milestone weapon this hero has earned so far.</summary>
+        private IEnumerable<uint> RewardHashes(CrewSlot slot)
+        {
+            foreach (string mission in RewardMissions)
+                if (_state.IsComplete(mission) && ReceivesReward(mission, slot))
+                    yield return (uint)Rewards(mission)[(int)slot];
+        }
         private WeaponHash[] _validWeapons;
         private WeaponHash[] ValidWeapons => _validWeapons ?? (_validWeapons = Enum.GetValues(typeof(WeaponHash)).Cast<WeaponHash>()
             .Concat(DlcCatalog.Select(w => (WeaponHash)w.Hash)).Distinct()
@@ -110,6 +167,18 @@ namespace Bloodlines.Crew
                     changed |= Owned(slot).Add((uint)weapon);
             return changed;
         }
+        /// <summary>
+        /// SM01's tungsten-core 7.62 is a supply line, not a new gun: once Ice has it,
+        /// every locker restock issues his rifles double the usual count. The story
+        /// promised the ammunition would matter, so the benefit is real and bounded.
+        /// </summary>
+        public bool HasArmorPiercingSupply(CrewSlot slot) =>
+            slot == CrewSlot.Ice && _state.FleetUpgrades.TryGetValue("armorPiercingSupply", out bool stocked) && stocked;
+        public int RestockCount(CrewSlot slot, uint weapon, bool restock)
+        {
+            int count = Core.WeaponMarket.AmmoCount(weapon);
+            return restock && count > 3 && HasArmorPiercingSupply(slot) ? count * 2 : count;
+        }
         public void Apply(CrewSlot slot, Ped ped, bool restock = false)
         {
             UnlockRewards();
@@ -117,15 +186,21 @@ namespace Bloodlines.Crew
             foreach (uint weapon in Owned(slot))
                 if (Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) &&
                     (restock || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)))
-                    ped.Weapons.Give((WeaponHash)weapon, Core.WeaponMarket.AmmoCount(weapon), false, true);
+                    ped.Weapons.Give((WeaponHash)weapon, RestockCount(slot, weapon, restock), false, true);
         }
-        public void Update(CrewRoster crew)
+        /// <summary>
+        /// Ownership capture runs only in free roam. A weapon a mission hands out is a
+        /// loan for that job; recording it here would make every mission-issued MG a
+        /// permanent locker item and quietly pre-empt the milestone that is supposed
+        /// to unlock it.
+        /// </summary>
+        public void Update(CrewRoster crew, bool captureAllowed = true)
         {
             if (Game.GameTime < _nextCapture || !crew.IsDeployed) return;
             _nextCapture = Game.GameTime + 1700;
             bool changed = UnlockRewards();
             var hero = Protagonist.All[_captureSlot++ % Protagonist.All.Length];
-            changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
+            if (captureAllowed && !LoanActive) changed |= Capture(hero.Slot, crew.PedFor(hero.Slot));
             Apply(hero.Slot, crew.PedFor(hero.Slot));
             if (changed) _state.Save();
         }

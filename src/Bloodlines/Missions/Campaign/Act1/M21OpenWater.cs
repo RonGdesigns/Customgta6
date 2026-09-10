@@ -25,7 +25,9 @@ namespace Bloodlines.Missions.Campaign
 
         private Vehicle _launch;
         private Vehicle _cargobob;
+        private Prop _container;
         private Ped _cargobobPilot;
+        private OperationHandoff _handoff;
         private Vector3 _spawn;
         private Vector3 _breakwater;
         private Vector3 _ridge;
@@ -51,15 +53,35 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Game.Player.Character.Weapons.Give(WeaponHash.MG, 400, false, true);
 
+            _handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
             SpawnLaunch();
             SpawnCargobob();
-            if (!RequireAssets(_launch, _cargobob, _cargobobPilot)) return false;
+            if (!RequireAssets(_launch, _cargobob, _cargobobPilot, _container)) return false;
+            RequireAsset(_cargobob, "The Cargobob went down with the bullion.");
+            RequireAsset(_container, "The bullion container was lost.");
+            RequireAsset(_launch, "The armed launch was destroyed. The lift has no escort.");
             Station(CrewSlot.Gohan, _launch, VehicleSeat.Driver);
             Station(CrewSlot.Ice, _launch, VehicleSeat.Passenger);
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.MicroSMG, 500, true, true);
-            // Hold the airborne lift while the player reads the briefing and boards.
-            StartCargobob();
+            // The lift waits, airborne and rotors turning, until the escort is actually
+            // on the water. Nothing flies toward the breakwater while Gohan is still
+            // boarding the launch.
+            HoldLift();
             return true;
+        }
+
+        private void HoldLift()
+        {
+            if (_cargobob == null || !_cargobob.Exists()) return;
+            _cargobob.IsPositionFrozen = true;
+            _cargobob.IsEngineRunning = true;
+            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, _cargobob);
+        }
+
+        private void ReleaseLift()
+        {
+            if (_cargobob == null || !_cargobob.Exists()) return;
+            _cargobob.IsPositionFrozen = false;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -74,7 +96,7 @@ namespace Bloodlines.Missions.Campaign
                     new ShadowTargetObjective("Stay on the Cargobob's wing.", () => _cargobob, 240f, 15,
                         "The launch lost contact with the Cargobob.", acquireSeconds: 60),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .OnEnter(context => { StartCargobob(); SpawnHostileBoats(); })
+                .OnEnter(context => { ReleaseLift(); StartCargobob(); SpawnHostileBoats(); })
                 .WithCues("M21_S1_01_GOHAN");
 
             yield return new MissionStage("Kill the speedboats",
@@ -116,9 +138,14 @@ namespace Bloodlines.Missions.Campaign
             var pilotModel = new Model("g_m_y_famca_01");
             if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(pilotModel)) return;
 
-            _cargobob = Track(World.CreateVehicle(model, _spawn + new Vector3(-40f, 30f, 45f), 20f));
+            // With a fresh M20 record the lift starts where the climb-out ended and
+            // still flies heavy; otherwise the default staging above the launch.
+            var start = _handoff != null && _handoff.VehicleModel.Length > 0 ? _handoff.VehiclePosition : _spawn + new Vector3(-40f, 30f, 45f);
+            float heading = _handoff != null && _handoff.VehicleModel.Length > 0 ? _handoff.VehicleHeading : 20f;
+            _cargobob = Track(World.CreateVehicle(model, start, heading));
             if (_cargobob == null || !_cargobob.Exists()) return;
             _cargobob.IsPersistent = true;
+            AttachContainer();
 
             _cargobobPilot = Ctx.Crew.PedFor(CrewSlot.Guess);
             model.MarkAsNoLongerNeeded();
@@ -135,6 +162,33 @@ namespace Bloodlines.Missions.Campaign
             blip.Sprite = BlipSprite.Helicopter;
             blip.Color = BlipColor.Blue;
             blip.Name = "Bullion lift";
+        }
+
+        /// <summary>
+        /// The story says this is the bullion lift, so the bullion has to be visible
+        /// under it. M20 attached the container to the aircraft; the same attachment
+        /// is rebuilt here so the escort protects something the player can see.
+        /// </summary>
+        private void AttachContainer()
+        {
+            var containerModel = new Model("prop_container_01a");
+            if (!GameUtils.RequestModel(containerModel)) return;
+            _container = Track(World.CreateProp(containerModel, _cargobob.Position - new Vector3(0f, 0f, 7f), false, false));
+            containerModel.MarkAsNoLongerNeeded();
+            if (_container == null || !_container.Exists()) return;
+            _container.IsPersistent = true;
+            Function.Call(Hash.ATTACH_ENTITY_TO_ENTITY, _container, _cargobob, 0,
+                0f, 0f, -6.5f, 0f, 0f, 0f, false, false, true, false, 2, true);
+            Logger.Info("M21: bullion container attached under the escorted lift" + (_handoff != null ? " (continuing M20's lift)." : " (default staging)."));
+        }
+
+        /// <summary>The lift crosses the ridge with the bullion; M22 starts from that state.</summary>
+        protected override void OnPassed()
+        {
+            var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M22", Ctx.Crew, _cargobob);
+            record.CargoAttached = _container != null && _container.Exists();
+            record.CargoModel = "prop_container_01a";
+            Ctx.Handoffs.Record(record);
         }
 
         private void StartCargobob()
@@ -198,6 +252,10 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            // A held lift that outlives the attempt (occupied transports are released,
+            // not deleted) must not stay pinned in the air.
+            ReleaseLift();
+            if (_container != null && _container.Exists()) Function.Call(Hash.DETACH_ENTITY, _container, true, true);
             _hostileCrews.Clear();
         }
     }

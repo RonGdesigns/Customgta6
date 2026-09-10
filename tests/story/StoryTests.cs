@@ -23,7 +23,7 @@ public static partial class StoryTests
  static int checks;
  static string dataDir,root;
  static void Check(bool ok,string name){if(!ok)throw new Exception("FAIL: "+name);checks++;Console.WriteLine("PASS: "+name);}
- static void Reset(){Game.GameTime=100;Game.Player=new Player();Game.Accept=false;World.Created.Clear();World.Vehicles.Clear();World.FailNavigation=false;World.WaterAvailable=true;World.FailPeds=false;World.RenderingCamera=null;World.FailCamera=false;World.CollisionReady=false;GameUtils.Faded=false;Function.Values.Clear();Function.Held.Clear();Function.Axes.Clear();Function.ThrowOnce=null;Script.Waited=0;}
+ static void Reset(){Game.GameTime=100;Game.Player=new Player();Game.Accept=false;Game.Pressed.Clear();World.Created.Clear();World.Vehicles.Clear();World.FailNavigation=false;World.WaterAvailable=true;World.FailPeds=false;World.RenderingCamera=null;World.FailCamera=false;World.CollisionReady=false;GameUtils.Faded=false;Function.Values.Clear();Function.Held.Clear();Function.Axes.Clear();Function.ThrowOnce=null;Script.Waited=0;}
  static CrewRoster Roster(){var c=new CrewRoster();c.Peds[CrewSlot.Ice]=Game.Player.Character;c.Peds[CrewSlot.Gohan]=new Ped{Position=new Vector3(10,0,0)};c.Peds[CrewSlot.Guess]=new Ped{Position=new Vector3(500,0,0)};return c;}
  static void AssignmentAndRouteChecks(){
   Reset();var crew=Roster();var c=Context(crew);var mission=new SplitProbe();Check(mission.Begin(c),"Composed split mission starts");
@@ -126,6 +126,13 @@ public static partial class StoryTests
   c.Cutscenes.Stop();Check(World.RenderingCamera==null&&Game.Player.CanControlCharacter,"Invalid prior camera returns to gameplay instead of keeping script rendering enabled");
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;var old=c.Locations.Position("M01.CraneNest");
   Check(!ProloguePlacement.Prepare(c.Locations)&&c.Locations.Position("M01.CraneNest")==old&&Script.Waited==600,"Unloaded navmesh rejects M01 within a bound without moving location keys");
+  Reset();crew=Roster();c=Context(crew);
+  var iceStart=c.Locations.Position("M01.IceApproach");var lookoutStart=c.Locations.Position("M01.CraneNest");
+  Check(GameUtils.IsWithinFlat(iceStart,lookoutStart,20f)&&!GameUtils.IsWithinFlat(iceStart,lookoutStart,12f),"Ice's lookout is a short walk from his approach, not a hike, and not on top of it");
+  Check(lookoutStart.DistanceTo(c.Locations.Position("M01.CapoSpawn"))<260f,"Ice can still identify Mateo from the lookout");
+  Reset();crew=Roster();c=Context(crew);c.Locations.Get("M01.CraneNest").Position=c.Locations.Position("M01.IceApproach");
+  Check(ProloguePlacement.Prepare(c.Locations),"A lookout that resolves onto Ice's approach is nudged out, not refused");
+  Check(!GameUtils.IsWithinFlat(c.Locations.Position("M01.IceApproach"),c.Locations.Position("M01.CraneNest"),12f),"The nudged lookout still leaves Ice an approach to walk");
   Reset();crew=Roster();c=Context(crew);c.Locations.Get("M01.ServiceTerminal").Position=c.Locations.Position("M01.CapoSpawn");
   Check(!ProloguePlacement.Prepare(c.Locations),"M01 rejects terminal overrides that overlap Mateo before moving actors");
   var legacy=Path.Combine(root,"old-terminal.ini");File.WriteAllText(legacy,"[Positions]\nM01.LowerDeckLedger.X = 1019\nM01.LowerDeckLedger.Y = -3184\nM01.LowerDeckLedger.Z = 6\n");
@@ -251,6 +258,6 @@ public static partial class StoryTests
   var file=Path.Combine(root,"timing.wav");using(var w=new BinaryWriter(File.Create(file))){w.Write(0x46464952u);w.Write(40u+16000u);w.Write(0x45564157u);w.Write(0x20746d66u);w.Write(16u);w.Write((ushort)1);w.Write((ushort)1);w.Write(8000u);w.Write(16000u);w.Write((ushort)2);w.Write((ushort)16);w.Write(0x61746164u);w.Write(16000u);w.Write(new byte[16000]);}
   Check(WaveTiming.DurationMs(file)==1000,"WAV timing uses actual recording byte rate and data length");File.WriteAllText(file,"broken");Check(WaveTiming.DurationMs(file)==0&&WaveTiming.DurationMs(null)==0,"Missing and invalid audio retain subtitle-only timing");
  }
- public static int Main(string[] args){try{dataDir=args[0];root=args[1];MarketChecks();PowerChecks();StreetsChecks();CampaignAuditChecks();ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ public static int Main(string[] args){try{dataDir=args[0];root=args[1];MarketChecks();PowerChecks();StreetsChecks();CampaignAuditChecks();ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();HandoffPassChecks();CorrectionPassChecks();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }
 

@@ -7,3 +7,5 @@ lib/*.dll
 Bloodlines.log
 Bloodlines.Captures.ini
 build/
+__pycache__/
+*.pyc
