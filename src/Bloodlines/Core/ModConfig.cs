@@ -31,6 +31,8 @@ namespace Bloodlines.Core
 
         /// <summary>Companions are damage-capped rather than invincible; 0 disables the cap.</summary>
         public int CompanionHealthFloor { get; private set; } = 150;
+        /// <summary>The brothers the player is not controlling cannot be hurt; the active one can.</summary>
+        public bool CompanionsInvincible { get; private set; } = true;
 
         public bool CompanionsRespawnOnDeath { get; private set; } = true;
 
@@ -134,6 +136,7 @@ namespace Bloodlines.Core
             config.SuppressVanillaSwitch = settings.GetValue<bool>("Keys", "SuppressVanillaSwitch", config.SuppressVanillaSwitch);
 
             config.CompanionHealthFloor = settings.GetValue<int>("Crew", "CompanionHealthFloor", config.CompanionHealthFloor);
+            config.CompanionsInvincible = settings.GetValue<bool>("Crew", "CompanionsInvincible", config.CompanionsInvincible);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);
             config.CompanionLeashDistance = settings.GetValue<float>("Crew", "CompanionLeashDistance", config.CompanionLeashDistance);
 

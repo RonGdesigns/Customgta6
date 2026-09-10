@@ -28,6 +28,7 @@ namespace Bloodlines.Crew
     {
         /// <summary>Armor every protagonist spawns and revives with.</summary>
         private const int StartingArmor = CrewDurability.Armor;
+        private readonly HashSet<int> _shielded = new HashSet<int>();
 
         public WeaponProgression Arsenal { get; set; }
         private readonly ModConfig _config;
@@ -388,7 +389,12 @@ namespace Bloodlines.Crew
             foreach (var protagonist in Protagonist.All)
             {
                 var ped = PedFor(protagonist.Slot);
-                if (protagonist.Slot == ActiveSlot) continue;
+                if (protagonist.Slot == ActiveSlot)
+                {
+                    // The brother you play is mortal again the moment you take him.
+                    if (ped != null && ped.Exists() && _shielded.Remove(ped.Handle)) ped.IsInvincible = false;
+                    continue;
+                }
                 if (!_peds.ContainsKey(protagonist.Slot)) continue; // Solo missions never deployed this hero.
 
                 if (ped == null || ped.IsDead)
@@ -401,6 +407,15 @@ namespace Bloodlines.Crew
                 }
 
                 _recovery.Forget(protagonist.Slot);
+                // The brothers you are not controlling cannot be hurt. Their AI still
+                // takes cover and fights; it just cannot lose them for you. The flag is
+                // ours to own: scenes and recovery restore whatever they found, so it
+                // is re-asserted every tick and taken off only by a switch or stand-down.
+                if (_config.CompanionsInvincible && ped.Exists())
+                {
+                    if (!ped.IsInvincible) ped.IsInvincible = true;
+                    _shielded.Add(ped.Handle);
+                }
                 if (_config.CompanionHealthFloor > 0 && ped.Health < _config.CompanionHealthFloor)
                 {
                     ped.Health = _config.CompanionHealthFloor;

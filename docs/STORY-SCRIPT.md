@@ -77,6 +77,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M01_SCENE_OUTRO_02_GUESS) — Fifteen years without a call. Now we're sharing a wanted poster. Nobody disappears before we talk.
 
+### Escape
+
+**MATEO** (M01_SCENE_ESCAPE_01_MATEO) — Fifteen years apart and the three of you still show up to the same dock. Tell whoever sent you the ledger's already gone.
+
+**ICE** (M01_SCENE_ESCAPE_02_ICE) — He's on the water. Let him go. The copy tells us where he lands.
+
 ## M02 — LOOSE STRANDS
 
 ### Intro

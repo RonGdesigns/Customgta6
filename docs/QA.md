@@ -50,6 +50,8 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 37 | **M04 comprehension** | A tester who has not read the books plays M04 once, then answers the seven questions in live-test item 50 | All seven answered from what was shown |
 | 38 | **M04 switch window** | Let the eight seconds run out once; take Guess early once | Required switch through the prompt with nobody frozen; early switch hands over cleanly |
 | 39 | **M04 skip and retry** | Skip the briefing; fail and retry | Four-line card for seven seconds; one-line recap on the retry |
+| 40 | **M01 escape** | Clear the guards; once watching, once pressing Enter | Mateo boards at the slipway on camera and the launch leaves; skipped, he is aboard and the launch leaves; the mission never fails on Mateo |
+| 41 | **Companion shield** | Firefight as one brother while the other two are in it | Their health does not drop; switching into one makes him mortal |
 
 ## Before you launch: the static checks
 

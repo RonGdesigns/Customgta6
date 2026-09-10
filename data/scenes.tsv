@@ -25,6 +25,8 @@ M01_SCENE_RECOGNITION_08_GUESS	M01	recognition	GUESS	Face-to-face reunion; anger
 M01_SCENE_RECOGNITION_09_ICE	M01	recognition	ICE	Face-to-face reunion; anger interrupted by danger	Mateo's running for the slipway. Let him lead us to the buyers. Cover each other and get to Guess's car.
 M01_SCENE_OUTRO_01_GOHAN	M01	outro	GOHAN	Reflective; allow the response to land	The dock cameras tagged all three of us. An Aegis van is carrying the upload. We have to catch it.
 M01_SCENE_OUTRO_02_GUESS	M01	outro	GUESS	Reflective; allow the response to land	Fifteen years without a call. Now we're sharing a wanted poster. Nobody disappears before we talk.
+M01_SCENE_ESCAPE_01_MATEO	M01	escape	MATEO	Staged action	Fifteen years apart and the three of you still show up to the same dock. Tell whoever sent you the ledger's already gone.
+M01_SCENE_ESCAPE_02_ICE	M01	escape	ICE	Staged action	He's on the water. Let him go. The copy tells us where he lands.
 M02_SCENE_INTRO_01_GOHAN	M02	intro	GOHAN	Briefing; intent before tactics	The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.
 M02_SCENE_INTRO_02_ICE	M02	intro	ICE	Briefing; intent before tactics	Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 M02_SCENE_OUTRO_01_GUESS	M02	outro	GUESS	Reflective; allow the response to land	You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
