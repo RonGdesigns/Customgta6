@@ -74,7 +74,7 @@ namespace Bloodlines.Missions
         }
 
         public bool IsRunning => _pending != null || _context.Cutscenes.IsActive ||
-            _current != null;
+            _current != null || PendingContinuation != null;
 
         public Crew.CrewSlot? RequiredSwitch => _current?.RequiredSwitch;
         public string CurrentObjective => _current?.CurrentObjective ?? (_pending != null ? "Watch the briefing, then follow the objective." : "No mission is running.");
@@ -84,6 +84,18 @@ namespace Bloodlines.Missions
         public MissionDefinition LastAttempted => _currentDefinition;
         public bool RetryAvailable { get; private set; }
         public string LastFailureReason { get; private set; } = "";
+
+        /// <summary>
+        /// Chapters that continue into the next one without a marker walk or the
+        /// mission key: the Port Heist is one operation on one clock. Each chapter
+        /// still commits its own completion and rewards, so a failure retries that
+        /// chapter alone and a fresh session resumes at the next chapter's marker.
+        /// </summary>
+        public static readonly System.Collections.Generic.Dictionary<string, string> Continuations =
+            new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase) { { "M19", "M20" }, { "M20", "M21" }, { "M21", "M22" } };
+
+        /// <summary>The chapter that starts as soon as the current aftermath ends, or null.</summary>
+        public MissionDefinition PendingContinuation { get; private set; }
 
         /// <param name="bypassGates">QA only: start any scripted mission out of order, prerequisites and story gates unmet.</param>
         public bool Start(MissionDefinition definition, bool bypassGates = false)
@@ -162,6 +174,7 @@ namespace Bloodlines.Missions
         public void Abort()
         {
             if (!IsRunning) return;
+            PendingContinuation = null;
             _context.Cutscenes.Stop();
             _pending = null;
             _current?.Abort();
@@ -180,7 +193,15 @@ namespace Bloodlines.Missions
                 BeginGameplay(pending);
                 return;
             }
-            if (_current == null) return;
+            if (_current == null)
+            {
+                if (PendingContinuation == null) return;
+                var next = PendingContinuation;
+                PendingContinuation = null;
+                if (CanStart(next, out string why)) { Logger.Info("Operation continues: " + next.Id); Start(next); }
+                else GameUtils.Notify("~y~" + why);
+                return;
+            }
 
             if (_current.Status == MissionStatus.Running)
             {
@@ -194,9 +215,18 @@ namespace Bloodlines.Missions
                     // Finish the last gameplay line before the aftermath takes over.
                     if (_context.Dialogue.HasPending) return;
                     _state.MarkComplete(_currentDefinition.Id, _catalog);
-                    GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
-                    GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
-                                       _state.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
+                    PendingContinuation = ContinuationOf(_currentDefinition);
+                    if (PendingContinuation != null)
+                    {
+                        GameUtils.Notify("~g~CHAPTER COMPLETE~s~ — " + _currentDefinition.Title + "~n~Continuing: " + PendingContinuation.Title);
+                        GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. The operation continues.", 5000);
+                    }
+                    else
+                    {
+                        GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
+                        GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
+                                           _state.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
+                    }
                     break;
 
                 case MissionStatus.Failed:
@@ -210,6 +240,14 @@ namespace Bloodlines.Missions
             bool passed = _current.Status == MissionStatus.Passed;
             Finish();
             if (passed) _context.Cutscenes.Play(_currentDefinition.Id, "outro", "Aftermath: " + _currentDefinition.Title);
+        }
+
+        private MissionDefinition ContinuationOf(MissionDefinition definition)
+        {
+            if (definition == null || !Continuations.TryGetValue(definition.Id, out string nextId)) return null;
+            foreach (var candidate in _catalog.All)
+                if (candidate.Id == nextId) return candidate.IsPlayable ? candidate : null;
+            return null;
         }
 
         private void Finish()

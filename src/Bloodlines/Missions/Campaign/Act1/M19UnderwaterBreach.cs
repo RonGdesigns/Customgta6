@@ -5,6 +5,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -30,6 +31,18 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Vector3> _clamps = new List<Vector3>();
 
+        /// <summary>The Titan Star stand-in: a tug hull, frozen at the surface, that the Kraken works under.</summary>
+        public const string HullModel = "tug";
+        /// <summary>How far the hull reaches below the surface (an estimate for the loop, not a measured draft).</summary>
+        public const float KeelDepth = 4.5f;
+        /// <summary>Room the Kraken needs between the keel and the work point.</summary>
+        public const float SubClearance = 4f;
+        /// <summary>Water the site needs below the work point before it counts as deep enough.</summary>
+        public const float SeabedMargin = 3f;
+        public const float ClampSpan = 12f;
+        public const float ShiftStep = 40f;
+
+        private Vehicle _hull;
         private Vehicle _kraken;
         private Vector3 _dive;
         private Vector3 _breach;
@@ -44,8 +57,12 @@ namespace Bloodlines.Missions.Campaign
             _dive = Ctx.Locations.Position("M19.DiveStart");
             _breach = Ctx.Locations.Position("M19.HullBreach");
             _surface = Ctx.Locations.Position("M19.Surface");
-            _clamps.Add(Ctx.Locations.Position("M19.ClampOne"));
-            _clamps.Add(Ctx.Locations.Position("M19.ClampTwo"));
+            // The authored breach and clamp points were three markers hanging in
+            // open water, sometimes under the seabed. The site is now built from a
+            // hull: the work point is under its keel, the clamps under its bow and
+            // stern, and the whole thing moves out to deeper water if the seabed is
+            // too close. Gohan has something to push against and can reach every mark.
+            if (!BuildSiteFromHull()) return false;
 
             if (!Ctx.Crew.DeploySolo(CrewSlot.Gohan, _dive, Ctx.Locations.Heading("M19.DiveStart")))
             {
@@ -69,7 +86,68 @@ namespace Bloodlines.Missions.Campaign
         {
             var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M20", Ctx.Crew, _kraken);
             record.Notes["kraken"] = "surfaced at M19.Surface with Gohan aboard";
+            if (_hull != null && _hull.Exists()) record.Notes["hull"] = "Titan Star stand-in at " + _hull.Position;
             Ctx.Handoffs.Record(record);
+            // The freighter does not vanish because chapter one ended; the lift in
+            // chapter two hovers over the same water.
+            if (_hull != null && _hull.Exists()) Release(_hull);
+        }
+
+        public Vehicle Hull => _hull;
+        public Vector3 Breach => _breach;
+        public IReadOnlyList<Vector3> Clamps => _clamps;
+
+        private bool BuildSiteFromHull()
+        {
+            var authored = Ctx.Locations.Position("M19.HullBreach");
+            float surface = WaterSurface(authored, _surface.Z);
+            var site = new Vector3(authored.X, authored.Y, surface);
+            float dx = authored.X - _dive.X, dy = authored.Y - _dive.Y;
+            float run = (float)Math.Sqrt(dx * dx + dy * dy);
+            var bearing = run < 0.5f ? new Vector3(0f, -1f, 0f) : new Vector3(dx / run, dy / run, 0f);
+            float workDepth = KeelDepth + SubClearance;
+            for (int attempt = 0; attempt < 4; attempt++)
+            {
+                if (!TrySeabed(site, out float seabed) || seabed <= surface - workDepth - SeabedMargin) break;
+                Logger.Warn("M19 site at " + site + " has the seabed at " + seabed.ToString("0.0") + "; moving " + ShiftStep + " m out.");
+                site += bearing * ShiftStep;
+            }
+
+            var model = new Model(HullModel);
+            if (!GameUtils.RequestModel(model)) return false;
+            float heading = Core.DriveUpStep.HeadingBetween(site, site + bearing);
+            _hull = Track(World.CreateVehicle(model, site, heading));
+            model.MarkAsNoLongerNeeded();
+            if (_hull == null || !_hull.Exists()) return false;
+            _hull.IsPersistent = true;
+            _hull.IsEngineRunning = false;
+            _hull.IsPositionFrozen = true;
+            _hull.IsInvincible = true;
+            var blip = Track(_hull.AddBlip());
+            blip.Sprite = BlipSprite.Boat;
+            blip.Color = BlipColor.Blue;
+            blip.Name = "Titan Star";
+
+            _breach = site + new Vector3(0f, 0f, -workDepth);
+            _clamps.Clear();
+            _clamps.Add(_breach + bearing * ClampSpan);
+            _clamps.Add(_breach - bearing * ClampSpan);
+            Logger.Info("M19 site: hull at " + site + ", breach " + _breach + ", clamps " + ClampSpan + " m fore and aft.");
+            return true;
+        }
+
+        private static float WaterSurface(Vector3 point, float fallback)
+        {
+            var height = new OutputArgument();
+            return Function.Call<bool>(Hash.GET_WATER_HEIGHT, point.X, point.Y, 100f, height) ? height.GetResult<float>() : fallback;
+        }
+
+        private static bool TrySeabed(Vector3 point, out float seabed)
+        {
+            var z = new OutputArgument();
+            bool found = Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + 5f, z, true, false);
+            seabed = found ? z.GetResult<float>() : 0f;
+            return found;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -133,9 +211,9 @@ namespace Bloodlines.Missions.Campaign
         private readonly Func<Vector3> _centre;
         private int _nextDrop;
 
-        public DepthChargeHazard(Func<Vector3> centre) : base("")
+        public DepthChargeHazard(Func<Vector3> center) : base("")
         {
-            _centre = centre;
+            _centre = center;
         }
 
         public override bool IsPassive => true;

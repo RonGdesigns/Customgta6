@@ -308,7 +308,7 @@ Prerequisite: M18. Story gate: SM01, SM02, SM03 must be complete first (QA may b
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M19.ClampOne, M19.ClampTwo, M19.DiveStart, M19.HullBreach, M19.Surface.
+Survey references: M19.DiveStart, M19.HullBreach, M19.Surface.
 
 ## M20 — THE PORT HEIST: SKY HOOK
 

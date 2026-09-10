@@ -187,6 +187,13 @@ The 01:22 log: the hand-off placed Ron at the dock, then M01's placement check r
 
 44. **Hand-off.** Fresh save, J, watch or skip both scenes: after the fade, "Terminal Island. Later that night." and the M01 cold open. If it refuses, quote the "M01 could not find" line; the key it names is the one to survey.
 
+## Port Heist (September 10 live note)
+
+M19's dive had no vessel and markers Gohan could not reach; the four chapters started one at a time. The site is now built from a hull and the chapters continue into one another. Details in `CHANGE-REGISTER.md`.
+
+45. **The dive.** Start M19: a tug sits on the water with a "Titan Star" blip; the breach marker is under its keel and the two clamp marks are under its bow and stern; the Kraken fits under it. If the log says the site moved, note by how much.
+46. **One operation.** Pass M19: after the aftermath lines, M20 starts on its own with "The operation continues"; the same Kraken is floating where Gohan surfaced. Fail M20: the mission key retries M20 alone.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
