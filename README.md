@@ -10,6 +10,41 @@ legally-owned copy of GTA V. It ships no Rockstar assets.
 
 ---
 
+## Project Objective
+Deliver a comprehensive, production-grade campaign overhaul and full literary omnibus publication for *Los Santos: Bloodlines*, novelizing the entire 70-mission narrative across three protagonists with complete artwork suite, character dossiers, and unified printable volume.
+
+## Build Checklist
+- [x] Novelize Genesis Arc (Prologue & Chapters I–VI) with canonical character dialogue and literary pacing (2026-09-09)
+- [x] Novelize Turbine Arc (Chapters VII–XI) including the dyno room confrontation and convoy shadow (2026-09-09)
+- [x] Novelize Port Heist Arc (Chapters XII–XXII) culminating in the Berth 44 drydock breach (2026-09-09)
+- [x] Novelize Blaine County Exile & Desert Citadel Arc (Chapters XXIII–XXXV) (2026-09-09)
+- [x] Novelize Deep-Sea Rig Sabotage & SAM Airspace Breach Arc (Chapters XXXVI–XLVIII) (2026-09-09)
+- [x] Novelize Scorched Earth & The Historic Siege of Davis (Chapters XLIX–LX) (2026-09-09)
+- [x] Novelize The Reckoning atop Maze Bank Tower, Spire BASE Jump & Epilogue (Chapters LXI–LXX) (2026-09-09)
+- [x] Generate Official Book Cover matching Project Book trio art style without logos (2026-09-10)
+- [x] Generate and curate full visual art suite: Act I Port Heist, Act II Chiliad Skyfall, Act III Siege of Davis, Climax Maze Bank Jump, Colonel Vance Dossier, Armored Turbine Granger, and Tactical Operations Map (2026-09-10)
+- [x] Extract and curate canonical character dossier portraits for Guess (Ron Ortiz), Ice (Darius Vance), and Gohan (Devin Mercer) (2026-09-10)
+- [x] Redo KJ character illustration as a light-skinned male tuner mechanic with stylish dreadlocks (`docs/Bloodlines_Dossier_KJ_Mechanic.jpg`) (2026-09-10)
+- [x] Compile unified Master Omnibus PDF (`docs/Bloodlines_Novel_Complete_Omnibus_Edition.pdf`) unifying all 70 chapters, solo missions, epilogue, front matter, table of contents, and all 12 embedded illustrations (2026-09-10)
+- [ ] In-game mission scripting for remaining Act II Blaine County missions (M31–M48)
+- [ ] In-game mission scripting for Act III missions (M49–M70)
+
+## Done Log
+- **2026-09-09**: Completed literary novelization batches 1 through 6 covering all 70 missions, solo missions, prologue, and epilogue.
+- **2026-09-10**: Generated and cleaned official book cover art, removed all Rockstar logos and "Grand Theft Auto" text.
+- **2026-09-10**: Produced high-resolution illustrations for Act I, Act II, Act III, Climax, Colonel Vance, Turbine Granger, and San Andreas Tactical Map.
+- **2026-09-10**: Extracted authentic Project Book portraits for Guess, Ice, and Gohan.
+- **2026-09-10**: Redid KJ character dossier to accurately depict a light-skinned male mechanic tuner with authentic dreadlocks.
+- **2026-09-10**: Built `tools/generate_novel_pdf_omnibus.py` and successfully compiled the 107-page complete Master Omnibus novel PDF (`docs/Bloodlines_Novel_Complete_Omnibus_Edition.pdf`) with all 12 photos and illustrations embedded.
+
+## Notes & Decisions
+- **2026-09-10 — KJ Character Canon**: Per user direction, KJ is canonically established as a light-skinned male tuner mechanic with dreadlocks. Base image composited with high-fidelity GTA-style dreadlocks, ambient lighting calibration, and smooth hairline transitions, saved to `docs/Bloodlines_Dossier_KJ_Mechanic.jpg`.
+- **2026-09-10 — Logo & Trademark Sanitization**: Removed all Rockstar logos, star insignias, and "Grand Theft Auto" text from book cover, vehicle art, and climax illustration to maintain standalone original publication standards.
+- **2026-09-10 — Master Omnibus Unification**: Aggregated all 7 separate story volumes into a single 107-page master volume with two-pass page numbering, Act frontispieces, intelligence dossiers, and technical schematics.
+
+
+---
+
 ## Status
 
 | Layer | State |
