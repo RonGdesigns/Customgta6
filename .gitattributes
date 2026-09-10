@@ -1,0 +1,13 @@
+# Generated files whose tools write CRLF on every platform (parse_bible.py,
+# validate_locations.py, render_campaign_doc.py, render_feasibility_doc.py).
+# They are stored LF and checked out CRLF everywhere, so CI's regenerate-and-diff
+# step on Linux sees the same bytes a Windows checkout does. Without this, a
+# Linux checkout is LF, the tool rewrites CRLF, and every line "changes".
+docs/CAMPAIGN.md text eol=crlf
+docs/FEASIBILITY.md text eol=crlf
+docs/LOCATION-AUDIT.md text eol=crlf
+data/missions.tsv text eol=crlf
+data/dialogue.tsv text eol=crlf
+data/anchors.tsv text eol=crlf
+data/locations.tsv text eol=crlf
+data/campaign_registry.json text eol=crlf
