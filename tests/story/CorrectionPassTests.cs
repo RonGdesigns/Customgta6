@@ -43,10 +43,20 @@ public static partial class StoryTests
   var later=CampaignState.Load(Path.Combine(root,"gates-later.json"));foreach(var id in new[]{"M03","M17","M18","M20"})later.Completed.Add(id);
   Check(later.GateGrandfathered("M19")&&later.GateSatisfied(cat.All.First(m=>m.Id=="M19"),cat),"A save past a later main mission is grandfathered through an earlier gate it never saw");
   Check(!state.GateGrandfathered("M44"),"Grandfathering is per gate: M44 is still ahead of this save");
-  // Required solo with no script never traps.
+  // A required solo with no script blocks the story and says so; it is never silently waived.
   var thin=new MissionCatalog();thin.All.Add(Def("M62","main"));thin.All.Add(Def("SM07","solo","M50",playable:false));thin.All.Add(Def("SM08","solo","M50"));thin.All.Add(Def("M63","main","M62"));
   var future=CampaignState.Load(Path.Combine(root,"gates-thin.json"));future.Completed.Add("M50");future.Completed.Add("M62");
-  Check(future.OutstandingGateJobs(thin.All.First(m=>m.Id=="M63"),thin).SequenceEqual(new[]{"SM08"}),"A required solo with no script does not block the gate; the scripted one still does");
+  var m63=thin.All.First(m=>m.Id=="M63");
+  Check(future.OutstandingGateJobs(m63,thin).SequenceEqual(new[]{"SM07","SM08"})&&future.UnavailableGateJobs(m63,thin).SequenceEqual(new[]{"SM07"}),"An unscripted required solo stays outstanding and is reported as unavailable");
+  Check(future.Progress(thin)==CampaignProgress.StoryBlocked&&future.NextPlayable(thin).Id=="SM08","The story reports blocked by unavailable content while the playable required job is still offered");
+  Check(future.DescribeGate(m63,thin)=="M63 needs SM08 finished first; SM07 has no script in this build.","The gate text separates what to play from what the build lacks");
+  future.MarkComplete("SM08",thin);
+  Check(future.Progress(thin)==CampaignProgress.StoryBlocked&&future.NextPlayable(thin)==null&&future.CurrentMissionId==""&&future.DescribeProgress(thin).Contains("SM07")&&future.DescribeProgress(thin).Contains("no script"),"With only unscripted required content left, nothing is offered and the block names the missing job");
+  var blockedManager=new MissionManager(Context(Roster()),future,thin);
+  Check(!blockedManager.Start(m63)&&GameUtils.Message.Contains("SM07")&&!blockedManager.IsRunning,"Normal play cannot start the gated mission past unavailable required content");
+  Check(blockedManager.Start(m63,bypassGates:true)&&blockedManager.IsRunning,"Dev mode may bypass the unavailable-content block");blockedManager.Abort();
+  var past=CampaignState.Load(Path.Combine(root,"gates-thin-past.json"));foreach(var id in new[]{"M50","M62","M63"})past.Completed.Add(id);
+  Check(past.GateSatisfied(m63,thin)&&past.Progress(thin)!=CampaignProgress.StoryBlocked,"A save already past the gate is still grandfathered through unavailable required content");
   // Markers route to the same answer as the mission key.
   Check(CampaignState.StoryGates.Count==4&&CampaignState.StoryGates["M68"].SequenceEqual(new[]{"SM09"}),"All four story gates are declared centrally");
 
@@ -136,6 +146,19 @@ public static partial class StoryTests
   Check(!driver.IsInVehicle()&&driver.Position!=ride.Position&&driver.Position.DistanceTo(ride.Position)<4f&&driver.Heading==90&&driver.Task.Clears>0,"Finishing an exit leaves the actor already outside, beside the car, facing its way");
   Check(GTA.Native.Function.Calls.Any(call=>call.Item1==GTA.Native.Hash.REQUEST_COLLISION_AT_COORD),"The skip position asks for collision before placing the actor");
   var expected=ExitVehicleStep.SafeSpotBeside(ride);Check(driver.Position==expected,"The actor stands on the computed safe spot");
+  // Fail-safe: an engine that will not unseat the actor fails the step and stops the skip there.
+  var stuck=new Ped{StuckInSeat=true};var stuckRide=new Vehicle{Position=new Vector3(200,200,10)};stuck.SetIntoVehicle(stuckRide,VehicleSeat.Driver);var bystander=new Ped{Position=Vector3.Zero};
+  var chain=new SceneBlocking().Then(new ExitVehicleStep(stuck)).Then(new WalkToStep(bystander,new Vector3(9,9,0),1f));
+  chain.Complete();
+  Check(chain.Steps[0].Failed&&stuck.IsInVehicle(stuckRide)&&stuck.Position==stuckRide.Position,"A refused warp-out marks the exit step failed instead of pretending the actor is outside");
+  Check(chain.Canceled&&chain.IsFinished&&bystander.Position==Vector3.Zero,"A failed step cancels the rest of the skip; later steps do not run against a false state");
+  Check(!ExitVehicleStep.ForceOut(stuck)&&ExitVehicleStep.ForceOut(new Ped()),"ForceOut reports honestly: false when still seated, true when already out");
+  // Prologue cold-open placement: out first, then the dock.
+  var dockPoint=new Vector3(1073,-3160,5.9f);var traveler=new Ped();var cab=new Vehicle{Position=new Vector3(291,-1078,29)};traveler.SetIntoVehicle(cab,VehicleSeat.Driver);
+  Check(PrologueSequence.PlaceForColdOpen(traveler,dockPoint)&&!traveler.IsInVehicle()&&traveler.Position==dockPoint&&cab.Position!=dockPoint,"The cold open unseats the player before moving them; the car stays behind");
+  var glued=new Ped{StuckInSeat=true};var gluedCab=new Vehicle{Position=new Vector3(291,-1078,29)};glued.SetIntoVehicle(gluedCab,VehicleSeat.Driver);
+  Check(!PrologueSequence.PlaceForColdOpen(glued,dockPoint)&&glued.IsInVehicle(gluedCab)&&gluedCab.Position==dockPoint&&glued.Position==dockPoint,"If the player cannot be unseated, the vehicle travels with them: a known state, reported as such");
+  Check(PrologueSequence.PlaceForColdOpen(new Ped{Position=Vector3.Zero},dockPoint),"A player on foot is simply placed");
   var caller=new Ped();var phone=new UsePhoneStep(caller,3000);phone.Start();phone.Finish();Check(caller.Task.Clears>0,"Finishing a phone step puts the phone away immediately");
   var walker=new Ped();var to=new WalkToStep(walker,new Vector3(7,7,0),1f);to.Start();to.Finish();Check(walker.Position==new Vector3(7,7,0)&&walker.Task.Clears>0,"Finishing a walk places the actor on the mark with tasks cleared");
   var rider=new Ped();var seat=new Vehicle();var enter=new EnterVehicleStep(rider,seat,VehicleSeat.Driver);enter.Start();enter.Finish();Check(rider.IsInVehicle(seat)&&rider.SeatIndex==VehicleSeat.Driver,"Finishing an entry seats the actor now");
@@ -159,6 +182,10 @@ public static partial class StoryTests
   Check(!scenes.Contains("Not tonight. Tonight I find out where I'm sleeping."),"The contradicted prologue line is gone");
   Check(CampaignDispatches.All.First(m=>m.Mission=="M27").Text.StartsWith("You got me out."),"Ice's M27 dispatch speaks as the one who was extracted");
   Check(scenes.Contains("Breakfast. Three seats. I'm driving."),"The quiet M70 aftermath is preserved");
-  Check(!dialogue.Contains("Guess never misses an exit")&&dialogue.Contains("Told y'all it still had engines."),"M70's clutch is shown, not announced");
+  Check(dialogue.Contains("Told y'all it still had engines.")&&!dialogue.Contains("Guess never misses an exit"),"M70's gameplay sets the exit up without the payoff line");
+  var m70Outro=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv")).Skip(1).Select(l=>l.Split('\t')).Where(f=>f[1]=="M70"&&f[2]=="outro").ToArray();
+  Check(m70Outro.Last()[5]=="Told y'all... Guess never misses an exit."&&m70Outro.Last()[3]=="GUESS","The locked line is the final spoken line of M70");
+  Check(Array.IndexOf(m70Outro.Select(f=>f[5]).ToArray(),"Breakfast. Three seats. I'm driving.")==m70Outro.Length-2,"The breakfast exchange comes right before it and nothing follows it");
+  Check(scenes.IndexOf("M70_SCENE_OUTRO",StringComparison.Ordinal)>=0&&!scenes.Substring(scenes.LastIndexOf("Guess never misses an exit",StringComparison.Ordinal)).Contains("\tM70\t"),"No M70 cue is written after the final line");
  }
 }

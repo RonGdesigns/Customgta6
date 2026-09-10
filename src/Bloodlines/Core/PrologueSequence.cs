@@ -208,6 +208,34 @@ namespace Bloodlines.Core
             Current = Phase.Idle;
         }
 
+        /// <summary>
+        /// Put the player at the dock for M01's cold open: out of any vehicle first,
+        /// deterministically, then repositioned with collision requested. If the
+        /// engine will not unseat the ped, the vehicle goes to the dock with the ped
+        /// still in it — a known state, and one M01's own deployment replaces — and
+        /// the return is false so the caller can log it.
+        /// </summary>
+        public static bool PlaceForColdOpen(Ped player, Vector3 dock)
+        {
+            if (player == null || !player.Exists()) return false;
+            bool unseated = ExitVehicleStep.ForceOut(player);
+            var ride = unseated ? null : player.CurrentVehicle;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
+            if (ride != null && ride.Exists())
+            {
+                Logger.Warn("Prologue: the player could not be unseated before the cold open; moving the vehicle to the dock with them.");
+                ride.Position = dock;
+            }
+            player.Position = dock;
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                Function.Call(Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
+                if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player)) break;
+                Script.Wait(100);
+            }
+            return unseated;
+        }
+
         private void ReleaseCar()
         {
             GameUtils.SafeDelete(_carBlip);

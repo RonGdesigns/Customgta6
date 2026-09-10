@@ -18,7 +18,7 @@ namespace Bloodlines.Missions
     /// playthrough; a flat text file next to the mod can be inspected, edited, backed
     /// up and deleted without touching anything Rockstar owns.
     /// </summary>
-    /// <summary>The four things "what next" can mean, so none of them falls back to M01.</summary>
+    /// <summary>The five things "what next" can mean, so none of them falls back to M01.</summary>
     public enum CampaignProgress
     {
         StoryAvailable,
@@ -215,7 +215,11 @@ namespace Bloodlines.Missions
         public CampaignProgress Progress(MissionCatalog catalog)
         {
             var story = NextStory(catalog);
-            if (story != null) return GateSatisfied(story, catalog) ? CampaignProgress.StoryAvailable : CampaignProgress.StoryGated;
+            if (story != null)
+            {
+                if (GateSatisfied(story, catalog)) return CampaignProgress.StoryAvailable;
+                return UnavailableGateJobs(story, catalog).Any() ? CampaignProgress.StoryBlocked : CampaignProgress.StoryGated;
+            }
             var side = catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
             if (side != null) return CampaignProgress.SideContentOnly;
             bool anyStoryLeft = catalog.Playable.Any(m => !m.IsSolo && !IsComplete(m.Id));
@@ -230,7 +234,13 @@ namespace Bloodlines.Missions
                 case CampaignProgress.StoryAvailable: return "Next story mission: " + NextPlayable(catalog)?.Id;
                 case CampaignProgress.StoryGated: return DescribeGate(NextStory(catalog), catalog);
                 case CampaignProgress.SideContentOnly: return "Story is caught up for this build. Optional solo jobs remain: " + NextPlayable(catalog)?.Id;
-                case CampaignProgress.StoryBlocked: return "A story mission is waiting on a prerequisite that cannot be met in this build.";
+                case CampaignProgress.StoryBlocked:
+                {
+                    var story = NextStory(catalog);
+                    return story != null && UnavailableGateJobs(story, catalog).Any()
+                        ? DescribeGate(story, catalog) + " The story is blocked until that content exists."
+                        : "A story mission is waiting on a prerequisite that cannot be met in this build.";
+                }
                 default: return "All " + catalog.Playable.Count() + " scripted missions are complete. Later chapters are not in this build; replay any job from the mission menu.";
             }
         }
@@ -283,7 +293,10 @@ namespace Bloodlines.Missions
             {
                 var outstanding = OutstandingGateJobs(story, catalog).ToList();
                 if (outstanding.Count == 0) return story;
-                return catalog.Playable.FirstOrDefault(m => outstanding.Contains(m.Id, StringComparer.OrdinalIgnoreCase)) ?? story;
+                // The playable required jobs come first. If only unscripted ones
+                // remain, there is nothing to offer: the story is blocked and
+                // Progress() says why, rather than handing the gate mission over.
+                return catalog.Playable.FirstOrDefault(m => outstanding.Contains(m.Id, StringComparer.OrdinalIgnoreCase));
             }
             return catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
         }
@@ -332,34 +345,44 @@ namespace Bloodlines.Missions
         }
 
         /// <summary>
-        /// The required solo jobs still standing between the player and this mission.
-        /// A required solo that has no script in this build cannot be asked of anyone,
-        /// so it never blocks; it is logged and the gate opens without it.
+        /// The required solo jobs still standing between the player and this mission,
+        /// scripted or not. A required job with no script in this build still counts:
+        /// the story is then blocked by unavailable content and says so, rather than
+        /// quietly opening a gate the design closed.
         /// </summary>
         public IEnumerable<string> OutstandingGateJobs(MissionDefinition mission, MissionCatalog catalog)
         {
             if (mission == null || !StoryGates.TryGetValue(mission.Id, out var required) || GateGrandfathered(mission.Id)) yield break;
             foreach (string solo in required)
-            {
-                if (IsComplete(solo)) continue;
-                var definition = catalog?.Playable.FirstOrDefault(m => string.Equals(m.Id, solo, StringComparison.OrdinalIgnoreCase));
-                if (definition == null)
-                {
-                    Logger.Warn(mission.Id + " gate ignores " + solo + ": it has no script in this build.");
-                    continue;
-                }
-                yield return solo;
-            }
+                if (!IsComplete(solo)) yield return solo;
+        }
+
+        /// <summary>Outstanding required jobs that this build cannot offer because they have no script.</summary>
+        public IEnumerable<string> UnavailableGateJobs(MissionDefinition mission, MissionCatalog catalog)
+        {
+            foreach (string solo in OutstandingGateJobs(mission, catalog))
+                if (catalog == null || !catalog.Playable.Any(m => string.Equals(m.Id, solo, StringComparison.OrdinalIgnoreCase)))
+                    yield return solo;
         }
 
         public bool GateSatisfied(MissionDefinition mission, MissionCatalog catalog) =>
             !OutstandingGateJobs(mission, catalog).Any();
 
-        /// <summary>"M19 needs SM01, SM02 finished first." or empty when the gate is open.</summary>
+        /// <summary>
+        /// "M19 needs SM01, SM02 finished first." — or, when a required job cannot be
+        /// played in this build, "M63 needs SM08 finished first; SM07 has no script in
+        /// this build." Empty when the gate is open.
+        /// </summary>
         public string DescribeGate(MissionDefinition mission, MissionCatalog catalog)
         {
-            var outstanding = OutstandingGateJobs(mission, catalog).ToList();
-            return outstanding.Count == 0 ? "" : mission.Id + " needs " + string.Join(", ", outstanding) + " finished first.";
+            var unavailable = UnavailableGateJobs(mission, catalog).ToList();
+            var playable = OutstandingGateJobs(mission, catalog).Where(id => !unavailable.Contains(id, StringComparer.OrdinalIgnoreCase)).ToList();
+            if (playable.Count == 0 && unavailable.Count == 0) return "";
+            string text = mission.Id + " needs ";
+            if (playable.Count > 0) text += string.Join(", ", playable) + " finished first";
+            if (unavailable.Count > 0)
+                text += (playable.Count > 0 ? "; " : "") + string.Join(", ", unavailable) + (unavailable.Count == 1 ? " has" : " have") + " no script in this build";
+            return text + ".";
         }
 
         public void Reset()

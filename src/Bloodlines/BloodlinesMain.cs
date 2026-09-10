@@ -419,17 +419,9 @@ namespace Bloodlines
             var dock = _locations.Position("M01.RegroupPoint");
             GameUtils.FadeOut(900);
             Script.Wait(950);
-            if (player != null && player.Exists())
-            {
-                if (player.IsInVehicle()) player.Task.LeaveVehicle();
-                player.Position = dock;
-                for (int attempt = 0; attempt < 20; attempt++)
-                {
-                    GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_COLLISION_AT_COORD, dock.X, dock.Y, dock.Z);
-                    if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player)) break;
-                    Script.Wait(100);
-                }
-            }
+            // Out of the car first, deterministically, then across the city. A normal
+            // leave-vehicle task followed by a teleport would move a ped still seated.
+            PrologueSequence.PlaceForColdOpen(player, dock);
             GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
             StartMission(m01);
             GameUtils.FadeIn(1200);

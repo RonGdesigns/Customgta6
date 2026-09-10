@@ -10,7 +10,7 @@ built and checked without the game running. The per-item reconciliation is in
 
 ### Campaign state (audit priority 2)
 
-- `CampaignState.Progress()` reports one of four states: next story mission, optional side content only, story blocked on an unmet prerequisite, or all implemented content complete. The mission key and the save menu use it. The end of the scripted campaign is reported as such; M01 is never a fallback.
+- `CampaignState.Progress()` reports one of five states: next story mission, story gated on solo jobs, optional side content only, story blocked (an unmet prerequisite or required content this build lacks), or all implemented content complete. The mission key and the save menu use it. The end of the scripted campaign is reported as such; M01 is never a fallback.
 - Failure retry: the mission key retries the failed job and says so; walking to another marker still chooses that job.
 - `CampaignState.PrologueComplete` (saved) with `PrologueDue` for saves that have not finished M01.
 - SM01's armor-piercing crates are a real supply line: `armorPiercingSupply` doubles Ice's rifle restock at any locker.
@@ -56,9 +56,9 @@ built and checked without the game running. The per-item reconciliation is in
 ```
 python tools/lint_missions.py          No errors. 35 of 36 missions fire every written line.
 python tools/validate_locations.py     0 of 161 flagged
-python tools/build_story.py --check    79 missions, 351 unique cues, 161 scenes; freshness verified
+python tools/build_story.py --check    79 missions, 352 unique cues, 161 scenes; freshness verified
 python tools/audit_campaign.py --check Mission map freshness verified
-python tools/run_story_tests.py        710 story/runtime checks passed (after the correction pass)
+python tools/run_story_tests.py        725 story/runtime checks passed (after the correction pass and final patch)
 python tools/run_regression_tests.py   165 checks passed
 python tools/build_roslyn.py           Bloodlines.dll built with warnings as errors; prebuilt/ refreshed
 ```
@@ -116,6 +116,8 @@ Brought the branch to a merge-ready source-level state. Each item, and what chan
 10. **Later dialogue** — M53, M55, M57, M64 and three M70 gameplay lines tightened; M67, M68 and the remaining M31–M70 character pass are marked deferred in `CHANGE-REGISTER.md`.
 11. **HUD leaks** — M08, M09, M12 gameplay lines and M03/M04/M06 briefings fixed; the speech check now covers every scripted mission's gameplay and scene lines.
 12. **Repository** — `tools/__pycache__` untracked; `__pycache__/` and `*.pyc` ignored.
+
+Final pre-merge patch (same day): the locked M70 final line "Told y'all... Guess never misses an exit." is the last spoken line of the campaign, after the boat exchange; an unscripted required solo now blocks the story and names itself rather than being waived; the prologue cold-open hand-off and `ExitVehicleStep.Finish` share a fail-safe `ForceOut` and a failed exit cancels the rest of a skip; the progress-state comment says five.
 
 Additional live-test items from this pass:
 

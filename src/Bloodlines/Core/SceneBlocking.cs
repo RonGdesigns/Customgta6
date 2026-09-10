@@ -24,6 +24,13 @@ namespace Bloodlines.Core
         /// <summary>Longest this step may run before the scene moves on with the finished state.</summary>
         public int TimeoutMs { get; set; } = 15000;
 
+        /// <summary>
+        /// Set by <see cref="Finish"/> when the documented end state could not be
+        /// reached. The blocking stops completing at a failed step instead of
+        /// running later steps against a state that is not true.
+        /// </summary>
+        public bool Failed { get; protected set; }
+
         public int StartedAt { get; private set; } = -1;
         public bool HasStarted => StartedAt >= 0;
         public bool TimedOut => HasStarted && Game.GameTime - StartedAt > TimeoutMs;
@@ -140,6 +147,27 @@ namespace Bloodlines.Core
             Actor = actor;
         }
 
+        /// <summary>
+        /// Get a ped out of its vehicle right now, or say that it could not be done.
+        /// Three escalating attempts: the warp-out task, an immediate task clear
+        /// followed by the warp-out, then the raw native with the warp flag. True
+        /// only when the ped is actually no longer seated.
+        /// </summary>
+        public static bool ForceOut(Ped ped)
+        {
+            if (ped == null || !ped.Exists()) return false;
+            if (!ped.IsInVehicle()) return true;
+            ped.Task.ClearAllImmediately();
+            ped.Task.LeaveVehicle(LeaveVehicleFlags.WarpOut);
+            if (!ped.IsInVehicle()) return true;
+            GTA.Native.Function.Call(GTA.Native.Hash.CLEAR_PED_TASKS_IMMEDIATELY, ped);
+            ped.Task.LeaveVehicle(LeaveVehicleFlags.WarpOut);
+            if (!ped.IsInVehicle()) return true;
+            var vehicle = ped.CurrentVehicle;
+            if (vehicle != null && vehicle.Exists()) GTA.Native.Function.Call(GTA.Native.Hash.TASK_LEAVE_VEHICLE, ped, vehicle, 16);
+            return !ped.IsInVehicle();
+        }
+
         /// <summary>Where a skip puts the actor: beside the vehicle, on ground the navmesh accepts.</summary>
         public static Vector3 SafeSpotBeside(Vehicle vehicle)
         {
@@ -167,12 +195,16 @@ namespace Bloodlines.Core
             var vehicle = Actor.CurrentVehicle;
             var spot = vehicle != null && vehicle.Exists() ? SafeSpotBeside(vehicle) : Actor.Position;
             float heading = vehicle != null && vehicle.Exists() ? vehicle.Heading : Actor.Heading;
-            Actor.Task.ClearAllImmediately();
-            Actor.Task.LeaveVehicle(LeaveVehicleFlags.WarpOut);
+            if (!ForceOut(Actor))
+            {
+                // The end state is not true, so nothing after this may assume it.
+                Failed = true;
+                Logger.Error("ExitVehicleStep.Finish: the engine refused to unseat the actor; the remaining blocking is canceled.");
+                return;
+            }
             SettleGround(spot);
             Actor.Position = spot;
             Actor.Heading = heading;
-            if (Actor.IsInVehicle()) Logger.Error("ExitVehicleStep.Finish: the actor is still seated after a warp-out; the next step may misbehave.");
         }
     }
 
@@ -297,7 +329,10 @@ namespace Bloodlines.Core
             {
                 var step = _steps[_index];
                 try { if (!step.HasStarted || !step.IsComplete) step.Finish(); }
-                catch (Exception ex) { Logger.Error("Scene step finish failed: " + step.GetType().Name, ex); }
+                catch (Exception ex) { Logger.Error("Scene step finish failed: " + step.GetType().Name, ex); step.Cancel(); Cancel(); return; }
+                // A step that could not reach its end state stops the skip here;
+                // the steps after it would be acting on a state that is false.
+                if (step.Failed) { Cancel(); return; }
             }
         }
 

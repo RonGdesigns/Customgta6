@@ -428,6 +428,7 @@ GUESS|Man's got a burning airplane behind him and he's already on a device. You 
 GOHAN|Probably.
 ICE|That's a no.
 GUESS|Breakfast. Three seats. I'm driving.
+GUESS|Told y'all... Guess never misses an exit.
 
 SM01
 ICE|Sergei sold me bad ammunition. I'll recover the proper crates alone. The crew needs a supply line we can trust.

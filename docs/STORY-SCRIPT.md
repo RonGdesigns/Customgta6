@@ -1057,6 +1057,8 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M70_SCENE_OUTRO_09_GUESS) — Breakfast. Three seats. I'm driving.
 
+**GUESS** (M70_SCENE_OUTRO_10_GUESS) — Told y'all... Guess never misses an exit.
+
 ## SM01 — LEAD & KEVLAR
 
 ### Intro

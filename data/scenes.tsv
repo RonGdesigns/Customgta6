@@ -308,6 +308,7 @@ M70_SCENE_OUTRO_06_GUESS	M70	outro	GUESS	Reflective; allow the response to land	
 M70_SCENE_OUTRO_07_GOHAN	M70	outro	GOHAN	Reflective; allow the response to land	Probably.
 M70_SCENE_OUTRO_08_ICE	M70	outro	ICE	Reflective; allow the response to land	That's a no.
 M70_SCENE_OUTRO_09_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Breakfast. Three seats. I'm driving.
+M70_SCENE_OUTRO_10_GUESS	M70	outro	GUESS	Reflective; allow the response to land	Told y'all... Guess never misses an exit.
 SM01_SCENE_INTRO_01_ICE	SM01	intro	ICE	Briefing; intent before tactics	Sergei sold me bad ammunition. I'll recover the proper crates alone. The crew needs a supply line we can trust.
 SM01_SCENE_INTRO_02_GUESS	SM01	intro	GUESS	Briefing; intent before tactics	You can work alone without pretending you don't have anyone to call. Tell us when you're leaving the warehouse.
 SM01_SCENE_OUTRO_01_ICE	SM01	outro	ICE	Reflective; allow the response to land	Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.

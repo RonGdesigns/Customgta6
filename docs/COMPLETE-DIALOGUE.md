@@ -3340,6 +3340,11 @@ Breakfast. Three seats. I'm driving.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
+**GUESS** `M70_SCENE_OUTRO_10_GUESS`
+Told y'all... Guess never misses an exit.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
 ## SM01 - LEAD & KEVLAR (scripted)
 
 ### Intro

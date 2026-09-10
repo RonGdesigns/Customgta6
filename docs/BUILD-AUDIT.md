@@ -46,7 +46,7 @@ regression checks) and none by the game:
 
 - **Crew:** three heroes, switching, companion AI, driving, travel modes, recovery, death handling, military pressure, personal wanted state, weapon progression, per-character free-roam memory.
 - **Missions:** stage/objective framework, 24 objective kinds, catalog, prerequisites, markers, retry, failure cleanup, required-asset failure, chapter handoff.
-- **Campaign:** save state, four-way progress reporting, first-completion rewards, safehouses, fleet upgrades, dispatches.
+- **Campaign:** save state, five-way progress reporting, first-completion rewards, safehouses, fleet upgrades, dispatches.
 - **World:** homes and apartments, shops and customization, weapon market, fleet garage, world tuning, survey mode.
 - **Scenes:** cutscene director, dialogue director, scene blocking, the prologue.
 
