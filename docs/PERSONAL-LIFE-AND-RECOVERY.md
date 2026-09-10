@@ -48,7 +48,7 @@ After 90 continuous seconds at five stars, the sixth tier activates. First dispa
 
 Helicopters pursue at a higher requested speed and smaller orbit distance. Available models rotate between Buzzard, FH-1 Hunter, Akula, Savage and Annihilator Stealth. One helicopter is active at a time. The Barracks driver pursues while its two rear passengers receive drive-by tasks.
 
-The tank retains its vehicle attack task. With a living seated driver, a clear line of sight and a target 40–180 metres away, it selects the mounted tank cannon and requests a shot no more often than every 6.5 seconds, after an initial eight-second delay. This uses the vehicle weapon, not a generated explosion. Verify actual aiming, firing and stability in the live game. Switching between heroes sharing six-star heat preserves the pursuing units.
+The tank retains its vehicle attack task. With a living seated driver, a clear line of sight and a target 40–180 meters away, it selects the mounted tank cannon and requests a shot no more often than every 6.5 seconds, after an initial eight-second delay. This uses the vehicle weapon, not a generated explosion. Verify actual aiming, firing and stability in the live game. Switching between heroes sharing six-star heat preserves the pursuing units.
 
 ## Also included
 

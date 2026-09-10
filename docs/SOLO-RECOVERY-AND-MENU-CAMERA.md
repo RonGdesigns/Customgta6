@@ -4,7 +4,7 @@ This follow-up changes player death/arrest recovery and debug/home menu controls
 
 - Only the active hero is revived, healed and returned to the recorded safe recovery point. Surviving teammates keep their health, armor, positions and vehicle seats. In free roam their existing activities and personal wanted levels are preserved.
 - Mission death still fails the current mission. Mission cleanup may release scripted assignments, but recovery does not regroup or heal the other heroes. Existing occupied-vehicle protection remains in effect.
-- Catch-up teleport and boarding-warp recovery are suppressed for separated teammates after the player's death. They may travel naturally. Coming within 65 metres, issuing a new free-roam behavior order, or starting a new mission ends this restriction.
+- Catch-up teleport and boarding-warp recovery are suppressed for separated teammates after the player's death. They may travel naturally. Coming within 65 meters, issuing a new free-roam behavior order, or starting a new mission ends this restriction.
 - Teammates who also died are not revived by the player's recovery, including the next automatic companion-update tick. A new behavior order or a fresh mission deployment can resume normal companion recovery.
 - The left stick moves the player, the right stick controls the camera, and D-pad/A/B navigate the debug and home menus. Camera mode cycling and idle-camera changes remain blocked while a menu is open.
 

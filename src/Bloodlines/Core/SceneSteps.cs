@@ -113,6 +113,52 @@ namespace Bloodlines.Core
         public override void Cancel() { }
     }
 
+    /// <summary>
+    /// A carried prop is set down on another entity: a crate into a truck bed. The
+    /// actor turns to it, holds a beat, and the prop leaves the hand for the offset
+    /// on the entity. Finishing places it at once; the prop is the mission's, so
+    /// cancel leaves it where it is.
+    /// </summary>
+    public sealed class StowPropStep : SceneStep
+    {
+        private readonly Prop _prop;
+        private readonly Entity _into;
+        private readonly Vector3 _offset;
+        private readonly int _holdMs;
+        private bool _moved;
+
+        public StowPropStep(Ped actor, Prop prop, Entity into, Vector3 offset, int holdMs = 900)
+        {
+            Actor = actor; _prop = prop; _into = into; _offset = offset; _holdMs = holdMs; TimeoutMs = holdMs + 2000;
+        }
+
+        public static bool Stow(Prop prop, Entity into, Vector3 offset)
+        {
+            if (prop == null || !prop.Exists() || into == null || !into.Exists()) return false;
+            try { prop.Detach(); prop.AttachTo(into, offset, Vector3.Zero); return true; }
+            catch (Exception ex) { Logger.Error("Prop could not be stowed", ex); return false; }
+        }
+
+        protected override void OnStart()
+        {
+            if (Usable(Actor) && Usable(_into)) Actor.Heading = DriveUpStep.HeadingBetween(Actor.Position, _into.Position);
+        }
+
+        public override bool IsComplete
+        {
+            get
+            {
+                if (Game.GameTime - StartedAt < _holdMs) return false;
+                Move();
+                return true;
+            }
+        }
+
+        private void Move() { if (_moved) return; _moved = true; Stow(_prop, _into, _offset); }
+        public override void Finish() { Move(); }
+        public override void Cancel() { }
+    }
+
     /// <summary>The prop moves from one hand to another. Finishing moves it at once.</summary>
     public sealed class HandoverStep : SceneStep
     {

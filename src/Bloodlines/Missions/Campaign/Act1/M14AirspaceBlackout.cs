@@ -72,7 +72,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The whole flight home is the objective: climb and the SAMs get a lock.
             yield return new MissionStage("Under the radar",
-                    new AltitudeCeilingObjective("Hug the terrain — stay under 50 metres above the terrain.", 50f,
+                    new AltitudeCeilingObjective("Hug the terrain — stay under 50 meters above the terrain.", 50f,
                         "A SAM battery locked on and took the plane down."),
                     new DeliverVehicleObjective("Guess: land the jammer aircraft at McKenzie and stop.", () => _plane, () => _mckenzie, 60f, land: true))
                 

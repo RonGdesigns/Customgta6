@@ -91,7 +91,7 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Raton Canyon",
-                    new AltitudeCeilingObjective("Hug the canyon — stay under 60 metres above terrain.", 60f,
+                    new AltitudeCeilingObjective("Hug the canyon — stay under 60 meters above terrain.", 60f,
                         "A Lazer got a lock in open sky."),
                     new DeliverVehicleObjective("Guess: fly the Cargobob through the marked canyon route.", () => _cargobob, () => _canyon, 120f))
                 

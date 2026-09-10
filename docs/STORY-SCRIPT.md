@@ -123,6 +123,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M03_SCENE_OUTRO_02_GUESS) — Three keys to the shop. Keep yours this time. I got tired of being the only one checking the door.
 
+### Split
+
+**ICE** (M03_SCENE_SPLIT_01_ICE) — Gohan and I take the van to the depot and wait on your call. Nobody moves on that yard until the rail is dead.
+
+**GUESS** (M03_SCENE_SPLIT_02_GUESS) — Then I'll make it loud. Give me twenty minutes and a straight road, and don't start without me.
+
+### Loading
+
+**GOHAN** (M03_SCENE_LOADING_01_GOHAN) — Rifles, plates, ammunition. Cartel-bought and never fired. Three crates and the truck is full.
+
+**GOHAN** (M03_SCENE_LOADING_02_GOHAN) — Last one. She's yours, Guess. Don't scrape her on the gate.
+
 ## M04 — SEVERED WIRE
 
 ### Intro

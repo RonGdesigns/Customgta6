@@ -12,7 +12,9 @@ SPEAKERS = {'ICE', 'GOHAN', 'GUESS', 'KJ'}
 SUPPORT = {'MILLER', 'BUYER', 'MATEO'}
 PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers in position',
                    'stash': 'At the curb; the prototype stays, the crew boards the Granger',
-                   'call': 'Alone in the starter apartment; the message arrives'}
+                   'call': 'Alone in the starter apartment; the message arrives',
+                   'split': 'At the base; the depot team boards the van and pulls away',
+                   'loading': 'At the Benson; crates carried into the bed by hand'}
 
 def blocks(path, key_pattern, phases=None):
     """Lines per block. With `phases`, a block may contain '@name' lines that open a named phase;

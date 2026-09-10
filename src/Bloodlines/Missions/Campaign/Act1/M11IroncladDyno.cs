@@ -163,8 +163,8 @@ namespace Bloodlines.Missions.Campaign
             if (inBand) _held += delta;
             else _held = System.Math.Max(0f, _held - delta * 0.5f);
 
-            string colour = inBand ? "~g~" : psi < _low ? "~y~" : "~r~";
-            GameUtils.Subtitle(colour + psi.ToString("0") + " PSI~s~   target " + _low + "–" + _high +
+            string color = inBand ? "~g~" : psi < _low ? "~y~" : "~r~";
+            GameUtils.Subtitle(color + psi.ToString("0") + " PSI~s~   target " + _low + "–" + _high +
                                "   held " + _held.ToString("0") + "/" + _holdSeconds + "s", 400);
 
             if (_held >= _holdSeconds) Complete();

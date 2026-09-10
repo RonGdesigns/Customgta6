@@ -8,7 +8,7 @@ using GTA;
 namespace Bloodlines.Core
 {
     /// <summary>
-    /// The bible's BloodlinesAudioManager: plays a dialogue cue as a speaker-coloured
+    /// The bible's BloodlinesAudioManager: plays a dialogue cue as a speaker-colored
     /// subtitle, with the generated WAV underneath it when one exists.
     ///
     /// Audio is optional by design. The campaign has 255 written lines and no
@@ -132,7 +132,7 @@ namespace Bloodlines.Core
         }
 
         /// <summary>
-        /// Speaker colours match each character's blip so the switch HUD, the map and
+        /// Speaker colors match each character's blip so the switch HUD, the map and
         /// the subtitles all identify a character the same way.
         /// </summary>
         private static string ColourFor(string speaker)

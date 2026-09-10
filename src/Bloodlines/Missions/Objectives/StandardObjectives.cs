@@ -15,18 +15,18 @@ namespace Bloodlines.Missions.Objectives
         private readonly float _radius;
         private readonly bool _flat;
         private readonly bool _inVehicle;
-        private readonly Color _colour;
+        private readonly Color _color;
         private bool _announced;
 
         public ReachZoneObjective(string label, Func<Vector3> position, float radius = 3f,
-            bool flat = false, bool requireVehicle = false, Color? colour = null)
+            bool flat = false, bool requireVehicle = false, Color? color = null)
             : base(label)
         {
             _position = position;
             _radius = radius;
             _flat = flat;
             _inVehicle = requireVehicle;
-            _colour = colour ?? Color.FromArgb(160, 240, 205, 60);
+            _color = color ?? Color.FromArgb(160, 240, 205, 60);
         }
 
         public ReachZoneObjective(string label, Vector3 position, float radius = 3f,
@@ -40,7 +40,7 @@ namespace Bloodlines.Missions.Objectives
         public override void Update(MissionContext context)
         {
             var target = _position();
-            GameUtils.DrawObjectiveMarker(target, _colour, Math.Max(1f, _radius * 0.6f));
+            GameUtils.DrawObjectiveMarker(target, _color, Math.Max(1f, _radius * 0.6f));
             ObjectiveMarkers.Navigation(target, RequiredCharacter);
 
             if (!IsOwnerActive(context)) return;
@@ -65,17 +65,20 @@ namespace Bloodlines.Missions.Objectives
         private readonly float _radius;
         private readonly int _seconds;
         private readonly string _progressText;
+        private readonly bool _onFoot;
 
         private int _startedAt;
 
+        /// <param name="onFoot">The hold counts only out of a vehicle: stopping the car on the mark is arrival, not the work.</param>
         public HoldZoneObjective(string label, Func<Vector3> position, int seconds,
-            float radius = 2.5f, string progressText = null)
+            float radius = 2.5f, string progressText = null, bool onFoot = false)
             : base(label)
         {
             _position = position;
             _seconds = seconds;
             _radius = radius;
             _progressText = progressText ?? label;
+            _onFoot = onFoot;
         }
 
         public override Vector3? AssignmentPosition => _position();
@@ -88,7 +91,7 @@ namespace Bloodlines.Missions.Objectives
             ObjectiveMarkers.Navigation(target, RequiredCharacter);
             var player = Game.Player.Character;
             if (!IsOwnerActive(context) || player == null || !player.Exists() ||
-                !GameUtils.IsWithin(player.Position, target, _radius))
+                !GameUtils.IsWithin(player.Position, target, _radius) || (_onFoot && player.IsInVehicle()))
             {
                 // Leaving the zone restarts the hold; a progress bar that survives the
                 // player walking away is a progress bar nobody has to defend.

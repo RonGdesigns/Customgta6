@@ -39,6 +39,10 @@ M03_SCENE_INTRO_01_GUESS	M03	intro	GUESS	Briefing; intent before tactics	Cypress
 M03_SCENE_INTRO_02_GOHAN	M03	intro	GOHAN	Briefing; intent before tactics	Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 M03_SCENE_OUTRO_01_ICE	M03	outro	ICE	Reflective; allow the response to land	Miller's selling the dock forensics. We go after him next. Everybody gets the file before we move.
 M03_SCENE_OUTRO_02_GUESS	M03	outro	GUESS	Reflective; allow the response to land	Three keys to the shop. Keep yours this time. I got tired of being the only one checking the door.
+M03_SCENE_SPLIT_01_ICE	M03	split	ICE	At the base; the depot team boards the van and pulls away	Gohan and I take the van to the depot and wait on your call. Nobody moves on that yard until the rail is dead.
+M03_SCENE_SPLIT_02_GUESS	M03	split	GUESS	At the base; the depot team boards the van and pulls away	Then I'll make it loud. Give me twenty minutes and a straight road, and don't start without me.
+M03_SCENE_LOADING_01_GOHAN	M03	loading	GOHAN	At the Benson; crates carried into the bed by hand	Rifles, plates, ammunition. Cartel-bought and never fired. Three crates and the truck is full.
+M03_SCENE_LOADING_02_GOHAN	M03	loading	GOHAN	At the Benson; crates carried into the bed by hand	Last one. She's yours, Guess. Don't scrape her on the gate.
 M04_SCENE_INTRO_01_GOHAN	M04	intro	GOHAN	Briefing; intent before tactics	Miller has our forensics and an Aegis buyer. The van's drive gave us the meeting. We need his copy.
 M04_SCENE_INTRO_02_GUESS	M04	intro	GUESS	Briefing; intent before tactics	Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 M04_SCENE_OUTRO_01_ICE	M04	outro	ICE	Reflective; allow the response to land	Miller's drive points to Mateo's sea cave. Mateo can tell us who paid for this. We bring him in breathing.

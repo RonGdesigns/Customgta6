@@ -35,6 +35,10 @@
 >   copy hands you straight back, the laptop is on the table; M02 opens at the curb,
 >   the drives ride in Ice's hand and the canal does not clear the police.
 >   Live-test items 58–64.
+> - M03 is the third slice: the split at the base, Ron's junction with its dogs and
+>   street crew, Ice's quiet entry that wakes the yard, Gohan's crates carried into
+>   the Benson on camera, the truck home with the police lost first and locked at
+>   the foundry. Live-test items 65–70.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

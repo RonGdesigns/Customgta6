@@ -72,7 +72,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The match is real flying: hold the band and the transfer becomes possible.
             yield return new MissionStage("Match the Shamal",
-                    new ShadowTargetObjective("Climb to the Shamal and hold station inside 60 metres.",
+                    new ShadowTargetObjective("Climb to the Shamal and hold station inside 60 meters.",
                         () => _shamal, 60f, 12, "The Shamal outran the stunt plane.", 12f, acquireSeconds: 240))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartJet())
