@@ -44,7 +44,7 @@ namespace Bloodlines.Missions.Campaign
             _climbOut = Ctx.Locations.Position("M20.ClimbOut");
 
             // Start on the ground at the crew's own staging hangar from M18: a
-            // deployment over open water drops three people into the harbour.
+            // deployment over open water drops three people into the harbor.
             var apron = Ctx.Locations.Position("M18.SaltHangar");
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, apron, Ctx.Locations.Heading("M18.SaltHangar")))
             {
@@ -75,7 +75,11 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("submersible2");
             if (!GameUtils.RequestModel(model)) return false;
             var point = handoff.VehicleModel.Length > 0 ? handoff.VehiclePosition : Ctx.Locations.Position("M19.Surface");
-            _kraken = Track(World.CreateVehicle(model, point, handoff.VehicleHeading));
+            // In a continuous run the Kraken chapter one released is still floating
+            // there; take it over rather than spawning a second one beside it.
+            foreach (var nearby in World.GetNearbyVehicles(point, 25f))
+                if (nearby != null && nearby.Exists() && nearby.Model.Hash == model.Hash) { _kraken = Track(nearby); break; }
+            if (_kraken == null) _kraken = Track(World.CreateVehicle(model, point, handoff.VehicleHeading));
             model.MarkAsNoLongerNeeded();
             if (_kraken == null || !_kraken.Exists()) return false;
             _kraken.IsPersistent = true;
