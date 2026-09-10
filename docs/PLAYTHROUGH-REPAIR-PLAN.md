@@ -40,13 +40,13 @@
 | 17 | M03 teleports to the objective; should drive from the start (p6–7) | Confirmed: Guess is deployed in a Primo 25 m from the rail junction; Ice 35 m from the depot. | D |
 | 18 | M03 "get out and reach the yellow marker" should trigger by driving up (p7) | `MissionInteraction` requires on foot plus a button press. Add an arrival mode: stop inside the zone → Ron gets out and the work starts. | D |
 | 19 | Ice should start near his objective; Ice and Gohan together; entry trigger before the first guard (p7–8) | Design: their staging is a story cut, Ron's is a drive. Guards currently hostile from stage entry. | D |
-| 20 | "no ability or button is needed" caption (p7) | Ambiguous: the note reads "that caption should be there". **Decision needed** (§9). | D |
+| 20 | "no ability or button is needed" caption (p7) | **Decided:** it should *not* be there. Remove that wording from the M03 HUD and from any other objective label that carries it. | D |
 | 21 | Fail if you shoot before the objective (p7–8) | Add a pre-breach quiet rule scoped to the depot actors, not to Ron's ambush. | D |
 | 22 | Gohan "loads weapons" by standing in a field (p8) | Confirmed: the crane stage is a bare timer at `M03.CraneControls`; the Benson sits elsewhere. Needs a visible loading presentation at the truck. | D |
 | 23 | The neighborhood ambush on Guess never happens; there is no ambush in the mission (p8) | Confirmed: no ambush, no dogs in `M03CypressFoundry.cs`. The dogs Ron met were ambient. | D |
 | 24 | Guarantee at least three dogs; truck parked in the field; Gohan loads it (p9) | Mission-owned dogs and the loading site at the actual Benson. | D |
 | 25 | Two-star wanted level, police drove past in plain view (p9) | Not from the crew's relationship groups (no relationship with COP is set) and not from dispatch (the mod shortens spawn intervals). Leading candidates: the stars were in the "search" state (greyed) after a restore by `PersonalWanted`, or police response was suppressed by a flag left set. Needs instrumentation before a fix. | C |
-| 26 | Force Guess out of the car at the end and lock it (p9) | Design; **which vehicle** is a decision (§9). | D |
+| 26 | Force Guess out of the car at the end and lock it (p9) | **Decided:** the truck Guess drives back to the hideout (the Benson). Guess is put out of it at the foundry and it locks; his approach car is not touched. | D |
 | 27 | Franklin in the M04 cutscene (p9) | Same cause as #16. | A |
 | 28 | Gohan cuts the power and is forced to switch to Ice while the shootout starts; objective sits inside the meeting; should drive there (p10) | Confirmed: "Kill the lights" is followed by "Take the ramp" owned by Ice, whose entry turns six bodyguards hostile. Gohan is deployed 15 m from the garage. | D |
 | 29 | Debug: pass to next objective; retry failed objective (p10) | The dev menu warps a stage index and refuses when reconstruction is unsupported. Needs real "complete this objective" and "restart this stage" hooks plus a full-precision coordinate readout. | A |
@@ -114,7 +114,7 @@ Keep the time scale at 0.45 for round one so handling is the only variable. Add 
 
 **Marker names (#15).** Blips read "M01 — Ghost in the Dockyard".
 
-**Debug tools (#29).** Two real actions, distinct from stage warping: *complete current objective* (calls the objective's declared completion, runs stage exit effects, validates the next stage's entities) and *restart this stage* (only when the stage declares it can rebuild; otherwise offers the full retry it already has). A full-precision coordinate line (X, Y, Z, heading, and the effective location key with its source: data file, your INI, or survey) that the capture HUD does not truncate, plus copy to the log. This is what gets P18's missing Y.
+**Debug tools (#29).** Two real actions, distinct from stage warping: *complete current objective* (calls the objective's declared completion, runs stage exit effects, validates the next stage's entities) and *restart this stage* (only when the stage declares it can rebuild; otherwise offers the full retry it already has). A full-precision coordinate line (X, Y, Z, heading, and the effective location key with its source: data file, your INI, or survey) drawn at the **top right of the screen**, where the objective text cannot cover it (Ron could not read P18's Y because the objective line sat on top of it), plus a copy to the log.
 
 **Also in A:** the live retest of R01 (route) and R02 (scene outcomes) from the fix branch, since Ron's playthrough predates them.
 
@@ -153,7 +153,7 @@ Instrument first: on every switch and restore, log wanted level, greyed-stars st
 6. Pre-breach quiet rule: firing before the trigger fails with an explanation, scoped to the depot actors so Ron's ambush is unaffected.
 7. Gohan loads the Benson where it is parked: walk to the rear, open, a looped carry/load task with crate props that appear in the bed, close. The stage completes on the visible sequence, not a timer in a field.
 8. Ron collects the loaded truck and delivers it; parallel pressure is held while a switch is forced, so a switch never causes an unavoidable death.
-9. Lose the pursuit before the foundry, deliver, Ron gets out through a tested exit, and the delivered vehicle is locked (see §9 for which one).
+9. Lose the pursuit before the foundry, deliver, Ron gets out of the Benson through a tested exit, and the Benson locks. Only the delivered truck.
 
 ### M04
 Gohan drives to a breaker moved outside the meeting. After the cut, he takes cover and can fight; Ice is offered as the tactical switch, not forced. If a switch must be mandatory, it happens before the bodyguards turn hostile, or with a protected hand-over. The right cast appears in the briefing.
@@ -194,9 +194,9 @@ Source SHA and installed DLL hash; tests run with counts; files changed; note nu
 
 ## 9. Decisions only Ron can make
 
-1. **P18's Y coordinate** and confirmation of Z 5.90; the debug readout in Package A will show it in full.
-2. **Ice's checkpoint Y:** −3248.37 is the reading of "-3248 37"; confirm or recapture.
-3. **The M03 caption:** the note says the "no ability or button is needed" caption *should be there*. Keep it, or was that meant as *shouldn't*? Either way the wording stays in the HUD, never in speech.
-4. **Which vehicle is locked at the end of M03:** the delivered Benson (my reading), Ron's approach car, or both.
-5. **Taxi opening:** stays an alternative unless chosen.
-6. **Speed target for round two**, after the four-car handling runs, not before.
+1. **P18's Y coordinate** and confirmation of Z 5.90. Open: the Package A readout at the top right of the screen exists to capture it.
+2. **Ice's checkpoint Y:** the reading of "-3248 37" is -3248.37. Open: confirm or recapture with the same readout.
+3. ~~The M03 caption~~ **Decided September 9:** the "no ability or button is needed" wording should not be there. Removed in Package D.
+4. ~~Which vehicle is locked~~ **Decided:** the Benson Guess drives back to the hideout.
+5. ~~Taxi opening~~ **Decided for now:** the self-driven opening stays as is. The taxi idea is parked until Ron has planned how Guess actually comes to own a car, since the taxi version removes the car he drives home in.
+6. ~~Speed target~~ **Decided:** the target stays where it is. The work is making driving good at those top speeds, per the handling table in the external repair plan (its §4) and §2 here. No speed reduction.
