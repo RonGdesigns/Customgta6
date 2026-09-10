@@ -7,6 +7,9 @@ ICE|Mateo Cifuentes. One clean shot, then I leave. That's the contract.
 GOHAN|Forty-eight percent would prove the account exists. I need the whole ledger to know who owns it.
 GOHAN|The dock cameras tagged all three of us. An Aegis van is carrying the upload. We have to catch it.
 GUESS|Fifteen years without a call. Now we're sharing a wanted poster. Nobody disappears before we talk.
+@escape
+MATEO|Fifteen years apart and the three of you still show up to the same dock. Tell whoever sent you the ledger's already gone.
+ICE|He's on the water. Let him go. The copy tells us where he lands.
 
 M02
 GOHAN|The van has the dock recording. I can hack it from the passenger seat. Keep me close enough to punch into their signal while I cut the upload.

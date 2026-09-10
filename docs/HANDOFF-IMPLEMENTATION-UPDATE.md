@@ -211,6 +211,11 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 54. **Skip and retry.** Skip the briefing: a four-line card (target, why, roles, first stop) for seven seconds. Fail and retry: a one-line recap.
 55. **Inactive brothers under fire.** During the chase, watch the map: Ice fights the escort from cover and Gohan holds his cover point; neither stands in the open.
 
+## M01 escape and the companion shield (September 10)
+
+56. **Mateo leaves on camera.** Clear the yard (or let the clock run): a short scene shows Mateo at the slipway, boarding the launch, and the launch pulling away with his line. Enter skips it; he is still aboard and gone. He cannot be killed at any point.
+57. **Nobody dies off screen.** Play M01's firefight as Ice and watch Guess and Gohan: they take cover and fight and their health does not move. Switch into one: he can be hurt. Stand down: the shield is off.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

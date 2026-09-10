@@ -43,7 +43,8 @@ namespace Bloodlines.Missions.Campaign
         private bool _iceHasEyes;
         private bool _ledgerRipped;
         private bool _prototypeTaken;
-        private bool _mateoFleeing;
+        private bool _mateoFleeing, _launchStarted;
+        private Vector3 _mateoCover;
         private bool _exitRouteSet;
         private CrewSlot? _guidanceSlot;
         private CrewSlot? _workingSlot;
@@ -101,6 +102,14 @@ namespace Bloodlines.Missions.Campaign
             { Fail("Mateo was killed. The ledger must lead us to his buyers."); return; }
             if (Stage == 0 && player.IsShooting)
             { Fail(Ctx.Crew.Active.DisplayName + " blew the cover by firing. Identify Mateo and copy the ledger without shooting."); return; }
+
+            // A skipped or failed escape scene still puts the launch on the water,
+            // whichever stage the mission has moved to by then.
+            if (_mateoFleeing && !_launchStarted && !Ctx.Cutscenes.IsActive && _mateo != null && _mateo.Exists() && _launch != null && _launch.Exists())
+            {
+                if (!_mateo.IsInVehicle(_launch)) _mateo.SetIntoVehicle(_launch, VehicleSeat.Driver);
+                StartLaunch();
+            }
 
             switch (Stage)
             {
@@ -296,13 +305,12 @@ namespace Bloodlines.Missions.Campaign
             if (_launch == null || !_launch.Exists()) { Fail("The launch could not spawn. Retry the mission."); return; }
 
             // The whole campaign turns on these three lines.
+            // Where Mateo waits out the shooting: behind his own spot, away from the
+            // dock edge, until the crew has cleared enough of the yard for him to go.
+            _mateoCover = _mateo.Position + new Vector3(0f, 0f, 0f);
             Ctx.Cutscenes.Play(Id, "recognition", "Fifteen years", _mateo, () =>
             {
-                if (_mateo != null && _mateo.Exists() && _launch != null && _launch.Exists())
-                {
-                    _mateo.Task.ClearAll();
-                    _mateo.Task.EnterVehicle(_launch, VehicleSeat.Driver, 90000, 2f, EnterVehicleFlags.None);
-                }
+                if (_mateo != null && _mateo.Exists()) { _mateo.Task.ClearAll(); _mateo.Task.RunTo(_mateoCover, false, 8000); }
             });
 
             Objective("Hold the dry-dock. Mateo is running for the launch.");
@@ -315,8 +323,8 @@ namespace Bloodlines.Missions.Campaign
             // Mission ticks resume after the scene. Start combat clocks now.
             _recognitionStartedAt = Game.GameTime;
             if (_launch == null || !_launch.Exists()) { Fail("The escape launch disappeared."); return; }
-            // Also runs after a skipped scene: the escape remains a real boarding task.
-            if (!_mateo.IsInVehicle(_launch)) _mateo.Task.EnterVehicle(_launch, VehicleSeat.Driver, 90000, 2f, EnterVehicleFlags.None);
+            // Also runs after a skipped scene: Mateo keeps his head down until the escape plays.
+            if (!_mateo.IsInVehicle(_launch)) { _mateo.Task.ClearAll(); _mateo.Task.RunTo(_mateoCover, false, 8000); }
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
             Ctx.Crew.CompanionsHoldPosition = false;
             Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
@@ -343,16 +351,11 @@ namespace Bloodlines.Missions.Campaign
             if (!_mateoFleeing && (remaining <= 0 || (_guards.Count <= 2 && remaining <= RecognitionWindowSeconds - 10)) &&
                 _launch != null && _launch.Exists() && _mateo != null && _mateo.Exists() && _mateo.IsAlive)
             {
-                if (!_mateo.IsInVehicle(_launch))
-                {
-                    if (remaining < -30) Fail("Mateo's route to the launch was blocked. Retry the mission.");
-                    return;
-                }
                 _mateoFleeing = true;
-                _mateo.Task.StartBoatMission(_launch, _slipway + new Vector3(0f, -500f, 0f),
-                    VehicleMissionType.GoTo, 20f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
+                PlayEscape();
                 Say("M01_S3_07_ICE");
             }
+
 
             if (!_mateoFleeing || (_guards.Count > 2 && remaining > -20)) return;
 
@@ -429,7 +432,11 @@ namespace Bloodlines.Missions.Campaign
             _mateo.IsPersistent = true;
             _mateo.BlockPermanentEvents = true;
             _mateo.Armor = 100;
-            _mateo.Health = 500; // Mortal: killing this lead fails explicitly instead of ignoring bullets.
+            _mateo.Health = 500;
+            // The lead cannot be lost to a stray round in the firefight: he is the
+            // campaign's thread, and his escape is shown, not raced.
+            _mateo.IsInvincible = true;
+            _mateoCover = _mateo.Position + new Vector3(0f, 0f, 0f);
             _mateo.Weapons.Give(WeaponHash.APPistol, 100, false, false);
             _mateo.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", _mateo.Position, 90f);
 
@@ -499,6 +506,45 @@ namespace Bloodlines.Missions.Campaign
             blip.Sprite = BlipSprite.PersonalVehicleCar;
             blip.Color = BlipColor.Orange;
             blip.Name = "$3M prototype";
+        }
+
+        /// <summary>
+        /// The escape, shown: the yard is clear enough, Mateo is already at the
+        /// slipway (nobody watches him jog the length of the dock under fire), he
+        /// boards, and the launch pulls away while he has the last word. Skipping
+        /// warps him aboard and the launch leaves on the next tick.
+        /// </summary>
+        private void PlayEscape()
+        {
+            if (_mateo == null || !_mateo.Exists() || _launch == null || !_launch.Exists()) return;
+            _mateo.Task.ClearAll();
+            if (!_mateo.IsInVehicle(_launch))
+            {
+                var spot = ExitVehicleStep.SafeSpotBeside(_launch);
+                Function.Call(Hash.REQUEST_COLLISION_AT_COORD, spot.X, spot.Y, spot.Z);
+                _mateo.Position = spot;
+                _mateo.Heading = DriveUpStep.HeadingBetween(spot, _launch.Position);
+            }
+            var blocking = new SceneBlocking { DialogueAfterStep = 1 }
+                .Then(new EnterVehicleStep(_mateo, _launch, VehicleSeat.Driver))
+                .Then(new ShotStep(4500, _launch, new Vector3(-9f, 3f, 2.5f), _launch, new Vector3(0f, 0f, 0.8f), 1.5f, StartLaunch))
+                .Then(ShotStep.Wide(2500, _slipway, 14f, 10f, 4f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "escape", Title = "Mateo runs",
+                Reason = "Mateo boards the launch and leaves by water; the ledger copy is the crew's only lead now.",
+                Blocking = blocking
+            }.With("MATEO", _mateo);
+            if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M01 escape scene did not play; Mateo boards and leaves without it.");
+        }
+
+        private void StartLaunch()
+        {
+            if (_launchStarted || _mateo == null || !_mateo.Exists() || _launch == null || !_launch.Exists()) return;
+            _launchStarted = true;
+            _launch.IsEngineRunning = true;
+            _mateo.Task.StartBoatMission(_launch, _slipway + new Vector3(0f, -500f, 0f),
+                VehicleMissionType.GoTo, 20f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
         }
 
         private void SpawnEscapeLaunch()
