@@ -93,7 +93,8 @@ public static partial class StoryTests
   Check(prologue.Current==PrologueSequence.Phase.Drive&&handoffs==0&&!save.PrologueComplete,"A canceled homecoming does not complete the prologue; the drive resumes");
   prologue.Update();
   Check(prologue.Current==PrologueSequence.Phase.Homecoming&&!c.Cutscenes.IsActive&&!Game.Player.Character.IsInVehicle()&&Game.Player.Character.Position==home,"The retry places Ron at the door directly instead of trusting the scene again");
-  prologue.Update();Check(handoffs==1&&save.PrologueComplete&&!prologue.IsActive,"The direct retry completes the prologue exactly once");
+  prologue.Update();Check(prologue.Current==PrologueSequence.Phase.Interior&&c.Cutscenes.IsActive&&handoffs==0,"The retry goes on to the message, read at the door with no home system");
+  c.Cutscenes.Skip();prologue.Update();Check(handoffs==1&&save.PrologueComplete&&!prologue.IsActive,"The direct retry completes the prologue exactly once");
   prologue.Update();Check(handoffs==1,"Finish cannot fire twice");
   // A Ron the engine will not unseat is asked to get out; the prologue waits.
   Reset();crew=Roster();c=Context(crew);World.CollisionReady=true;save=CampaignState.Load(Path.Combine(root,"homecoming-stuck.json"));handoffs=0;
@@ -101,8 +102,8 @@ public static partial class StoryTests
   prologue.Begin();c.Cutscenes.Skip();prologue.Update();ride=Game.Player.Character.CurrentVehicle;ride.Position=home;Game.Player.Character.Position=home;ride.Speed=0;prologue.Update();c.Cutscenes.Stop();prologue.Update();
   Game.Player.Character.StuckInSeat=true;prologue.Update();
   Check(prologue.Current==PrologueSequence.Phase.Drive&&handoffs==0&&GameUtils.Message.Contains("Get out"),"When Ron cannot be unseated the prologue stays in the drive and asks him to get out");
-  Game.Player.Character.StuckInSeat=false;Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.Position=home;Game.GameTime+=5000;prologue.Update();prologue.Update();
-  Check(handoffs==1&&save.PrologueComplete,"Once he is out on foot at the door the homecoming completes");
+  Game.Player.Character.StuckInSeat=false;Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.Position=home;Game.GameTime+=5000;prologue.Update();prologue.Update();c.Cutscenes.Skip();prologue.Update();
+  Check(handoffs==1&&save.PrologueComplete,"Once he is out on foot at the door the homecoming completes, the message reads, and the prologue hands off");
   // Cold-open placement: nothing moves unless both halves succeed.
   Reset();World.CollisionReady=true;var dock=new Vector3(1073,-3160,5.9f);var seated=new Ped();var cab=new Vehicle{Position=new Vector3(291,-1078,29)};seated.SetIntoVehicle(cab,VehicleSeat.Driver);
   Check(PrologueSequence.PlaceForColdOpen(seated,dock)==PrologueSequence.Placement.Placed&&!seated.IsInVehicle()&&seated.Position==dock&&cab.Position!=dock,"Seated player: unseated, then placed; the car stays behind");

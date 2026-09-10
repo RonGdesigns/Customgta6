@@ -190,6 +190,13 @@ namespace Bloodlines.Missions
         /// <summary>QA: complete the objective the player is on, through its own completion, so stage exit effects run. Returns its label, or null.</summary>
         public virtual string CompleteCurrentObjective() => null;
 
+        /// <summary>
+        /// Blocking for the aftermath scene the manager plays after this mission
+        /// passes: the crew peds and their transport are still there, the mission's
+        /// own entities are not. Null keeps the speaker framing.
+        /// </summary>
+        public virtual SceneBlocking OutroBlocking() => null;
+
         public void Fail(string reason)
         {
             if (Status != MissionStatus.Running) return;

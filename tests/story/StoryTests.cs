@@ -23,7 +23,7 @@ public static partial class StoryTests
  static int checks;
  static string dataDir,root;
  static void Check(bool ok,string name){if(!ok)throw new Exception("FAIL: "+name);checks++;Console.WriteLine("PASS: "+name);}
- static void Reset(){Game.GameTime=100;Game.Player=new Player();Game.Accept=false;Game.Pressed.Clear();World.Created.Clear();World.Vehicles.Clear();World.FailNavigation=false;World.FailNavigationNear=null;Function.Seabed=-40f;Function.SeabedKnown=true;World.NearbyVehicles=new Vehicle[0];World.GroundHeight=0f;World.WaterAvailable=true;World.FailPeds=false;World.RenderingCamera=null;World.FailCamera=false;World.CollisionReady=false;GameUtils.Faded=false;Function.Values.Clear();Function.Held.Clear();Function.Axes.Clear();Function.ThrowOnce=null;Script.Waited=0;}
+ static void Reset(){Game.GameTime=100;Game.Player=new Player();Game.Accept=false;Game.Pressed.Clear();World.Created.Clear();World.Vehicles.Clear();World.Props.Clear();World.FailNavigation=false;World.FailNavigationNear=null;Function.Seabed=-40f;Function.SeabedKnown=true;World.NearbyVehicles=new Vehicle[0];World.GroundHeight=0f;World.WaterAvailable=true;World.FailPeds=false;World.RenderingCamera=null;World.FailCamera=false;World.CollisionReady=false;GameUtils.Faded=false;Function.Values.Clear();Function.Held.Clear();Function.Axes.Clear();Function.ThrowOnce=null;Script.Waited=0;}
  static CrewRoster Roster(){var c=new CrewRoster();c.Peds[CrewSlot.Ice]=Game.Player.Character;c.Peds[CrewSlot.Gohan]=new Ped{Position=new Vector3(10,0,0)};c.Peds[CrewSlot.Guess]=new Ped{Position=new Vector3(500,0,0)};return c;}
  static void AssignmentAndRouteChecks(){
   Reset();var crew=Roster();var c=Context(crew);var mission=new SplitProbe();Check(mission.Begin(c),"Composed split mission starts");
@@ -54,11 +54,15 @@ public static partial class StoryTests
   Game.GameTime+=3000;work.Update(c);Check(!work.IsFinished,"Assigned work cannot finish from across the map");
   crew.PedFor(CrewSlot.Gohan).Position=new Vector3(100,0,0);work.Update(c);Game.GameTime+=1000;work.Update(c);Game.GameTime+=1000;work.Update(c);
   Check(work.Status==Bloodlines.Missions.Objectives.ObjectiveStatus.Complete,"NPC completes work at the assigned site while player handles another job");work.Exit(c);
-  Reset();crew=Roster();c=Context(crew);var m=new Bloodlines.Missions.Campaign.M02LooseStrands();Check(m.Begin(c),"M02 creates its moving van and occupied crew car");
-  var chase=World.Vehicles[0];var van=World.Vehicles[1];
-  Check(crew.ActiveSlot==CrewSlot.Guess&&crew.Peds.Values.All(p=>p.IsInVehicle(chase)),"M02 starts Guess driving with Ice and Gohan already seated");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"m02-open.json"));var m=new Bloodlines.Missions.Campaign.M02LooseStrands();Check(m.Begin(c)&&c.Cutscenes.IsActive,"M02 opens on the stash beat: the prototype at the curb, the Granger beside it, the crew on foot");
+  var chase=World.Vehicles.First(v=>v.Model.Name=="granger");var van=World.Vehicles.First(v=>v.Model.Name=="rumpo");var proto=World.Vehicles.First(v=>v.Model.Name=="schafter3");var technician=World.Created.First(p=>p.CurrentVehicle==van);
+  Check(crew.ActiveSlot==CrewSlot.Guess&&crew.Peds.Values.All(p=>!p.IsInVehicle())&&proto.LockStatus==VehicleLockStatus.CannotEnter&&!m.StashDone&&technician.Task.VehicleMissions==0&&m.EndpointKind==MissionEndpoint.EscapeCheckpoint,"Nobody is seated yet, the prototype is locked, the van waits and the clock has not started");
+  c.Cutscenes.Skip();
+  Check(crew.PedFor(CrewSlot.Guess).SeatIndex==VehicleSeat.Driver&&crew.PedFor(CrewSlot.Ice).IsInVehicle(chase)&&crew.PedFor(CrewSlot.Gohan).IsInVehicle(chase),"Skipping the stash beat seats the crew in the Granger with Guess driving");
+  m.Tick();Check(m.StashDone&&m.CurrentStage==0&&technician.Task.VehicleMissions==1&&technician.Task.LastMissionPoint.DistanceTo(van.Position)>600f,"The first tick after the beat starts the clock and puts the van on a road mission far down its road");
   chase.Position=van.Position-new Vector3(0,20,0);m.Tick();m.Tick();
   for(int i=0;i<11;i++){Game.GameTime+=1000;m.Tick();}
+  Check(technician.Task.VehicleMissions==2,"A van that sits still for five seconds gets its route re-issued once, and once only");
   Check(m.CurrentStage==1&&!Function.Values.ContainsKey(Hash.TASK_VEHICLE_SHOOT_AT_PED),"Van crew holds fire before the hack reaches halfway");
   chase.Position=van.Position-new Vector3(0,80,0);for(int i=0;i<5;i++){Game.GameTime+=1000;m.Tick();}
   Check(m.CurrentStage==1&&!Function.Values.ContainsKey(Hash.TASK_VEHICLE_SHOOT_AT_PED),"Losing proximity pauses hacking and delays the ambush");
@@ -71,10 +75,12 @@ public static partial class StoryTests
   var ice=crew.PedFor(CrewSlot.Ice);crew.SetActive(CrewSlot.Ice);Game.Player.Character=ice;ice.SetIntoVehicle(van,VehicleSeat.Driver);Game.GameTime+=4000;m.Tick();
   Check(m.CurrentStage==2,"Stealing the target van does not incorrectly complete drive retrieval");
   ice.Task.LeaveVehicle();ice.Position=van.Position-van.ForwardVector*3.2f;Game.GameTime+=100;m.Tick();Game.GameTime+=3001;m.Tick();
-  Check(m.CurrentStage==3,"Ice collects drives after three seconds on foot at the rear doors");
-  ice.Position=c.Locations.Position("M02.CanalEscape");m.Tick();Check(m.Status==MissionStatus.Running,"Escape cannot pass on foot without the crew car");
-  ice.SetIntoVehicle(chase,VehicleSeat.RightFront);ice.Position=c.Locations.Position("M02.CanalEscape");Game.GameTime+=1000;m.Tick();
-  Check(m.Status==MissionStatus.Passed&&crew.CompanionAI.Controlled.Count==0&&!crew.CompanionAI.RequireSharedVehicle,"M02 passes with all three in the Granger and releases mission AI ownership");
+  Check(m.CurrentStage==3&&m.Drives!=null&&m.Drives.AttachedTo==ice&&c.State.EvidenceOf("dockRecording")==EvidenceState.CopyHeld,"Ice collects the drives after three seconds at the rear doors: they are in his hand and the evidence is recorded");
+  ice.Position=c.Locations.Position("M02.CanalEscape");m.Tick();Check(m.Status==MissionStatus.Running&&m.Drives!=null,"Escape cannot pass on foot without the crew car, and the drives stay in hand");
+  ice.SetIntoVehicle(chase,VehicleSeat.RightFront);ice.Position=c.Locations.Position("M02.CanalEscape");Game.Player.WantedLevel=2;Game.GameTime+=1000;m.Tick();
+  Check(m.Drives==null&&m.Status==MissionStatus.Running&&Game.Player.WantedLevel==2&&GameUtils.Message.Contains("Lose the police"),"Boarding stows the drives; the canal is an escape checkpoint and does not clear the police");
+  Game.Player.WantedLevel=0;m.Tick();
+  Check(m.Status==MissionStatus.Passed&&crew.CompanionAI.Controlled.Count==0&&!crew.CompanionAI.RequireSharedVehicle&&chase.Present&&chase.Released&&proto.Present&&proto.Released,"M02 passes with all three in the Granger and the police lost; the Granger and the prototype remain in the world");
  }
  static void Switches(){
   Reset();var crew=Roster();var s=new SwitchController(crew);int stopped=0;s.BeforeSwitch=()=>stopped++;
@@ -154,15 +160,21 @@ public static partial class StoryTests
   Check(GameUtils.Message.Contains("Switch to Gohan"),"Free aim identifies Mateo from the lookout without lock-on targeting");
   crew.ActiveSlot=CrewSlot.Gohan;Game.Player.Character=crew.Peds[CrewSlot.Gohan];mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==0,"Waiting at Gohan's entry point does not copy the distant ledger");
-  Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.Accept=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
+  Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.Accept=true;World.CollisionReady=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==1&&c.Cutscenes.IsActive,"All three assignments trigger the recognition scene exactly once");
-  Check(Game.Player.Character.Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Recognition preserves split positions and the actual driver's seat");
+  Check(crew.ActiveSlot==CrewSlot.Ice&&Game.Player.Character==crew.Peds[CrewSlot.Ice]&&crew.Peds[CrewSlot.Gohan].Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Copying the ledger hands the player straight back to the brother he came from; recognition preserves split positions and the actual driver's seat");
   c.Cutscenes.Stop();mission.Tick();
   Check(mission.CurrentStage==2&&World.Created.Count>=9,"Combat spawns after recognition resumes gameplay");
-  foreach(var guard in World.Created.Skip(2))guard.IsDead=true;Game.GameTime+=10001;mission.Tick();
-  Check(mission.CurrentStage==3&&c.Cutscenes.IsActive,"Cleared guards trigger Mateo's escape scene and open the extraction stage");
-  var mateo=World.Created[0];Check(mateo.IsInvincible&&mateo.Position.DistanceTo(World.Vehicles.Last().Position)<10f,"Mateo cannot be killed and is already at the slipway when the escape plays");
-  c.Cutscenes.Skip();mission.Tick();Check(mateo.IsInVehicle(World.Vehicles.Last())&&mateo.Task.BoatTasks==1,"Skipping the escape still puts Mateo in the launch and the launch on the water");
+  var mateo=World.Created[0];var technician=World.Created[1];var launch=World.Vehicles.Last();
+  Check(mateo.Task.Enters==1&&mateo.Task.LastSeat==VehicleSeat.Driver&&technician.Task.Enters==1&&mateo.IsInvincible&&!technician.IsInvincible,"Recognition sends Mateo and his technician running for the launch on foot; only Mateo is protected");
+  Game.GameTime+=100000;mission.Tick();
+  Check(mission.CurrentStage==2&&GameUtils.Message.Contains("Hostiles")&&!GameUtils.Message.Contains("clear in"),"There is no clock: with guards alive nothing happens however long it takes");
+  foreach(var guard in World.Created.Skip(2))guard.IsDead=true;mission.Tick();
+  Check(mission.CurrentStage==2&&!c.Cutscenes.IsActive,"A clear yard waits for Mateo to reach the boat before the escape plays");
+  Game.GameTime+=Bloodlines.Missions.Campaign.M01GhostInTheDockyard.StrandedMs+1;mission.Tick();
+  Check(mission.CurrentStage==3&&c.Cutscenes.IsActive&&mateo.Position.DistanceTo(launch.Position)<10f,"A Mateo the navmesh strands is brought to the launch after the bounded wait, and the escape plays");
+  c.Cutscenes.Skip();mission.Tick();Check(mateo.IsInVehicle(launch)&&mateo.Task.BoatTasks==1,"Skipping the escape still puts Mateo in the launch and the launch on the water");
+  mateo.IsDead=true;mission.Tick();Check(mission.Status==MissionStatus.Running,"Once the launch has left, losing Mateo at a distance is not his death");
   Game.Player.Character.Position=c.Locations.Position("M01.ExitPoint");mission.Tick();Check(mission.Status==MissionStatus.Running,"On-foot arrival at the final marker cannot complete the car extraction");
   car.Position=c.Locations.Position("M01.ExitPoint");Game.Player.Character.SetIntoVehicle(car,VehicleSeat.Driver);mission.Tick();Check(mission.Status==MissionStatus.Running,"Extraction waits for missing companions");
   foreach(var member in crew.Peds.Values){member.CurrentVehicle=car;member.Position=Game.Player.Character.Position;}mission.Tick();
@@ -260,6 +272,6 @@ public static partial class StoryTests
   var file=Path.Combine(root,"timing.wav");using(var w=new BinaryWriter(File.Create(file))){w.Write(0x46464952u);w.Write(40u+16000u);w.Write(0x45564157u);w.Write(0x20746d66u);w.Write(16u);w.Write((ushort)1);w.Write((ushort)1);w.Write(8000u);w.Write(16000u);w.Write((ushort)2);w.Write((ushort)16);w.Write(0x61746164u);w.Write(16000u);w.Write(new byte[16000]);}
   Check(WaveTiming.DurationMs(file)==1000,"WAV timing uses actual recording byte rate and data length");File.WriteAllText(file,"broken");Check(WaveTiming.DurationMs(file)==0&&WaveTiming.DurationMs(null)==0,"Missing and invalid audio retain subtitle-only timing");
  }
- public static int Main(string[] args){try{dataDir=args[0];root=args[1];MarketChecks();PowerChecks();StreetsChecks();CampaignAuditChecks();ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();HandoffPassChecks();CorrectionPassChecks();FixBranchChecks();PackageABChecks();Round2Checks();VisualsDamageChecks();M01ExitChecks();ShieldChecks();PortHeistChecks();CrewVanChecks();StoryToPlayChecks();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ public static int Main(string[] args){try{dataDir=args[0];root=args[1];MarketChecks();PowerChecks();StreetsChecks();CampaignAuditChecks();ApartmentWeaponChecks();PersonalChecks();ExpansionChecks();HomeAndVehicleChecks();ClarityMissionChecks(); CampaignFlowChecks();AssignmentAndRouteChecks();NewMissionBehavior();Switches();Scenes();M01Regression();PadSwitchTests();WheelAndLooks();NewControlsAndRoutes();AbilityBindingTests();StickTests();Dispatch();Markers();TransportAndRace();Waves();HandoffPassChecks();CorrectionPassChecks();FixBranchChecks();PackageABChecks();Round2Checks();VisualsDamageChecks();M01ExitChecks();ShieldChecks();PortHeistChecks();CrewVanChecks();StoryToPlayChecks();OpenSliceChecks();Console.WriteLine(checks+" story/runtime checks passed.");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }
 

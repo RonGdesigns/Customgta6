@@ -52,6 +52,10 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 39 | **M04 skip and retry** | Skip the briefing; fail and retry | Four-line card for seven seconds; one-line recap on the retry |
 | 40 | **M01 escape** | Clear the guards; once watching, once pressing Enter | Mateo boards at the slipway on camera and the launch leaves; skipped, he is aboard and the launch leaves; the mission never fails on Mateo |
 | 41 | **Companion shield** | Firefight as one brother while the other two are in it | Their health does not drop; switching into one makes him mortal |
+| 42 | **Prologue room** | Fresh save; stop at the door; watch once, skip once; once with the room failing to load | Inside: cross, phone, three lines; skip lands the same; a failed room plays the call at the door with a notice; the cut to the dock follows |
+| 43 | **Mateo's run** | Recognition, then watch the yard with guards alive; then clear it | He and the technician run in the open; no countdown; the launch leaves only after the last guard, and only once he is at the boat |
+| 44 | **Terminal hand-back** | Finish Gohan's copy last; finish it with a job still open | Straight to the brother you came from; straight to the brother with the job |
+| 45 | **M02 opening and custody** | Start M02; breach; board with a wanted level | Curb scene, clock after it, van on the move; case in Ice's hand, stowed on boarding; canal refuses until the police are lost |
 
 ## Before you launch: the static checks
 

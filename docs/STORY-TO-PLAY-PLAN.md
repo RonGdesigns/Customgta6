@@ -2,7 +2,7 @@
 
 **Source:** `Bloodlines_From_Story_to_Play_Full_Proposal.html` (review draft v1, September 10, 2026).
 **Reconciled against:** main at `d31b1b0` (the proposal pinned `24a23e9`; since then: round two, the reviewed visuals and deformation, and the M01 exit fix).
-**Status (September 10):** P1 decisions recorded in `CHANGE-REGISTER.md` (Miller's fate is the player's; the rest are the marked defaults). P2a building blocks and the P2b M04 reference are built on branch `claude/s2p-blocks-m04`. P2c and P2d are not started.
+**Status (September 10):** P1 decisions recorded in `CHANGE-REGISTER.md` (Miller's fate is the player's; the rest are the marked defaults). P2a building blocks and the P2b M04 reference are merged. P2c (the interior call, M01's run and terminal hand-back, M02's stash beat, route, custody and endpoint) is built on branch `claude/s2p-open`, with Ron's September 10 corrections to M01 folded in: no clock, the run is seen, the yard must be clear. P2d (M03) is not started.
 
 The proposal's principle is adopted whole: context before control, consequence before the next job, and a scene may only claim a result the world actually reached. This plan says how that gets built in this codebase, in what order, and what Ron has to decide first.
 

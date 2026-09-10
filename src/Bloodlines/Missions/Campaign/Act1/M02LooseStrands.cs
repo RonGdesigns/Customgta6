@@ -17,36 +17,54 @@ namespace Bloodlines.Missions.Campaign
     /// to hold the match, Gohan is the only one who can kill the drivetrain, and Ice
     /// is the only one who takes the doors. Miss the window and the upload lands.
     ///
-    /// Positions here are approximate (see LocationBook) — the van drives a live
-    /// traffic route rather than a scripted spline, so the mission tolerates the
-    /// start point being a few meters off in a way a waypoint list would not.
+    /// It opens at the curb where M01 ended: the prototype stays, the crew boards
+    /// its own Granger, and only then does the clock start. The van drives a real
+    /// route rather than idling at lights. The drives leave the van in Ice's hand
+    /// and are stowed when he boards. The canal is an escape checkpoint: the police
+    /// have to be lost, nothing clears them at the marker.
+    ///
+    /// Positions here are approximate (see LocationBook) — the van runs a road
+    /// mission from the start point, so the mission tolerates the start being a few
+    /// meters off in a way a waypoint list would not.
     /// </summary>
     public sealed class M02LooseStrands : Mission
     {
         private const int UploadWindowSeconds = 180;
         private const float HackRange = 35f;
+        private const int StuckMs = 5000;
         private readonly ProximityHack _hack = new ProximityHack(24);
         private readonly List<Ped> _gunners = new List<Ped>();
         private bool _alerted;
         private int _nextGunfire;
         private int _driverStage = -1;
 
-        
-
+        private Vehicle _prototype;
         private Vehicle _van;
         private Ped _technician;
         private Vehicle _chase;
         private Blip _vanBlip;
+        private Prop _drives;
 
         private int _startedAt;
         private int _breachStarted;
+        private bool _stashDone;
         private bool _driveSeized;
+        private bool _vanDisabled;
         private bool _chopperCalled;
         private bool _guessDriving;
         private int _nextDriverUpdate;
+        private Vector3 _routeTarget;
+        private int _nextRouteCheck, _stuckSince, _reissues;
 
         public override string Id => "M02";
         public override string Title => "Loose Strands";
+
+        /// <summary>The canal is an escape checkpoint: the police are lost, never erased.</summary>
+        public MissionEndpoint EndpointKind => MissionEndpoint.EscapeCheckpoint;
+        public Prop Drives => _drives;
+        public Vehicle Van => _van;
+        public Vehicle Prototype => _prototype;
+        public bool StashDone => _stashDone;
 
         protected override bool OnStart()
         {
@@ -55,18 +73,21 @@ namespace Bloodlines.Missions.Campaign
             if (start == Vector3.Zero || !GameUtils.IsWithinFlat(start, requested, 80f)) return false;
             float heading = Ctx.Locations.Heading("M02.InterceptStart");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, start, heading)) return false;
+            // On foot at the curb, between the car they arrived in and the one they leave in.
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, start + new Vector3(2.5f, -3f, 0f), heading)) return false;
 
             ApplyBibleSetting();
 
+            if (!SpawnPrototype(start, heading)) return false;
             if (!SpawnChaseCar(start, heading)) return false;
             if (!SpawnVan(start, heading)) return false;
 
             Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
-            MaintainPassengers();
-            _startedAt = Game.GameTime;
-            SayStage(1);
-            Objective("Catch the Aegis comm-van before the upload finishes.");
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            Preserve(_prototype);
+            Preserve(_chase);
+            PlayStash();
+            Objective("Leave the prototype. Everyone into the Granger.");
             return true;
         }
 
@@ -74,10 +95,12 @@ namespace Bloodlines.Missions.Campaign
         {
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            if (!_stashDone) { BeginPursuit(); return; }
             MaintainPassengers();
             MaintainGuessDriving(player);
             MaintainGunfire(player);
-            if (_chase == null || !_chase.Exists() || !_chase.IsDriveable) { Fail("The crew's chase car is wrecked."); return; }
+            MaintainVanRoute();
+            if (_chase == null || !_chase.Exists() || !_chase.IsDriveable) { Fail("The crew's Granger is wrecked."); return; }
 
             // Once the drives are out of the van, the van itself stops mattering.
             if ((_van == null || !_van.Exists() || _van.IsDead) && !_driveSeized)
@@ -96,11 +119,8 @@ namespace Bloodlines.Missions.Campaign
                     return;
                 }
 
-                if (Stage < 2)
-                {
-                    GameUtils.Subtitle("~s~Upload completes in ~r~" + remaining / 60 + ":" +
-                                       (remaining % 60).ToString("00"), 500);
-                }
+                GameUtils.Subtitle("~s~Upload completes in ~r~" + remaining / 60 + ":" +
+                                   (remaining % 60).ToString("00"), 500);
             }
 
             RequiredSwitch = Stage == 2 && Ctx.Crew.ActiveSlot != CrewSlot.Ice ? (CrewSlot?)CrewSlot.Ice : null;
@@ -111,6 +131,50 @@ namespace Bloodlines.Missions.Campaign
                 case 2: UpdateBreach(player); break;
                 case 3: UpdateEscape(player); break;
             }
+        }
+
+        // ---------- The stash beat: the prototype stays, the Granger goes ----------
+
+        /// <summary>
+        /// Seen before anyone drives: the two cars at the curb, the crew boarding the
+        /// Granger, the van's dome already moving off. Skipping warps them in. The
+        /// upload clock does not start until this is over.
+        /// </summary>
+        private void PlayStash()
+        {
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var blocking = new SceneBlocking()
+                .Then(ShotStep.Wide(3000, _chase.Position, 12f, 6f, 5f))
+                .Then(new EnterVehicleStep(guess, _chase, VehicleSeat.Driver))
+                .Then(new EnterVehicleStep(ice, _chase, VehicleSeat.RightFront))
+                .Then(new EnterVehicleStep(gohan, _chase, VehicleSeat.LeftRear))
+                .Then(new ShotStep(2500, _chase, new Vector3(-6f, 2.5f, 1.6f), _chase, new Vector3(0f, 0f, 0.8f), 1.2f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "stash", Title = "The car stays",
+                Reason = "The prototype is left at the curb; the crew leaves in its own Granger with Guess driving, Ice in front and Gohan in the back with the signal.",
+                Blocking = blocking
+            };
+            if (!Ctx.Cutscenes.Play(spec)) { Logger.Warn("M02 stash scene did not play; the crew boards the Granger directly."); blocking.Complete(); }
+        }
+
+        /// <summary>First tick after the stash beat: everyone aboard, the van on its route, the clock running.</summary>
+        private void BeginPursuit()
+        {
+            _stashDone = true;
+            var seats = new Dictionary<CrewSlot, VehicleSeat> { [CrewSlot.Guess] = VehicleSeat.Driver, [CrewSlot.Ice] = VehicleSeat.RightFront, [CrewSlot.Gohan] = VehicleSeat.LeftRear };
+            foreach (var pair in seats)
+            {
+                var ped = Ctx.Crew.PedFor(pair.Key);
+                if (ped != null && ped.Exists() && _chase != null && _chase.Exists() && !ped.IsInVehicle(_chase)) ped.SetIntoVehicle(_chase, pair.Value);
+            }
+            _startedAt = Game.GameTime;
+            StartVanRoute();
+            MaintainPassengers();
+            SayStage(1);
+            Objective("Catch the Aegis comm-van before the upload finishes.");
         }
 
         // ---------- Stage 0: match speed ----------
@@ -161,6 +225,50 @@ namespace Bloodlines.Missions.Campaign
             else guess.Task.DriveTo(_chase, Ctx.Locations.Position("M02.CanalEscape"), 10f, 22f, DrivingStyle.Normal);
         }
 
+        // ---------- The van's route ----------
+
+        /// <summary>
+        /// The van is on a job of its own: a road mission toward a point far down the
+        /// road it is on, reckless about lights and traffic, re-aimed further along
+        /// whenever it gets close, so it never sits at an intersection waiting to be
+        /// caught. It stops only when Gohan's work kills the drivetrain.
+        /// </summary>
+        private void StartVanRoute()
+        {
+            if (_van == null || !_van.Exists() || _technician == null || !_technician.Exists() || _vanDisabled) return;
+            _routeTarget = NextRoutePoint();
+            _technician.Task.StartVehicleMission(_van, _routeTarget, VehicleMissionType.GoTo, 24f,
+                VehicleDrivingFlags.DrivingModeAvoidVehiclesReckless | VehicleDrivingFlags.UseShortCutLinks, 12f, 30f, false);
+            Function.Call(Hash.SET_PED_KEEP_TASK, _technician, true);
+            Function.Call(Hash.SET_DRIVER_ABILITY, _technician, 1f);
+            Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, _technician, 0.6f);
+            _stuckSince = 0;
+        }
+
+        private Vector3 NextRoutePoint()
+        {
+            var ahead = _van.Position + _van.ForwardVector * 700f;
+            var road = World.GetNextPositionOnStreet(ahead);
+            return road != Vector3.Zero && road.DistanceTo(_van.Position) > 150f ? road : ahead;
+        }
+
+        private void MaintainVanRoute()
+        {
+            if (_vanDisabled || _van == null || !_van.Exists() || _technician == null || !_technician.Exists() || !_technician.IsAlive) return;
+            if (Game.GameTime < _nextRouteCheck) return;
+            _nextRouteCheck = Game.GameTime + 1000;
+            if (_van.Position.DistanceTo(_routeTarget) < 90f) { StartVanRoute(); return; }
+            // Stuck watchdog: a van that has not moved for five seconds gets its
+            // mission re-issued once; a second stall is logged, not hidden.
+            if (_van.Speed > 0.5f) { _stuckSince = 0; return; }
+            if (_stuckSince == 0) { _stuckSince = Game.GameTime; return; }
+            if (Game.GameTime - _stuckSince < StuckMs) return;
+            _reissues++;
+            if (_reissues <= 1) { Logger.Warn("M02: the van has been stationary for 5 s; re-issuing its route once."); StartVanRoute(); }
+            else if (_reissues == 2) Logger.Warn("M02: the van stalled again after a re-issue; leaving it to the engine.");
+            _stuckSince = Game.GameTime;
+        }
+
         private void UpdatePursuit(Ped player)
         {
             ObjectiveMarkers.Navigation(_van.Position, null, _chase);
@@ -183,6 +291,8 @@ namespace Bloodlines.Missions.Campaign
             GameUtils.DrawObjectiveMarker(_van.Position + new Vector3(0f,0f,2.2f), Color.Green, .6f);
             GameUtils.Subtitle("~y~Gohan's remote hack: " + percent + "%  ~s~" + (int)distance + "/35m  " +
                 (!seated ? "Gohan must be a passenger in the crew car." : !connected ? "Signal lost - close the gap." : "Connected - keep the van in range."), 500);
+            // Detection is the reaction, not a stage: halfway in they find the intrusion
+            // and the windows open. Ice covers the car from the passenger seat.
             if (!_alerted && _hack.Progress >= .5f)
             {
                 _alerted = true;
@@ -216,13 +326,15 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>
-        /// Kills the van without destroying it — the bible is explicit that the
-        /// physical server has to survive, so this stalls the drivetrain rather than
-        /// blowing the engine block.
+        /// Gohan's work is what stops the van: the drivetrain dies under it and it
+        /// rolls to a halt on its own. Nothing rams it; the bible is explicit that
+        /// the physical server has to survive, so this stalls the drivetrain rather
+        /// than blowing the engine block.
         /// </summary>
         private void DisableVan()
         {
             Say("M02_S2_04_GOHAN");
+            _vanDisabled = true;
 
             _van.EngineHealth = 1f;
             _van.IsEngineRunning = false;
@@ -233,6 +345,7 @@ namespace Bloodlines.Missions.Campaign
 
             if (_technician != null && _technician.Exists())
             {
+                _technician.Task.ClearAll();
                 _technician.Task.LeaveVehicle(LeaveVehicleFlags.None);
             }
 
@@ -275,6 +388,9 @@ namespace Bloodlines.Missions.Campaign
 
             Say("M02_S2_05_ICE");
             _driveSeized = true;
+            // Custody: the drives are in Ice's hand from here, stowed when he boards.
+            SpawnDrives(player);
+            Ctx.State?.SetEvidence("dockRecording", EvidenceState.CopyHeld);
 
             if (_technician != null && _technician.Exists() && _technician.IsAlive)
             {
@@ -282,7 +398,7 @@ namespace Bloodlines.Missions.Campaign
             }
 
             SpawnChopper();
-            Objective("Return all three to the Granger, then follow the GPS to the storm canal with the server drives.");
+            Objective("All three back in the Granger. Lose the police and follow the GPS to the storm canal with the drives.");
             Advance();
         }
 
@@ -290,7 +406,6 @@ namespace Bloodlines.Missions.Campaign
 
         private void UpdateEscape(Ped player)
         {
-
             var canal = Ctx.Locations.Position("M02.CanalEscape");
             ObjectiveMarkers.Navigation(canal, null, _chase);
             GameUtils.DrawObjectiveMarker(canal, Color.FromArgb(120, 106, 168, 122), 5f);
@@ -301,6 +416,7 @@ namespace Bloodlines.Missions.Campaign
                 Say("M02_S2_06_GUESS");
             }
 
+            StowDrives();
             if (!player.IsInVehicle(_chase)) { GameUtils.Subtitle("~y~Return to the crew's Granger.", 500); return; }
             foreach (var hero in Protagonist.All)
             {
@@ -308,15 +424,43 @@ namespace Bloodlines.Missions.Campaign
                 if (member == null || !member.Exists() || !member.IsAlive || !member.IsInVehicle(_chase))
                 { GameUtils.Subtitle("~y~Bring all three back into the Granger before escaping.", 500); return; }
             }
+            // An escape checkpoint: the canal hides the car, it does not erase the
+            // police. Whatever heat the chase earned has to be lost first.
+            if (Game.Player.WantedLevel > 0) { GameUtils.Subtitle("~y~Lose the police before the canal.", 500); return; }
             if (!GameUtils.IsWithinFlat(player.Position, canal, 20f)) return;
 
-            Ctx.State?.SetEvidence("dockRecording", EvidenceState.CopyHeld);
-            Game.Player.WantedLevel = 0;
             GameUtils.Subtitle("~g~Server drives secured. The upload never landed.", 5000);
             Pass();
         }
 
+        /// <summary>The drives leave Ice's hand once he is in the Granger: stowed, not carried into the next scene.</summary>
+        private void StowDrives()
+        {
+            if (_drives == null || !_drives.Exists()) { _drives = null; return; }
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice == null || !ice.Exists() || !ice.IsInVehicle(_chase)) return;
+            _drives.Detach();
+            GameUtils.SafeDelete(_drives);
+            _drives = null;
+            GameUtils.Subtitle("~g~Drives stowed in the Granger.", 3000);
+        }
+
         // ---------- world building ----------
+
+        private bool SpawnPrototype(Vector3 start, float heading)
+        {
+            // The car M01 ended in, parked where it will be found. It stays.
+            var model = new Model("schafter3");
+            if (!GameUtils.RequestModel(model)) return false;
+            _prototype = Track(World.CreateVehicle(model, start + new Vector3(0f, -14f, 0f), heading));
+            model.MarkAsNoLongerNeeded();
+            if (_prototype == null || !_prototype.Exists()) return false;
+            _prototype.IsPersistent = true;
+            _prototype.IsEngineRunning = false;
+            _prototype.Mods.CustomPrimaryColor = System.Drawing.Color.Black;
+            _prototype.LockStatus = VehicleLockStatus.CannotEnter;
+            return true;
+        }
 
         private bool SpawnChaseCar(Vector3 start, float heading)
         {
@@ -327,16 +471,6 @@ namespace Bloodlines.Missions.Campaign
 
             _chase.IsPersistent = true;
             _chase.IsEngineRunning = true;
-
-            // Everyone starts in the car: Guess driving, the other two riding, which is
-            // the shape the mission's dialogue assumes.
-            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
-            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
-
-            guess?.Task.WarpIntoVehicle(_chase, VehicleSeat.Driver);
-            ice?.Task.WarpIntoVehicle(_chase, VehicleSeat.RightFront);
-            gohan?.Task.WarpIntoVehicle(_chase, VehicleSeat.LeftRear);
             return true;
         }
 
@@ -376,9 +510,7 @@ namespace Bloodlines.Missions.Campaign
                     _technician.IsPersistent = true;
                     _technician.BlockPermanentEvents = true;
                     _technician.Task.WarpIntoVehicle(_van, VehicleSeat.Driver);
-                    // Runs the road rather than a fixed path: the route survives the
-                    // start point being approximate.
-                    _technician.Task.CruiseWithVehicle(_van, 20f, DrivingStyle.Normal);
+                    // The route mission starts when the stash beat ends and the clock with it.
                 }
             }
 
@@ -401,6 +533,16 @@ namespace Bloodlines.Missions.Campaign
             _vanBlip.Name = "Aegis comm-van";
             _vanBlip.ShowRoute = false;
             return true;
+        }
+
+        private void SpawnDrives(Ped ice)
+        {
+            var model = new Model("prop_ld_case_01");
+            if (!GameUtils.RequestModel(model)) return;
+            _drives = Track(World.CreateProp(model, ice.Position + new Vector3(0f, 0f, 1f), false, false));
+            model.MarkAsNoLongerNeeded();
+            if (_drives == null || !_drives.Exists()) { _drives = null; return; }
+            CarryPropStep.Attach(ice, _drives, new Vector3(0.12f, 0.02f, -0.02f), new Vector3(0f, 90f, 0f));
         }
 
         private void SpawnChopper()
@@ -427,10 +569,13 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnStageEntered(int stage)
         {
+            // A warp past the stash beat still needs the crew aboard and the clock running.
+            if (stage >= 0 && !_stashDone && Ctx?.Cutscenes != null && !Ctx.Cutscenes.IsActive) BeginPursuit();
             // Restoring past the remote hack means the van must already be dead, or the player
             // resumes chasing a van that cannot be caught again.
             if (stage >= 2 && _van != null && _van.Exists())
             {
+                _vanDisabled = true;
                 _van.IsDriveable = false;
                 _van.IsEngineRunning = false;
             }
@@ -438,9 +583,16 @@ namespace Bloodlines.Missions.Campaign
             if (stage >= 2) _driveSeized = stage >= 3;
         }
 
+        protected override void OnPassed()
+        {
+            // The Granger is the crew's ride home; the prototype is part of the street now.
+            if (_chase != null && _chase.Exists()) Release(_chase);
+            if (_prototype != null && _prototype.Exists()) Release(_prototype);
+        }
+
         protected override void OnCleanup()
         {
-            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess);
+            foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
             _guessDriving = false;
             GameUtils.SafeDelete(_vanBlip);
             _gunners.Clear();

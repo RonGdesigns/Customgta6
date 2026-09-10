@@ -3,9 +3,10 @@ M01_SCENE_PROLOGUE_01_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone
 M01_SCENE_PROLOGUE_02_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Two numbers in this phone I ain't dialed since graduation. Guess I'll find out if either one still works.
 M01_SCENE_PROLOGUE_03_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Voicemail. Both of them. Same as it ever was.
 M01_SCENE_PROLOGUE_04_GUESS	M01	prologue	GUESS	Alone at the terminal curb; phone, walk to the car, get in	Car's where the man said it would be. Half a tank. That'll get me across town.
-M01_SCENE_ARRIVAL_01_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Home. Or the closest thing I've got to one until I'm working again.
-M01_SCENE_ARRIVAL_02_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
-M01_SCENE_ARRIVAL_03_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, read the job	Somebody knew I was back before I did. I'm going anyway.
+M01_SCENE_ARRIVAL_01_GUESS	M01	arrival	GUESS	Alone at the apartment door; out of the car, walk to the door	Home. Or the closest thing I've got to one until I'm working again.
+M01_SCENE_CALL_01_GUESS	M01	call	GUESS	Alone in the starter apartment; the message arrives (at the door if the room does not load)	Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+M01_SCENE_CALL_02_GUESS	M01	call	GUESS	Alone in the starter apartment; the message arrives (at the door if the room does not load)	Somebody knew I was back before I did. I'm going anyway.
+M01_SCENE_CALL_03_GUESS	M01	call	GUESS	Alone in the starter apartment; the message arrives (at the door if the room does not load)	Bag stays packed. Keys. Whatever this is, I'm not unpacking for it.
 M01_SCENE_INTRO_01_GUESS	M01	intro	GUESS	Private channel; no recognition or shared conversation	Terminal Island. Two in the morning. They sent me a gate code, a photograph and half the money. That's usually the part where I should ask more questions.
 M01_SCENE_INTRO_02_GUESS	M01	intro	GUESS	Private channel; no recognition or shared conversation	I'm outside the freight entrance in my own car. One pickup inside the yard. Keep it quiet, get paid, go home.
 M01_SCENE_INTRO_03_GOHAN	M01	intro	GOHAN	Private channel; no recognition or shared conversation	Different client, same dockyard. The laptop at the west service station holds Mateo's payment ledger. It's separate from his meeting point. I'm at the service entrance; I need to reach it before the security shift.
@@ -31,6 +32,9 @@ M02_SCENE_INTRO_01_GOHAN	M02	intro	GOHAN	Briefing; intent before tactics	The van
 M02_SCENE_INTRO_02_ICE	M02	intro	ICE	Briefing; intent before tactics	Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 M02_SCENE_OUTRO_01_GUESS	M02	outro	GUESS	Reflective; allow the response to land	You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
 M02_SCENE_OUTRO_02_ICE	M02	outro	ICE	Reflective; allow the response to land	Can you get us somewhere safe, Guess? And Gohan... keep that drive. I want to hear what it says.
+M02_SCENE_STASH_01_GUESS	M02	stash	GUESS	At the curb; the prototype stays, the crew boards the Granger	Three million dollars of somebody's prototype, and it's the most recognizable car in the city. It stays here. The Granger's clean.
+M02_SCENE_STASH_02_GOHAN	M02	stash	GOHAN	At the curb; the prototype stays, the crew boards the Granger	Their van is already moving. Every minute it drives, that upload gets closer to landing. I need the back seat and a clear signal.
+M02_SCENE_STASH_03_ICE	M02	stash	ICE	At the curb; the prototype stays, the crew boards the Granger	Then drive, Guess. Gohan works the connection; I keep them off the car. Nobody stops until that van does.
 M03_SCENE_INTRO_01_GUESS	M03	intro	GUESS	Briefing; intent before tactics	Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
 M03_SCENE_INTRO_02_GOHAN	M03	intro	GOHAN	Briefing; intent before tactics	Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 M03_SCENE_OUTRO_01_ICE	M03	outro	ICE	Reflective; allow the response to land	Miller's selling the dock forensics. We go after him next. Everybody gets the file before we move.
