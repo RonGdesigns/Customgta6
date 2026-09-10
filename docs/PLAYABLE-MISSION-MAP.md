@@ -67,15 +67,17 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Kill the lights** — MissionInteraction: Gohan: cut the marked surface-lot breaker |
-| 2 | Ice | **Take the ramp** — KillTargetsObjective: Ice — clear Miller's escort. |
-| 3 | Guess | **Get after him** — EnterVehicleObjective: Guess — get behind the wheel. |
-| 4 | Guess | **Run him down** — PursueTargetObjective: Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive. |
-| 5 | Guess | **Recover the drive** — MissionInteraction: Guess: collect Miller's drive |
+| 1 | Guess | **Drive to the lot** — TravelObjective: Guess: drive the crew to the Pillbox Hill lot. |
+| 2 | Guess | **Get in position** — WaitForRolesObjective: Hold at the exit while Ice and Gohan get in position. |
+| 3 | Gohan | **Kill the lights** — MissionInteraction: Gohan: cut the marked surface-lot breaker |
+| 4 | Gohan | **Miller runs** — SwitchWindowObjective: Miller is running. Take Guess to intercept; Ron is already on him |
+| 5 | Guess | **Run him down** — PursueTargetObjective: Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive. |
+| 6 | Guess | **Recover the drive** — MissionInteraction: Guess: collect Miller's drive |
+| 7 | Guess | **Lose them and regroup** — LoseWantedObjective: Lose the police.<br>EnterVehicleObjective: Pick up Ice and Gohan in the van. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.RampGuards, M04.TextileCrash.
+Survey references: Base.CypressFlats, M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.RampGuards.
 
 ## M05 — TIDAL LOCK
 

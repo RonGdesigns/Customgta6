@@ -200,6 +200,17 @@ M19's dive had no vessel and markers Gohan could not reach; the four chapters st
 48. **The van.** Deploy the crew near the Cypress base: a Granger with a blue "Crew van" blip sits at the stash. Drive it to a mod shop, fit a spoiler and paint it, get out, stand down, redeploy: the same spoiler and paint. Start M02: the chase car is that van.
 49. **Upgrades.** After M11, get into the van: the fleet package applies as before; reinforce the tires at the chop bay; they stay reinforced on the next spawn.
 
+## Story to play, first slice (P2a blocks and the M04 reference)
+
+Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults recorded in `CHANGE-REGISTER.md`. The M04 acceptance test is the proposal's own: a tester who has not read either book explains why Miller is at the lot, why Ron is in a separate car, why Gohan cuts power, why Miller flees, what Ice does during the pursuit, what object was recovered, and why Mateo is next.
+
+50. **M04 from the base.** Start M04 at the Cypress base marker with the crew deployed: the briefing plays, then the three of you are in the crew van with Guess driving. Two radio calls on the way (Gohan at 60%, Ice at 30%). Stop in the yellow zone at the lot exit: Ice and Gohan get out and walk to their positions while you hold.
+51. **The exchange.** Once they are in place the scene plays: wide on the lot, over Miller's shoulder at the buyer with the case in Miller's hand, the buyer looking it over, the van at the exit, Ice's angle. Enter skips it. After it you are asked to switch to Gohan for the breaker.
+52. **The breaker and the flight.** Cut the breaker: the buyer runs, the escort turns hostile, Miller grabs the case and goes for his car, a short shot on him pulling out, and "Miller is running. Take Guess" with an eight-second count while Ron's van is already chasing. Let it run out once: the switch is then required, nobody freezes. Take it early once.
+53. **The chase and the drive.** Disable the car or stop Miller. Reach in for the drive: "Drive secured. Stored in the van." A living Miller runs off; nothing asks you to kill him. Lose the police with Ice and Gohan walking to the exit; pick them up in the van. The van and the Fugitive are still there after the pass.
+54. **Skip and retry.** Skip the briefing: a four-line card (target, why, roles, first stop) for seven seconds. Fail and retry: a one-line recap.
+55. **Inactive brothers under fire.** During the chase, watch the map: Ice fights the escort from cover and Gohan holds his cover point; neither stands in the open.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -211,5 +222,7 @@ M19's dive had no vessel and markers Gohan could not reach; the four chapters st
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
+- Story to play P2c (prologue interior call, M01 escape trigger, M02 stash beat and route) and P2d (M03) are not started. M02, M03 and M16 still clear the wanted level at their end markers; the endpoint helper exists, they do not use it yet.
+- The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

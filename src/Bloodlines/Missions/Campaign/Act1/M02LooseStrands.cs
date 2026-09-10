@@ -310,6 +310,7 @@ namespace Bloodlines.Missions.Campaign
             }
             if (!GameUtils.IsWithinFlat(player.Position, canal, 20f)) return;
 
+            Ctx.State?.SetEvidence("dockRecording", EvidenceState.CopyHeld);
             Game.Player.WantedLevel = 0;
             GameUtils.Subtitle("~g~Server drives secured. The upload never landed.", 5000);
             Pass();

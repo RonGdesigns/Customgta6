@@ -119,6 +119,14 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M04_SCENE_OUTRO_02_GOHAN) — Then let me ask the questions. A corpse can't explain why three separate clients sent us to one dock.
 
+### Transaction
+
+**MILLER** (M04_SCENE_TRANSACTION_01_MILLER) — Two copies. This one's yours when the transfer clears. The other one stays with me.
+
+**BUYER** (M04_SCENE_TRANSACTION_02_BUYER) — Aegis pays on delivery, Detective. Open it.
+
+**GOHAN** (M04_SCENE_TRANSACTION_03_GOHAN) — Case is real, and it's in his hand. I'm at the breaker. Lights go out on my count.
+
 ## M05 — TIDAL LOCK
 
 ### Intro

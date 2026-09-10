@@ -112,8 +112,10 @@ namespace Bloodlines.Missions
             if (bypassGates && !_state.GateSatisfied(definition, _catalog)) Logger.Warn("QA bypassed a story gate: " + _state.DescribeGate(definition, _catalog));
             if (bypassGates && !_state.PrerequisiteMet(definition)) Logger.Warn("QA started " + definition.Id + " with " + definition.Info.Prerequisite + " unfinished.");
 
+            bool retrying = RetryAvailable && _currentDefinition == definition;
             RetryAvailable = false;
             LastFailureReason = "";
+            if (retrying) MissionContextCard.Show(definition.Id, recap: true, ms: 6000);
             _context.Abilities.Stop();
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
@@ -188,11 +190,15 @@ namespace Bloodlines.Missions
 
         public void Update()
         {
+            MissionContextCard.Draw();
             if (_context.Cutscenes.IsActive) return;
             if (_pending != null)
             {
                 var pending = _pending;
                 _pending = null;
+                // A skipped briefing still leaves the player knowing the target, the
+                // reason, the roles and the first destination.
+                if (_context.Cutscenes.LastOutcome == SceneOutcome.Skipped) MissionContextCard.Show(pending.Id, recap: false);
                 BeginGameplay(pending);
                 return;
             }

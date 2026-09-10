@@ -8,26 +8,39 @@ import argparse, csv, io, re
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEAKERS = {'ICE', 'GOHAN', 'GUESS', 'KJ'}
+# Support cast who may speak only inside a named phase (an "@phase" line inside a mission block).
+SUPPORT = {'MILLER', 'BUYER', 'MATEO'}
+PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers in position'}
 
-def blocks(path, key_pattern):
-    result, key = {}, None
+def blocks(path, key_pattern, phases=None):
+    """Lines per block. With `phases`, a block may contain '@name' lines that open a named phase;
+    those lines are collected in phases[block][name] and the block keeps only its unnamed lines."""
+    result, key, phase = {}, None, None
     for number, raw in enumerate(path.read_text(encoding='utf-8').splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith('#'): continue
         if re.fullmatch(key_pattern, line):
             if line in result: raise ValueError(f'{path.name}:{number}: duplicate block {line}')
-            key=line; result[key]=[]; continue
+            key=line; phase=None; result[key]=[]; continue
+        if line.startswith('@') and phases is not None and key is not None:
+            phase=line[1:].strip()
+            if not re.fullmatch(r'[a-z]+', phase) or phase in ('intro','outro','prologue','arrival','recognition','moment'):
+                raise ValueError(f'{path.name}:{number}: invalid phase name {phase}')
+            phases.setdefault(key, {}).setdefault(phase, []); continue
         if key is None or '|' not in line: raise ValueError(f'{path.name}:{number}: malformed line')
         speaker, speech = line.split('|', 1)
-        if speaker not in SPEAKERS or not speech.strip() or len(speech)>240:
+        allowed = SPEAKERS | (SUPPORT if phase else set())
+        if speaker not in allowed or not speech.strip() or len(speech)>240:
             raise ValueError(f'{path.name}:{number}: invalid speaker or subtitle length')
-        result[key].append((speaker, speech))
+        if phase: phases[key][phase].append((speaker, speech))
+        else: result[key].append((speaker, speech))
     return result
 
 def render():
     with (ROOT/'data/missions.tsv').open(encoding='utf-8') as stream:
         missions={row['id']: row for row in csv.DictReader(stream,delimiter='\t')}
-    beats=blocks(ROOT/'data/story_beats.txt',r'S?M\d\d')
+    named={}
+    beats=blocks(ROOT/'data/story_beats.txt',r'S?M\d\d',named)
     opening=blocks(ROOT/'data/opening_scene.txt',r'prologue|arrival|intro|recognition')
     if beats.keys()!=missions.keys(): raise ValueError(f'Mission coverage mismatch: {beats.keys() ^ missions.keys()}')
     if opening.keys()!={'prologue','arrival','intro','recognition'}: raise ValueError('Opening requires prologue, arrival, intro and recognition')
@@ -55,6 +68,9 @@ def render():
         if len(lines)<4: raise ValueError(f'{mission}: needs briefing and aftermath')
         phases={'intro': lines[:2], 'outro': lines[2:]}
         if mission=='M01': phases={'prologue':opening['prologue'],'arrival':opening['arrival'],'intro':opening['intro'],'recognition':opening['recognition'],'outro':lines[2:]}
+        for name, cues in named.get(mission, {}).items():
+            if not cues: raise ValueError(f'{mission}: empty phase {name}')
+            phases[name]=cues
         script += [f'## {mission} — {missions[mission]["title"]}', '']
         for phase, cues in phases.items():
             script += [f'### {phase.title()}', '']
@@ -64,7 +80,8 @@ def render():
                            'Alone at the apartment door; out of the car, read the job' if phase=='arrival' else
                            'Private channel; no recognition or shared conversation' if mission=='M01' and phase=='intro' else
                            'Face-to-face reunion; anger interrupted by danger' if phase=='recognition' else
-                           'Reflective; allow the response to land' if phase=='outro' else 'Briefing; intent before tactics')
+                           'Reflective; allow the response to land' if phase=='outro' else
+                           PHASE_DIRECTION.get(phase, 'Staged action') if phase not in ('intro',) else 'Briefing; intent before tactics')
                 rows.append(dict(cue_id=cue_id,mission=mission,phase=phase,speaker=speaker,direction=direction,line=line))
                 script += [f'**{speaker}** ({cue_id}) — {line}', '']
     if len({row['cue_id'] for row in rows})!=len(rows): raise ValueError('Duplicate cue IDs')

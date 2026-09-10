@@ -25,6 +25,10 @@ GOHAN|Miller has our forensics and an Aegis buyer. The van's drive gave us the m
 GUESS|Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
 ICE|Miller's drive points to Mateo's sea cave. Mateo can tell us who paid for this. We bring him in breathing.
 GOHAN|Then let me ask the questions. A corpse can't explain why three separate clients sent us to one dock.
+@transaction
+MILLER|Two copies. This one's yours when the transfer clears. The other one stays with me.
+BUYER|Aegis pays on delivery, Detective. Open it.
+GOHAN|Case is real, and it's in his hand. I'm at the breaker. Lights go out on my count.
 
 M05
 GOHAN|Mateo is hiding offshore. If Aegis burns him before we reach him, we lose the only person who knows the setup.

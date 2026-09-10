@@ -21,6 +21,9 @@ namespace Bloodlines.Core
         /// <summary>Where the scene camera should look while this step runs; null keeps the speaker framing.</summary>
         public virtual Entity CameraTarget => Actor;
 
+        /// <summary>An authored shot positions the camera itself each frame. False leaves the director's framing in charge.</summary>
+        public virtual bool DriveCamera(Camera camera) => false;
+
         /// <summary>Longest this step may run before the scene moves on with the finished state.</summary>
         public int TimeoutMs { get; set; } = 15000;
 

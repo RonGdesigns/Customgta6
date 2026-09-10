@@ -80,6 +80,22 @@ namespace Bloodlines.Core
         /// completes the remaining blocking instantly so gameplay resumes in the
         /// same state either way.
         /// </summary>
+        /// <summary>Play a specified scene: its lines, its support cast, its blocking and shots.</summary>
+        public bool Play(SceneSpec spec)
+        {
+            if (spec == null) return false;
+            _pendingSupport = spec.Support;
+            try
+            {
+                bool started = Play(spec.MissionId, spec.Phase, spec.Title, spec.ActionActor, spec.SceneAction, spec.Blocking);
+                if (started) Logger.Info("Scene " + spec.MissionId + ":" + spec.Phase + " establishes: " + spec.Reason);
+                return started;
+            }
+            finally { _pendingSupport = null; }
+        }
+
+        private Dictionary<string, Ped> _pendingSupport;
+
         public bool Play(string missionId, string phase, string title, Ped actionActor = null, Action sceneAction = null, SceneBlocking blocking = null)
         {
             if (IsActive || !_scenes.TryGetValue(missionId + ":" + phase, out var lines) || lines.Count == 0) return false;
@@ -109,6 +125,11 @@ namespace Bloodlines.Core
                 Hold(player);
                 Hold(player.CurrentVehicle);
                 Game.Player.CanControlCharacter = false;
+                // The mission's own cast for speakers who are not brothers. Held like
+                // the rest unless the blocking moves them; released on every exit.
+                if (_pendingSupport != null)
+                    foreach (var pair in _pendingSupport)
+                        if (pair.Value != null && pair.Value.Exists()) { _support[pair.Key.ToUpperInvariant()] = pair.Value; Hold(pair.Value); }
                 // Briefings use temporary cast before mission setup. The M01 cold open
                 // shows three separate jobs; they must not meet before recognition.
                 var speakers = Protagonist.All.Where(p => lines.Any(l => l.Speaker.Equals(p.Handle, StringComparison.OrdinalIgnoreCase))).ToList();
@@ -388,7 +409,8 @@ namespace Bloodlines.Core
             // Solo aftermath voices come over radio; never invent an off-screen companion.
             if (actor == null || !actor.Exists()) actor = Game.Player.Character;
             if (_radioScene && !_dockIntro && actor != null && actor.Position.DistanceTo(Game.Player.Character.Position) > 18f) actor = Game.Player.Character;
-            if (actor != null && actor.Exists())
+            bool shotInCharge = _blocking != null && _blocking.Current != null && _blocking.Current.HasStarted && _blocking.Current.DriveCamera(_camera);
+            if (actor != null && actor.Exists() && !shotInCharge)
             {
                 var facing = actor.ForwardVector;
                 // A side window view keeps seated actors in context without clearing their tasks.
@@ -431,8 +453,9 @@ namespace Bloodlines.Core
                 if (_blocking != null)
                 {
                     _blocking.Update();
-                    var subject = _blocking.Current?.CameraTarget;
-                    if (subject != null && subject.Exists())
+                    var current = _blocking.Current;
+                    if (current != null && current.HasStarted && current.DriveCamera(_camera)) { }
+                    else if (current?.CameraTarget is Entity subject && subject.Exists())
                     {
                         // Tracking shot: behind and above the subject, looking through it.
                         var forward = subject is Ped mover ? mover.ForwardVector : subject is Vehicle ride ? ride.ForwardVector : new Vector3(0f, 1f, 0f);

@@ -47,6 +47,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 34 | **Port Heist** | Start M19 from its marker, pass it | A hull with a "Titan Star" blip over the breach; all three marks reachable in the Kraken; M20 starts on its own after the aftermath, then M21, then M22 |
 | 35 | **Arrival car** | Fresh save, J | The Primo is at the curb on the street, not on the terminal roof |
 | 36 | **Crew van** | Deploy near the Cypress base, modify the van at a shop, stand down, redeploy, start M02 | The van is at the stash with a blue blip; the mods and paint persist; M02's chase car is the van |
+| 37 | **M04 comprehension** | A tester who has not read the books plays M04 once, then answers the seven questions in live-test item 50 | All seven answered from what was shown |
+| 38 | **M04 switch window** | Let the eight seconds run out once; take Guess early once | Required switch through the prompt with nobody frozen; early switch hands over cleanly |
+| 39 | **M04 skip and retry** | Skip the briefing; fail and retry | Four-line card for seven seconds; one-line recap on the retry |
 
 ## Before you launch: the static checks
 

@@ -2,7 +2,7 @@ mission	location_key
 M01	M01.RegroupPoint
 M02	M02.InterceptStart
 M03	Base.CypressFlats
-M04	M04.GarageEntry
+M04	Base.CypressFlats
 M05	M05.CliffPerch
 M06	M06.GrangerSpawn
 M07	Base.CypressFlats
