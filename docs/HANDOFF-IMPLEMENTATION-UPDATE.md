@@ -181,6 +181,12 @@ Live-test additions:
 42. **Crew protection.** Get into a car, get out, get back in: the log's damage-scale lines follow you, and after stand-down a crash in the story character's car hurts as much as vanilla.
 43. **Ini safety.** Copy `build\deploy\scripts` over the game's `scripts` folder by hand: your `Bloodlines.ini` is unchanged and a `.example` sits beside it.
 
+## M01 after the prologue (September 10 live failure)
+
+The 01:22 log: the hand-off placed Ron at the dock, then M01's placement check refused every start on `M01.ExitPoint`, whose data row pointed 838 m away. The row is corrected and the exit is no longer validated at the cold open. Details in `CHANGE-REGISTER.md`.
+
+44. **Hand-off.** Fresh save, J, watch or skip both scenes: after the fade, "Terminal Island. Later that night." and the M01 cold open. If it refuses, quote the "M01 could not find" line; the key it names is the one to survey.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

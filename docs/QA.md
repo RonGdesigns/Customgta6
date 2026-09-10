@@ -43,6 +43,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 30 | **Visuals restore** | Deploy, drive at 13:00 and 23:00, `F10` off, press Insert | Grade changes per band with a log line each; after stand-down and reload the world is vanilla |
 | 31 | **Crew protection** | Enter and leave a car with the crew deployed, then stand down and crash the story character's car | Damage-scale calls follow entry and exit in the log; vanilla damage after stand-down |
 | 32 | **Ini safety** | Copy the packaged `scripts` folder over the install by hand | `Bloodlines.ini` unchanged; `Bloodlines.ini.example` beside it |
+| 33 | **Prologue to M01** | Fresh save, J, watch both scenes | The cold open starts after the time-cut with no "could not find a loaded walkable surface" line in the log |
 
 ## Before you launch: the static checks
 

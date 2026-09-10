@@ -8,7 +8,7 @@ M01.PrototypeCar	1053.0	-3205.0	5.9	270	land	estimate	Terminal Island Dry-Docks
 M01.CapoSpawn	1019.0	-3184.0	6.0	0	land	estimate	Terminal Island Dry-Docks
 M01.LaunchEscape	1140.0	-3320.0	0.0	0	water	estimate	Terminal Island Dry-Docks
 M01.RegroupPoint	1073.0	-3160.0	5.9	0	land	estimate	Terminal Island Dry-Docks
-M01.ExitPoint	720.50	-2400.10	15.20	0	land	bible	Terminal Island Dry-Docks
+M01.ExitPoint	1180.00	-2990.00	5.90	0	land	estimate	Terminal Island Dry-Docks
 M01.GuessApproach	1175.0	-3090.0	6.0	180	land	estimate	Terminal Island Dry-Docks
 M01.GohanApproach	965.0	-3110.0	6.0	180	land	estimate	Terminal Island Dry-Docks
 SM01.WarehouseGate	1035.0	-3100.0	5.9	340	land	estimate	Terminal Island Warehouse 4
