@@ -46,6 +46,7 @@ namespace Bloodlines
         private readonly PrologueSequence _prologue;
 
         private int _abortHeldSince;
+        private bool _sceneWasActive, _gameplayWasRunning;
         private CrewSlot? _controllerSelection;
         private bool _controllerWheelHeld;
 
@@ -146,6 +147,7 @@ namespace Bloodlines
             if (_homes.Apartment.Busy) { Step("apartment loading", _homes.UpdateTransition); return; }
             if (_cutscenes.IsActive)
             {
+                _sceneWasActive = true;
                 ObjectiveMarkers.Clear();
                 _missionMarkers.Clear();
                 _homes.Clear();
@@ -155,6 +157,14 @@ namespace Bloodlines
             if (_handoff.IsWaiting) Step("stop ability during handoff", _abilities.Stop);
                 return;
             }
+            if (_sceneWasActive && !_cutscenes.IsActive)
+            {
+                _sceneWasActive = false;
+                Step("control diagnostics", () => ControlDiagnostics.Snapshot("scene ended: " + _cutscenes.LastOutcome, _crew, _cutscenes, _handoff, _homes, _missions.LastAttempted?.Id));
+            }
+            bool gameplay = _missions.IsRunning && !_cutscenes.IsActive && _missions.CurrentStage >= 0;
+            if (gameplay && !_gameplayWasRunning) Step("control diagnostics", () => ControlDiagnostics.Snapshot("gameplay begins", _crew, _cutscenes, _handoff, _homes, _missions.LastAttempted?.Id));
+            _gameplayWasRunning = gameplay;
             _crew.CompanionAI.MissionActive = _missions.IsRunning;
             Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
             Step("crew", _crew.Update);
@@ -448,6 +458,7 @@ namespace Bloodlines
                 }
                 GameUtils.Subtitle("~o~Terminal Island. Later that night.", 3500);
                 StartMission(m01);
+                ControlDiagnostics.Snapshot("prologue hand-off", _crew, _cutscenes, _handoff, _homes, "M01");
             }
             finally { GameUtils.FadeIn(1200); }
         }

@@ -223,6 +223,15 @@ namespace Bloodlines.Missions
             _context.Crew.Arsenal?.EndLoan(_context.Crew);
         }
 
+        /// <summary>QA harness: complete the objective the player is on; the stage advances on the next tick with its exit effects.</summary>
+        public string CompleteObjective()
+        {
+            if (_current == null || _context.Cutscenes.IsActive) return null;
+            var label = _current.CompleteCurrentObjective();
+            GameUtils.Subtitle(label == null ? "~y~No objective to complete." : "~g~QA completed: " + label, 3000);
+            return label;
+        }
+
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
         public void CommitCheckpoint()
         {

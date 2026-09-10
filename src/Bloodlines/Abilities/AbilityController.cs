@@ -20,6 +20,7 @@ namespace Bloodlines.Abilities
         private readonly Dictionary<CrewSlot, Ability> _abilities;
 
         private Ability _running;
+        private Ability _settling;
         private Ped _owner;
         private float _meter = 1f;
         private int _lastTick;
@@ -130,6 +131,11 @@ namespace Bloodlines.Abilities
             {
                 _meter = System.Math.Min(1f, _meter + delta * _config.AbilityRechargeRate);
             }
+            if (_settling != null && _running == null)
+            {
+                try { if (player == null || !player.Exists() || !_settling.Settle(player)) _settling = null; }
+                catch (System.Exception ex) { Logger.Error("Ability settle failed for " + _settling.Name, ex); _settling = null; }
+            }
 
             DrawMeter();
         }
@@ -151,6 +157,7 @@ namespace Bloodlines.Abilities
             finally
             {
                 // Belt and braces: a stuck time scale ruins the whole session.
+                _settling = _running;
                 _running = null;
                 _owner = null;
                 Function.Call(Hash.SET_TIME_SCALE, 1.0f);

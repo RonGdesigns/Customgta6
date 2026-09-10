@@ -14,6 +14,10 @@
 > - Your `scripts\Bloodlines\Bloodlines.Locations.ini` from before September 9
 >   carried template positions; the mod now ignores those exact values and says so
 >   in `Bloodlines.log` ("stale template override").
+> - The dev coordinate readout is at the top right (with speed in a car). Map icons
+>   are named by mission id. The dev menu's "Running mission" page has "Complete
+>   current objective". Driving: run the loop in `HANDLING-CALIBRATION.md` before judging
+>   the speed target; the handling baseline and Guess's press are opening values.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

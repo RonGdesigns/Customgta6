@@ -305,8 +305,9 @@ namespace Bloodlines.Core
             page.Add("Retry last attempt", () => _missions.RetryAvailable ? "from the beginning" : "", () => { Close(); _missions.Retry(); });
             page.Add("Stage", () => _missions.IsRunning ? _missions.CurrentStage.ToString() : "—",
                 null, delta => _missions.WarpStage(delta));
-            page.Add("Commit checkpoint", () => "", () => _missions.CommitCheckpoint());
-            page.Add("Restore checkpoint", () => "", () => _missions.RestoreCheckpoint());
+            page.Add("Complete current objective", () => "runs its exit effects", () => _missions.CompleteObjective());
+            page.Add("Commit checkpoint ([ key)", () => "", () => _missions.CommitCheckpoint());
+            page.Add("Restart this stage (] key)", () => "needs stage reconstruction; else full retry", () => _missions.RestoreCheckpoint());
             page.Add("Force pass", () => "", () =>
             {
                 _missions.ForcePass();

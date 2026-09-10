@@ -45,6 +45,8 @@ namespace Bloodlines.Core
         private bool _actionStarted;
         private SceneBlocking _blocking;
         private bool _skipping;
+        private Ped _hiddenPlayer;
+        private int _staged;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
         private List<DialogueCue> _lines;
@@ -111,7 +113,19 @@ namespace Bloodlines.Core
                 {
                     Ped actor = _dockIntro ? null : _crew.PedFor(protagonist.Slot);
                     if (actor != null && (!actor.Exists() || actor.IsDead)) actor = null;
-                    if (actor == null && !_dockIntro) { _radioScene = true; continue; }
+                    if (actor == null && !_dockIntro)
+                    {
+                        // A briefing plays before the mission deploys anyone, so no crew
+                        // ped exists. Without this the director framed the only ped it
+                        // had: the story character, Franklin, standing in for the crew.
+                        // Stage the hero as a temporary actor beside the start point and
+                        // hide the story ped for the scene; a deployed crew that is merely
+                        // far away is still a radio call.
+                        if (_crew.IsDeployed) { _radioScene = true; continue; }
+                        actor = StageHero(protagonist, player, _staged++);
+                        if (actor == null) { _radioScene = true; continue; }
+                        if (_hiddenPlayer == null) { _hiddenPlayer = player; player.IsVisible = false; }
+                    }
                     if (actor == null && _dockIntro)
                     {
                         var position = player.Position + new Vector3((int)protagonist.Slot * 1.8f - 1.8f, 3f, 0f);
@@ -229,6 +243,25 @@ namespace Bloodlines.Core
             _scenes[missionId + ":moment"] = new List<DialogueCue> { new DialogueCue {
                 CueId = missionId + "_MOMENT", MissionId = missionId, Speaker = speaker, Line = line } };
             return Play(missionId, "moment", title, actor, () => { });
+        }
+
+        /// <summary>A hero as a temporary actor for a briefing, in a short arc facing the start point.</summary>
+        private Ped StageHero(Protagonist protagonist, Ped player, int index)
+        {
+            var model = protagonist.Model;
+            if (!GameUtils.RequestModel(model, 1000)) return null;
+            var forward = player.ForwardVector;
+            var right = new Vector3(forward.Y, -forward.X, 0f);
+            var position = player.Position + forward * 2.6f + right * (index * 1.7f - 0.85f);
+            var actor = World.CreatePed(model, position, player.Heading + 180f);
+            model.MarkAsNoLongerNeeded();
+            if (actor == null || !actor.Exists()) return null;
+            CrewAppearance.Apply(actor, protagonist.Slot);
+            _temporary.Add(actor);
+            actor.IsPersistent = true;
+            actor.BlockPermanentEvents = true;
+            actor.Task.StandStill(-1);
+            return actor;
         }
 
         private void Hold(Entity entity)
@@ -408,6 +441,10 @@ namespace Bloodlines.Core
             _temporary.Clear();
             _actors.Clear();
             _support.Clear();
+            _staged = 0;
+            var hidden = _hiddenPlayer;
+            _hiddenPlayer = null;
+            if (hidden != null) Release("player visibility", () => { if (hidden.Exists()) hidden.IsVisible = true; });
             Release("player control", () => Game.Player.CanControlCharacter = _hadControl);
         }
 

@@ -187,6 +187,9 @@ namespace Bloodlines.Missions
         {
         }
 
+        /// <summary>QA: complete the objective the player is on, through its own completion, so stage exit effects run. Returns its label, or null.</summary>
+        public virtual string CompleteCurrentObjective() => null;
+
         public void Fail(string reason)
         {
             if (Status != MissionStatus.Running) return;
