@@ -13,8 +13,10 @@ namespace Bloodlines.Core
     ///
     /// LSIA curb → Ron checks his phone, walks to the car he was told would be
     /// waiting, gets in → control returns with him already seated → the player
-    /// drives across the city to his starter apartment → he gets out, walks to the
-    /// door, reads the Terminal Island job → time-cut to M01's cold open.
+    /// drives across the city to his starter apartment → he gets out and walks to
+    /// the door → inside, the message with the Terminal Island job arrives and he
+    /// reads it → time-cut to M01's cold open. If the room never loads, the job is
+    /// read at the door instead and the cut still happens.
     ///
     /// Stock-only by design: the Guess ped, a Primo (the same car M01's intro puts
     /// him in), the terminal frontage, and the apartment entrance the home system
@@ -27,7 +29,7 @@ namespace Bloodlines.Core
     /// </summary>
     public sealed class PrologueSequence
     {
-        public enum Phase { Idle, Arrival, Drive, Homecoming, Finished }
+        public enum Phase { Idle, Arrival, Drive, Homecoming, Interior, Finished }
 
         private const string CarModel = "primo";
         private const float ArriveRadius = 9f;
@@ -37,8 +39,10 @@ namespace Bloodlines.Core
         private readonly LocationBook _locations;
         private readonly CampaignState _state;
         private readonly Func<Vector3?> _home;
+        private readonly ApartmentAccess _apartment;
 
         private Vehicle _car;
+        private bool _callStarted;
         private Blip _carBlip;
         private Vector3 _homePoint;
         private int _lastHint;
@@ -49,13 +53,15 @@ namespace Bloodlines.Core
         /// <summary>Result of <see cref="PlaceForColdOpen"/>. Only Placed means the player is at the dock.</summary>
         public enum Placement { Placed, StillSeated, NoGround }
 
-        public PrologueSequence(CrewRoster crew, CutsceneDirector cutscenes, LocationBook locations, CampaignState state, Func<Vector3?> home)
+        /// <param name="apartment">The home system's room access; null plays the job at the door with no interior.</param>
+        public PrologueSequence(CrewRoster crew, CutsceneDirector cutscenes, LocationBook locations, CampaignState state, Func<Vector3?> home, ApartmentAccess apartment = null)
         {
             _crew = crew;
             _cutscenes = cutscenes;
             _locations = locations;
             _state = state;
             _home = home;
+            _apartment = apartment;
         }
 
         public Phase Current { get; private set; } = Phase.Idle;
@@ -160,9 +166,88 @@ namespace Bloodlines.Core
                         break;
                     }
                     _sceneStarted = false;
-                    Finish();
+                    BeginInterior();
+                    break;
+
+                case Phase.Interior:
+                    UpdateInterior(player);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Through the door: the home system streams the starter room with Ron held
+        /// behind a fade, and the message arrives once he is inside. No room, or no
+        /// home system at all, and the job is read where he stands.
+        /// </summary>
+        private void BeginInterior()
+        {
+            var room = _apartment == null ? null : _locations.Get("Apartment.Starter.Interior");
+            if (room == null || _apartment.Inside || _apartment.Busy)
+            {
+                if (_apartment != null && room == null) Logger.Warn("Prologue: no starter interior location; the job is read at the door.");
+                PlayCall(atDoor: true);
+                return;
+            }
+            if (!_apartment.Begin(room.Position, null, true))
+            {
+                Logger.Warn("Prologue: the apartment could not be entered; the job is read at the door.");
+                PlayCall(atDoor: true);
+                return;
+            }
+            Current = Phase.Interior;
+            _callStarted = false;
+        }
+
+        private void UpdateInterior(Ped player)
+        {
+            if (_apartment != null && _apartment.Busy) return;
+            if (!_callStarted)
+            {
+                if (_apartment == null || !_apartment.Inside)
+                {
+                    // Entry timed out: the home system already returned control at the
+                    // door, so the message is read there.
+                    Logger.Warn("Prologue: the apartment did not load; the job is read at the door.");
+                    GameUtils.Notify("~y~The apartment did not load.~s~ The job reads at the door.");
+                    PlayCall(atDoor: true);
+                    return;
+                }
+                PlayCall(atDoor: false);
+                return;
+            }
+            // The scene has ended; the host does not tick the prologue while one runs.
+            if (_sceneStarted && _cutscenes.LastOutcome != SceneOutcome.Completed && _cutscenes.LastOutcome != SceneOutcome.Skipped)
+                Logger.Warn("Prologue: the call scene ended by " + _cutscenes.LastOutcome + "; the job counts as read.");
+            _sceneStarted = false;
+            Finish();
+        }
+
+        /// <summary>
+        /// The message. Inside: Ron crosses the room, stops, the phone comes out, and
+        /// the last line lands on his face. At the door: the phone only. Skipping
+        /// puts the phone away on the same mark. Whatever ends the scene, the job
+        /// counts as read; the host cuts to the dock from wherever he stands.
+        /// </summary>
+        private void PlayCall(bool atDoor)
+        {
+            _callStarted = true;
+            Current = Phase.Interior;
+            var guess = Game.Player.Character;
+            var blocking = new SceneBlocking();
+            if (!atDoor)
+            {
+                var across = guess.Position + guess.ForwardVector * 2f;
+                blocking.DialogueAfterStep = 2;
+                blocking.Then(new WalkToStep(guess, across, 0.9f)).Then(new WaitStep(1400, guess));
+            }
+            blocking.Then(new UsePhoneStep(guess, 4200))
+                .Then(new ShotStep(3600, guess, new Vector3(1.7f, 0.5f, 1.55f), guess, new Vector3(0f, 0f, 1.45f), -0.3f));
+            _sceneStarted = _cutscenes.Play("M01", "call", "The job", null, null, blocking);
+            if (_sceneStarted) return;
+            Logger.Warn("Prologue: the call scene is unavailable; the job counts as read.");
+            blocking.Complete();
+            Finish();
         }
 
         private void UpdateDrive(Ped player)
@@ -241,6 +326,7 @@ namespace Bloodlines.Core
         {
             if (Current == Phase.Idle) return;
             _cutscenes.Stop();
+            if (_apartment != null && (_apartment.Inside || _apartment.Busy)) _apartment.Cancel();
             if (_car != null && _car.Exists()) GameUtils.SafeDelete(_car);
             _car = null;
             GameUtils.SafeDelete(_carBlip);

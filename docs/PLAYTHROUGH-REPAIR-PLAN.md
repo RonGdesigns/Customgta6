@@ -137,6 +137,8 @@ Keep the time scale at 0.45 for round one so handling is the only variable. Add 
 - Ice reboards: the pickup releases his scripted control and role gate; if AI, he is assigned a free seat; Guess waits for the required passengers with a visible reason if one cannot board.
 - Safe arrival: the canal is a safe endpoint, so the stage requires the wanted level to be gone (a `LoseWantedObjective` before delivery) instead of zeroing it.
 
+**Status (September 10):** the M02 rows above are built in the story-to-play second slice (`STORY-TO-PLAY-PLAN.md`, P2c): road mission with a stuck watchdog, custody in Ice's hand, the canal refusing until the police are lost. The M01 rows are superseded by Ron's direction of the same day: no clock, Mateo's run is seen, the yard must be clear.
+
 ### Police policy (#25, #14)
 Instrument first: on every switch and restore, log wanted level, greyed-stars state, and any ignore flags. Then: operational checkpoints are allowed under heat; safe arrivals require the pursuit lost, with the HUD saying why. No safehouse erases stars. `PersonalWanted` restores must not leave the police in a permanent search state; if a legitimate sighting happens, they respond.
 
@@ -160,6 +162,8 @@ Gohan drives to a breaker moved outside the meeting. After the cut, he takes cov
 
 ### Prologue apartment call (#4)
 After Package A proves scene ownership: park → get out → concealed-door fade → Ron inside the starter apartment → sets his bag down / walks to the window → the phone message arrives → short call → time cut to M01. Reuses `ApartmentAccess`. If the interior fails to load, exterior control comes back with a clear retry; an unseen call is never marked done.
+
+**Status (September 10):** built in P2c with one difference from the last sentence: a room that fails to load plays the same call at the door (with a notice) rather than leaving the prologue open, so a broken interior can never strand a fresh campaign before M01. The live apartment pass is still owed.
 
 ---
 

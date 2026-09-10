@@ -10,7 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEAKERS = {'ICE', 'GOHAN', 'GUESS', 'KJ'}
 # Support cast who may speak only inside a named phase (an "@phase" line inside a mission block).
 SUPPORT = {'MILLER', 'BUYER', 'MATEO'}
-PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers in position'}
+PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers in position',
+                   'stash': 'At the curb; the prototype stays, the crew boards the Granger',
+                   'call': 'Alone in the starter apartment; the message arrives'}
 
 def blocks(path, key_pattern, phases=None):
     """Lines per block. With `phases`, a block may contain '@name' lines that open a named phase;
@@ -41,10 +43,10 @@ def render():
         missions={row['id']: row for row in csv.DictReader(stream,delimiter='\t')}
     named={}
     beats=blocks(ROOT/'data/story_beats.txt',r'S?M\d\d',named)
-    opening=blocks(ROOT/'data/opening_scene.txt',r'prologue|arrival|intro|recognition')
+    opening=blocks(ROOT/'data/opening_scene.txt',r'prologue|arrival|call|intro|recognition')
     if beats.keys()!=missions.keys(): raise ValueError(f'Mission coverage mismatch: {beats.keys() ^ missions.keys()}')
-    if opening.keys()!={'prologue','arrival','intro','recognition'}: raise ValueError('Opening requires prologue, arrival, intro and recognition')
-    if any(speaker!='GUESS' for phase in ('prologue','arrival') for speaker,_ in opening[phase]): raise ValueError('Ron is alone before M01')
+    if opening.keys()!={'prologue','arrival','call','intro','recognition'}: raise ValueError('Opening requires prologue, arrival, call, intro and recognition')
+    if any(speaker!='GUESS' for phase in ('prologue','arrival','call') for speaker,_ in opening[phase]): raise ValueError('Ron is alone before M01')
     with (ROOT/'data/mission_starts.tsv').open(encoding='utf-8') as stream:
         starts=list(csv.DictReader(stream,delimiter='\t'))
     with (ROOT/'data/locations.tsv').open(encoding='utf-8') as stream:
@@ -61,13 +63,13 @@ def render():
         '36 gameplay missions exist (M01–M30, SM01–SM06). Other scenes are authored for future scripts; they are not playable missions.', '',
         'Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.',
         'Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.', '',
-        'A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, and the job read at his door. Both prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.', '',
+        'A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, the door, and the job read inside his starter apartment (at the door if the room does not load). The prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.', '',
         'M01 opens on separate private channels at separate exterior approach positions (ground-resolved at runtime). Recognition follows successful approaches, not mission launch.', '',
         'Each WAV uses the cue ID below, in that mission\'s existing audio bank. Silence is supported. Enter or controller A skips a scene; hold Backspace aborts.', '']
     for mission, lines in beats.items():
         if len(lines)<4: raise ValueError(f'{mission}: needs briefing and aftermath')
         phases={'intro': lines[:2], 'outro': lines[2:]}
-        if mission=='M01': phases={'prologue':opening['prologue'],'arrival':opening['arrival'],'intro':opening['intro'],'recognition':opening['recognition'],'outro':lines[2:]}
+        if mission=='M01': phases={'prologue':opening['prologue'],'arrival':opening['arrival'],'call':opening['call'],'intro':opening['intro'],'recognition':opening['recognition'],'outro':lines[2:]}
         for name, cues in named.get(mission, {}).items():
             if not cues: raise ValueError(f'{mission}: empty phase {name}')
             phases[name]=cues
@@ -77,7 +79,8 @@ def render():
             for i,(speaker,line) in enumerate(cues,1):
                 cue_id=f'{mission}_SCENE_{phase.upper()}_{i:02d}_{speaker}'
                 direction=('Alone at the terminal curb; phone, walk to the car, get in' if phase=='prologue' else
-                           'Alone at the apartment door; out of the car, read the job' if phase=='arrival' else
+                           'Alone at the apartment door; out of the car, walk to the door' if phase=='arrival' else
+                           'Alone in the starter apartment; the message arrives (at the door if the room does not load)' if mission=='M01' and phase=='call' else
                            'Private channel; no recognition or shared conversation' if mission=='M01' and phase=='intro' else
                            'Face-to-face reunion; anger interrupted by danger' if phase=='recognition' else
                            'Reflective; allow the response to land' if phase=='outro' else

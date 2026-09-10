@@ -222,8 +222,8 @@ namespace Bloodlines.Core
                         }
                     }
                     var terminal = _locations.Position("M01.ServiceTerminal");
-                    SceneProp("prop_table_03", terminal, true);
-                    SceneProp("prop_laptop_01a", terminal + new Vector3(0f, 0f, .82f), false);
+                    var desk = SceneProp("prop_table_03", terminal, true);
+                    if (desk != null) SceneProp("prop_laptop_01a", PropPlacement.OnTop(desk, new Model("prop_table_03"), new Model("prop_laptop_01a")), false);
                     var workerModel = new Model("s_m_m_dockwork_01");
                     if (GameUtils.RequestModel(workerModel, 1000))
                     {
@@ -384,15 +384,16 @@ namespace Bloodlines.Core
             return vehicle;
         }
 
-        private void SceneProp(string name, Vector3 point, bool ground)
+        private Prop SceneProp(string name, Vector3 point, bool ground)
         {
             var model = new Model(name);
             try
             {
-                if (!GameUtils.RequestModel(model, 1000)) return;
+                if (!GameUtils.RequestModel(model, 1000)) return null;
                 var prop = World.CreateProp(model, point, false, ground);
-                if (prop == null || !prop.Exists()) return;
+                if (prop == null || !prop.Exists()) return null;
                 _temporary.Add(prop); Hold(prop);
+                return prop;
             }
             finally { model.MarkAsNoLongerNeeded(); }
         }

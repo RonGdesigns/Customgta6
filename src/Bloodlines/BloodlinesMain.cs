@@ -107,7 +107,7 @@ namespace Bloodlines
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
             _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
             _homes.OpenMenu = _menu.OpenHomePage;
-            _prologue = new PrologueSequence(_crew, _cutscenes, _locations, _state, () => _homes.Position(CrewSlot.Guess));
+            _prologue = new PrologueSequence(_crew, _cutscenes, _locations, _state, () => _homes.Position(CrewSlot.Guess), _homes.Apartment);
             _prologue.Finished = StartAfterPrologue;
             _homes.RouteNextLead = _missionMarkers.RouteNextAvailable;
             _homes.ApplyFleetUpgrade = vehicle =>
@@ -456,6 +456,9 @@ namespace Bloodlines
                 // Out of the car first, deterministically, then across the city. If
                 // either half cannot be done, nothing is moved: the arrival is already
                 // saved, Ron keeps his state, and M01 waits for the mission key.
+                // The message was read inside the starter apartment: leave the room
+                // behind the fade, releasing its interior, before crossing the city.
+                if (_homes.Apartment.Inside || _homes.Apartment.Busy) _homes.StopApartment();
                 var placement = PrologueSequence.PlaceForColdOpen(player, dock);
                 if (placement != PrologueSequence.Placement.Placed)
                 {

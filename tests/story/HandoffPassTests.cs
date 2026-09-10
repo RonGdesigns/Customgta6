@@ -137,6 +137,8 @@ public static partial class StoryTests
   Check(c.Cutscenes.IsActive&&handoffs==0,"The homecoming holds until Ron is out of the car and at the door");
   Game.Accept=true;c.Cutscenes.Update();prologue.Update();
   Check(!Game.Player.Character.IsInVehicle()&&Game.Player.Character.Position==home,"Skipping the homecoming puts Ron at his door, out of the car");
+  Check(prologue.Current==PrologueSequence.Phase.Interior&&c.Cutscenes.IsActive&&handoffs==0,"With no home system the message is read at the door: the call scene plays there");
+  Game.Accept=true;c.Cutscenes.Update();prologue.Update();
   Check(handoffs==1&&!prologue.IsActive&&save.PrologueComplete&&CampaignState.Load(Path.Combine(root,"prologue-run.json")).PrologueComplete,"The prologue commits its flag and hands off to M01 exactly once");
   Check(prologue.Car==null&&ride.Released,"The arrival car is handed back to the world, not deleted under the player");
   // Abort hold skips the whole thing but still counts.

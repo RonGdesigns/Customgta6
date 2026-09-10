@@ -7,7 +7,7 @@ Authored expansion of the omnibus and solo bibles. These are new lines, not quot
 Delivery: Ice measures his words, Gohan explains precisely then risks personal honesty, Guess uses humor until he needs a direct answer.
 Briefings and aftermath use camera cuts and held poses. No lip sync or bespoke performance animation is supplied. Solo aftermath replies are over radio.
 
-A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, and the job read at his door. Both prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.
+A fresh campaign opens on the prologue: Ron alone at LSIA, a drive home the player makes, the door, and the job read inside his starter apartment (at the door if the room does not load). The prologue scenes move him (phone, walk, car entry/exit); skipping lands on the same state.
 
 M01 opens on separate private channels at separate exterior approach positions (ground-resolved at runtime). Recognition follows successful approaches, not mission launch.
 
@@ -29,9 +29,13 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M01_SCENE_ARRIVAL_01_GUESS) — Home. Or the closest thing I've got to one until I'm working again.
 
-**GUESS** (M01_SCENE_ARRIVAL_02_GUESS) — Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+### Call
 
-**GUESS** (M01_SCENE_ARRIVAL_03_GUESS) — Somebody knew I was back before I did. I'm going anyway.
+**GUESS** (M01_SCENE_CALL_01_GUESS) — Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+
+**GUESS** (M01_SCENE_CALL_02_GUESS) — Somebody knew I was back before I did. I'm going anyway.
+
+**GUESS** (M01_SCENE_CALL_03_GUESS) — Bag stays packed. Keys. Whatever this is, I'm not unpacking for it.
 
 ### Intro
 
@@ -96,6 +100,14 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M02_SCENE_OUTRO_01_GUESS) — You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
 
 **ICE** (M02_SCENE_OUTRO_02_ICE) — Can you get us somewhere safe, Guess? And Gohan... keep that drive. I want to hear what it says.
+
+### Stash
+
+**GUESS** (M02_SCENE_STASH_01_GUESS) — Three million dollars of somebody's prototype, and it's the most recognizable car in the city. It stays here. The Granger's clean.
+
+**GOHAN** (M02_SCENE_STASH_02_GOHAN) — Their van is already moving. Every minute it drives, that upload gets closer to landing. I need the back seat and a clear signal.
+
+**ICE** (M02_SCENE_STASH_03_ICE) — Then drive, Guess. Gohan works the connection; I keep them off the car. Nobody stops until that van does.
 
 ## M03 — CYPRESS FOUNDRY
 

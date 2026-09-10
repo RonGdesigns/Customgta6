@@ -247,8 +247,10 @@ namespace Bloodlines.Missions
             }
 
             bool passed = _current.Status == MissionStatus.Passed;
+            SceneBlocking outro = null;
+            if (passed) { try { outro = _current.OutroBlocking(); } catch (System.Exception ex) { Logger.Error(_current.Id + " outro blocking", ex); } }
             Finish();
-            if (passed) _context.Cutscenes.Play(_currentDefinition.Id, "outro", "Aftermath: " + _currentDefinition.Title);
+            if (passed) _context.Cutscenes.Play(_currentDefinition.Id, "outro", "Aftermath: " + _currentDefinition.Title, null, null, outro);
         }
 
         private MissionDefinition ContinuationOf(MissionDefinition definition)

@@ -216,6 +216,16 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 56. **Mateo leaves on camera.** Clear the yard (or let the clock run): a short scene shows Mateo at the slipway, boarding the launch, and the launch pulling away with his line. Enter skips it; he is still aboard and gone. He cannot be killed at any point.
 57. **Nobody dies off screen.** Play M01's firefight as Ice and watch Guess and Gohan: they take cover and fight and their health does not move. Switch into one: he can be hurt. Stand down: the shield is off.
 
+## Story to play, second slice: the opening (P2c)
+
+58. **The message at home.** Fresh save, prologue: drive home, stop at the door. The door scene is Ron getting out and walking to the door, one line. Then the fade, the starter room, Ron crossing it, the phone, and three lines with the last on his face. Enter during the room skips to the same state. Then the cut to the dock as before. If the room never loads (12 s), the message plays at the door with a notice.
+59. **Mateo runs.** M01: after the recognition scene, watch Mateo and the dock technician run for the launch through the yard. Shoot near them: Mateo takes nothing, the technician can drop. The HUD reads "Hostiles: N" with no countdown. Leave guards alive for two minutes: nothing happens.
+60. **The launch waits for a clear yard.** Kill the last guard while Mateo is already in the boat: the escape plays at once (he is aboard, the launch pulls away). Kill the last guard while he is still running: "Mateo is running for the launch" until he gets there, then the escape.
+61. **Back from the terminal.** Play Gohan's copy with Ice's and Guess's jobs already done: the moment it completes you are Ice, no wheel. Play it with Guess's job still open: you become Guess.
+62. **The laptop.** Cold open and mission: the laptop sits on the table, not above it.
+63. **M02 at the curb.** Start M02: the prototype (locked) and the Granger at the curb, the crew on foot, three lines while they board. The clock starts after. The van moves off on its own and does not sit at lights; if it stalls, the log says the route was re-issued.
+64. **Custody and the canal.** After the rear doors: the case is in Ice's hand; it disappears when he boards ("Drives stowed"). Pick up a wanted level in the chase: the canal will not pass until it is gone; nothing clears it for you.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -227,7 +237,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
-- Story to play P2c (prologue interior call, M01 escape trigger, M02 stash beat and route) and P2d (M03) are not started. M02, M03 and M16 still clear the wanted level at their end markers; the endpoint helper exists, they do not use it yet.
+- Story to play P2d (M03) is not started. M03 and M16 still clear the wanted level at their end markers; the endpoint helper exists, they do not use it yet. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.

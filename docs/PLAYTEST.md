@@ -30,6 +30,11 @@
 > - M04 now starts at the Cypress base marker and is the reference for the story-to-play
 >   work: drive in, see the sale, cut the power, take the wheel when offered, recover
 >   the drive, lose the police. Live-test items 50–55.
+> - The opening is the second slice: the message is read inside the starter
+>   apartment; in M01 Mateo runs for the launch in the open with no clock, Gohan's
+>   copy hands you straight back, the laptop is on the table; M02 opens at the curb,
+>   the drives ride in Ice's hand and the canal does not clear the police.
+>   Live-test items 58–64.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

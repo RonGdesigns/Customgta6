@@ -8,8 +8,12 @@ GUESS|Car's where the man said it would be. Half a tank. That'll get me across t
 
 arrival
 GUESS|Home. Or the closest thing I've got to one until I'm working again.
+
+# The message arrives inside the starter apartment (at the door if the room never loads).
+call
 GUESS|Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
 GUESS|Somebody knew I was back before I did. I'm going anyway.
+GUESS|Bag stays packed. Keys. Whatever this is, I'm not unpacking for it.
 
 # M01 cold open: private channels, not a conversation between friends.
 intro

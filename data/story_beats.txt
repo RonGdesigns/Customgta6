@@ -16,6 +16,10 @@ GOHAN|The van has the dock recording. I can hack it from the passenger seat. Kee
 ICE|Guess drives, Gohan works the connection. If they spot us, I cover the car. Once the van stops, I take the physical drives.
 GUESS|You still give orders like the bell's about to ring. I can find us a shop in Cypress, if you can ask.
 ICE|Can you get us somewhere safe, Guess? And Gohan... keep that drive. I want to hear what it says.
+@stash
+GUESS|Three million dollars of somebody's prototype, and it's the most recognizable car in the city. It stays here. The Granger's clean.
+GOHAN|Their van is already moving. Every minute it drives, that upload gets closer to landing. I need the back seat and a clear signal.
+ICE|Then drive, Guess. Gohan works the connection; I keep them off the car. Nobody stops until that van does.
 
 M03
 GUESS|Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
