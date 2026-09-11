@@ -17,6 +17,8 @@ namespace Bloodlines.Core
         private string _waiting;
         private float _heading;
         private bool _frozen, _invincible, _control, _entering, _moved;
+        private bool _wasDisabled, _wasCapped;
+        private float? _heading2;
         private int _started, _interior;
         private string _ipl;
         private bool _ownsIpl;
@@ -26,11 +28,12 @@ namespace Bloodlines.Core
         public Vector3 InteriorPosition { get; private set; }
         public ApartmentAccess(CrewRoster crew) { _crew = crew; }
 
-        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null)
+        /// <param name="heading">The way to face once inside; null keeps the heading from the street.</param>
+        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null, float? heading = null)
         {
             var ped = Game.Player.Character;
             if (Busy || enter == Inside || ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) return false;
-            _ped = ped; _origin = ped.Position; _heading = ped.Heading; _target = target;
+            _ped = ped; _origin = ped.Position; _heading = ped.Heading; _target = target; _heading2 = heading;
             _frozen = ped.IsPositionFrozen; _invincible = ped.IsInvincible; _control = Game.Player.CanControlCharacter;
             _entering = enter; _moved = false; _started = Game.GameTime; Busy = true; _probe = interiorProbe ?? target; _waiting = null;
             Logger.Info("Apartment: " + (enter ? "entry" : "exit") + " requested; target=" + target + "; IPL=" + (ipl ?? "stock"));
@@ -62,7 +65,7 @@ namespace Bloodlines.Core
             {
                 if (_ped == null || !_ped.Exists() || _ped.IsDead || Game.Player.Character.Handle != _ped.Handle)
                 { Fail(); return; }
-                if (Game.GameTime - _started > 12000) { Logger.Warn("Apartment timeout: " + _waiting + "; interior=" + _interior + "; moved=" + _moved + "; target=" + _target); Fail(); GameUtils.Notify("~y~Apartment loading timed out. Returned to your previous position."); return; }
+                if (Game.GameTime - _started > 12000) { Logger.Warn("Apartment timeout: " + _waiting + "; interior=" + _interior + "; moved=" + _moved + "; wasDisabled=" + _wasDisabled + "; wasCapped=" + _wasCapped + "; target=" + _target); Fail(); GameUtils.Notify("~y~Apartment loading timed out. Returned to your previous position."); return; }
                 Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, _target.X, _target.Y, _target.Z);
                 if (Game.GameTime - _started < 250) return;
@@ -76,7 +79,15 @@ namespace Bloodlines.Core
                         if (_interior == 0 && _probe != _target)
                             _interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _probe.X, _probe.Y, _probe.Z);
                         if (_interior == 0) { Waiting("interior lookup"); return; }
-                        Logger.Info("Apartment: pinned interior " + _interior);
+                        // Story Mode ships the Online apartments switched off: a disabled
+                        // or capped interior never reports ready, however long the player
+                        // waits inside it (Ron's logs: 12 s at "interior readiness", twice).
+                        // Switch it on for the visit and put it back on the way out.
+                        _wasDisabled = Function.Call<bool>(Hash.IS_INTERIOR_DISABLED, _interior);
+                        _wasCapped = Function.Call<bool>(Hash.IS_INTERIOR_CAPPED, _interior);
+                        Logger.Info("Apartment: interior " + _interior + (_wasDisabled ? " was disabled" : " was enabled") + (_wasCapped ? " and capped" : " and uncapped") + "; pinned for the visit.");
+                        if (_wasDisabled) Function.Call(Hash.DISABLE_INTERIOR, _interior, false);
+                        if (_wasCapped) Function.Call(Hash.CAP_INTERIOR, _interior, false);
                         Function.Call(Hash.PIN_INTERIOR_IN_MEMORY, _interior);
                         Function.Call(Hash.REFRESH_INTERIOR, _interior);
                     }
@@ -88,6 +99,7 @@ namespace Bloodlines.Core
                 if (!_moved)
                 {
                     _moved = true; _ped.Position = _target;
+                    if (_heading2.HasValue) _ped.Heading = _heading2.Value;
                     Function.Call(Hash.CLEAR_ROOM_FOR_ENTITY, _ped);
                     Waiting("destination collision"); return;
                 }
@@ -135,8 +147,10 @@ namespace Bloodlines.Core
             foreach (var slot in _held) Attempt(() => _crew.CompanionAI.ReleaseControl(slot));
             _held.Clear();
             if (_interior != 0) Attempt(() => Function.Call(Hash.UNPIN_INTERIOR, _interior));
+            if (_interior != 0 && _wasCapped) Attempt(() => Function.Call(Hash.CAP_INTERIOR, _interior, true));
+            if (_interior != 0 && _wasDisabled) Attempt(() => Function.Call(Hash.DISABLE_INTERIOR, _interior, true));
             if (_ownsIpl && !string.IsNullOrEmpty(_ipl)) Attempt(() => Function.Call(Hash.REMOVE_IPL, _ipl));
-            _interior = 0; _ipl = null; _ownsIpl = false;
+            _interior = 0; _ipl = null; _ownsIpl = false; _wasDisabled = _wasCapped = false;
         }
         private void Fail()
         {

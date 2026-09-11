@@ -237,7 +237,10 @@ namespace Bloodlines.Core
             var blocking = new SceneBlocking();
             if (!atDoor)
             {
-                var across = guess.Position + guess.ForwardVector * 2f;
+                // The message spot once Ron has surveyed the room; until then two
+                // meters into it from the door.
+                var spot = _locations.Get("Apartment.Room.Message");
+                var across = spot != null && spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f;
                 blocking.DialogueAfterStep = 2;
                 blocking.Then(new WalkToStep(guess, across, 0.9f)).Then(new WaitStep(1400, guess));
             }

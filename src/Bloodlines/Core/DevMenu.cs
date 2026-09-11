@@ -67,6 +67,9 @@ namespace Bloodlines.Core
 
         public bool IsOpen { get; private set; }
 
+        /// <summary>The marker a job starts from; set by the host from the mission markers.</summary>
+        public Func<MissionDefinition, MissionLocation> StartPoint { get; set; }
+
         public void Close()
         {
             _shopping = null;
@@ -275,6 +278,7 @@ namespace Bloodlines.Core
                         else if (!_state.GateSatisfied(captured, _catalog)) GameUtils.Notify("~y~QA bypass: " + _state.DescribeGate(captured, _catalog));
                         if (_missions.IsRunning) _missions.Abort();
                         if (_crew.IsDeployed) _crew.Dismiss();
+                        WarpToStart(captured);
                         _missions.Start(captured, bypassGates: true);
                         Toggle();
                     });
@@ -295,6 +299,32 @@ namespace Bloodlines.Core
                 remaining = remaining.Substring(length).TrimStart();
             }
             return page;
+        }
+
+        /// <summary>
+        /// A start from the menu is still a start: the briefing plays at the job's
+        /// own marker, with the crew pulling up to that street, not wherever the
+        /// menu happened to be opened with the mission's real place a cut away.
+        /// </summary>
+        private void WarpToStart(MissionDefinition mission)
+        {
+            var point = StartPoint?.Invoke(mission);
+            var player = Game.Player.Character;
+            if (point == null || player == null || !player.Exists() || player.IsDead) return;
+            if (GameUtils.IsWithinFlat(player.Position, point.Position, 12f)) return;
+            GameUtils.FadeOut(300);
+            Script.Wait(350);
+            try
+            {
+                var placement = PrologueSequence.PlaceForColdOpen(player, point.Position);
+                if (placement == PrologueSequence.Placement.Placed)
+                {
+                    player.Heading = point.Heading;
+                    Logger.Info("QA start: moved to " + mission.Id + "'s marker before the briefing.");
+                }
+                else Logger.Warn("QA start: could not move to " + mission.Id + "'s marker (" + placement + "); the job starts where the player stands.");
+            }
+            finally { GameUtils.FadeIn(300); }
         }
 
         private Page BuildMissionControl()
@@ -406,6 +436,31 @@ namespace Bloodlines.Core
             _waitForOpeningDownRelease = false;
             _stack.Push(BuildHomePage());
         }
+        /// <summary>The wardrobe straight from its spot in the room.</summary>
+        public void OpenWardrobe()
+        {
+            _stick.Reset(); IsOpen = true; _stack.Clear(); _openedAt = Game.GameTime;
+            _waitForOpeningDownRelease = false;
+            _stack.Push(BuildWardrobe(_crew.ActiveSlot));
+        }
+        /// <summary>The room's shape from its own collision, written beside the ini files for laying out its spots.</summary>
+        private void MapRoom()
+        {
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists()) return;
+            try
+            {
+                string map = InteriorMapper.Map(player.Position, 12f, player);
+                string path = InteriorMapper.Write(_survey.OutputDirectory, "Bloodlines.Room.txt", map);
+                Logger.Info("Room map written to " + path);
+                GameUtils.Notify("~g~Room map written~s~ to Bloodlines.Room.txt beside the ini files.");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Room map failed", ex);
+                GameUtils.Notify("~r~Room map failed.~s~ See Bloodlines.log.");
+            }
+        }
         private Page BuildHomePage()
         {
             var page = new Page(_homes.ResidenceName);
@@ -416,6 +471,11 @@ namespace Bloodlines.Core
                 page.Add("Enter apartment", () => _homes.Progression, () => { Close(); _homes.EnterApartment(); });
                 if (_config.DevToolsEnabled && !_homes.LuxuryUnlocked)
                     page.Add("Preview luxury apartment", () => "QA only - does not unlock", () => { Close(); _homes.EnterApartment(true); });
+            }
+            if (_homes.Apartment.Inside && _config.DevToolsEnabled)
+            {
+                page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(CrewHomes.RoomSurveyKeys); });
+                page.Add("Map this room", () => "writes Bloodlines.Room.txt", () => { Close(); MapRoom(); });
             }
             page.Add("Wardrobe", () => "clothes / facial hair", () => _stack.Push(BuildWardrobe(_crew.ActiveSlot)));
             page.Add("Rest and save", () => "six hours", () => { Close(); _homes.Rest(); });

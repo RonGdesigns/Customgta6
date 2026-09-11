@@ -28,6 +28,10 @@ namespace Bloodlines.Core
                 _keys[row.Text("mission")] = row.Text("location_key");
         }
 
+        /// <summary>The marker a job starts from, or null for a job without one.</summary>
+        public MissionLocation StartPoint(MissionDefinition mission) =>
+            mission != null && _keys.TryGetValue(mission.Id, out var key) ? _locations.Get(key) : null;
+
         public void RouteNextAvailable()
         {
             // Same answer as the mission key: story first, a solo only when a gate

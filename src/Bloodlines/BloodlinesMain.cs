@@ -107,6 +107,8 @@ namespace Bloodlines
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
             _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
             _homes.OpenMenu = _menu.OpenHomePage;
+            _homes.OpenWardrobe = _menu.OpenWardrobe;
+            _menu.StartPoint = _missionMarkers.StartPoint;
             _prologue = new PrologueSequence(_crew, _cutscenes, _locations, _state, () => _homes.Position(CrewSlot.Guess), _homes.Apartment);
             _prologue.Finished = StartAfterPrologue;
             _homes.RouteNextLead = _missionMarkers.RouteNextAvailable;

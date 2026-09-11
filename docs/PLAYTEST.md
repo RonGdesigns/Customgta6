@@ -44,6 +44,10 @@
 >   fire at the racks, and the rotors turning Ron's wait into a pickup at the alley
 >   mouth. Also the control fix: you can move after the prologue and after Gohan's
 >   terminal. Live-test items 71–74.
+> - The starter room: it loads now (Story Mode had the Online room switched off), it
+>   has named spots that appear once you survey them inside, and the dev menu can
+>   write a floor map of it. A start from the mission menu begins at the job's
+>   marker. Live-test items 75–78.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

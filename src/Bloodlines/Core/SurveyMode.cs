@@ -61,6 +61,22 @@ namespace Bloodlines.Core
             Select(0);
         }
 
+        /// <summary>A named set of spots in the order given: the room survey, walked rather than driven.</summary>
+        public void Start(IEnumerable<string> keys)
+        {
+            if (IsActive) Stop();
+            _queue.Clear();
+            _captured.Clear();
+            _index = 0;
+            foreach (var key in keys) { var location = _book.Get(key); if (location != null) _queue.Add(location); }
+            if (_queue.Count == 0) { GameUtils.Subtitle("~y~No locations to survey.", 3000); return; }
+            IsActive = IsSurveyRunning = true;
+            Select(0);
+        }
+
+        /// <summary>The folder the survey ini lives in; other survey files go beside it.</summary>
+        public string OutputDirectory => Path.GetDirectoryName(_outputPath);
+
         public void Stop()
         {
             bool wasActive = IsActive;

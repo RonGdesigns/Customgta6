@@ -208,12 +208,12 @@ namespace Bloodlines.Missions.Campaign
     {
         private static readonly Random Random = new Random();
 
-        private readonly Func<Vector3> _centre;
+        private readonly Func<Vector3> _center;
         private int _nextDrop;
 
         public DepthChargeHazard(Func<Vector3> center) : base("")
         {
-            _centre = center;
+            _center = center;
         }
 
         public override bool IsPassive => true;

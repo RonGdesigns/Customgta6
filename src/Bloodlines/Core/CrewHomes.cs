@@ -33,13 +33,50 @@ namespace Bloodlines.Core
             if (location == null) { GameUtils.Notify("~y~Apartment location is missing."); return; }
             // Each penthouse occupies a different floor; no overlapping themes are loaded.
             string ipl = luxury ? (_crew.ActiveSlot == CrewSlot.Ice ? "apa_v_mp_h_01_a" : _crew.ActiveSlot == CrewSlot.Gohan ? "apa_v_mp_h_01_b" : "apa_v_mp_h_01_c") : null;
-            // Room-centre probes identify the requested floor when a doorway's
+            // Room-center probes identify the requested floor when a doorway's
             // coordinate lookup returns zero. Teleport still uses LocationBook.
             Vector3? probe = !luxury ? (Vector3?)null : _crew.ActiveSlot == CrewSlot.Ice
                 ? new Vector3(-787.7805f, 334.9232f, 215.8384f) : _crew.ActiveSlot == CrewSlot.Gohan
                 ? new Vector3(-773.2258f, 322.8252f, 194.8862f) : new Vector3(-787.7805f, 334.9232f, 186.1134f);
-            Apartment.Begin(location.Position, ipl, true, probe);
+            Apartment.Begin(location.Position, ipl, true, probe, location.Heading);
         }
+        /// <summary>The room survey, in walking order: the entry first, then the spots.</summary>
+        public static readonly string[] RoomSurveyKeys = { "Apartment.Starter.Interior", "Apartment.Room.Door", "Apartment.Room.Message", "Apartment.Room.Wardrobe", "Apartment.Room.Bed", "Apartment.Room.Locker" };
+        private static readonly string[] RoomSpots = { "Wardrobe", "Bed", "Locker", "Door" };
+        /// <summary>
+        /// A spot in the starter room once Ron has surveyed it on foot; null while it
+        /// is still a desk estimate, when it stays folded into the entry marker rather
+        /// than sending the player into a wall.
+        /// </summary>
+        public MissionLocation RoomSpot(string name)
+        {
+            if (LuxuryUnlocked) return null;
+            var spot = _locations.Get("Apartment.Room." + name);
+            return spot != null && spot.Status == LocationStatus.Surveyed ? spot : null;
+        }
+        public Action OpenWardrobe { get; set; }
+        private void UpdateRoomSpots(Ped player, bool atEntry)
+        {
+            foreach (var name in RoomSpots)
+            {
+                var spot = RoomSpot(name);
+                if (spot == null) continue;
+                GameUtils.DrawObjectiveMarker(spot.Position, Color.FromArgb(90, 100, 210, 160), 0.6f);
+                if (atEntry || !GameUtils.IsWithin(player.Position, spot.Position, 1.6f)) continue;
+                GameUtils.Subtitle("E / D-pad Right: " + RoomPrompt(name), 500);
+                if (!Game.IsControlJustPressed(GTA.Control.Context)) return;
+                switch (name)
+                {
+                    case "Wardrobe": (OpenWardrobe ?? OpenMenu)?.Invoke(); break;
+                    case "Bed": Rest(); break;
+                    case "Locker": RestockLocker(); break;
+                    default: ExitApartment(); break;
+                }
+                return;
+            }
+        }
+        private static string RoomPrompt(string name) =>
+            name == "Wardrobe" ? "wardrobe" : name == "Bed" ? "rest and save" : name == "Locker" ? "personal weapon locker" : "leave the apartment";
         public void ExitApartment() { if (Apartment.Inside && !Apartment.Busy) Apartment.Begin(Apartment.ExitPosition, null, false); }
         public void StopApartment() { Apartment.Cancel(); }
         public void UpdateTransition() { Apartment.Update(); }
@@ -95,13 +132,15 @@ namespace Bloodlines.Core
             if (player == null || !player.Exists() || player.IsDead) return;
             if (Apartment.Inside)
             {
-                // The same entry marker opens services and a clearly labelled exit.
+                // The same entry marker opens services and a clearly labeled exit.
                 GameUtils.DrawObjectiveMarker(Apartment.InteriorPosition, Color.FromArgb(110, 100, 210, 160));
-                if (GameUtils.IsWithin(player.Position, Apartment.InteriorPosition, 3f))
+                bool atEntry = GameUtils.IsWithin(player.Position, Apartment.InteriorPosition, 3f);
+                if (atEntry)
                 {
                     GameUtils.Subtitle("E / D-pad Right: apartment - wardrobe, rest, locker, exit.", 500);
                     if (Game.IsControlJustPressed(GTA.Control.Context)) OpenMenu?.Invoke();
                 }
+                UpdateRoomSpots(player, atEntry);
                 return;
             }
             foreach (var hero in Protagonist.All)
