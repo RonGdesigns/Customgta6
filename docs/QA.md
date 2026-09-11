@@ -78,6 +78,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 65 | **The meter** | Any hold or work | Name and a small yellow meter, no countdown text |
 | 66 | **Three starter rooms** | Enter each brother's home | A studio, a one-bedroom, a house; nobody shares a layout |
 | 67 | **The Diamond** | Preview the next residence past Eclipse, or finish M47 | Two floors, furnished; "Apartment: 16 entity set(s)" in the log |
+| 68 | **M09 unit** | Take the driver; hold E at the cab; land on the flat | The colonel shown leaving; the unit in Ice's hand; Gohan's read; a landed pickup; a burned escort fails |
+| 69 | **M10 stash to shop** | Start at the connector; deliver to Burro Heights | Both crates checked, the Buzzard shown, the window named, the truck stopped there by Ron's AI, the engines recorded at the shop |
+| 70 | **M11 shop** | Start; dyno; Berth 44 | The shop mid-work instead of a briefing; the meter on the dyno; Gohan at the window; the Granger shown |
 
 ## Before you launch: the static checks
 

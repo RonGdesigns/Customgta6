@@ -63,6 +63,10 @@
 > - Apartment tiers: each brother's starter room is its own interior (Ron's is the
 >   Forum Drive house), Eclipse Towers after M27, the two-floor Diamond penthouse
 >   after M47. Live-test items 91–93.
+> - M09, M10 and M11 are the sixth slice: the convoy seen and the colonel let go on
+>   camera, the unit in Ice's hand; the same crates from the stash to the shop with
+>   the gunship's window named; the shop mid-work and Berth 44 in the room. Live-test
+>   items 94–96.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

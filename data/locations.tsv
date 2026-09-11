@@ -60,6 +60,7 @@ M09.HeliSpawn	1520.00	3140.00	40.00	180	land	estimate	Grand Senora Desert
 M09.ConvoyStart	1180.00	2650.00	38.00	270	land	estimate	Grand Senora Desert
 M09.AmbushPoint	480.00	2760.00	42.00	270	land	estimate	Harmony
 M09.Bunker	1980.00	3050.00	46.00	90	land	estimate	Grand Senora Desert
+M09.Pickup	525.00	2740.00	42.00	270	land	estimate	Harmony
 M10.ConvoyStart	-1360.00	-620.00	27.00	30	land	estimate	Del Perro
 M10.BridgePoint	-1500.00	-800.00	25.00	60	land	estimate	Del Perro
 M10.TunnelMouth	120.00	-1880.00	25.00	120	land	estimate	Davis

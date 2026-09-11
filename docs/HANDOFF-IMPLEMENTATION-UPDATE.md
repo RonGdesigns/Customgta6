@@ -273,6 +273,12 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 92. **The Diamond.** With the dev menu on, from any home marker choose "Preview the next residence" twice across the tiers (or complete M47): the casino penthouse, two floors, furnished (bar, lounge, spa, cinema). If rooms are bare, quote the "Apartment: N entity set(s)" log line; a set name the engine does not know is silently ignored and needs correcting.
 93. **The luxury tier.** After M27 the home markers collapse to the Eclipse Towers door and each brother's penthouse is his own floor, as before.
 
+## The IFF, the truck, the shop (P3c: M09, M10, M11)
+
+94. **M09.** Start M09: three shots (the escort, Ice, the flat) with two lines; skip once. Fly the ridge, then as Ice take the driver: the truck stops, the other two pull away and the moment shows the colonel leaving. Hold E at the cab: the unit in Ice's hand as a scene, then Gohan's radio read. Land on the flat marker as Guess, board as Ice, fly to the drop. Blow the escort up instead: the job fails with the unit.
+95. **M10.** Start M10 from the connector marker: both crates on the flatbed. Hold E at the bed: the inspection. Roll out with Ice beside you; bikes; the Buzzard moment and "tunnel mouth" named; get the truck there, step out as Ice, kill it; lose the police, deliver to Burro Heights: the truck shuts down with both crates on it and stays.
+96. **M11.** Start M11: the shop mid-work, the flatbed with one crate, Gohan walking up; skip once. Mounts, dyno with the meter, then Gohan at the window with Berth 44 as a scene; skip once. The aftermath: Ice out, the Granger shown.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -285,8 +291,8 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
 - The room's spots are desk estimates until surveyed inside (items 76–77); the room map is the tool for laying them out.
-- M08's bed slots, forklift approach and stash are estimates; M09 showing the stashed crates and M10 collecting them are P3c.
-- P3 continues: M09–M11 (the IFF, the truck, the shop) and the first-window solos SM01–SM03 are not started; see the plan's P3 table.
+- M08's bed slots, forklift approach and stash are estimates; M09's pickup flat and M10's window are estimates.
+- P3 continues: the first-window solos SM01–SM03 (P3d) are not started; see the plan's P3 table.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
