@@ -95,6 +95,11 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 82 | **M20 hook** | Take off, clear the quay, hover, climb | The handoff cut; no duplicate lift, sub or container; the pod radio; the hook insert and heavy flight; the transfer scene with both in real seats |
 | 83 | **M21 escort** | Board, escort, breakwater, shore | The escort cut; boats and gate per M13/M15 said and felt; the split; the road transfer scene into the Granger |
 | 84 | **M22 bay** | Drop, land, regroup, replay | The arrivals cut; the drop insert; cargo recorded once; the strike learned from the phone and seen; the keys in Ron's hand then in the Granger; a replay leaves the ledger |
+| 85 | **M23 sage** | Survey, clear, bays, generator, walk | The survey scene; cover on the approach; a subtitle per bay; the generator scene; the four limits; safehouse endpoint |
+| 86 | **M24 gold** | Park, cable, ridge, board, deliver | The approach scene; cruisers by road, deputies out at the shore; the hoist scene; Gohan aboard before rolling; the unload scene; first portion recorded |
+| 87 | **M25 canyon** | Deck, tanker, waves, jump, board | The approach scene with the boat running; the escape scene before the jump; Ron's radio on the way down |
+| 88 | **M26 scramble** | Take off, kill, listen, kill, park | The approach scene with the parked Lazer and the Duster; the listen and the call sign; early kill fails; the park scene |
+| 89 | **M27 flight** | Board, match, transfer, ledger, bail, boat | Ice in the Duster's second seat; the transfer cut; the case in hand; Ron home on his own route; the case in the boat |
 
 ## Before you launch: the static checks
 

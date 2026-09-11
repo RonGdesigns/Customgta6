@@ -380,10 +380,11 @@ Prerequisite: M22. Retry: full mission restart.
 | 2 | Ice | **Clear the radar yard** — KillTargetsObjective: Clear the cartel squatters out. |
 | 3 | Guess | **Secure the bays** — MultiHoldObjective: Guess — check the three storage bays. |
 | 4 | Gohan | **Power up** — MissionInteraction: Gohan — bring the marked generator online. |
+| 5 | Gohan | **Walk the yard** — ReachZoneObjective: Walk the yard to the bunker door. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.BayOne, M23.BayThree, M23.BayTwo, M23.BunkerDoor, M23.DomeApproach, M23.Generator.
+Survey references: M23.BayOne, M23.BayThree, M23.BayTwo, M23.BunkerDoor, M23.DomeApproach, M23.Generator, M23.SecondExit.
 
 ## M24 — LIQUID GOLD
 
@@ -393,11 +394,12 @@ Prerequisite: M23. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Into the shallows** — DeliverVehicleObjective: Guess — park the recovery truck at the dry shoreline marker. |
 | 2 | Ice | **Dredge the crates** — AssignedWorkObjective: Guess works the recovery cable. Ice: cover him from the ridge.<br>SurviveWavesObjective: Ice — keep the deputies off the haul. |
-| 3 | Guess | **Back to the bunker** — DeliverVehicleObjective: Get the haul to the radar base. |
+| 3 | Ice | **Gohan aboard** — ConditionObjective: Gohan is boarding the truck. Hold here until he is in. |
+| 4 | Guess | **Back to the bunker** — DeliverVehicleObjective: Get the haul to the radar base. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.BunkerDoor, M24.CraneSpawn, M24.RidgeLine.
+Survey references: M22.AlamoDrop, M23.BayOne, M23.BunkerDoor, M24.CraneSpawn, M24.RidgeLine, M24.RidgeRoad.
 
 ## M25 — BOUNTY HUNTERS' CANYON
 
@@ -413,7 +415,7 @@ Prerequisite: M24. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M25.BridgeDeck, M25.Riverbed, M25.TankerSpot.
+Survey references: M25.BridgeDeck, M25.DeckApproach, M25.RimPost, M25.Riverbed, M25.TankerSpot.
 
 ## M26 — THE ALAMO SCRAMBLE
 
@@ -423,12 +425,13 @@ Prerequisite: M25. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Scramble** — EnterVehicleObjective: Guess — take off in the marked Lazer. |
 | 2 | Guess | **First spotter** — DestroyVehicleObjective: Splash the lead spotter. |
-| 3 | Guess | **Second spotter** — DestroyVehicleObjective: The second one is diving for Grapeseed — kill him. |
-| 4 | Guess | **Home** — DeliverVehicleObjective: Guess: land the Lazer at McKenzie and stop. |
+| 3 | Guess | **The charter** — ConditionObjective: Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic. |
+| 4 | Guess | **Second spotter** — DestroyVehicleObjective: The second one is diving for Grapeseed — kill him. |
+| 5 | Guess | **Home** — DeliverVehicleObjective: Guess: land the Lazer at McKenzie and stop. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M26.DusterPad, M26.PatrolBox.
+Survey references: M14.McKenzieHangar, M26.DusterPad, M26.PatrolBox.
 
 ## M27 — FLIGHT RISK
 
@@ -436,9 +439,9 @@ Prerequisite: M26. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Get on his rudder** — EnterVehicleObjective: Guess — take the stunt plane up. |
+| 1 | Guess | **Get on his rudder** — EnterVehicleObjective: Guess — take the Duster up with Ice in the second seat. |
 | 2 | Guess | **Match the Shamal** — ShadowTargetObjective: Climb to the Shamal and hold station inside 60 meters. |
-| 3 | Ice | **Zero-G** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
+| 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
 | 5 | Ice | **Sea pickup** — EnterVehicleObjective: Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy. |
 
