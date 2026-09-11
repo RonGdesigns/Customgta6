@@ -48,6 +48,8 @@
 >   has named spots that appear once you survey them inside, and the dev menu can
 >   write a floor map of it. A start from the mission menu begins at the job's
 >   marker. Live-test items 75–78.
+> - Helicopters fly stock again: no ceiling, no cruise push, no handling edit.
+>   Live-test item 79.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

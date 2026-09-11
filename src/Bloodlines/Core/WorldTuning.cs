@@ -80,6 +80,9 @@ namespace Bloodlines.Core
 
         private void Register(Vehicle car, CrewRoster crew)
         {
+                // Helicopters fly stock (Ron, September 10: the tuned rotorcraft was
+                // "just horrible"). No ceiling, no cruise force, no handling edits.
+                if (car.Model.IsHelicopter) return;
                 var handling = car.HandlingData;
                 if (handling == null || !handling.IsValid) return;
                 var address = handling.MemoryAddress;
@@ -129,15 +132,6 @@ namespace Bloodlines.Core
             if (target <= current) return target;
             return Math.Min(target, current + .2f * Math.Max(0f, Math.Min(.1f, seconds)));
         }
-        /// <summary>Helicopter cruise assist, m/s² along the nose. Zero until 8 m/s; capped at 3.</summary>
-        public const float HeliCruiseCap = 3f;
-        public static float HeliCruise(float forwardSpeed, float power)
-        {
-            if (forwardSpeed < 8f || float.IsNaN(forwardSpeed) || power <= 1f) return 0f;
-            // Follow the same ramp the road torque uses: 1.0..1.8 maps to 0..cap.
-            return HeliCruiseCap * Math.Max(0f, Math.Min(1f, (power - 1f) / .8f));
-        }
-
         public static bool CanAssist(Vehicle vehicle)
         {
             if(vehicle.IsDead||!vehicle.IsDriveable||(!vehicle.IsEngineRunning&&!vehicle.Model.IsBicycle))return false;
@@ -169,16 +163,6 @@ namespace Bloodlines.Core
                 float power = RampPower(_power[pair.Key], target, Game.LastFrameTime);
                 _power[pair.Key] = power;
                 Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car, power);
-                // Rotors do not answer the torque native. A helicopter in forward
-                // flight gets a bounded push along its nose instead; hover, takeoff
-                // and landing sit below the speed floor and get nothing.
-                if (car.Model.IsHelicopter && CanAssist(car))
-                {
-                    var velocity = car.Velocity; var forward = car.ForwardVector;
-                    float forwardSpeed = velocity.X * forward.X + velocity.Y * forward.Y + velocity.Z * forward.Z;
-                    float assist = HeliCruise(forwardSpeed, power);
-                    if (assist > 0.01f) car.ApplyForce(forward * assist, GTA.Math.Vector3.Zero, ForceType.MaxForceRot2);
-                }
             }
         }
         /// <summary>

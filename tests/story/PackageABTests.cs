@@ -66,16 +66,16 @@ public static partial class StoryTests
   var ride=Car(VehicleClass.Sedans);var ice=crew.PedFor(CrewSlot.Ice);ice.SetIntoVehicle(ride,VehicleSeat.Driver);guess.SetIntoVehicle(ride,VehicleSeat.RightFront);reflex.Activate(guess);reflex.Update(guess);
   Check(reflex.Vehicle==null&&ride.Forces==0,"A passenger gets no overlay");reflex.Deactivate(guess);
 
-  // ---- B3. Helicopter cruise assist and the adapter report.
-  Check(WorldTuning.HeliCruise(5f,1.8f)==0f&&WorldTuning.HeliCruise(20f,1f)==0f&&Math.Abs(WorldTuning.HeliCruise(30f,1.8f)-3f)<1e-4&&WorldTuning.HeliCruise(30f,1.4f)>1.4f&&WorldTuning.HeliCruise(30f,1.4f)<1.6f,"Cruise assist is zero below the speed floor or without ramped power, and capped at 3 m/s2");
+  // ---- B3. Helicopters fly stock (Ron, September 10); the adapter report for planes.
+  Check(!System.IO.File.ReadAllText(System.IO.Path.Combine(Repo,"src","Bloodlines","Core","WorldTuning.cs")).Contains("HeliCruise"),"The helicopter cruise assist is gone");
   Reset();crew=Roster();tuning=new WorldTuning();var buzzard=new Vehicle{Model=new Model("supervolito"),DisplayName="buzzard",IsInAir=true,IsEngineRunning=true,Velocity=new Vector3(0,50,0),ForwardVector=new Vector3(0,1,0)};World.Vehicles.Add(buzzard);
   Game.LastFrameTime=.1f;tuning.Update(crew);for(int i=0;i<60;i++){Game.GameTime+=100;tuning.Update(crew);}
-  Check(buzzard.Forces>0&&buzzard.LastForce.Y>0&&buzzard.LastForce.Z==0,"An airborne helicopter in forward flight is pushed along its nose");
+  Check(buzzard.Forces==0&&!GTA.Native.Function.Calls.Any(c=>c.Item1==GTA.Native.Hash.SET_VEHICLE_MAX_SPEED&&c.Item2[0]==buzzard),"An airborne helicopter in forward flight is left stock: no push, no ceiling");
   buzzard.IsInAir=false;buzzard.Forces=0;for(int i=0;i<5;i++){Game.GameTime+=100;tuning.Update(crew);}
   Check(buzzard.Forces==0,"On the ground the helicopter gets no push");
-  var adapter=new TravelHandling();adapter.Apply(new HandlingData(),new Model("supervolito"));
+  var adapter=new TravelHandling();adapter.Apply(new HandlingData(),new Model("supervolito"){IsHelicopter=false,IsPlane=true});
   Check(adapter.Report.StartsWith("flight handling:")&&(adapter.Report.Contains("->")||adapter.Report.Contains("unsupported")),"The adapter says what it found and applied instead of staying silent");
-  var noFlight=new HandlingData{FlyingHandlingData=null};var silent=new TravelHandling();silent.Apply(noFlight,new Model("supervolito"));
+  var noFlight=new HandlingData{FlyingHandlingData=null};var silent=new TravelHandling();silent.Apply(noFlight,new Model("supervolito"){IsHelicopter=false,IsPlane=true});
   Check(silent.Report.Contains("unsupported on this runtime"),"A runtime without the flight handling type is reported as unsupported");
 
   // ---- A1. Briefing cast: no crew deployed -> temporary heroes, story ped hidden, no radio framing.

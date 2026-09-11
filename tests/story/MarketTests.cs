@@ -54,13 +54,13 @@ public static partial class StoryTests
   var sub=new Vehicle{Model=new Model("sub"){IsCar=false,IsSubmarine=true},IsEngineRunning=true,IsInWater=true};
   var train=new Vehicle{Model=new Model("train"){IsCar=false,IsTrain=true},IsEngineRunning=true};
   World.Vehicles.AddRange(new[]{plane,boat,heli,bike,sub,train});tune.Update(crew);
-  Check(Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED&&(float)c.Item2[1]==120f)==6,"Air, water, bikes, submarines and trains enter the doubled-ceiling system");
+  Check(Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED&&(float)c.Item2[1]==120f)==5,"Planes, boats, bikes, submarines and trains enter the doubled-ceiling system; helicopters stay stock");
   Check(plane.HandlingData.InitialDriveMaxFlatVelocity==60&&boat.HandlingData.InitialDriveMaxFlatVelocity==60&&bike.HandlingData.InitialDriveMaxFlatVelocity==120,"Aircraft and boats never receive car gearing edits");
   Check(plane.HandlingData.FlyingHandlingData.ThrustFallOff==.5f&&plane.HandlingData.FlyingHandlingData.VectorSpeedResistance==new Vector3(2,2,6),"Flight adapter reduces longitudinal losses while preserving lateral and vertical damping");
   Check(boat.HandlingData.BoatHandlingData.DragCoefficient==5f,"Marine adapter adjusts water resistance through the runtime public API");
   Game.LastFrameTime=.1f;for(int i=0;i<25;i++){Game.GameTime+=100;tune.Update(crew);}
   Check((float)Function.Calls.Last(c=>c.Item1==Hash.SET_VEHICLE_CHEAT_POWER_INCREASE&&c.Item2[0]==plane).Item2[1]>1.4f,"Airborne forward flight receives gradual cruise power");
-  Check((float)Function.Calls.Last(c=>c.Item1==Hash.SET_VEHICLE_CHEAT_POWER_INCREASE&&c.Item2[0]==heli).Item2[1]==1f,"Hovering helicopter receives no extra power");
+  Check(!Function.Calls.Any(c=>(c.Item1==Hash.SET_VEHICLE_CHEAT_POWER_INCREASE||c.Item1==Hash.SET_VEHICLE_MAX_SPEED)&&c.Item2[0]==heli)&&heli.HandlingData.FlyingHandlingData.ThrustFallOff==1f,"A helicopter is left stock: no power, no ceiling, no flight handling edit");
   plane.IsInAir=false;boat.IsInWater=false;Check(!WorldTuning.CanAssist(plane)&&!WorldTuning.CanAssist(boat),"Taxiing aircraft and beached boats do not receive cruise power");
   Check(boat.HandlingData.BoatHandlingData.DragCoefficient==5f,"Repeated marine scans do not compound resistance reduction");
   tune.Reset();Check(plane.HandlingData.FlyingHandlingData.ThrustFallOff==1f&&plane.HandlingData.FlyingHandlingData.VectorSpeedResistance==new Vector3(2,4,6)&&boat.HandlingData.BoatHandlingData.DragCoefficient==10f,"Stand-down restores aircraft and marine handling");

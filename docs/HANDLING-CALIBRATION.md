@@ -10,7 +10,7 @@ first, without the ability; Guess's ability is a layer on top.
 | --- | --- | --- |
 | Baseline road profile | `Core/RoadHandling.cs`, applied by `WorldTuning` once per model | Per class: traction curve up, traction loss down, suspension damping up, center of mass lowered, brake force up, yaw inertia up. Restored on stand-down where still ours. |
 | Guess overlay | `Abilities/SlipstreamReflex.cs` | On his car only, while on all wheels: a bounded press toward the road (a constant 0.25 g of weight plus downforce growing with speed squared to a 0.6 g cap, applied as force because the SDK has no per-vehicle gravity), and a +20% grip lift on the model's shared traction. The press blends in and out over half a second. Never on aircraft or boats. |
-| Aircraft | `Core/TravelHandling.cs`, `Core/WorldTuning.cs` | The flight-handling adapter now logs found / unsupported per model. Helicopters get a bounded forward cruise assist through the force API when airborne above 8 m/s, ramped like road torque. Hover, takeoff and landing untouched. |
+| Aircraft | `Core/TravelHandling.cs`, `Core/WorldTuning.cs` | The flight-handling adapter now logs found / unsupported per model. Helicopters fly stock since September 10: no ceiling, no cruise force, no handling edit. |
 | Readout | `DevTools.cs` | Top-right: X, Y, Z, heading, and speed in km/h and mph when in a vehicle. |
 
 ## Opening values (not final)
