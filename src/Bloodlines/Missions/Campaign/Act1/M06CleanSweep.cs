@@ -36,6 +36,8 @@ namespace Bloodlines.Missions.Campaign
         private int _fire = -1;
 
         private Vehicle _granger;
+        private Prop _feederPanel, _rackBench;
+        private readonly List<Prop> _rackCases = new List<Prop>();
         private RoleTracks _roles;
         private Vector3 _culvert;
         private Vector3 _feeder;
@@ -48,6 +50,9 @@ namespace Bloodlines.Missions.Campaign
         public override string Title => "Clean Sweep";
 
         public Vehicle Granger => _granger;
+        public Prop FeederPanel => _feederPanel;
+        public Prop RackBench => _rackBench;
+        public IReadOnlyList<Prop> RackCases => _rackCases;
         public RoleTracks Roles => _roles;
         public bool PickupCalled => _pickupCalled;
         public bool FireBurning => _fire >= 0;
@@ -57,9 +62,12 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!MissionSites.Ground(Ctx.Locations, "M06.Culvert", "M06.Feeder", "M06.SallyPort", "M06.ServerRacks", "M06.AlleyHold", "M06.GrangerSpawn")) return false;
             _culvert = Ctx.Locations.Position("M06.Culvert");
-            _feeder = Ctx.Locations.Position("M06.Feeder");
+            // Gohan's two work points off the street (Ron, September 11: he stood in
+            // the middle of the road): the sidewalk nearest each estimate, with a real
+            // thing at each to work on.
+            _feeder = OffStreet(Ctx.Locations.Position("M06.Feeder"));
             _sallyPort = Ctx.Locations.Position("M06.SallyPort");
-            _racks = Ctx.Locations.Position("M06.ServerRacks");
+            _racks = OffStreet(Ctx.Locations.Position("M06.ServerRacks"));
             _alley = Ctx.Locations.Position("M06.AlleyHold");
             // The crew's actual exit: the alley mouth on the Granger's side, where
             // Ron brings the truck once the rotors are over the roof.
@@ -76,6 +84,7 @@ namespace Bloodlines.Missions.Campaign
 
             ApplyBibleSetting();
             SpawnGranger();
+            SpawnWorkProps();
             if (_granger == null || !_granger.Exists()) return false;
             Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_granger, VehicleSeat.Driver);
             _roles = new RoleTracks(Ctx.Crew, () => _swat);
@@ -122,6 +131,8 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context =>
                 {
+                    // The truck is the crew's from here: it can be lost again.
+                    if (_granger != null && _granger.Exists()) _granger.IsInvincible = false;
                     _roles.Release();
                     context.Crew.CompanionAI.ReleaseAll();
                     context.Crew.CompanionsHoldPosition = false;
@@ -168,6 +179,67 @@ namespace Bloodlines.Missions.Campaign
             guess.Task.DriveTo(_granger, _pickup, 6f, 12f, DrivingStyle.Normal);
         }
 
+        /// <summary>
+        /// A place a trooper can stand: the navmesh's nearest walkable point to the
+        /// offset, then the sidewalk, then a step toward the alley (Ron, September 11:
+        /// one spawned inside a wall). Never the raw offset when the map has an answer.
+        /// </summary>
+        private Vector3 StreetPost(Vector3 wanted)
+        {
+            var safe = World.GetSafeCoordForPed(wanted, false, 0);
+            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 20f)) return safe;
+            safe = World.GetSafeCoordForPed(wanted, true, 16);
+            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 25f)) return safe;
+            var toward = _alley - wanted; toward.Z = 0f;
+            float run = (float)Math.Sqrt(toward.X * toward.X + toward.Y * toward.Y);
+            if (run > 1f)
+            {
+                var closer = wanted + toward * (10f / run);
+                safe = World.GetSafeCoordForPed(closer, false, 0);
+                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, closer, 20f)) return safe;
+            }
+            Logger.Warn("M06: no walkable point near a SWAT spawn at " + wanted + "; using it as is.");
+            return wanted;
+        }
+
+        /// <summary>The sidewalk nearest an estimated work point, so the work is not done in the road; the point itself when none is close.</summary>
+        private static Vector3 OffStreet(Vector3 point)
+        {
+            var side = World.GetSafeCoordForPed(point, true, 16);
+            return side != Vector3.Zero && GameUtils.IsWithinFlat(side, point, 25f) ? side : point;
+        }
+
+        /// <summary>A feeder panel at the cut and the backup array on a bench at the racks: things Gohan works on, not marks in the street.</summary>
+        private void SpawnWorkProps()
+        {
+            var panelModel = new Model("prop_ld_case_01");
+            if (GameUtils.RequestModel(panelModel))
+            {
+                _feederPanel = Track(World.CreateProp(panelModel, _feeder + new Vector3(0.7f, 0.4f, 0f), false, true));
+                panelModel.MarkAsNoLongerNeeded();
+                if (_feederPanel != null && _feederPanel.Exists()) { _feederPanel.IsPersistent = true; _feederPanel.IsPositionFrozen = true; }
+            }
+            var benchModel = new Model("prop_table_03");
+            var caseModel = new Model("prop_ld_case_01");
+            if (!GameUtils.RequestModel(benchModel) || !GameUtils.RequestModel(caseModel)) return;
+            _rackBench = Track(World.CreateProp(benchModel, _racks + new Vector3(0f, 1.2f, 0f), false, true));
+            benchModel.MarkAsNoLongerNeeded();
+            if (_rackBench != null && _rackBench.Exists())
+            {
+                _rackBench.IsPersistent = true; _rackBench.IsPositionFrozen = true;
+                for (int i = 0; i < 2; i++)
+                {
+                    var box = Track(World.CreateProp(caseModel, _rackBench.Position + new Vector3(0f, 0f, 1f), false, false));
+                    if (box == null || !box.Exists()) continue;
+                    box.IsPersistent = true;
+                    StowPropStep.Stow(box, _rackBench, new Vector3(i == 0 ? -0.35f : 0.35f, 0f, 0.8f));
+                    _rackCases.Add(box);
+                }
+            }
+            caseModel.MarkAsNoLongerNeeded();
+            Logger.Info("M06 work points: feeder panel at " + _feeder + ", backup bench at " + _racks + ".");
+        }
+
         /// <summary>The racks are slag: a real fire where the work was, and the record's destruction on the books.</summary>
         private void RacksBurned()
         {
@@ -211,7 +283,8 @@ namespace Bloodlines.Missions.Campaign
             for (int i = 0; i < count; i++)
             {
                 var offset = new Vector3(-8f + i * 3f, 22f + (i % 2) * 5f, 0f);
-                var trooper = World.CreatePed(model, _alley + offset, 180f);
+                var post = StreetPost(_alley + offset);
+                var trooper = World.CreatePed(model, post, DriveUpStep.HeadingBetween(post, _alley));
                 if (trooper == null || !trooper.Exists()) continue;
 
                 trooper.RelationshipGroup = police;
@@ -251,7 +324,10 @@ namespace Bloodlines.Missions.Campaign
         private void SpawnGranger()
         {
             // The crew's own Granger, customized as they left it; the M11 package goes on top.
+            // Staged away from the depot, on a road node (Ron, September 11: it was lost
+            // at the alley before the pickup), and protected until the crew boards it.
             var spot = Ctx.Locations.Position("M06.GrangerSpawn"); float heading = Ctx.Locations.Heading("M06.GrangerSpawn");
+            if (GameUtils.NearestRoadNode(spot, 40f, out var node, out float nodeHeading)) { spot = node; heading = nodeHeading; }
             Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, heading) : null;
             if (granger == null)
             {
@@ -265,6 +341,10 @@ namespace Bloodlines.Missions.Campaign
 
             _granger.IsPersistent = true;
             _granger.IsEngineRunning = false;
+            _granger.IsInvincible = true;
+            float standoff = _granger.Position.DistanceTo(_alley);
+            if (standoff < 150f) Logger.Warn("M06: the Granger is staged only " + standoff.ToString("0") + " m from the alley; move M06.GrangerSpawn farther out.");
+            else Logger.Info("M06: the Granger staged " + standoff.ToString("0") + " m from the alley, protected until the crew boards.");
 
             var blip = Track(_granger.AddBlip());
             blip.Sprite = BlipSprite.PersonalVehicleCar;
@@ -275,8 +355,10 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _roles?.Release();
+            if (_granger != null && _granger.Exists()) _granger.IsInvincible = false;
             if (_fire >= 0) { Function.Call(Hash.REMOVE_SCRIPT_FIRE, _fire); _fire = -1; }
             _swat.Clear();
+            _rackCases.Clear();
             _insertions.Clear();
         }
     }

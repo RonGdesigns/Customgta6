@@ -32,10 +32,10 @@ M05.Sandbar	2560.0	-1120.0	0.0	0	water	estimate	Palomino Highlands Shoreline
 M05.DinghySpawn	2420.0	-1040.0	0.0	0	water	estimate	Palomino Highlands Shoreline
 M06.Culvert	-1180.0	-1350.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
 M06.Feeder	-1160.0	-1330.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
-M06.SallyPort	-1140.0	-1300.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.SallyPort	-1170.28	-1276.46	5.57	283.4	land	surveyed	Vespucci Canals LSPD Depot
 M06.ServerRacks	-1128.0	-1290.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
 M06.AlleyHold	-1150.0	-1275.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
-M06.GrangerSpawn	-1168.0	-1262.0	5.0	90	land	estimate	Vespucci Canals LSPD Depot
+M06.GrangerSpawn	-1420.0	-1240.0	4.0	90	land	estimate	Vespucci Beach, staged away from the depot
 M07.GarageRoof	-720.0	-60.0	55.0	0	land	estimate	Rockford Hills / Pillbox
 M07.MastTop	-724.0	-64.0	56.5	0	land	estimate	Rockford Hills / Pillbox
 M07.LandingZone	-1030.0	-430.0	36.0	0	land	estimate	Rockford Hills / Pillbox

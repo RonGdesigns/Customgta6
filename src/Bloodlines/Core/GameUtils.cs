@@ -48,6 +48,21 @@ namespace Bloodlines.Core
             }
         }
 
+        /// <summary>
+        /// The nearest road node to a point, within a bound: a road node is never in
+        /// a wall, which an estimated key can be. False when none is close enough.
+        /// </summary>
+        public static bool NearestRoadNode(Vector3 near, float maxDistance, out Vector3 point, out float heading)
+        {
+            point = near; heading = 0f;
+            var node = new OutputArgument(); var nodeHeading = new OutputArgument();
+            if (!Function.Call<bool>(Hash.GET_CLOSEST_VEHICLE_NODE_WITH_HEADING, near.X, near.Y, near.Z, node, nodeHeading, 1, 3f, 0f)) return false;
+            var found = node.GetResult<Vector3>();
+            if (found.DistanceTo(near) > maxDistance) return false;
+            point = found; heading = nodeHeading.GetResult<float>();
+            return true;
+        }
+
         private sealed class HeldVehicle { public Vehicle Vehicle; public int Until; }
         private static readonly System.Collections.Generic.List<HeldVehicle> Held = new System.Collections.Generic.List<HeldVehicle>();
 

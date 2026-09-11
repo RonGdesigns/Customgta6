@@ -321,6 +321,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 
 117. **M05.** Start M05: the log has "M05 dinghy on the water at ..." and, if the estimate was on land, "Water key M05.DinghySpawn resolved N m from its estimate". The dinghy floats with Ron at the wheel and Gohan beside him; the log says if either had to be warped in. The generator crew stands at the cave mouth on the shore below the cliff (the log gives the first post), not on the road. If the coast has no water deep enough within 250 m the mission refuses with "No water deep enough at <key>"; survey the coast key with F11 and retry.
 118. **Start cars.** Start M04 (and M03): the crew van and Ron's car no longer sink through the ground and pop back up. If the ground was not loaded at spawn the log has "Holding a fresh ..." and then "Ground loaded under ..."; the car sits still for that moment.
+119. **M06.** Start M06: the marker and Ron's Granger are at Vespucci Beach, well away from the depot (the log gives the standoff). Gohan cuts a real panel on the sidewalk and, during the burn, works at a bench with two cases on it, not in the road. Ice's entrance marker is at the surveyed alley point. When the rotors come, Ron's truck drives in (or you do) and cannot be destroyed until the boarding stage opens at the alley mouth; from then it can. No SWAT trooper stands in a wall; a spawn with no walkable point near it is logged.
 
 ## Not done in this pass
 

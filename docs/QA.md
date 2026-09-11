@@ -103,6 +103,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 90 | **M03 ambush** | Junction, yard, load, return, joint fight, ride | Truck on the road; four dogs attack; red markers on the block; the depot answers after loading; locked to Ron until close, then free switching; Ice rides with Ron |
 | 91 | **M05 water** | Start, look at the boat and the crew | The dinghy floats with Ron and Gohan aboard; the generator crew at the cave mouth on the shore; no boat on the road; a refusal names the key |
 | 92 | **Start cars** | Start M04 and M03, watch the van and Ron's car | Neither sinks through the ground; a held car is logged and released onto the ground |
+| 93 | **M06 places** | Start, cut, burn, pickup | Panel and bench off the road; Ice's entrance at the surveyed point; Granger staged far off and safe until boarded; no trooper in a wall |
 
 ## Before you launch: the static checks
 

@@ -663,13 +663,8 @@ namespace Bloodlines.Missions.Campaign
             var authored = Ctx.Locations.Position("M03.HaulerSpawn");
             float heading = Ctx.Locations.Heading("M03.HaulerSpawn");
             var spot = authored;
-            var node = new OutputArgument(); var nodeHeading = new OutputArgument();
-            if (Function.Call<bool>(Hash.GET_CLOSEST_VEHICLE_NODE_WITH_HEADING, authored.X, authored.Y, authored.Z, node, nodeHeading, 1, 3f, 0f))
-            {
-                var found = node.GetResult<Vector3>();
-                if (found.DistanceTo(authored) <= 40f) { spot = found; heading = nodeHeading.GetResult<float>(); }
-                else Logger.Warn("M03: the nearest road node is " + found.DistanceTo(authored).ToString("0") + " m from M03.HaulerSpawn; the key is used as authored.");
-            }
+            if (GameUtils.NearestRoadNode(authored, 40f, out var node, out float nodeHeading)) { spot = node; heading = nodeHeading; }
+            else Logger.Warn("M03: no road node within 40 m of M03.HaulerSpawn; the key is used as authored.");
             _hauler = Track(World.CreateVehicle(model, spot, heading));
             model.MarkAsNoLongerNeeded();
             if (_hauler == null || !_hauler.Exists()) return;
