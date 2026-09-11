@@ -67,6 +67,10 @@
 >   camera, the unit in Ice's hand; the same crates from the stash to the shop with
 >   the gunship's window named; the shop mid-work and Berth 44 in the room. Live-test
 >   items 94–96.
+> - SM01, SM02 and SM03 are the seventh slice, the first solo window: the shipment,
+>   the annex and the grid seen first; the broker kept alive; the tap and the trace
+>   clock; the prize driven to the chop bay; every reward said as it works. Live-test
+>   items 97–99.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

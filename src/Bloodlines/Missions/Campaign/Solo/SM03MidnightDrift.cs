@@ -15,8 +15,14 @@ namespace Bloodlines.Missions.Campaign
     /// pull guns once they lose. Slipstream Reflex is the intended way to hold the
     /// hairpins, so the meter starts full.
     ///
-    /// The last stage is deliberately either/or: shake the shooters or cross the line
-    /// first. A race that can only be won by killing everyone is not a race.
+    /// Seen, not told: KJ walking the prize and the coupe before the grid, with the
+    /// warning about the racers said out loud; the rivals' guns shown as a change of
+    /// plan after a legitimate result, not confused with losing; the prize driven to
+    /// the chop bay, where it becomes the crew's next transmission, and KJ checked
+    /// in with over the phone. KJ is a contact, outside the combat path.
+    ///
+    /// The ambush stage is deliberately either/or: shake the shooters or cross the
+    /// line first. A race that can only be won by killing everyone is not a race.
     /// </summary>
     public sealed class SM03MidnightDrift : ComposedMission
     {
@@ -25,18 +31,30 @@ namespace Bloodlines.Missions.Campaign
 
         private Ped _kj;
         private Vehicle _coupe;
+        private Prop _prize;
         private readonly int[] _rivalCheckpoint = new int[2];
         private readonly int[] _rivalLaps = new int[2];
         private Vector3 _start;
+        private Vector3 _bay;
         private List<Vector3> _circuit;
+        private bool _gunsShown, _gunsCalled, _prizeHome;
 
         public override string Id => "SM03";
         public override string Title => "Midnight Drift";
+        protected override MissionEndpoint Endpoint => MissionEndpoint.SafehouseArrival;
+
+        public Ped KJ => _kj;
+        public Vehicle Coupe => _coupe;
+        public Prop Prize => _prize;
+        public bool GunsShown => _gunsShown;
+        public bool PrizeHome => _prizeHome;
 
         protected override bool Setup()
         {
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            if (!MissionSites.Ground(Ctx.Locations, "M11.ChopShop")) return false;
             _start = Ctx.Locations.Position("SM03.StartLine");
+            _bay = Ctx.Locations.Position("M11.ChopShop");
             _circuit = new List<Vector3>
             {
                 Ctx.Locations.Position("SM03.Checkpoint1"),
@@ -57,7 +75,10 @@ namespace Bloodlines.Missions.Campaign
             if (!SpawnCoupe()) return false;
             SpawnKJ();
             SpawnRivals();
-            return _kj != null && _kj.Exists() && _rivals.Count == 2;
+            SpawnPrize();
+            if (_kj == null || !_kj.Exists() || _rivals.Count != 2) return false;
+            PlayApproach();
+            return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -65,7 +86,6 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Starting line",
                     new EnterVehicleObjective("Get in the drift coupe.", () => _coupe, VehicleSeat.Driver))
                 .PlayedBy(CrewSlot.Guess)
-                
                 .WithCues("SM03_S1_01_GUESS");
 
             yield return new MissionStage("Three laps",
@@ -75,33 +95,101 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(context => StartRivals())
                 .WithCues("SM03_S1_02_GUESS");
 
+            // A legitimate result first; then the guns, shown as the change of plan.
             yield return new MissionStage("They pulled guns",
                     new KillTargetsObjective("Stop the marked shooters OR drive the coupe to the yellow finish marker.", () => _rivals),
                     new DeliverVehicleObjective("Escape in the drift coupe to the marked finish, or stop the shooters.", () => _coupe, () => _start, 15f),
-                    new ProtectObjective("", () => _coupe, "The coupe is wrecked."))
+                    new ProtectObjective("", () => _coupe, "The coupe is wrecked."),
+                    new ReactionTrigger(() => !_gunsShown && !Ctx.Cutscenes.IsActive, ShowGuns),
+                    new ReactionTrigger(() => _gunsShown && !_gunsCalled && !Ctx.Cutscenes.IsActive, CallGuns))
                 .AnyOf()
                 .PlayedBy(CrewSlot.Guess)
-                
-                .OnEnter(context =>
-                {
-                    foreach (var rival in _rivals)
-                    {
-                        if (rival == null || !rival.Exists()) continue;
-                        rival.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
-                        rival.Task.VehicleShootAtPed(Game.Player.Character);
-                    }
-                })
-                .OnExit(context =>
-                {
-                    // The bible's payout: the pink slip plus the transmission and clutch
-                    // the crew's getaway fleet is waiting on.
-                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    GameUtils.Subtitle("~g~Pink slip and the racing transmission are yours.", 5000);
-                })
-                .WithCues("SM03_S2_03_ENEMY", "SM03_S2_04_GUESS")
+                .OnEnter(context => ArmRivals());
+
+            // The prize is earned, then delivered: the chop bay is where it becomes the crew's.
+            yield return new MissionStage("The chop bay",
+                    new DeliverVehicleObjective("Guess: drive the coupe and the prize to the Burro Heights chop bay.", () => _coupe, () => _bay, 25f),
+                    new ProtectObjective("", () => _coupe, "The coupe is wrecked with the prize in it."))
+                .PlayedBy(CrewSlot.Guess)
+                .OnExit(context => PrizeDelivered())
                 .AfterCues("SM03_S2_05_GUESS");
         }
+
+        // ---------- beats ----------
+
+        /// <summary>KJ walks the prize and the coupe; the rivals' Elegys on the grid; the warning said before the start.</summary>
+        private void PlayApproach()
+        {
+            var blocking = new SceneBlocking();
+            if (_kj != null && _kj.Exists() && _coupe != null && _coupe.Exists())
+            {
+                blocking.Then(new WalkToStep(_kj, _coupe.Position - _coupe.ForwardVector * 3.2f, 1.0f))
+                    .Then(_prize != null && _prize.Exists() ? new InspectStep(_kj, _prize.Position, 2600) : (SceneStep)new WaitStep(2600, _kj))
+                    .Then(new WalkToStep(_kj, _coupe.Position + new Vector3(2.4f, 0f, 0f), 1.0f))
+                    .Then(ShotStep.Watching(2600, _kj, _coupe));
+            }
+            if (_rivalCars.Count > 0 && _rivalCars[0].Exists())
+                blocking.Then(new ShotStep(3000, _rivalCars[0], new Vector3(-5f, 4f, 1.6f), _rivalCars[0], new Vector3(0f, 0f, 0.7f), 0.8f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "approach", Title = "The grid",
+                Reason = "KJ walks the prize crate on the coupe's tail and the coupe itself, and looks at the two tuned Elegys on the grid. The prize is real; the drivers are not clean. KJ stays off the grid.",
+                Blocking = blocking
+            }.With("KJ", _kj);
+            if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("SM03 approach scene did not play; the grid stands on its own.");
+        }
+
+        private void ArmRivals()
+        {
+            foreach (var rival in _rivals)
+            {
+                if (rival == null || !rival.Exists()) continue;
+                rival.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+                rival.Task.VehicleShootAtPed(Game.Player.Character);
+            }
+        }
+
+        /// <summary>The guns, shown once on the first rival: a change of plan after a legitimate result.</summary>
+        private void ShowGuns()
+        {
+            _gunsShown = true;
+            string line = Ctx.Data?.Cue("SM03_S2_03_ENEMY")?.Line ?? "We lost the race! Shoot his tires before he leaves!";
+            Ped shooter = null;
+            foreach (var rival in _rivals) if (rival != null && rival.Exists() && !rival.IsDead) { shooter = rival; break; }
+            if (shooter != null) Ctx.Cutscenes.PlayMoment(Id, "They pulled guns", "RIVAL RACER", line, shooter);
+            else Say("SM03_S2_03_ENEMY");
+        }
+
+        private void CallGuns()
+        {
+            _gunsCalled = true;
+            Say("SM03_S2_04_GUESS");
+        }
+
+        /// <summary>The prize at the bay: recorded there for the fleet; the real reward said plainly.</summary>
+        private void PrizeDelivered()
+        {
+            _prizeHome = true;
+            ClearHeatIfSafe();
+            Ctx.State?.SetCargo("racePrize", "M11.ChopShop");
+            if (_coupe != null && _coupe.Exists()) { _coupe.IsEngineRunning = false; Release(_coupe); }
+            if (_prize != null && _prize.Exists()) Release(_prize);
+            // Awarded once by CampaignState.MarkComplete after the mission passes: the
+            // cash and the race transmission the fleet garage fits to the next build.
+            GameUtils.Subtitle("~g~Prize at the bay: $25,000 and the race transmission, fitted to the crew's next build. KJ gets the call.", 6000);
+        }
+
+        /// <summary>The aftermath: Ron out of the coupe at the bay, the prize on its tail.</summary>
+        public override SceneBlocking OutroBlocking()
+        {
+            if (_coupe == null || !_coupe.Exists()) return null;
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            var blocking = new SceneBlocking();
+            if (guess != null && guess.Exists() && guess.IsInVehicle(_coupe)) blocking.Then(new ExitVehicleStep(guess));
+            return blocking.Then(new ShotStep(4500, _coupe, new Vector3(-4.5f, -3.5f, 1.4f), _coupe, new Vector3(0f, -1.5f, 0.7f), 0.7f));
+        }
+
+        // ---------- world building ----------
 
         private void SpawnKJ()
         {
@@ -115,6 +203,18 @@ namespace Bloodlines.Missions.Campaign
             _kj.Task.StandStill(-1);
             var blip = Track(_kj.AddBlip());
             blip.Name = "KJ"; blip.Color = BlipColor.Purple; blip.IsShortRange = false;
+        }
+
+        /// <summary>The prize, real: a crate on the coupe's tail that rides with it.</summary>
+        private void SpawnPrize()
+        {
+            var model = new Model("prop_box_wood02a");
+            if (!GameUtils.RequestModel(model) || _coupe == null || !_coupe.Exists()) return;
+            _prize = Track(World.CreateProp(model, _coupe.Position + new Vector3(0f, 0f, 2f), false, false));
+            model.MarkAsNoLongerNeeded();
+            if (_prize == null || !_prize.Exists()) { _prize = null; return; }
+            _prize.IsPersistent = true;
+            StowPropStep.Stow(_prize, _coupe, new Vector3(0f, -1.9f, 0.75f));
         }
 
         protected override void OnUpdate()

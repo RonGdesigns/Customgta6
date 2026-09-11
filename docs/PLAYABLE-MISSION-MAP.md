@@ -500,7 +500,8 @@ Prerequisite: M03. Retry: full mission restart.
 | 1 | Ice | **Breach** — ReachZoneObjective: Breach the side entrance. |
 | 2 | Ice | **Clear the floor** — KillTargetsObjective: Clear Sergei's men. |
 | 3 | Ice | **Sergei** — MissionInteraction: Ice: approach Sergei and demand the crate codes |
-| 4 | Ice | **The crates** — MissionInteraction: Load the AP crates. |
+| 4 | Ice | **The crates** — MissionInteraction: Ice: load the two marked crates into your car |
+| 5 | Ice | **Bring it back** — DeliverVehicleObjective: Ice: drive the crates back to your door. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -515,7 +516,7 @@ Prerequisite: M03. Retry: full mission restart.
 | 1 | Gohan | **Rooftop** — ReachZoneObjective: Get onto the annex roof. |
 | 2 | Gohan | **Server bay** — SubdueTargetsObjective: Gohan: use the stun gun on both marked guards. Keep them alive. |
 | 3 | Gohan | **Root terminal** — MissionInteraction: Inject the worm at the root terminal. |
-| 4 | Gohan | **Fire escape** — ReachZoneObjective: Down the fire escape before IT notices. |
+| 4 | Gohan | **Fire escape** — ReachZoneObjective: Down the fire escape before IT traces the connection. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -530,10 +531,11 @@ Prerequisite: M03. Retry: full mission restart.
 | 1 | Guess | **Starting line** — EnterVehicleObjective: Get in the drift coupe. |
 | 2 | Guess | **Three laps** — RaceCheckpointObjective: Win the circuit — three laps. |
 | 3 | Guess | **They pulled guns** — KillTargetsObjective: Stop the marked shooters OR drive the coupe to the yellow finish marker.<br>DeliverVehicleObjective: Escape in the drift coupe to the marked finish, or stop the shooters. |
+| 4 | Guess | **The chop bay** — DeliverVehicleObjective: Guess: drive the coupe and the prize to the Burro Heights chop bay. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM03.Checkpoint1, SM03.Checkpoint2, SM03.Checkpoint3, SM03.Checkpoint4, SM03.StartLine.
+Survey references: M11.ChopShop, SM03.Checkpoint1, SM03.Checkpoint2, SM03.Checkpoint3, SM03.Checkpoint4, SM03.StartLine.
 
 ## SM04 — DEAD DROP QUARRY
 

@@ -279,6 +279,12 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 95. **M10.** Start M10 from the connector marker: both crates on the flatbed. Hold E at the bed: the inspection. Roll out with Ice beside you; bikes; the Buzzard moment and "tunnel mouth" named; get the truck there, step out as Ice, kill it; lose the police, deliver to Burro Heights: the truck shuts down with both crates on it and stays.
 96. **M11.** Start M11: the shop mid-work, the flatbed with one crate, Gohan walking up; skip once. Mounts, dyno with the meter, then Gohan at the window with Berth 44 as a scene; skip once. The aftermath: Ice out, the Granger shown.
 
+## The first solo window (P3d: SM01, SM02, SM03)
+
+97. **SM01.** Start SM01: three shots (Sergei, a crate, the gate) with two lines, Ron over the radio; skip once. Clear the floor, hold E at Sergei: he gives the codes and runs. Shoot him first instead: the job fails. Hold E at the crates: two crates into Ice's car on camera, counted; skip once and they are in the car. Drive to Ice's door: the reward line names the Mk II and double rifle ammunition, and the next locker restock does exactly that.
+98. **SM02.** Start SM02: three shots (the roof, the bay, a laptop on a table) with two lines; skip once. Stun both guards, hold E at the terminal: the tap as a scene, then "IT will trace this: 75 s". Wait it out on the roof: the job fails. Do it again and take the fire escape in time: Gohan's radio, the Marksman Rifle named.
+99. **SM03.** Start SM03: KJ walks the crate on the coupe's tail and the coupe, then looks at the Elegys, with two lines; skip once. Win three laps; the first rival's guns are shown once; Ron's line; stop them or reach the finish; then drive the coupe to the Burro Heights chop bay: the prize recorded, $25,000 and the transmission named, KJ's check-in as the aftermath.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -292,7 +298,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
 - The room's spots are desk estimates until surveyed inside (items 76–77); the room map is the tool for laying them out.
 - M08's bed slots, forklift approach and stash are estimates; M09's pickup flat and M10's window are estimates.
-- P3 continues: the first-window solos SM01–SM03 (P3d) are not started; see the plan's P3 table.
+- P3 is built through P3d; every slice's scenes still want the live watch/skip/cancel pass.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.

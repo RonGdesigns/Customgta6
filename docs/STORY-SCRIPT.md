@@ -1159,6 +1159,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (SM01_SCENE_OUTRO_02_GOHAN) — I heard you. That's enough for tonight. We'll check the ammunition together when you get back.
 
+### Approach
+
+**ICE** (SM01_SCENE_APPROACH_01_ICE) — Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+
+**GUESS** (SM01_SCENE_APPROACH_02_GUESS) — Say when you're leaving. That's the whole of what I'm asking.
+
 ## SM02 — ZERO-DAY INJECTION
 
 ### Intro
@@ -1173,6 +1179,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (SM02_SCENE_OUTRO_02_GUESS) — And you're back on the radio. I like that part of the upgrade best.
 
+### Approach
+
+**GOHAN** (SM02_SCENE_APPROACH_01_GOHAN) — Roof access on the service side, the server bay one floor down, the terminal at the back. Camera archive, nothing else. Check-in in twenty minutes.
+
+**ICE** (SM02_SCENE_APPROACH_02_ICE) — Twenty minutes. If we don't hear you we notice; we don't come. That's the deal.
+
 ## SM03 — MIDNIGHT DRIFT
 
 ### Intro
@@ -1186,6 +1198,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **KJ** (SM03_SCENE_OUTRO_01_KJ) — I saw the guns. Prize is secured, but don't come back here tonight. Winning doesn't make those people good losers.
 
 **GUESS** (SM03_SCENE_OUTRO_02_GUESS) — Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call when the parts get back to the crew.
+
+### Approach
+
+**KJ** (SM03_SCENE_APPROACH_01_KJ) — Transmission and clutch, real, in the crate on your tail. Those Elegys are tuned and the men in them are not clean.
+
+**GUESS** (SM03_SCENE_APPROACH_02_GUESS) — Then I'll be clean for both of us. Stay off the grid when it starts, KJ. I want you around after.
 
 ## SM04 — DEAD DROP QUARRY
 

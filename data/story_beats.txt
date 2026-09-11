@@ -476,18 +476,27 @@ ICE|Sergei sold me bad ammunition. I'll recover the proper crates alone. The cre
 GUESS|You can work alone without pretending you don't have anyone to call. Tell us when you're leaving the warehouse.
 ICE|Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.
 GOHAN|I heard you. That's enough for tonight. We'll check the ammunition together when you get back.
+@approach
+ICE|Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+GUESS|Say when you're leaving. That's the whole of what I'm asking.
 
 SM02
 GOHAN|The annex gives me municipal optical access for the drone work. One person can reach it quietly. That's why I'm going alone.
 ICE|Send the check-in time. You aren't asking permission. You're giving us a chance to notice if you need help.
 GOHAN|The tap is live. The camera archive is open; that doesn't wipe the dock recording or a human witness.
 GUESS|And you're back on the radio. I like that part of the upgrade best.
+@approach
+GOHAN|Roof access on the service side, the server bay one floor down, the terminal at the back. Camera archive, nothing else. Check-in in twenty minutes.
+ICE|Twenty minutes. If we don't hear you we notice; we don't come. That's the deal.
 
 SM03
 KJ|Guess, I checked the prize. Transmission and clutch are real. Marabunta's promise to race clean? I wouldn't put money on that.
 GUESS|You got me a place on the grid, KJ. That's enough. Stay clear when it starts; I need my friend around after the finish.
 KJ|I saw the guns. Prize is secured, but don't come back here tonight. Winning doesn't make those people good losers.
 GUESS|Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call when the parts get back to the crew.
+@approach
+KJ|Transmission and clutch, real, in the crate on your tail. Those Elegys are tuned and the men in them are not clean.
+GUESS|Then I'll be clean for both of us. Stay off the grid when it starts, KJ. I want you around after.
 
 SM04
 ICE|The quarry snipers are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
