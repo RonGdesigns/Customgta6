@@ -132,6 +132,11 @@ Apartment.Starter.Gohan	-1288.52	-430.51	35.15	124	land	estimate	Richards Majest
 Apartment.Starter.Guess	291.517	-1078.674	29.405	270	land	estimate	Mission Row
 Apartment.Luxury.Entrance	-773.6176	299.3455	85.7201	3	land	estimate	Rockford Hills
 Apartment.Starter.Interior	347.2686	-999.2955	-99.19622	0	underground	estimate	
+Apartment.Room.Door	347.27	-999.30	-99.20	180	interior	estimate	starter room; survey inside
+Apartment.Room.Message	347.27	-997.30	-99.20	0	interior	estimate	starter room; survey inside
+Apartment.Room.Wardrobe	349.00	-999.30	-99.20	90	interior	estimate	starter room; survey inside
+Apartment.Room.Bed	345.50	-999.30	-99.20	270	interior	estimate	starter room; survey inside
+Apartment.Room.Locker	348.50	-997.50	-99.20	0	interior	estimate	starter room; survey inside
 Apartment.Luxury.Ice	-786.8663	315.7642	217.6385	0	interior	estimate	
 Apartment.Luxury.Gohan	-774.0126	342.0428	196.6864	0	interior	estimate	
 Apartment.Luxury.Guess	-786.9563	315.6229	187.9136	0	interior	estimate	

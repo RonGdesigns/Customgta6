@@ -62,6 +62,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 49 | **Control after a hand-off** | Prologue into M01; Gohan's terminal into the recognition scene | The player can move as soon as gameplay starts or resumes |
 | 50 | **M05 witness** | Stop Mateo; press E alongside; skip the account once | Ice comes down to the shore; Mateo climbs aboard and speaks over Gohan's shoulder; still aboard on skip; alive at the end |
 | 51 | **M06 pickup** | Hold the alley through the first rotors as Ice; then take Guess | Ron's radio line; the Granger at the alley mouth by his own AI; a fire at the racks after the burn; boarding at the mouth; no wanted reset |
+| 52 | **The room loads** | Enter the starter apartment; leave it | Inside with control within a few seconds; "was disabled"/"was enabled" and "entered" in the log; no timeout; put back on leaving |
+| 53 | **Room map and survey** | Dev menu inside: "Map this room", then "Survey the room's spots" with F11 on each | `Bloodlines.Room.txt` beside the ini; next session each surveyed spot has its own marker and prompt |
+| 54 | **Start from the menu** | Dev menu, Missions, any job, away from its marker | A short fade, the briefing at the job's marker, no second cut |
 
 ## Before you launch: the static checks
 

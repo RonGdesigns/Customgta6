@@ -41,7 +41,7 @@ MAP_MIN_Y, MAP_MAX_Y = -4000.0, 8200.0
 SEA_LEVEL = 0.0
 
 # Kinds where a low or negative Z is the point rather than a mistake.
-DEEP_KINDS = ('water', 'underground')
+DEEP_KINDS = ('water', 'underground', 'interior')
 
 
 def load_zones():
@@ -73,7 +73,7 @@ def zone_for(zones, x, y, z):
     return best
 
 
-def zone_centre(zone):
+def zone_center(zone):
     box = min(zone['Bounds'],
               key=lambda b: (b['Maximum']['X'] - b['Minimum']['X']) *
                             (b['Maximum']['Y'] - b['Minimum']['Y']))
@@ -171,9 +171,9 @@ def main():
             findings.append(row)
 
         if args.fix and expected and issues:
-            centre_x, centre_y = zone_centre(expected)
-            row['x'] = '{:.2f}'.format(centre_x)
-            row['y'] = '{:.2f}'.format(centre_y)
+            center_x, center_y = zone_center(expected)
+            row['x'] = '{:.2f}'.format(center_x)
+            row['y'] = '{:.2f}'.format(center_y)
             row['status'] = 'zone-center'
 
     if args.fix:
@@ -204,7 +204,7 @@ def main():
               '| Status | Meaning |', '|---|---|',
               '| `bible` | from the omnibus Track 2 index — surveyed by the author |',
               '| `surveyed` | captured in game with the dev tools; trustworthy |',
-              '| `zone-centre` | moved here by `--fix`; the right district, an arbitrary spot in it |',
+              '| `zone-center` | moved here by `--fix`; the right district, an arbitrary spot in it |',
               '| `estimate` | hand-placed guess; treat every one as unverified |', '']
 
     with io.open(REPORT, 'w', encoding='utf-8', newline=CRLF) as handle:

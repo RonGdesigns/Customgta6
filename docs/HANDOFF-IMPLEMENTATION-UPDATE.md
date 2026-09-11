@@ -242,6 +242,13 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 73. **M05, the cove.** Start M05: three shots (the cove from the perch, the dinghy with Ron and Gohan, Mateo's boat under the lamps) with two lines; skip once. Clear the lamps, flare, close on him. When he stops: Ice's line and Ice running down to the shore. Bring the dinghy alongside and press E: Mateo climbs into the dinghy and says it over Gohan's shoulder; skip once and he is still aboard. The mission ends with him alive in the boat.
 74. **M06, positions and the pickup.** Start M06: three shots on the three positions with two lines; skip once. Cut the feeder, walk Ice in, hold the alley. On the first rotors: Ron's radio line, and if you are Ice, watch the map: the Granger moves to the alley mouth on its own. When the burn ends a fire burns at the racks. Switch to Guess: bring the truck to the alley-mouth marker if it is not there; Ice and Gohan come to it; nothing clears the police for you.
 
+## The starter room and a start from the menu
+
+75. **The room loads.** Home marker, E, "Enter apartment": black screen, then inside the furnished room with control, facing into it. The log has "Apartment: interior N was disabled and capped; pinned for the visit" (or "was enabled") and then "Apartment: entered". No "Apartment timeout". Leave by the entry marker's menu; the log says the room was put back.
+76. **Map the room.** With `[Dev] Enabled = True`, inside the room open the menu at the entry marker and choose "Map this room". `Bloodlines.Room.txt` appears beside `Bloodlines.ini`: a floor map with '@' where you stood. Send it, or read it, before surveying: it says where the floor, walls and furniture are.
+77. **Survey the spots.** Same menu, "Survey the room's spots": stand where the door, the message spot (a window or the couch), the wardrobe, the bed and the locker belong, pressing F11 on each; the entry key comes first, so stand at the door facing into the room for that one. From the next session those spots have their own markers and prompts, and the prologue's message walks to the message spot.
+78. **A start from the menu.** Open the dev menu somewhere away from a job, pick any mission from the list: a short fade, then the briefing plays at that job's marker with the crew's car pulling up to that street, and gameplay begins there without a second cut.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -253,6 +260,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The M05 perch coordinate itself is still an estimate; the ground snap makes it start, the survey makes it right.
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
+- The room's spots are desk estimates until surveyed inside (items 76–77); the room map is the tool for laying them out.
 - P3 continues: M07–M08 (the dish and the engines), M09–M11 (the IFF, the truck, the shop) and the first-window solos SM01–SM03 are not started; see the plan's P3 table.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.

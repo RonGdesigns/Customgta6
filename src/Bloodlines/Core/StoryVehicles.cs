@@ -23,7 +23,7 @@ namespace Bloodlines.Core
             new Choice("Jester RR", "jester4"), new Choice("Calico GTF", "calico"),
             new Choice("Dominator ASP", "dominator7"), new Choice("Dominator GTT", "dominator8"),
             new Choice("Comet S2", "comet6"), new Choice("Euros", "euros"),
-            new Choice("Cypher", "cypher"), new Choice("ZR350", "zr350"),
+            new Choice("Cypher", "cypher"), new Choice("ZR350", "zr350"), // dialect-ok: the Cypher is the game's own vehicle name
             new Choice("Remus", "remus"), new Choice("Growler", "growler"),
             new Choice("Baller ST", "baller7"), new Choice("Granger 3600LX", "granger2"),
             new Choice("Astron", "astron"), new Choice("Cinquemila", "cinquemila"),
@@ -124,7 +124,7 @@ namespace Bloodlines.Core
                         if (!Function.Call<bool>(Hash.GET_WATER_HEIGHT, candidate.X, candidate.Y, candidate.Z + 20f, height)) continue;
                         candidate.Z = height.GetResult<float>();
                         if (Math.Abs(candidate.Z - player.Position.Z) > 8f || Occupied(candidate, 7f)) continue;
-                        // Check a water footprint, not just the centre of a narrow canal.
+                        // Check a water footprint, not just the center of a narrow canal.
                         bool wide = true;
                         for (int i = 0; i < 4; i++)
                         {

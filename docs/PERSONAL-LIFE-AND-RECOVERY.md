@@ -30,9 +30,11 @@ Each hero has a furnished starter apartment entry, separate from the earlier wor
 
 Walk around inside. The interior entry marker opens rest/save, wardrobe, personal weapon locker, crew messages and **Exit apartment**. Switch characters and start missions after exiting; companions remain outside instead of teleporting into the interior. Guess's vehicle repair is available outside beside a parked vehicle.
 
+The room has named spots (`Apartment.Room.Door`, `Message`, `Wardrobe`, `Bed`, `Locker`). They ship as desk estimates and are offered only once surveyed on foot; until then everything stays at the entry marker. A surveyed spot has its own marker and prompt: the wardrobe opens the wardrobe, the bed rests and saves, the locker restocks, the door leaves, and the prologue's message is read at the message spot. With the dev menu on, inside the room: **Map this room** writes `Bloodlines.Room.txt`, a half-meter floor map read from the room's collision, and **Survey the room's spots** walks the six keys with the capture key.
+
 Completing **M27** unlocks three Eclipse Towers luxury suites, one floor per hero, and moves the home destination to Eclipse. The M27 follow-up explains the clean-name rentals; the radar bunker remains the operational base. Before M27, the dev-enabled home menu offers **Preview luxury apartment**, which returns to the original entry and does not grant campaign progress.
 
-Entry waits for interior readiness and collision. A timeout returns you to the position where entry began. Saves made inside record the exterior return point so a fresh session does not spawn inside an unloaded room. These are stock GTA interiors, not custom MLOs. Rendering, door placement and navigation require live Enhanced testing; failed loading must decline entry rather than release the player into empty space.
+Story Mode ships the Online apartments switched off; entry enables and uncaps the room for the visit, logs what it found, and puts it back on leaving. Entry waits for interior readiness and collision. A timeout returns you to the position where entry began. Saves made inside record the exterior return point so a fresh session does not spawn inside an unloaded room. These are stock GTA interiors, not custom MLOs. Rendering, door placement and navigation require live Enhanced testing; failed loading must decline entry rather than release the player into empty space.
 
 ## DLC weapons
 

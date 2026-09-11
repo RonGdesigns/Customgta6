@@ -83,7 +83,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context =>
                 {
                     /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    GameUtils.Subtitle("~g~We have a command centre in the desert.", 6000);
+                    GameUtils.Subtitle("~g~We have a command center in the desert.", 6000);
                 })
                 .AfterCues("M23_S1_03_GOHAN");
         }
