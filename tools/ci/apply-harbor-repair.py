@@ -31,7 +31,8 @@ for a,b in re.findall(rb'^diff --git a/(\S+) b/(\S+)$',patch,re.MULTILINE):
  paths.append(path)
 assert len(paths)==34, paths
 subprocess.run(['git','fetch','--depth=1','origin',BASE],check=True)
-subprocess.run(['git','diff','--exit-code',BASE,'HEAD','--']+paths,check=True)
+extra='tests/story/CampaignFlowTests.cs'
+subprocess.run(['git','diff','--exit-code',BASE,'HEAD','--']+paths+[extra],check=True)
 subprocess.run(['git','config','core.autocrlf','false'],check=True)
 # Compile committed source bytes, not a Windows checkout conversion. Normalize only
 # the patch application scratch input; then restore the existing blob conventions.
@@ -47,6 +48,19 @@ out=pathlib.Path('build/harbor-source.patch')
 out.write_bytes(patch.replace(b'\r\n',b'\n'))
 subprocess.run(['git','apply','--unidiff-zero','--whitespace=nowarn','--check',str(out)],check=True)
 subprocess.run(['git','apply','--unidiff-zero','--whitespace=nowarn',str(out)],check=True)
+# Extend the existing generic flow driver for a new objective type. It physically
+# places the test craft at its goal and lets production evaluate real 3D/seat checks.
+# Dedicated HarborRepairChecks assert that being below the goal cannot complete it.
+f=pathlib.Path(extra)
+raw=subprocess.check_output(['git','show',BASE+':'+extra]);s=raw.decode('utf-8').replace('\r\n','\n')
+anchor='     else if(name=="TechnicalChoiceObjective")'
+assert s.count(anchor)==1, 'Unexpected generic flow driver'
+s=s.replace(anchor,'''     // SurfaceSubObjective is a real 3D/driver check. Move the simulated craft
+     // to the target; do not force-pass it or weaken the production depth rule.
+     else if(name=="SurfaceSubObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_target")(),Field<Func<Vehicle>>(objective,"_sub")());
+'''+anchor,1)
+f.write_bytes(s.replace('\n','\r\n').encode('utf-8') if b'\r\n' in raw else s.encode('utf-8'))
+paths.append(extra)
 for name in crlf:
  target=pathlib.Path(name)
  target.write_bytes(target.read_bytes().replace(b'\r\n',b'\n').replace(b'\n',b'\r\n'))
@@ -54,4 +68,4 @@ for name in crlf:
 for name in filter(None,subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
  if name not in paths:pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
 pathlib.Path('build/harbor-changed.json').write_text(json.dumps(paths),encoding='utf-8')
-print('Applied 34 scoped source, test, configuration and documentation files. Compile and behavioral verification follow.')
+print('Applied scoped source, tests, configuration and documentation. Compile and behavioral verification follow.')
