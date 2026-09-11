@@ -16,6 +16,9 @@ public static partial class StoryTests
   // ---- M07: the relay seen, the sniffer clamped, the manifests read, the helicopter shown.
   Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7.json"));var m7=new M07WiretapWaltz();
   Check(m7.Begin(c)&&c.Cutscenes.IsActive&&m7.Sedan!=null&&crew.PedFor(CrewSlot.Guess).IsInVehicle(m7.Sedan),"M07 opens on the relay, the roof and the pickup lane with Ron already in the lane");
+  Check(!crew.PedFor(CrewSlot.Gohan).IsInVehicle()&&crew.PedFor(CrewSlot.Gohan).Position==m7.BuildingBase&&m7.Laptop!=null&&m7.BuildingBase.DistanceTo(c.Locations.Position("M07.GarageRoof"))<60f&&Game.Player.Character.Position.DistanceTo(m7.Roof)<10f,"Ice starts on the roof; Gohan reads the feed at the building's base on the street with a laptop; Ron is in the lane");
+  string m7pre=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
+  Check(m7pre.Contains("VehicleMissionType.Attack")&&!m7pre.Contains("ChaseWithHelicopter")&&m7pre.Contains("Survey the roof (F11)"),"The helicopter attacks the roof instead of shadowing it, and a missing roof is reported with the survey key");
   c.Cutscenes.Skip();m7.Tick();Check(m7.CurrentStage==0&&!c.Cutscenes.IsActive,"Skipping the approach leaves Ice on the roof at stage one");
   Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M07.MastTop");m7.Tick();Check(m7.CurrentStage==1,"Reaching the mast opens the clamp");
   GTA.UI.Screen.Subtitle=null;Interact(m7,c,CrewSlot.Ice,c.Locations.Position("M07.MastTop"),7);
@@ -35,10 +38,13 @@ public static partial class StoryTests
   c.Cutscenes.Skip();m8.Tick();Check(m8.CurrentStage==0,"Skipping the approach leaves Gohan at the gate");
   Interact(m8,c,CrewSlot.Gohan,c.Locations.Position("M08.CameraRoom"),5);Check(m8.CurrentStage==1&&m8.LoopRunning,"The camera loop opens a stated window");
   var sentries=World.Created.Where(p=>p.Model.Name=="s_m_m_security_01").ToList();Check(sentries.Count==5,"Five sentries stand the gate");
-  Use(crew,CrewSlot.Ice);foreach(var s in sentries)s.IsDead=true;m8.Tick();Check(m8.CurrentStage==2,"The sentries down, Guess is sent to the forklift");
+  Check(sentries.Count==5&&sentries.Select(s=>s.Position).Distinct().Count()==5&&sentries.Min(s=>sentries.Where(o=>o!=s).Min(o=>o.Position.DistanceTo(s.Position)))>6f,"Five sentries at five posts, none within six meters of another");
+  Use(crew,CrewSlot.Ice);sentries[0].IsDead=true;m8.Tick();m8.Tick();Check(sentries.Skip(1).All(s=>s.Task.HatedFights==1),"The first sentry down wakes the rest to fight");
+  foreach(var s in sentries)s.IsDead=true;m8.Tick();Check(m8.CurrentStage==2,"The sentries down, Guess is sent to the forklift");
   Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m8.Forklift,VehicleSeat.Driver);m8.Tick();Check(m8.CurrentStage==3,"In the forklift, the first crate is the job");
   GTA.UI.Screen.Subtitle=null;Interact(m8,c,CrewSlot.Guess,c.Locations.Position("M08.CratePadOne"),3,true);
   Check(m8.CurrentStage==4&&c.Cutscenes.IsActive&&m8.Loaded==1&&m8.Crates[0].AttachedTo==m8.Forklift,"The first crate is on the forks and its loading plays as a scene; the technical is on its way");
+  Check(Flow(m8)[3].Objectives[0].GetType().Name=="ForksUnderCrateObjective"&&m8.Crates[1].IsPositionFrozen&&!m8.Crates[0].IsPositionFrozen,"The forks under the crate is a stop at the pad, no button; a crate is static until the forks take it");
   Check(m8.Technical!=null&&m8.Technical.Exists()&&!m8.TechnicalShown,"The technical exists before it is shown");
   c.Cutscenes.Skip();Check(m8.Crates[0].AttachedTo==m8.Hauler,"Skipping the loading lands crate one on the bed");
   m8.Tick();Check(m8.TechnicalShown&&c.Cutscenes.IsActive,"The technical is shown coming up the ramp, once");

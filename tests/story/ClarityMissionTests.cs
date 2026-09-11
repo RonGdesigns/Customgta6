@@ -95,6 +95,7 @@ public static partial class StoryTests
   Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2&&!m6.CurrentObjective.Contains("No ability"),"M06 power interaction and Ice's breach open the parallel burn and siege, with no ability wording");
   crew.PedFor(CrewSlot.Gohan).Position=c.Locations.Position("M06.ServerRacks");
   for(int i=0;i<45&&m6.CurrentStage==2;i++){foreach(var enemy in World.Created)enemy.IsDead=true;Game.GameTime+=1000;m6.Tick();}
+  Check(crew.PedFor(CrewSlot.Guess).Task.Drives>=1&&m6.CurrentStage==3,"Ron's AI moves the truck only when the pickup stage opens, after the siege");
   Check(m6.CurrentStage==3&&m6.PickupCalled&&crew.PedFor(CrewSlot.Guess).Task.Drives>=1,"M06 requires both the completed burn and all response waves; the rotors turned Ron's wait into a pickup and his own AI moved the truck");
   Check(m6.FireBurning&&c.State.EvidenceOf("vespucciBackup")==EvidenceState.Destroyed,"The burn leaves a real fire at the racks and the record's destruction on the books");
   Use(crew,CrewSlot.Guess);m6.Tick();Check(m6.CurrentStage==3&&m6.Roles.For(CrewSlot.Ice).State==RoleState.Extracting,"Guess has to bring the Granger to the alley mouth; Ice and Gohan are coming to it");

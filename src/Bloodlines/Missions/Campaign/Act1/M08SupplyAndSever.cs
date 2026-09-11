@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using Bloodlines.Core;
 using Bloodlines.Crew;
@@ -41,7 +43,8 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _granger;
         private Vehicle _technical;
         private Ped _technicalDriver;
-        private MissionInteraction _crateTwo;
+        private ForksUnderCrateObjective _crateTwo;
+        private bool _alerted;
         private Vector3 _gate;
         private Vector3 _cameras;
         private Vector3 _padOne;
@@ -108,6 +111,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Drop the sentries",
                     new KillTargetsObjective("Ice — drop the sentries at the marked warehouse posts.", () => _sentries),
+                    new ReactionTrigger(() => !_alerted && _sentries.Any(s => s != null && s.Exists() && (s.IsDead || s.IsInCombat)), AlertSentries),
                     LoopWindow())
                 .OwnedBy(CrewSlot.Ice);
 
@@ -116,8 +120,10 @@ namespace Bloodlines.Missions.Campaign
                     LoopWindow())
                 .OwnedBy(CrewSlot.Guess);
 
+            // The forks under the crate is the whole action: drive in, stop, and the
+            // crate is on the forks. No button, no physics lift (Ron, September 11).
             yield return new MissionStage("Crate one",
-                    new MissionInteraction("Guess — bring the forks under the first turbine crate.", () => _padOne, 3, 4.5f, () => _forklift),
+                    new ForksUnderCrateObjective("Guess — drive the forks under the first turbine crate and stop.", () => _padOne, () => _forklift),
                     LoopWindow())
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
@@ -128,7 +134,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The technical is shown coming before it is a fight. Ice handles it;
             // Ron finishes the loading. Either brother's job can be done first.
-            _crateTwo = new MissionInteraction("Guess — bring the forks under the second crate.", () => _padTwo, 3, 4.5f, () => _forklift);
+            _crateTwo = new ForksUnderCrateObjective("Guess — drive the forks under the second crate and stop.", () => _padTwo, () => _forklift);
             yield return new MissionStage("Crate two, the technical",
                     new DestroyVehicleObjective("Ice — put the Aegis technical down.", () => _technical),
                     _crateTwo,
@@ -186,6 +192,7 @@ namespace Bloodlines.Missions.Campaign
             var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
             if (crate == null || !crate.Exists() || _hauler == null || !_hauler.Exists() || _forklift == null || !_forklift.Exists()) return;
             _loaded = index + 1;
+            crate.IsPositionFrozen = false;
             StowPropStep.Stow(crate, _forklift, ForkOffset);
             var rear = _hauler.Position - _hauler.ForwardVector * 7f;
             float heading = DriveUpStep.HeadingBetween(rear, _hauler.Position);
@@ -291,6 +298,22 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- cast and props ----------
 
+        /// <summary>Five posts around the gate and the pads, each its own place: the gate, the camera room, the two pads and the hauler (Ron, September 11: they stood in a bunch).</summary>
+        private Vector3 SentryPost(int index)
+        {
+            Vector3 wanted;
+            switch (index)
+            {
+                case 0: wanted = _gate + new Vector3(0f, 12f, 0f); break;
+                case 1: wanted = _cameras + new Vector3(6f, 4f, 0f); break;
+                case 2: wanted = _padOne + new Vector3(-9f, 8f, 0f); break;
+                case 3: wanted = _padTwo + new Vector3(9f, 8f, 0f); break;
+                default: wanted = Ctx.Locations.Position("M08.HaulerSpawn") + new Vector3(0f, 10f, 0f); break;
+            }
+            var safe = World.GetSafeCoordForPed(wanted, false, 0);
+            return safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 20f) ? safe : wanted;
+        }
+
         private void SpawnSentries()
         {
             var model = new Model("s_m_m_security_01");
@@ -300,7 +323,8 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 5; i++)
             {
-                var guard = World.CreatePed(model, _gate + new Vector3(6f + i * 5f, 10f + (i % 2) * 8f, 0f), 180f);
+                var post = SentryPost(i);
+                var guard = World.CreatePed(model, post, DriveUpStep.HeadingBetween(post, _gate));
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = aegis;
@@ -308,12 +332,22 @@ namespace Bloodlines.Missions.Campaign
                 guard.BlockPermanentEvents = true;
                 guard.Accuracy = 30;
                 guard.Weapons.Give(WeaponHash.Pistol, 60, true, true);
-                guard.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", guard.Position, 180f);
+                guard.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", guard.Position, guard.Heading);
 
                 _sentries.Add(Track(guard));
             }
+            if (_sentries.Count > 1) Logger.Info("M08 sentries at five posts; the first two are " + _sentries[0].Position.DistanceTo(_sentries[1].Position).ToString("0") + " m apart.");
 
             model.MarkAsNoLongerNeeded();
+        }
+
+        /// <summary>The first sentry hit or fighting wakes the rest: they come for the shooter instead of standing at their posts (Ron, September 11).</summary>
+        private void AlertSentries()
+        {
+            _alerted = true;
+            foreach (var guard in _sentries)
+                if (guard != null && guard.Exists() && !guard.IsDead) { guard.Task.ClearAll(); guard.Task.FightAgainstHatedTargets(120f); }
+            Logger.Info("M08 sentries alerted.");
         }
 
         private void SpawnHauler()
@@ -343,6 +377,8 @@ namespace Bloodlines.Missions.Campaign
                 var crate = Track(World.CreateProp(model, pad, true, false));
                 if (crate == null || !crate.Exists()) continue;
                 crate.IsPersistent = true;
+                // Static until the forks take it: a bump cannot knock it over or push it off its pad.
+                crate.IsPositionFrozen = true;
                 _crates.Add(crate);
             }
             model.MarkAsNoLongerNeeded();
@@ -424,6 +460,45 @@ namespace Bloodlines.Missions.Campaign
         {
             _sentries.Clear();
             _crates.Clear();
+        }
+    }
+
+    /// <summary>
+    /// The forks under a crate: the required driver brings the forklift to the pad
+    /// and stops; after a short dwell the crate is theirs. No button and no physics
+    /// lift, because a real forklift lift is a fight the crate wins (Ron, September 11).
+    /// </summary>
+    internal sealed class ForksUnderCrateObjective : Objective
+    {
+        public const float Radius = 4.5f;
+        public const int DwellMs = 1000;
+        private readonly string _action;
+        private readonly Func<Vector3> _pad;
+        private readonly Func<Vehicle> _forklift;
+        private int _dwell, _lastTick;
+
+        public ForksUnderCrateObjective(string action, Func<Vector3> pad, Func<Vehicle> forklift) : base(action)
+        { _action = action; _pad = pad; _forklift = forklift; }
+
+        public override void Enter(MissionContext c) { base.Enter(c); _dwell = 0; _lastTick = Game.GameTime; }
+
+        public override void Update(MissionContext c)
+        {
+            var forklift = _forklift();
+            if (forklift == null || !forklift.Exists() || forklift.IsDead) { Fail("The forklift is lost. Restart this mission."); return; }
+            var pad = _pad(); var ped = Game.Player.Character;
+            ObjectiveMarkers.Navigation(pad, null, forklift);
+            GameUtils.DrawObjectiveMarker(pad, System.Drawing.Color.Yellow, 2f);
+            int delta = Math.Max(0, Math.Min(1000, Game.GameTime - _lastTick)); _lastTick = Game.GameTime;
+            if (!IsOwnerActive(c)) { _dwell = 0; Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
+            bool seated = ped != null && ped.Exists() && ped.IsInVehicle(forklift);
+            bool near = seated && forklift.Position.DistanceTo(pad) <= Radius;
+            if (!near) { _dwell = 0; Label = _action + (seated ? " — drive the forks under the crate." : " — get in the forklift."); return; }
+            if (forklift.Speed > 1f) { _dwell = 0; Label = _action + " — stop with the forks under it."; return; }
+            _dwell += delta;
+            Label = _action;
+            GameUtils.DrawProgressBar(_dwell / (float)DwellMs);
+            if (_dwell >= DwellMs) Complete();
         }
     }
 }

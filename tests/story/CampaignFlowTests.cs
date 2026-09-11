@@ -64,6 +64,7 @@ public static partial class StoryTests
      else if(name=="SurviveWavesObjective")foreach(var ped in ((SurviveWavesObjective)objective).Spawned)ped.IsDead=true;
      else if(name=="ShadowTargetObjective")Game.Player.Character.Position=Field<Func<Entity>>(objective,"_target")().Position+new Vector3((Field<float>(objective,"_minDistance")+Field<float>(objective,"_maxDistance"))/2,0,0);
      else if(name=="AssignedWorkObjective") {var worker=crew.PedFor(Field<CrewSlot>(objective,"_worker"));worker.Task.LeaveVehicle();worker.Position=Field<Func<Vector3>>(objective,"_target")();}
+     else if(name=="ForksUnderCrateObjective") {var v=Field<Func<Vehicle>>(objective,"_forklift")();PositionActor(c,objective,Field<Func<Vector3>>(objective,"_pad")(),v);}
      else if(name=="DynoObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);v.CurrentRPM=.625f;}
      else if(name=="BailOutObjective")Game.Player.Character.Task.LeaveVehicle();
      else if(name=="LoseWantedObjective")Game.Player.WantedLevel=0;
