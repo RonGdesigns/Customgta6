@@ -397,6 +397,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M16_SCENE_OUTRO_02_GOHAN) — Now the submerged load needs a way to float. Bring that lifting capacity to the dry dock.
 
+### Approach
+
+**ICE** (M16_SCENE_APPROACH_01_ICE) — The unit's on the dash: 7-Echo-Victor, one gate, once. The outer yard reads us as friendly. The inner pad won't.
+
+**GUESS** (M16_SCENE_APPROACH_02_GUESS) — The Cargobob on the pad is mine. You clear it, I spool it, we leave through Raton Canyon low and set down on the flats at Terminal.
+
+### Lift
+
+**GUESS** (M16_SCENE_LIFT_01_GUESS) — Lift's on the flats. Its job is one container out of Berth 44, once, and then it's a parked helicopter again.
+
+**ICE** (M16_SCENE_LIFT_02_ICE) — Under a tarp until Gohan cuts the hull. The clearance trick is burned; that was the price of it.
+
 ## M17 — SUB-ZERO PAYLOAD
 
 ### Intro
@@ -411,6 +423,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M17_SCENE_OUTRO_02_ICE) — We rehearse the pickups at staging. Everybody knows how to bring the other two back.
 
+### Approach
+
+**GUESS** (M17_SCENE_APPROACH_01_GUESS) — Same sub that mapped the hull, hauled into the slip. Torches on the nose, grapples on the belly, and I want to see where the release is.
+
+**ICE** (M17_SCENE_APPROACH_02_ICE) — I've got the pickup gear. When it's done, we test it before anybody sleeps.
+
+### Release
+
+**GOHAN** (M17_SCENE_RELEASE_01_GOHAN) — Outside the hull, rear quarter, a handle either of you can pull. I learned to work alone. That doesn't mean I want to die that way.
+
+**GUESS** (M17_SCENE_RELEASE_02_GUESS) — Pull it once so I can hear it. Good. Now it's a boat with a door.
+
 ## M18 — THE STAGING LINE
 
 ### Intro
@@ -424,6 +448,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M18_SCENE_OUTRO_01_GOHAN) — I used to think being useful was how I earned a place here. Tonight, if I need help, I'll say it.
 
 **ICE** (M18_SCENE_OUTRO_02_ICE) — Then we go in with that understood. Hold three first. No one starts a different fight.
+
+### Approach
+
+**ICE** (M18_SCENE_APPROACH_01_ICE) — Map's on the hood. Gohan takes the sub down the channel to hold three. Ron lifts the container out from the flats. The launch runs the water route with me on it; the load goes inland.
+
+**GOHAN** (M18_SCENE_APPROACH_02_GOHAN) — Sub, lift, launch, pickup: one man each. The pod goes on the lift tonight so I can switch it on from the channel. Nobody is a fourth man.
 
 ## M19 — THE PORT HEIST: UNDERWATER BREACH
 

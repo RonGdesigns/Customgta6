@@ -64,6 +64,7 @@ public static partial class StoryTests
      else if(name=="AssignedWorkObjective") {var worker=crew.PedFor(Field<CrewSlot>(objective,"_worker"));worker.Task.LeaveVehicle();worker.Position=Field<Func<Vector3>>(objective,"_target")();}
      else if(name=="DynoObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);v.CurrentRPM=.625f;}
      else if(name=="BailOutObjective")Game.Player.Character.Task.LeaveVehicle();
+     else if(name=="LoseWantedObjective")Game.Player.WantedLevel=0;
      else if(name=="RaceCheckpointObjective") {var sites=Field<IList<Vector3>>(objective,"_checkpoints");PositionActor(c,objective,sites[Field<int>(objective,"_index")],Field<Func<Vehicle>>(objective,"_vehicle")());}
     }
     c.Dialogue.Clear();Game.Accept=true;Game.GameTime+=1000;m.Tick();

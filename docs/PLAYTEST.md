@@ -75,6 +75,10 @@
 >   the work on camera, the change of plan shown once, and the result recorded for
 >   the heist (the survey, fewer patrols, the pod, the gate access). Live-test items
 >   100–103.
+> - M16–M18 are the ninth slice: the unit spent by a challenge on the net, Ice
+>   aboard the lift and Gohan by road, the pursuit lost before Terminal; three
+>   parts and a handle on the sub; the plan on the hood, the pod on the lift and the
+>   roll call in seats under one clock. Live-test items 104–106.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

@@ -306,6 +306,8 @@ namespace Bloodlines.Missions.Objectives
         }
 
         public int Remaining => _sites.Count - _done.Count;
+        /// <summary>Called with the site index when a site's hold completes: a part fitted, a charge set.</summary>
+        public Action<int> SiteDone { get; set; }
 
         public override void Update(MissionContext context)
         {
@@ -359,6 +361,7 @@ namespace Bloodlines.Missions.Objectives
                 _done.Add(near);
                 _activeSite = -1;
                 GameUtils.Subtitle("~g~Set. " + Remaining + " left.", 2000);
+                SiteDone?.Invoke(near);
                 return;
             }
 
