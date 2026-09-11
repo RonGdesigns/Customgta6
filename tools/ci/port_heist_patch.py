@@ -52,22 +52,19 @@ f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'));paths
 # Explicit phase QA uses its authored marker; the normal entrance resumes M19-M22.
 f=Path('src/Bloodlines/Core/MissionMarkers.cs');s=f.read_text(encoding='utf-8')
 old='PortHeistOperation.Contains(mission.Id) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;'
-assert s.count(old)==1
+assert s.count(old)==1, 'Unexpected start point expression'
 s=s.replace(old,'mission.Id.Equals("M19", StringComparison.OrdinalIgnoreCase) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;',1)
 f.write_bytes(s.encode('utf-8'))
-f=Path('src/Bloodlines/Missions/MissionManager.cs');s=f.read_text(encoding='utf-8')
-old='public string CurrentTitle => _currentDefinition?.Title;'
-assert s.count(old)==1
-s=s.replace(old,'public string CurrentTitle => _current?.Title ?? _currentDefinition?.Title;',1)
-f.write_bytes(s.encode('utf-8'))
+# The verified implementation already displays the parent's shared title.
+assert 'public string CurrentTitle => _current?.Title ?? _currentDefinition?.Title;' in Path('src/Bloodlines/Missions/MissionManager.cs').read_text(encoding='utf-8')
 # MultiHold records its final site first; its next update completes the stage.
 f=Path('tests/story/ContinuousPortHeistTests.cs');s=f.read_text(encoding='utf-8')
 old='foreach (var clamp in m19.Clamps) Interact(m19, c, CrewSlot.Gohan, clamp, 8, afloat: true);'
-assert s.count(old)==1
+assert s.count(old)==1, 'Unexpected clamp fixture'
 s=s.replace(old,old+'\n        manager.Update(); // Evaluate the now-complete multi-site objective.',1)
 s=s.replace('"The parent advances internally to " + next + " without an ordinary mission restart"','"The parent advances internally to " + next + " without an ordinary mission restart [" + manager.CurrentObjective + "; " + manager.LastFailureReason + "]"')
 old='bool rejected = false; try { state.SavePortHeistBoundary("M99"); }'
-assert s.count(old)==1
+assert s.count(old)==1, 'Unexpected bookmark fixture'
 s=s.replace(old,'''var points = new MissionMarkers(catalog, state, null, Context(Roster()).Locations, dataDir, "J");
         Check(points.StartPoint(catalog.All[0])?.Key == "M21.LaunchSpawn", "The one normal heist entry routes to its saved phase");
         Check(points.StartPoint(catalog.All[3])?.Key == "M22.Beach", "An explicit QA phase retains its own authored start point");
@@ -76,7 +73,7 @@ f.write_bytes(s.encode('utf-8'))
 # Run the focused integration cases before the unchanged broader suite.
 f=Path('tests/story/StoryTests.cs');s=f.read_text(encoding='utf-8')
 s=s.replace('HeistChecks();ContinuousPortHeistChecks();','HeistChecks();',1)
-assert s.count('root=args[1];MarketChecks();')==1
+assert s.count('root=args[1];MarketChecks();')==1, 'Unexpected suite entry point'
 s=s.replace('root=args[1];MarketChecks();','root=args[1];ContinuousPortHeistChecks();MarketChecks();',1)
 f.write_bytes(s.encode('utf-8'))
 for path in crlf:
