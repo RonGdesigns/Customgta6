@@ -1,0 +1,58 @@
+# Temporary branch-only integration inspection. Does not publish commits or touch main.
+name: harbor-integration
+on:
+  push:
+    branches: [codex/harbor-playtest-repair]
+    paths: ['.github/workflows/harbor-integration.yml']
+permissions:
+  contents: read
+concurrency:
+  group: harbor-integration
+  cancel-in-progress: true
+jobs:
+  inspect:
+    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/harbor-playtest-repair'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Capture pinned sides and inspect the real merge
+        shell: python
+        run: |
+          import json,pathlib,subprocess
+          p=pathlib.Path
+          base='d295306764fa137ceda3e1f3741e2a0d766bdb45'
+          main='f8a37b9837b11f6661df081fd59616b7c06e6bb3'
+          repair='ea4c54667d60d10f8973bfeccdd9713c97499501'
+          p('build/integration').mkdir(parents=True,exist_ok=True)
+          subprocess.run(['git','config','core.autocrlf','false'],check=True)
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          for label,ref in [('base',base),('main',main),('repair',repair)]:
+              subprocess.run(['git','archive','-o','build/integration/'+label+'.zip',ref],check=True)
+          assert subprocess.check_output(['git','merge-base',main,repair],text=True).strip()==base
+          result=subprocess.run(['git','merge','--no-commit','--no-ff',main],capture_output=True,text=True)
+          p('build/integration/merge.log').write_text(result.stdout+'\n'+result.stderr,encoding='utf-8')
+          conflicts=subprocess.check_output(['git','diff','--name-only','--diff-filter=U'],text=True).splitlines()
+          p('build/integration/conflicts.json').write_text(json.dumps(conflicts,indent=2),encoding='utf-8')
+          for name in conflicts:
+              if name.endswith('.dll'): continue
+              target=p('build/integration/conflicted')/name
+              target.parent.mkdir(parents=True,exist_ok=True)
+              target.write_bytes(p(name).read_bytes())
+          p('build/integration/from-main.diff').write_bytes(subprocess.check_output(['git','diff',base,main,'--',':!prebuilt/Bloodlines.dll']))
+          p('build/integration/from-repair.diff').write_bytes(subprocess.check_output(['git','diff',base,repair,'--',':!prebuilt/Bloodlines.dll']))
+          print(result.stdout)
+          print('Unresolved:',conflicts)
+          if result.returncode not in (0,1): raise SystemExit(result.returncode)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: harbor-integration-review
+          retention-days: 7
+          if-no-files-found: error
+          path: build/integration/
