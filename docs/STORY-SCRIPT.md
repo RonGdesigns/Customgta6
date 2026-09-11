@@ -317,6 +317,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M12_SCENE_OUTRO_02_ICE) — You showed us the part that wouldn't work. Keep doing that. I can plan around a problem you tell me about.
 
+### Approach
+
+**GOHAN** (M12_SCENE_APPROACH_01_GOHAN) — Hold 44 is on the manifest. The sub tells us whether a container comes out through that hull; I'm the one going under.
+
+**ICE** (M12_SCENE_APPROACH_02_ICE) — Two launches on the water. I watch them from the pier, Ron holds the jetty. You surface where we can see you.
+
 ## M13 — SMUGGLER'S CUT
 
 ### Intro
@@ -330,6 +336,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M13_SCENE_OUTRO_01_GUESS) — Fewer boats behind us. That still leaves radar above us. Sandy Shores has the jammer pod we need.
 
 **ICE** (M13_SCENE_OUTRO_02_ICE) — Copy. We're making an exit, not collecting explosions. Keep me honest about that.
+
+### Approach
+
+**ICE** (M13_SCENE_APPROACH_01_ICE) — Three barges, one basin. I plant and I leave; nobody in the water gets shot tonight.
+
+**GOHAN** (M13_SCENE_APPROACH_02_GOHAN) — The men on the slipway are fuel workers, not Aegis. I hold the harbor alarm. If it trips, you leave with whatever's planted.
 
 ## M14 — AIRSPACE BLACKOUT
 
@@ -345,6 +357,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M14_SCENE_OUTRO_02_GOHAN) — Air cover sorted. I still need the harbor gate network before we move anything through the channel.
 
+### Approach
+
+**GUESS** (M14_SCENE_APPROACH_01_GUESS) — Besra on the apron with the pod under the wing. I take it to McKenzie in the dirt. The pod is the cargo; the plane is how it gets there.
+
+**ICE** (M14_SCENE_APPROACH_02_ICE) — Five on the apron. I clear them from the ridge; you don't move until I say. Then Gohan and I leave by road.
+
 ## M15 — CRAWLSPACE
 
 ### Intro
@@ -358,6 +376,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M15_SCENE_OUTRO_01_GOHAN) — Gate access is ready. Keeping a copy on each of your devices. If I go down, the plan still belongs to all three.
 
 **GUESS** (M15_SCENE_OUTRO_02_GUESS) — You aren't a spare part, Gohan. But thank you for trusting us with your work.
+
+### Approach
+
+**GOHAN** (M15_SCENE_APPROACH_01_GOHAN) — Service access on the side, the trunk one level down. The tap opens the lock gates and nothing else.
+
+**ICE** (M15_SCENE_APPROACH_02_ICE) — Three watchmen on rounds, night shift. Stun gun, all three, before you're committed to the cable.
 
 ## M16 — THE HEAVY LIFT
 

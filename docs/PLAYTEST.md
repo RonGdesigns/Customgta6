@@ -71,6 +71,10 @@
 >   the annex and the grid seen first; the broker kept alive; the tap and the trace
 >   clock; the prize driven to the chop bay; every reward said as it works. Live-test
 >   items 97–99.
+> - M12–M15 are the eighth slice, the preparation jobs: each seen before it starts,
+>   the work on camera, the change of plan shown once, and the result recorded for
+>   the heist (the survey, fewer patrols, the pod, the gate access). Live-test items
+>   100–103.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

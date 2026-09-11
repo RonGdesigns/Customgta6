@@ -285,6 +285,13 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 98. **SM02.** Start SM02: three shots (the roof, the bay, a laptop on a table) with two lines; skip once. Stun both guards, hold E at the terminal: the tap as a scene, then "IT will trace this: 75 s". Wait it out on the roof: the job fails. Do it again and take the fire escape in time: Gohan's radio, the Marksman Rifle named.
 99. **SM03.** Start SM03: KJ walks the crate on the coupe's tail and the coupe, then looks at the Elegys, with two lines; skip once. Win three laps; the first rival's guns are shown once; Ron's line; stop them or reach the finish; then drive the coupe to the Burro Heights chop bay: the prize recorded, $25,000 and the transmission named, KJ's check-in as the aftermath.
 
+## The preparation jobs (P4a: M12–M15)
+
+100. **M12.** Start M12: the sub, the freighter, Ice on the pier, two lines; skip once. Dive, scan the hull with the meter: the scan as a scene; skip once; then the launches shown once; back to the jetty. The log has "Evidence hullSurvey -> CopyHeld".
+101. **M13.** Start M13: the barges, the slipway, the Granger, two lines; skip once. Plant all three with the meter; a launch turns into the basin and is shown once; reach the slipway; board the Granger and hold E: the basin burns, seen from the slipway. The log has "harborPatrolsReduced".
+102. **M14.** Start M14: the Besra with the pod, the apron, the ridge, two lines; skip once. Clear the apron, take the plane: Ice's radio, and on the map Ice and Gohan walk to the Granger on the ridge road. Gohan's cue at the midpoint. Land at McKenzie and stop: the pod under the wing as a scene. The log has "Cargo radarPod -> M14.McKenzieHangar".
+103. **M15.** Start M15: the access, a watchman, the cable point, the Granger at the exit, two lines; skip once. Stun three, splice with the meter: the splice as a scene; Gohan's radio that one gate answered; leave. The log has "harborGateAccess".
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -298,7 +305,8 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
 - The room's spots are desk estimates until surveyed inside (items 76–77); the room map is the tool for laying them out.
 - M08's bed slots, forklift approach and stash are estimates; M09's pickup flat and M10's window are estimates.
-- P3 is built through P3d; every slice's scenes still want the live watch/skip/cancel pass.
+- P3 is built through P3d and P4a through M15; every slice's scenes still want the live watch/skip/cancel pass.
+- M16–M30 and SM04–SM06 remain per the plan's P4b–P5c rows.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.

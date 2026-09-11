@@ -84,6 +84,10 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 71 | **SM01 broker and crates** | Hold E at Sergei; then at the crates; drive home | Sergei alive and running; two crates into the car on camera; a dead Sergei fails; the reward said as the Mk II plus double rifle ammunition |
 | 72 | **SM02 tap and trace** | Stun, tap, leave | The tap as a scene; camera archive named, not the dock recording; 75 s to the fire escape or the job fails |
 | 73 | **SM03 grid and bay** | Watch KJ, race, ambush, deliver | KJ walks the prize; the guns shown once; the coupe and prize to the chop bay; $25,000 and the transmission named |
+| 74 | **M12 survey** | Dive, scan, return | The scan as a scene; the launches shown once; "hullSurvey" recorded |
+| 75 | **M13 basin** | Plant three, leave, board, trigger | The alarm launch shown; charges dark until aboard; the burn seen from the slipway; "harborPatrolsReduced" |
+| 76 | **M14 pod** | Clear, take the plane, fly low, land | Ice and Gohan leave by road; the pod shown at McKenzie; "radarPod" recorded |
+| 77 | **M15 splice** | Stun three, splice, leave | The splice as a scene; one gate answers; "harborGateAccess" recorded |
 
 ## Before you launch: the static checks
 

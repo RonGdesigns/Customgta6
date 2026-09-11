@@ -362,7 +362,8 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            Label = _workText + " — stay at this marker: " + (_secondsEach - elapsed) + "s; " + Remaining + " left.";
+            Label = _workText + " — " + Remaining + " left.";
+            GameUtils.DrawProgressBar((Game.GameTime - _startedAt) / (_secondsEach * 1000f));
         }
     }
 }

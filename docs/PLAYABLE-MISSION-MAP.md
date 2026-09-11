@@ -252,7 +252,7 @@ Prerequisite: M14. Retry: full mission restart.
 | 1 | Gohan | **Maintenance level** — ReachZoneObjective: Gohan: reach the marked maintenance access outside the administration building. |
 | 2 | Ice | **Clear the rounds** — SubdueTargetsObjective: Ice — put the watchmen down without killing them. |
 | 3 | Gohan | **Splice the trunk** — MissionInteraction: Gohan — splice the optical bypass. |
-| 4 | Gohan | **Out clean** — ReachZoneObjective: Leave the way you came in. |
+| 4 | Gohan | **Out clean** — ReachZoneObjective: Leave the way you came in; Ron is at the exit. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
