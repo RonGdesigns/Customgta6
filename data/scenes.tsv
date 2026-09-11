@@ -66,10 +66,16 @@ M07_SCENE_INTRO_01_GOHAN	M07	intro	GOHAN	Briefing; intent before tactics	Mateo n
 M07_SCENE_INTRO_02_ICE	M07	intro	ICE	Briefing; intent before tactics	I used to trust a uniform to tell me whose side I was on. Give me something I can verify.
 M07_SCENE_OUTRO_01_GUESS	M07	outro	GUESS	Reflective; allow the response to land	Two engines, bound for Paleto. Steal their speed and maybe we stop finishing every job with holes in the doors.
 M07_SCENE_OUTRO_02_GOHAN	M07	outro	GOHAN	Reflective; allow the response to land	Elysian warehouse first. This is a supply route. Each shipment should tell us where the next one goes.
+M07_SCENE_APPROACH_01_GOHAN	M07	approach	GOHAN	On the approach; the place and the job seen before anyone moves	That dish carries their logistics. It stays live, Ice: clamp it, don't cut it. I read, you climb.
+M07_SCENE_APPROACH_02_GUESS	M07	approach	GUESS	On the approach; the place and the job seen before anyone moves	I'm in the lane under the garage with the engine running. Whatever comes, that's your door down.
 M08_SCENE_INTRO_01_GUESS	M08	intro	GUESS	Briefing; intent before tactics	Those turbines are the difference between hauling armor and dying inside it. I'll choose what the truck can carry.
 M08_SCENE_INTRO_02_ICE	M08	intro	ICE	Briefing; intent before tactics	Take the time you need to secure them. I won't call you slow while I'm standing behind your armor.
 M08_SCENE_OUTRO_01_GOHAN	M08	outro	GOHAN	Reflective; allow the response to land	The crates need a quiet transfer before the final run. While they're hidden, we can lift an IFF from Vance's convoy.
 M08_SCENE_OUTRO_02_GUESS	M08	outro	GUESS	Reflective; allow the response to land	Colonel Vance. Same surname as you, Ice. I won't invent a connection, but don't make me ask twice if there is one.
+M08_SCENE_APPROACH_01_GUESS	M08	approach	GUESS	On the approach; the place and the job seen before anyone moves	Two crates, one flatbed, one forklift. That's the whole job; everything else is what stops me doing it.
+M08_SCENE_APPROACH_02_GOHAN	M08	approach	GOHAN	On the approach; the place and the job seen before anyone moves	The loop buys minutes, not the afternoon. When it drops they see all of us. Ice, the gate is yours first.
+M08_SCENE_LOADING_01_GUESS	M08	loading	GUESS	At the Benson; crates carried into the bed by hand	On the forks. Easy... easy. Seated. That's one.
+M08_SCENE_LOADING_02_GUESS	M08	loading	GUESS	At the Benson; crates carried into the bed by hand	Two. Chain them down and we're gone before the loop drops.
 M09_SCENE_INTRO_01_ICE	M09	intro	ICE	Briefing; intent before tactics	The colonel isn't family. He's Aegis command. We take his escort's clearance unit; chasing him costs us the route.
 M09_SCENE_INTRO_02_GUESS	M09	intro	GUESS	Briefing; intent before tactics	Good. Tell me the part that might change your judgment before I put the Frogger over that convoy.
 M09_SCENE_OUTRO_01_ICE	M09	outro	ICE	Reflective; allow the response to land	Seven-Echo-Victor gets us past a military checkpoint. Save it for the heavy lift. The engines still need delivering.

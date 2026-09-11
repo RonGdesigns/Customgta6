@@ -17,7 +17,7 @@ namespace Bloodlines.Core
         private string _waiting;
         private float _heading;
         private bool _frozen, _invincible, _control, _entering, _moved;
-        private bool _wasDisabled, _wasCapped;
+        private bool _wasDisabled, _wasCapped, _refaded;
         private float? _heading2;
         private int _started, _interior;
         private string _ipl;
@@ -35,7 +35,7 @@ namespace Bloodlines.Core
             if (Busy || enter == Inside || ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) return false;
             _ped = ped; _origin = ped.Position; _heading = ped.Heading; _target = target; _heading2 = heading;
             _frozen = ped.IsPositionFrozen; _invincible = ped.IsInvincible; _control = Game.Player.CanControlCharacter;
-            _entering = enter; _moved = false; _started = Game.GameTime; Busy = true; _probe = interiorProbe ?? target; _waiting = null;
+            _entering = enter; _moved = false; _started = Game.GameTime; Busy = true; _probe = interiorProbe ?? target; _waiting = null; _refaded = false;
             Logger.Info("Apartment: " + (enter ? "entry" : "exit") + " requested; target=" + target + "; IPL=" + (ipl ?? "stock"));
             try
             {
@@ -68,6 +68,14 @@ namespace Bloodlines.Core
                 if (Game.GameTime - _started > 12000) { Logger.Warn("Apartment timeout: " + _waiting + "; interior=" + _interior + "; moved=" + _moved + "; wasDisabled=" + _wasDisabled + "; wasCapped=" + _wasCapped + "; target=" + _target); Fail(); GameUtils.Notify("~y~Apartment loading timed out. Returned to your previous position."); return; }
                 Function.Call(Hash.DISABLE_ALL_CONTROL_ACTIONS, 0);
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, _target.X, _target.Y, _target.Z);
+                // A scene ending in the same breath can fade the screen back in over
+                // a room that is still streaming: the player then watches the void
+                // from inside the interior. The fade is ours until the room is ready.
+                if (Game.GameTime - _started > 400 && !GameUtils.IsScreenFadedOut())
+                {
+                    if (!_refaded) { _refaded = true; Logger.Info("Apartment: the screen came back early; holding the fade until the room is ready."); }
+                    GameUtils.FadeOut(150);
+                }
                 if (Game.GameTime - _started < 250) return;
                 if (_entering)
                 {

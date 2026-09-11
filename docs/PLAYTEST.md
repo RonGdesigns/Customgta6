@@ -50,6 +50,11 @@
 >   marker. Live-test items 75–78.
 > - Helicopters fly stock again: no ceiling, no cruise push, no handling edit.
 >   Live-test item 79.
+> - M07 and M08 are the fifth slice: the relay seen before the climb, a real sniffer
+>   on the dish with the manifests read over it, the helicopter shown coming; the
+>   crates and the flatbed seen first, a timed camera loop, the forklift lifting each
+>   crate onto the bed on camera, the technical shown coming, and the engines left
+>   locked at a recorded stash for M09 and M10. Live-test items 80–83.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.
