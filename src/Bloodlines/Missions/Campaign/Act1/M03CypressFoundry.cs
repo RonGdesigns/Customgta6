@@ -124,7 +124,9 @@ namespace Bloodlines.Missions.Campaign
             // Out of the car and onto the mark: the work starts when he is there, no button.
             yield return new MissionStage("Seal the response routes",
                     new HoldZoneObjective("Guess: get out and hold the junction marker.", () => _junction, RailHoldSeconds, 4f, "Locking the junction", onFoot: true),
-                    new ReactionTrigger(() => _workStartedAt > 0 && Game.GameTime - _workStartedAt >= AmbushDelayMs, SpringAmbush))
+                    new ReactionTrigger(() => _workStartedAt > 0 && Game.GameTime - _workStartedAt >= AmbushDelayMs, SpringAmbush),
+                    // The block's crew is Ron's fight, here, before anyone is asked to switch (Ron, September 10).
+                    new ConditionObjective("Guess: put the street crew down.", () => _ambushSprung && _ambush.All(t => t == null || !t.Exists() || t.IsDead)))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => Say("M03_S1_01_GUESS"));
 
@@ -165,6 +167,8 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context =>
                 {
                     ClearHeatIfSafe();
+                    // Whoever rode in gets out before the truck locks (Ron, September 10: Gohan could not).
+                    UnseatCrew();
                     // The delivered truck is the base's: it locks where it stands.
                     if (_hauler != null && _hauler.Exists()) _hauler.LockStatus = VehicleLockStatus.CannotEnter;
                     /* Awarded once by CampaignState.MarkComplete after the mission passes. */
@@ -353,7 +357,25 @@ namespace Bloodlines.Missions.Campaign
             if (guess == null || !guess.Exists() || _hauler == null || !_hauler.Exists()) return null;
             var blocking = new SceneBlocking { DialogueAfterStep = guess.IsInVehicle(_hauler) ? 1 : 0 };
             if (guess.IsInVehicle(_hauler)) blocking.Then(new ExitVehicleStep(guess));
+            foreach (var slot in new[] { CrewSlot.Gohan, CrewSlot.Ice })
+            {
+                var rider = Ctx.Crew.PedFor(slot);
+                if (rider != null && rider.Exists() && rider.IsInVehicle(_hauler)) blocking.Then(new ExitVehicleStep(rider));
+            }
             return blocking.Then(new ShotStep(4000, _hauler, new Vector3(-6f, 3f, 1.6f), _hauler, new Vector3(0f, 0f, 0.8f), 1.0f));
+        }
+
+        /// <summary>Every brother out of the Benson and back on his own AI; the player's exit is the aftermath's.</summary>
+        private void UnseatCrew()
+        {
+            if (_hauler == null || !_hauler.Exists()) return;
+            foreach (var hero in Protagonist.All)
+            {
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists() || ped.Handle == Game.Player.Character.Handle || !ped.IsInVehicle(_hauler)) continue;
+                Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
+                ped.Task.LeaveVehicle();
+            }
         }
 
         protected override void OnPassed()
@@ -420,7 +442,17 @@ namespace Bloodlines.Missions.Campaign
                 if (!GameUtils.RequestModel(model)) continue;
 
                 var offset = new Vector3(-12f + i * 4f, 6f + (i % 3) * 9f, 0f);
-                var guard = World.CreatePed(model, _depot + offset, 180f);
+                var post = _depot + offset;
+                // Never inside the Benson (Ron, September 10: a guard spawned in the truck).
+                var truck = Ctx.Locations.Position("M03.HaulerSpawn");
+                if (GameUtils.IsWithinFlat(post, truck, 7f))
+                {
+                    var away = post - truck;
+                    float length = (float)System.Math.Sqrt(away.X * away.X + away.Y * away.Y);
+                    if (length < 0.5f) { away = new Vector3(1f, 0f, 0f); length = 1f; }
+                    post = truck + new Vector3(away.X / length * 9f, away.Y / length * 9f, 0f);
+                }
+                var guard = World.CreatePed(model, post, 180f);
                 model.MarkAsNoLongerNeeded();
                 if (guard == null || !guard.Exists()) continue;
 

@@ -27,7 +27,6 @@ namespace Bloodlines.Missions.Campaign
     {
         private const int LedgerRipSeconds = 8;
         /// <summary>How long a clear yard waits for a Mateo the navmesh has stranded before he is brought to the boat.</summary>
-        public const int StrandedMs = 45000;
 
         private static readonly string[] CartelGoons = { "g_m_y_mexgoon_01", "g_m_y_mexgoon_02", "g_m_y_mexgang_01" };
 
@@ -55,7 +54,7 @@ namespace Bloodlines.Missions.Campaign
         private CrewSlot? _workingSlot;
 
         private int _ripStartedAt;
-        private int _yardClearedAt;
+        private readonly Dictionary<int, Blip> _guardBlips = new Dictionary<int, Blip>();
 
         public override string Id => "M01";
         public override string Title => "Ghost in the Dockyard";
@@ -367,6 +366,9 @@ namespace Bloodlines.Missions.Campaign
 
         private void UpdateFirefight(Ped player)
         {
+            foreach (var guard in _guards)
+                if ((guard == null || !guard.Exists() || guard.IsDead) && guard != null && _guardBlips.TryGetValue(guard.Handle, out var mark))
+                { GameUtils.SafeDelete(mark); _guardBlips.Remove(guard.Handle); }
             _guards.RemoveAll(guard => guard == null || !guard.Exists() || guard.IsDead);
             bool launchReady = _launch != null && _launch.Exists() && _mateo != null && _mateo.Exists();
             bool aboard = launchReady && _mateo.IsInVehicle(_launch);
@@ -375,16 +377,13 @@ namespace Bloodlines.Missions.Campaign
             // blip, not to a HUD line that reads as the hostiles announcing him.
             if (!_mateoFleeing) GameUtils.Subtitle("~y~Hostiles: " + _guards.Count, 500);
 
-            // No clock: the yard has to be cleared. The escape then plays once Mateo is
-            // at the boat, and a Mateo the navmesh has stranded is brought to it after
-            // a bounded wait rather than never.
-            if (_guards.Count > 0) { _yardClearedAt = 0; return; }
-            if (_yardClearedAt == 0) _yardClearedAt = Game.GameTime;
+            // No clock: the yard has to be cleared. The moment it is, the escape plays
+            // (Ron, September 10): a Mateo still short of the boat is brought to it.
+            if (_guards.Count > 0) return;
 
             if (!_mateoFleeing && launchReady)
             {
                 bool atLaunch = aboard || _mateo.Position.DistanceTo(_launch.Position) <= 14f;
-                if (!atLaunch && Game.GameTime - _yardClearedAt < StrandedMs) return;
                 _mateoFleeing = true;
                 PlayEscape(!atLaunch);
                 Say("M01_S3_07_ICE");
@@ -558,7 +557,7 @@ namespace Bloodlines.Missions.Campaign
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, spot.X, spot.Y, spot.Z);
                 _mateo.Position = spot;
                 _mateo.Heading = DriveUpStep.HeadingBetween(spot, _launch.Position);
-                Logger.Warn("M01: Mateo did not reach the launch on foot within " + StrandedMs / 1000 + " s of the yard clearing; placed beside it for the escape.");
+                Logger.Info("M01: Mateo was short of the launch when the yard cleared; placed beside it for the escape.");
             }
             var blocking = new SceneBlocking { DialogueAfterStep = 1 }
                 .Then(new EnterVehicleStep(_mateo, _launch, VehicleSeat.Driver) { TimeoutMs = 12000 })
@@ -630,6 +629,16 @@ namespace Bloodlines.Missions.Campaign
                 guard.Task.FightAgainstHatedTargets(120f);
 
                 _guards.Add(Track(guard));
+                // Hostiles on the map (Ron, September 10): a red mark per guard, gone when he is.
+                var mark = Track(guard.AddBlip());
+                if (mark != null && mark.Exists())
+                {
+                    mark.Sprite = BlipSprite.Enemy;
+                    mark.Color = BlipColor.Red;
+                    mark.IsShortRange = true;
+                    mark.Name = "Hostile";
+                    _guardBlips[guard.Handle] = mark;
+                }
             }
 
             Logger.Info("M01 spawned " + _guards.Count + " cartel guards.");

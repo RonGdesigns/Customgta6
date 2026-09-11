@@ -41,9 +41,9 @@ M07.MastTop	-724.0	-64.0	56.5	0	land	estimate	Rockford Hills / Pillbox
 M07.LandingZone	-1030.0	-430.0	36.0	0	land	estimate	Rockford Hills / Pillbox
 M08.WarehouseGate	240.0	-2900.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
 M08.CameraRoom	252.0	-2916.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
-M08.CratePadOne	268.0	-2930.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
-M08.CratePadTwo	276.0	-2930.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
-M08.HaulerSpawn	258.0	-2944.0	6.0	270	land	estimate	Port of Los Santos Elysian Island
+M08.CratePadOne	272.0	-2936.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.CratePadTwo	286.0	-2936.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
+M08.HaulerSpawn	279.0	-2962.0	6.0	90	land	estimate	Port of Los Santos Elysian Island
 M08.Connector	90.0	-2620.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
 SM02.RoofAccess	-1078.0	-250.0	44.0	210	land	estimate	Lifeinvader Data Annex / Rockford
 SM02.ServerBay	-1085.0	-262.0	44.0	0	land	estimate	Lifeinvader Data Annex / Rockford

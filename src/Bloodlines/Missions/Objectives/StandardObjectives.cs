@@ -112,7 +112,8 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            GameUtils.Subtitle(_progressText + "... " + (_seconds - elapsed) + "s", 500);
+            GameUtils.Subtitle(_progressText, 500);
+            GameUtils.DrawProgressBar((Game.GameTime - _startedAt) / (_seconds * 1000f));
         }
     }
 

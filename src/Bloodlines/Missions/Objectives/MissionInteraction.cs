@@ -66,9 +66,10 @@ namespace Bloodlines.Missions.Objectives
                 _started = Game.GameTime;
                 if (_vehicle == null) StartAnimation(ped, point);
             }
-            int remaining = Math.Max(0, (_duration - (Game.GameTime - _started) + 999) / 1000);
-            Label = _action + " — stay in the marker: " + remaining + "s.";
-            if (remaining == 0) { StopAnimation(ped); Complete(); }
+            int elapsed = Game.GameTime - _started;
+            Label = _action;
+            GameUtils.DrawProgressBar(elapsed / (float)_duration);
+            if (elapsed >= _duration) { StopAnimation(ped); Complete(); }
         }
     }
 

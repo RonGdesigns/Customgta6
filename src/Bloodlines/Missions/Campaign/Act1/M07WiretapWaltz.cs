@@ -49,9 +49,13 @@ namespace Bloodlines.Missions.Campaign
         protected override bool Setup()
         {
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _roof = Ctx.Locations.Position("M07.GarageRoof");
-            _mast = Ctx.Locations.Position("M07.MastTop");
-            _landing = Ctx.Locations.Position("M07.LandingZone");
+            // The estimates carry the building; the roof's real height comes from the
+            // world, and the pickup lane is the nearest street, not a wall (Ron,
+            // September 10: Ice was not on the building; the sedan was against it).
+            _roof = RoofTop(Ctx.Locations.Position("M07.GarageRoof"));
+            _mast = RoofTop(Ctx.Locations.Position("M07.MastTop"));
+            var lane = World.GetNextPositionOnStreet(Ctx.Locations.Position("M07.LandingZone"));
+            _landing = lane == Vector3.Zero ? Ctx.Locations.Position("M07.LandingZone") : lane;
 
             if (!Ctx.Crew.Deploy(CrewSlot.Ice, _roof + new Vector3(0f, -8f, 0f),
                     Ctx.Locations.Heading("M07.GarageRoof")))
@@ -106,6 +110,18 @@ namespace Bloodlines.Missions.Campaign
                     // The manifests are the payout, and they set up M08.
                     GameUtils.Subtitle("~g~Manifests decrypted. Elysian warehouse, tomorrow.", 5000);
                 });
+        }
+
+        /// <summary>The highest surface under the sky at the estimate's X and Y, when it is at least roughly as high as the estimate: the roof, not the street below it.</summary>
+        private static Vector3 RoofTop(Vector3 estimate)
+        {
+            var z = new OutputArgument();
+            if (Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, estimate.X, estimate.Y, estimate.Z + 120f, z, false, false))
+            {
+                float top = z.GetResult<float>();
+                if (top > estimate.Z - 3f) return new Vector3(estimate.X, estimate.Y, top + 0.1f);
+            }
+            return estimate;
         }
 
         // ---------- beats ----------

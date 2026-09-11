@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Bloodlines.Core;
 using GTA;
 using GTA.Native;
 
@@ -11,7 +12,9 @@ namespace Bloodlines.Crew
     {
         private readonly Dictionary<int, Ped> _tuned = new Dictionary<int, Ped>();
         private readonly Dictionary<int, Vehicle> _wantedCars = new Dictionary<int, Vehicle>();
-        private int _nextScan, _tier = -1;
+        private int _nextScan, _tier = -1, _nextSighting, _lastSightingLog;
+        /// <summary>How far a cop can be and still count as having seen the player.</summary>
+        public const float SightingRange = 70f;
         private static readonly int[] Dispatch = { 1, 2, 4, 6, 8, 13, 14 };
         public static float DispatchInterval(int stars) => stars <= 0 ? 1f : Math.Max(.52f, 1.12f - Math.Min(5, stars) * .12f);
         public void Update(CrewRoster crew)
@@ -36,6 +39,15 @@ namespace Bloodlines.Crew
                 Function.Call(Hash.SET_VEHICLE_IS_WANTED, car, true);
             }
             if (stars == 0) ClearWantedCars();
+            // Smarter, not unlosable (Ron, September 10): while the stars are grayed
+            // out, a cop with a clear line of sight inside 70 m reports the player and
+            // the search re-centers on them. Break the line of sight and the search
+            // still runs down the way it always has.
+            if (stars > 0 && Game.GameTime >= _nextSighting)
+            {
+                _nextSighting = Game.GameTime + 1500;
+                if (Function.Call<bool>(Hash.ARE_PLAYER_STARS_GREYED_OUT, Game.Player)) ReportSightings(player, crew);
+            }
             if (Game.GameTime < _nextScan) return;
             _nextScan = Game.GameTime + 1000;
             foreach (var key in _tuned.Where(p => !p.Value.Exists() || p.Value.IsDead).Select(p => p.Key).ToArray()) _tuned.Remove(key);
@@ -70,6 +82,20 @@ namespace Bloodlines.Crew
                     }
                 }
                 _tuned[ped.Handle] = ped;
+            }
+        }
+        private void ReportSightings(Ped player, CrewRoster crew)
+        {
+            foreach (var ped in World.GetNearbyPeds(player, SightingRange))
+            {
+                if (ped == null || !ped.Exists() || ped.IsDead || ped == player || ped.RelationshipGroup == crew.CrewGroup) continue;
+                if (Function.Call<int>(Hash.GET_PED_TYPE, ped) != 6) continue;
+                if (!Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, ped, player, 17)) continue;
+                var at = player.Position;
+                Function.Call(Hash.REPORT_POLICE_SPOTTED_PLAYER, Game.Player);
+                Function.Call(Hash.SET_PLAYER_WANTED_CENTRE_POSITION, Game.Player, at.X, at.Y, at.Z);
+                if (Game.GameTime - _lastSightingLog > 10000) { _lastSightingLog = Game.GameTime; Logger.Info("Police sighting: a unit inside " + SightingRange + " m had line of sight; the search re-centered."); }
+                return;
             }
         }
         private void ClearWantedCars()

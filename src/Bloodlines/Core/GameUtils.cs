@@ -133,6 +133,21 @@ namespace Bloodlines.Core
             Function.Call(Hash.SET_WEATHER_TYPE_NOW, weather);
         }
 
+        /// <summary>
+        /// A small progress meter above the subtitle line for a hold or a piece of
+        /// work: the game's own timer-bar backing with a fill. Replaces "stay in the
+        /// marker: Ns" text (Ron, September 10).
+        /// </summary>
+        public static void DrawProgressBar(float fraction)
+        {
+            fraction = Math.Max(0f, Math.Min(1f, fraction));
+            const float width = 0.085f, height = 0.007f, x = 0.5f, y = 0.888f;
+            if (!Function.Call<bool>(Hash.HAS_STREAMED_TEXTURE_DICT_LOADED, "timerbars")) Function.Call(Hash.REQUEST_STREAMED_TEXTURE_DICT, "timerbars", false);
+            else Function.Call(Hash.DRAW_SPRITE, "timerbars", "all_black_bg", x, y, width + 0.014f, height + 0.014f, 0f, 255, 255, 255, 170);
+            Function.Call(Hash.DRAW_RECT, x, y, width, height, 38, 38, 38, 210);
+            if (fraction > 0f) Function.Call(Hash.DRAW_RECT, x - width * 0.5f + width * fraction * 0.5f, y, width * fraction, height, 240, 205, 60, 235);
+        }
+
         public static void FadeOut(int ms)
         {
             Function.Call(Hash.DO_SCREEN_FADE_OUT, ms);

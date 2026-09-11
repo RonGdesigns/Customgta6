@@ -55,6 +55,11 @@
 >   crates and the flatbed seen first, a timed camera loop, the forklift lifting each
 >   crate onto the bed on camera, the technical shown coming, and the engines left
 >   locked at a recorded stash for M09 and M10. Live-test items 80–83.
+> - Ron's third round: hostile marks and the immediate escape in M01, boarding the
+>   Granger in M02, the junction fought before the switch and Gohan out of the truck
+>   in M03, Ron arriving alone in M04, police that pursue when they see you, Ice on
+>   the roof in M07, the M08 yard spread out, and a small meter instead of "stay in
+>   the marker". Live-test items 84–90.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

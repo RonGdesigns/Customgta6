@@ -69,6 +69,13 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 56 | **M07 clamp and helicopter** | Reach the mast, hold E; skip the clamp; watch the moment | A real case on the dish that survives the skip; the manifests read as a scene; the helicopter shown once, then Ron's radio |
 | 57 | **M08 forks and stash** | Loop, clear, forklift to each crate, hold E; deliver | Each crate seen onto the bed and counted; the technical shown once; Ice aboard, Gohan in the Granger; the flatbed locked at the connector with both crates, still there after the mission |
 | 58 | **M08 loop window** | Loop the cameras and wait it out | "Camera loop: Ns" on the HUD; the job fails when it drops |
+| 59 | **M01 marks and escape** | Fight the yard | Red marks per hostile, gone as they drop; the escape plays the moment the last drops |
+| 60 | **M02 boarding** | Take the drives, press E at the Granger's door | Seated; the drives stowed |
+| 61 | **M03 order** | Arrive at the junction as Guess | Ambush fought as Guess; the switch asked only after; no guard in the truck; Gohan out after delivery |
+| 62 | **M04 arrival** | Drive to the lot | Guess alone in the van; Ice and Gohan already in position |
+| 63 | **Police sightings** | Grayed stars, drive past a patrol in view | The stars flash and they pursue; out of sight the search runs down |
+| 64 | **M07/M08 placement** | Start each | Ice on the roof, the sedan on the street; the M08 yard spread out with the forklift in the open |
+| 65 | **The meter** | Any hold or work | Name and a small yellow meter, no countdown text |
 
 ## Before you launch: the static checks
 

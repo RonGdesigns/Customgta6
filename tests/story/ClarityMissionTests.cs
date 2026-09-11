@@ -36,7 +36,8 @@ public static partial class StoryTests
   guess.Task.LeaveVehicle();guess.Position=junction;m3.Tick();Game.GameTime+=1000;m3.Tick();Check(!m3.AmbushSprung,"The block waits a beat after the work starts");
   Game.GameTime+=M03CypressFoundry.AmbushDelayMs-1000;m3.Tick();
   Check(m3.AmbushSprung&&m3.Ambush.Count==4&&m3.Ambush.All(t=>t.Task.HatedFights==1)&&c.Cutscenes.IsActive&&m3.CurrentStage==1,"Five seconds into the work the street crew comes out of the houses, with a moment on the first of them, and the hold is not done");
-  c.Cutscenes.Stop();Game.GameTime+=2000;m3.Tick();Check(m3.CurrentStage==2,"Holding the junction through it locks the rail");
+  c.Cutscenes.Stop();Game.GameTime+=2000;m3.Tick();Check(m3.CurrentStage==1&&m3.CurrentObjective.Contains("street crew"),"The hold done, the block's crew is still Ron's fight before any switch");
+  foreach(var thug in m3.Ambush)thug.IsDead=true;m3.Tick();Check(m3.CurrentStage==2,"With the street crew down the rail is locked and the depot is Ice's");
   var guards=World.Created.Where(g=>g.Model.Name.StartsWith("g_m_y_mex")||g.Model.Name=="g_m_m_armboss_01").ToList();
   Game.Player.Character.Position=depot-new Vector3(0,50,0);Game.Player.Character.IsShooting=true;m3.Tick();
   Check(m3.Status==MissionStatus.Running&&guards.All(g=>g.Task.HatedFights==0),"Ron shooting near the depot is not Ice's shot: the quiet rule is scoped to Ice and the guards keep patrolling");
@@ -54,7 +55,8 @@ public static partial class StoryTests
   var destination=basePoint;Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
   hauler.Position=destination;Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running&&m3.CurrentObjective.Contains("Lose the police"),"Arriving with the police on the truck is not delivery: the foundry is a safehouse, the heat is lost on the way");
   var outro=m3.OutroBlocking();Check(outro!=null&&outro.Steps.Count==2&&outro.Steps[0] is ExitVehicleStep,"The aftermath gets Ron out of the truck before the lines");
-  Game.Player.WantedLevel=0;m3.Tick();
+  gohan.SetIntoVehicle(hauler,VehicleSeat.RightFront);Game.Player.WantedLevel=0;m3.Tick();
+  Check(!gohan.IsInVehicle(hauler),"Gohan is out of the Benson before it locks");
   Check(m3.Status==MissionStatus.Passed&&hauler.LockStatus==VehicleLockStatus.CannotEnter&&hauler.Present&&hauler.Released&&van.Present&&car.Present,"Delivered with the police lost: the Benson locks at the foundry and the crew's vehicles remain");
   Reset();crew=Roster();c=Context(crew);bool scope=false;var quiet=new QuietRuleObjective("Quiet","Heard",()=>scope);quiet.Enter(c);Game.Player.Character.IsShooting=true;quiet.Update(c);
   Check(quiet.IsPassive&&!quiet.IsFinished,"Out of its scope the quiet rule allows the shot");scope=true;quiet.Update(c);
