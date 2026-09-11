@@ -124,6 +124,9 @@ namespace Bloodlines.Missions.Campaign
                     if (_granger != null && _granger.Exists()) _granger.IsEngineRunning = true;
                     _roles.For(CrewSlot.Ice).Extract(_pickup);
                     _roles.For(CrewSlot.Gohan).Extract(_pickup);
+                    // Only now does the truck move: the siege is over (Ron, September 11:
+                    // Ron's AI drove into the fight). His own AI brings it if the player is elsewhere.
+                    DriveIn();
                 });
 
             yield return new MissionStage("Everyone aboard",
@@ -166,14 +169,20 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M06 positions scene did not play; the feeder objective stands on its own.");
         }
 
-        /// <summary>Rotors over the roofline: Ron's waiting job becomes a pickup. His own AI moves the truck if the player is elsewhere.</summary>
+        /// <summary>Rotors over the roofline: Ron says the pickup is his once the burn is done. The truck stays put until then.</summary>
         private void CallPickup()
         {
             if (_pickupCalled) return;
             _pickupCalled = true;
-            Radio("GUESS", "Rotors over the roofline. I'm bringing the Granger to the alley mouth. Both of you come to me when it's done.", "M06_RADIO_01_GUESS");
+            Radio("GUESS", "Rotors over the roofline. Finish the burn and hold the alley; the second it's done I bring the Granger to the alley mouth. Not before.", "M06_RADIO_01_GUESS");
+        }
+
+        /// <summary>Ron's own AI brings the truck to the alley mouth when the player is somebody else; the player drives it himself otherwise.</summary>
+        private void DriveIn()
+        {
             var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
             if (guess == null || !guess.Exists() || guess.Handle == Game.Player.Character.Handle || _granger == null || !_granger.Exists()) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
             if (!guess.IsInVehicle(_granger)) guess.SetIntoVehicle(_granger, VehicleSeat.Driver);
             _granger.IsEngineRunning = true;
             guess.Task.DriveTo(_granger, _pickup, 6f, 12f, DrivingStyle.Normal);

@@ -104,6 +104,8 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 91 | **M05 water** | Start, look at the boat and the crew | The dinghy floats with Ron and Gohan aboard; the generator crew at the cave mouth on the shore; no boat on the road; a refusal names the key |
 | 92 | **Start cars** | Start M04 and M03, watch the van and Ron's car | Neither sinks through the ground; a held car is logged and released onto the ground |
 | 93 | **M06 places** | Start, cut, burn, pickup | Panel and bench off the road; Ice's entrance at the surveyed point; Granger staged far off and safe until boarded; no trooper in a wall |
+| 94 | **M07 roof** | Start, climb, clamp, jump | Ice on the roof, Gohan at the base with the laptop; a notice if the roof estimate is wrong; the Buzzard fires |
+| 95 | **M08 forks** | Stop at each pad, sentries | Crate on the forks after a second stopped, no button; crates do not topple; sentries apart and alerted |
 
 ## Before you launch: the static checks
 
