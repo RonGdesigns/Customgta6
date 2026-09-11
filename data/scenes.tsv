@@ -98,18 +98,26 @@ M12_SCENE_INTRO_01_GOHAN	M12	intro	GOHAN	Briefing; intent before tactics	The man
 M12_SCENE_INTRO_02_GUESS	M12	intro	GUESS	Briefing; intent before tactics	You're quiet when you're worried. Used to mean an exam. Now it means I should check my fuel twice.
 M12_SCENE_OUTRO_01_GOHAN	M12	outro	GOHAN	Reflective; allow the response to land	The hull can be breached, but surface patrols will box in the extraction. We need their boats short of fuel.
 M12_SCENE_OUTRO_02_ICE	M12	outro	ICE	Reflective; allow the response to land	You showed us the part that wouldn't work. Keep doing that. I can plan around a problem you tell me about.
+M12_SCENE_APPROACH_01_GOHAN	M12	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Hold 44 is on the manifest. The sub tells us whether a container comes out through that hull; I'm the one going under.
+M12_SCENE_APPROACH_02_ICE	M12	approach	ICE	On the approach; the place and the job seen before anyone moves	Two launches on the water. I watch them from the pier, Ron holds the jetty. You surface where we can see you.
 M13_SCENE_INTRO_01_ICE	M13	intro	ICE	Briefing; intent before tactics	The fuel barges supply harbor pursuit. Take them out and the heist's slowest vehicle gets a chance to leave.
 M13_SCENE_INTRO_02_GOHAN	M13	intro	GOHAN	Briefing; intent before tactics	Check the waterline before you plant. A fuel worker isn't Aegis command just because he's working their slipway.
 M13_SCENE_OUTRO_01_GUESS	M13	outro	GUESS	Reflective; allow the response to land	Fewer boats behind us. That still leaves radar above us. Sandy Shores has the jammer pod we need.
 M13_SCENE_OUTRO_02_ICE	M13	outro	ICE	Reflective; allow the response to land	Copy. We're making an exit, not collecting explosions. Keep me honest about that.
+M13_SCENE_APPROACH_01_ICE	M13	approach	ICE	On the approach; the place and the job seen before anyone moves	Three barges, one basin. I plant and I leave; nobody in the water gets shot tonight.
+M13_SCENE_APPROACH_02_GOHAN	M13	approach	GOHAN	On the approach; the place and the job seen before anyone moves	The men on the slipway are fuel workers, not Aegis. I hold the harbor alarm. If it trips, you leave with whatever's planted.
 M14_SCENE_INTRO_01_GUESS	M14	intro	GUESS	Briefing; intent before tactics	The stolen pod has to survive the flight. Blinding their radar is worth more than winning a dogfight tonight.
 M14_SCENE_INTRO_02_ICE	M14	intro	ICE	Briefing; intent before tactics	If the approach closes, call it off. I'd rather change the heist than put your name on a memorial.
 M14_SCENE_OUTRO_01_GUESS	M14	outro	GUESS	Reflective; allow the response to land	Pod's ours. Hearing you say I could turn back made it easier to make the run. Funny how that works.
 M14_SCENE_OUTRO_02_GOHAN	M14	outro	GOHAN	Reflective; allow the response to land	Air cover sorted. I still need the harbor gate network before we move anything through the channel.
+M14_SCENE_APPROACH_01_GUESS	M14	approach	GUESS	On the approach; the place and the job seen before anyone moves	Besra on the apron with the pod under the wing. I take it to McKenzie in the dirt. The pod is the cargo; the plane is how it gets there.
+M14_SCENE_APPROACH_02_ICE	M14	approach	ICE	On the approach; the place and the job seen before anyone moves	Five on the apron. I clear them from the ridge; you don't move until I say. Then Gohan and I leave by road.
 M15_SCENE_INTRO_01_GOHAN	M15	intro	GOHAN	Briefing; intent before tactics	This fiber trunk runs the lock gates. Without access, our exit becomes a basin with the doors shut.
 M15_SCENE_INTRO_02_ICE	M15	intro	ICE	Briefing; intent before tactics	Talk me through the tap. I don't need every circuit. I need to know when you're committed and can't move.
 M15_SCENE_OUTRO_01_GOHAN	M15	outro	GOHAN	Reflective; allow the response to land	Gate access is ready. Keeping a copy on each of your devices. If I go down, the plan still belongs to all three.
 M15_SCENE_OUTRO_02_GUESS	M15	outro	GUESS	Reflective; allow the response to land	You aren't a spare part, Gohan. But thank you for trusting us with your work.
+M15_SCENE_APPROACH_01_GOHAN	M15	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Service access on the side, the trunk one level down. The tap opens the lock gates and nothing else.
+M15_SCENE_APPROACH_02_ICE	M15	approach	ICE	On the approach; the place and the job seen before anyone moves	Three watchmen on rounds, night shift. Stun gun, all three, before you're committed to the cable.
 M16_SCENE_INTRO_01_ICE	M16	intro	ICE	Briefing; intent before tactics	The convoy's IFF buys an approach to Zancudo. It won't make us invisible once Guess starts the Cargobob.
 M16_SCENE_INTRO_02_GUESS	M16	intro	GUESS	Briefing; intent before tactics	I'll call when the aircraft is ready. You leave the fight then, even if there's somebody left to be angry at.
 M16_SCENE_OUTRO_01_ICE	M16	outro	ICE	Reflective; allow the response to land	I heard you. You got the lift out. We'll meet at Terminal. The helicopter is ours and the clearance trick is burned.

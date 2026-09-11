@@ -114,24 +114,36 @@ GOHAN|The manifest gives us a hold number. The ROV tells us whether a container 
 GUESS|You're quiet when you're worried. Used to mean an exam. Now it means I should check my fuel twice.
 GOHAN|The hull can be breached, but surface patrols will box in the extraction. We need their boats short of fuel.
 ICE|You showed us the part that wouldn't work. Keep doing that. I can plan around a problem you tell me about.
+@approach
+GOHAN|Hold 44 is on the manifest. The sub tells us whether a container comes out through that hull; I'm the one going under.
+ICE|Two launches on the water. I watch them from the pier, Ron holds the jetty. You surface where we can see you.
 
 M13
 ICE|The fuel barges supply harbor pursuit. Take them out and the heist's slowest vehicle gets a chance to leave.
 GOHAN|Check the waterline before you plant. A fuel worker isn't Aegis command just because he's working their slipway.
 GUESS|Fewer boats behind us. That still leaves radar above us. Sandy Shores has the jammer pod we need.
 ICE|Copy. We're making an exit, not collecting explosions. Keep me honest about that.
+@approach
+ICE|Three barges, one basin. I plant and I leave; nobody in the water gets shot tonight.
+GOHAN|The men on the slipway are fuel workers, not Aegis. I hold the harbor alarm. If it trips, you leave with whatever's planted.
 
 M14
 GUESS|The stolen pod has to survive the flight. Blinding their radar is worth more than winning a dogfight tonight.
 ICE|If the approach closes, call it off. I'd rather change the heist than put your name on a memorial.
 GUESS|Pod's ours. Hearing you say I could turn back made it easier to make the run. Funny how that works.
 GOHAN|Air cover sorted. I still need the harbor gate network before we move anything through the channel.
+@approach
+GUESS|Besra on the apron with the pod under the wing. I take it to McKenzie in the dirt. The pod is the cargo; the plane is how it gets there.
+ICE|Five on the apron. I clear them from the ridge; you don't move until I say. Then Gohan and I leave by road.
 
 M15
 GOHAN|This fiber trunk runs the lock gates. Without access, our exit becomes a basin with the doors shut.
 ICE|Talk me through the tap. I don't need every circuit. I need to know when you're committed and can't move.
 GOHAN|Gate access is ready. Keeping a copy on each of your devices. If I go down, the plan still belongs to all three.
 GUESS|You aren't a spare part, Gohan. But thank you for trusting us with your work.
+@approach
+GOHAN|Service access on the side, the trunk one level down. The tap opens the lock gates and nothing else.
+ICE|Three watchmen on rounds, night shift. Stun gun, all three, before you're committed to the cable.
 
 M16
 ICE|The convoy's IFF buys an approach to Zancudo. It won't make us invisible once Guess starts the Cargobob.
