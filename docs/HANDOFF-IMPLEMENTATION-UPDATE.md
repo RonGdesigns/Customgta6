@@ -317,6 +317,10 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 
 116. **M03.** Start M03: the log has "M03 Benson at ... (road node near the key)" and the truck stands on the road, not in a wall. At the junction, four dogs come at Ron within seconds of him stopping; the street crew (six) and the dogs are red on the map while they are his fight. Ice wakes ten guards. After the loading scene Gohan is in the cab; then Ice's radio: the gate opens again, seven gunmen and three dogs come at the truck, Gohan gets out into cover. You are locked to Ron until you are within 45 m of the depot; then the switch is free and the targets are red. Clear them; take the Benson as Ron: Ice's radio, he walks to the passenger seat (20 s, then seated), Gohan takes the van behind you. Deliver as before; Ron and Ice get out before the keys go down.
 
+## M05 water and shore (Ron, September 11)
+
+117. **M05.** Start M05: the log has "M05 dinghy on the water at ..." and, if the estimate was on land, "Water key M05.DinghySpawn resolved N m from its estimate". The dinghy floats with Ron at the wheel and Gohan beside him; the log says if either had to be warped in. The generator crew stands at the cave mouth on the shore below the cliff (the log gives the first post), not on the road. If the coast has no water deep enough within 250 m the mission refuses with "No water deep enough at <key>"; survey the coast key with F11 and retry.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

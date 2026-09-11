@@ -45,6 +45,16 @@ public static partial class StoryTests
   World.GroundHeight=0f;World.FailNavigationNear=null;
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;
   Check(!MissionSites.Ground(c.Locations,"M05.CliffPerch")&&GameUtils.Message.Contains("F11"),"No walkable ground still refuses the mission and tells the player to survey the key");World.FailNavigation=false;
+  // The coast road sits on the ocean's water plane: a water key is real water only when the ground is below the surface.
+  Reset();crew=Roster();c=Context(crew);var spawn=c.Locations.Get("M05.DinghySpawn");var authoredSpawn=spawn.Position;GTA.Native.Function.Seabed=1f;
+  Check(!MissionSites.Water(c.Locations,"M05.DinghySpawn")&&GameUtils.Message.Contains("deep enough")&&spawn.Position==authoredSpawn,"Water under a road is not a boat spawn: the key refuses and says the water is not deep enough");
+  GTA.Native.Function.Seabed=-3f;Check(MissionSites.Water(c.Locations,"M05.DinghySpawn")&&Math.Abs(spawn.Position.Z-0.2f)<0.01f,"Ground three meters under the surface floats the dinghy");
+  GTA.Native.Function.Seabed=-0.5f;Check(!MissionSites.Water(c.Locations,"M05.DinghySpawn"),"Half a meter of water does not");
+  GTA.Native.Function.SeabedKnown=false;GTA.Native.Function.Seabed=1f;Check(MissionSites.Water(c.Locations,"M05.DinghySpawn"),"Unloaded seabed counts as open water");GTA.Native.Function.SeabedKnown=true;GTA.Native.Function.Seabed=-40f;
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"m05-shallow.json"));GTA.Native.Function.Seabed=1f;var shallow5=new M05TidalLock();
+  Check(!shallow5.Begin(c)&&GameUtils.Message.Contains("deep enough"),"M05 refuses to start on a coast with no floatable water rather than putting the boat on the road");GTA.Native.Function.Seabed=-40f;
+  string m5src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M05TidalLock.cs"));
+  Check(m5src.Contains("LightCrewPost(i)")&&!m5src.Contains("World.CreatePed(model, _perch + new Vector3(12f + i * 4f, -20f, 0f), 0f)"),"The generator crew stands on real ground at the cave mouth, not at the cliff's height over the road");
 
   // ---- 4. M06: the second and third waves come in by helicopter; the first aircraft is on camera once.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"round2-m6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c)&&c.Cutscenes.IsActive,"M06 sets up and opens on its positions");c.Cutscenes.Skip();

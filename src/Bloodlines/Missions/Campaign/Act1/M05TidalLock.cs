@@ -73,13 +73,26 @@ namespace Bloodlines.Missions.Campaign
             SpawnDinghy();
             if (_dinghy == null || !_dinghy.Exists() || _mateo == null || !_mateo.Exists() || _mateoBoat == null || !_mateoBoat.Exists() || _lightCrew.Count != 4) return false;
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
-            Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_dinghy, VehicleSeat.Driver);
-            Ctx.Crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(_dinghy, VehicleSeat.RightFront);
+            // Ron and Gohan in the dinghy, checked: a seat that did not take left Ron
+            // standing by the cliff (Ron, September 11).
+            Board(CrewSlot.Guess, VehicleSeat.Driver);
+            Board(CrewSlot.Gohan, VehicleSeat.RightFront);
             Function.Call(Hash.REQUEST_WEAPON_ASSET, (uint)WeaponHash.FlareGun, 31, 0);
             _mateo.IsInvincible = true;
             _roles = new RoleTracks(Ctx.Crew, () => _lightCrew);
             PlayShore();
             return true;
+        }
+
+        private void Board(CrewSlot slot, VehicleSeat seat)
+        {
+            var ped = Ctx.Crew.PedFor(slot);
+            if (ped == null || !ped.Exists() || _dinghy == null || !_dinghy.Exists()) return;
+            ped.Task.ClearAllImmediately();
+            ped.SetIntoVehicle(_dinghy, seat);
+            if (ped.IsInVehicle(_dinghy)) return;
+            ped.Task.WarpIntoVehicle(_dinghy, seat);
+            Logger.Warn("M05: " + Protagonist.Of(slot).Handle + " did not take the dinghy's " + seat + " seat on the first try; warped in." + (ped.IsInVehicle(_dinghy) ? "" : " Still not aboard."));
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -217,6 +230,34 @@ namespace Bloodlines.Missions.Campaign
             return _mateo != null && _mateo.Exists() ? _mateo.Position : _sandbar;
         }
 
+        /// <summary>
+        /// The generator crew works the lamps at the cave mouth, on the shore below
+        /// the cliff: ground beside the grotto, found from the water toward the land,
+        /// or the perch's own hillside snapped to the ground when the shore refuses.
+        /// Never a point at the cliff's height over the road (Ron, September 11).
+        /// </summary>
+        private Vector3 LightCrewPost(int index)
+        {
+            var toLand = _perch - _grotto; toLand.Z = 0f;
+            float run = (float)Math.Sqrt(toLand.X * toLand.X + toLand.Y * toLand.Y);
+            if (run < 1f) { toLand = new Vector3(0f, 1f, 0f); run = 1f; }
+            toLand = new Vector3(toLand.X / run, toLand.Y / run, 0f);
+            var across = new Vector3(-toLand.Y, toLand.X, 0f) * (index * 5f - 7.5f);
+            for (float d = 8f; d <= 40f; d += 8f)
+            {
+                var p = _grotto + toLand * d + across;
+                float ground = World.GetGroundHeight(new Vector3(p.X, p.Y, _grotto.Z + 80f));
+                if (ground <= _grotto.Z + 0.3f) continue;
+                var safe = World.GetSafeCoordForPed(new Vector3(p.X, p.Y, ground + 0.5f), false, 0);
+                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, _grotto, 60f)) return safe;
+            }
+            var fallback = _perch + new Vector3(12f + index * 4f, -20f, 0f);
+            float hill = World.GetGroundHeight(new Vector3(fallback.X, fallback.Y, _perch.Z + 60f));
+            if (hill > 0.5f) fallback = new Vector3(fallback.X, fallback.Y, hill + 0.5f);
+            var onHill = World.GetSafeCoordForPed(fallback, false, 0);
+            return onHill != Vector3.Zero ? onHill : fallback;
+        }
+
         private void SpawnLightCrew()
         {
             var model = new Model("g_m_y_mexgoon_02");
@@ -226,7 +267,8 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 4; i++)
             {
-                var guard = World.CreatePed(model, _perch + new Vector3(12f + i * 4f, -20f, 0f), 0f);
+                var post = LightCrewPost(i);
+                var guard = World.CreatePed(model, post, DriveUpStep.HeadingBetween(post, _grotto));
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = cartel;
@@ -238,6 +280,7 @@ namespace Bloodlines.Missions.Campaign
 
                 _lightCrew.Add(Track(guard));
             }
+            if (_lightCrew.Count > 0) Logger.Info("M05 generator crew at the cave mouth: first post " + _lightCrew[0].Position + " (grotto " + _grotto + ").");
 
             model.MarkAsNoLongerNeeded();
         }
@@ -283,6 +326,8 @@ namespace Bloodlines.Missions.Campaign
             if (_dinghy == null || !_dinghy.Exists()) return;
 
             _dinghy.IsPersistent = true;
+            _dinghy.Heading = DriveUpStep.HeadingBetween(_dinghy.Position, _grotto);
+            Logger.Info("M05 dinghy on the water at " + _dinghy.Position + ".");
 
             var blip = Track(_dinghy.AddBlip());
             blip.Sprite = BlipSprite.Boat;
