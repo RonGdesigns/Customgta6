@@ -51,7 +51,7 @@ s=s[:a]+'''  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringCo
 f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'));paths.append(f.as_posix())
 # MultiHold records its final site first; its next update completes the stage.
 f=Path('tests/story/ContinuousPortHeistTests.cs');s=f.read_text(encoding='utf-8')
-old='foreach (var clamp in m19.Clamps) Interact(m19, c, CrewSlot.Gohan, clamp, 8, true);'
+old='foreach (var clamp in m19.Clamps) Interact(m19, c, CrewSlot.Gohan, clamp, 8, afloat: true);'
 assert s.count(old)==1
 s=s.replace(old,old+'\n        manager.Update(); // Evaluate the now-complete multi-site objective.',1)
 s=s.replace('"The parent advances internally to " + next + " without an ordinary mission restart"','"The parent advances internally to " + next + " without an ordinary mission restart [" + manager.CurrentObjective + "; " + manager.LastFailureReason + "]"')
