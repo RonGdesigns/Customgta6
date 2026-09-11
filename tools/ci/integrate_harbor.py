@@ -1,5 +1,6 @@
 """One-time branch-only integration. Never updates main or a game installation."""
 from pathlib import Path, PurePosixPath
+import csv
 import hashlib
 import io
 import json
@@ -78,8 +79,7 @@ def prepare():
     run('git', 'config', 'core.autocrlf', 'false')
     Path('.git/info/attributes').write_text('* -text\n', encoding='ascii')
     # Fresh disposable Actions checkout only. Reset alone may retain a cached CRLF
-    # conversion after changing attributes. Restore every tracked blob exactly via
-    # git archive, including workflows, before any merge or preservation assertions.
+    # conversion after changing attributes. Restore every committed blob exactly.
     run('git', 'reset', '--hard', 'HEAD')
     with zipfile.ZipFile(io.BytesIO(git('archive', '--format=zip', 'HEAD'))) as archive:
         for item in archive.infolist():
@@ -172,7 +172,7 @@ def publish():
     assert sc and rc, 'Missing passing check summaries'
     info = '# Harbor integration - both agents preserved\n\n'
     info += 'Main input: `'+MAIN+'` (through merged PR #32).\n\nRepair input: `'+REPAIR+'`. Common base: `'+BASE+'`.\n\nIntegration input: `'+os.environ['GITHUB_SHA']+'`; Actions run `'+os.environ['GITHUB_RUN_ID']+'`.\n\n'
-    info += '## Preservation and resolution\n\nAll 14 paths changed only on main remain byte-identical to main. This includes complete M03, M04, M05, M06, M07 and M08 mission classes; CrewVan, GameUtils and MissionSites; and exclusive tests, QA and handoff entries. No source edits were made to those mission implementations.\n\nAll 31 paths changed only by the repair were checked against the repair input before metadata was updated. They retain marine fixes, the one-sitting rule, police sighting, banner/music/map work and tests. The manifest identifies metadata-only differences explicitly.\n\nThe only source conflict was RuntimeStubs.cs: native names and ground-placement helpers from main are combined with police/music/geometry definitions from the repair. BloodlinesMain keeps the grounded-spawn tick AND presentation. CampaignFlowTests keeps the driving fixture AND simulated sub-surfacing check. The two changed M06 location rows and both new harbor keys are retained. The mission map is regenerated.\n\nThe location audit is regenerated for 191 combined rows instead of its historical 189; it checks district, not physical reachability. Campaign and feasibility documents were fully compared after regeneration with only newline conversion allowed, then restored to committed bytes. No freshness assertion was removed.\n\n'
+    info += '## Preservation and resolution\n\nAll 14 paths changed only on main remain byte-identical to main. This includes complete M03, M04, M05, M06, M07 and M08 mission classes; CrewVan, GameUtils and MissionSites; and exclusive tests, QA and handoff entries. No source edits were made to those mission implementations.\n\nAll 31 paths changed only by the repair were checked against the repair input before metadata was updated. They retain marine fixes, the one-sitting rule, police sighting, banner/music/map work and tests. The manifest identifies metadata-only differences explicitly.\n\nThe only source conflict was RuntimeStubs.cs: native names and ground-placement helpers from main are combined with police/music/geometry definitions from the repair. BloodlinesMain keeps the grounded-spawn tick AND presentation. CampaignFlowTests keeps the driving fixture AND simulated sub-surfacing check. The two changed M06 location rows and both new harbor keys are retained. The mission map is regenerated.\n\nThe location audit is regenerated for 191 combined rows instead of its historical 189; it checks district, not physical reachability. Campaign and feasibility documents were fully compared after regeneration with only newline conversion allowed, then restored to committed bytes. No freshness assertion was removed. Locations TSV has eight columns: a trailing tab encodes an empty district_hint, not stray formatting. Its exact reviewed hash and per-field whitespace/schema checks protect it; every other staged file keeps strict git whitespace checks.\n\n'
     info += '## Binary comparison\n\nBoth original DLLs and the combined DLL were inspected with PEReader, not executed as plugins. Assembly references, type/method inventories, IL instructions, local signatures and exception regions were read. Token operands were resolved to symbolic names so token reordering is not confused with code changes. HARBOR-INTEGRATION-BINARIES.json records input hashes and checked groups. The 386 compiled methods (including generated helpers) of M03-M08 match main. Selected main placement/forklift helpers and repair marine/police/presentation/operation classes match their own input DLLs. This is preservation evidence, not live GTA validation.\n\nThe DLL conflict is resolved by a fresh combined build, never ours/theirs. SHA-256: `'+sha+'`.\n\n'
     info += '## Actual verification\n\n- Production warnings-as-errors compilation passed.\n- '+sc[-1]+' story/runtime checks passed, retaining both suites.\n- '+rc[-1]+' behavioral regression checks passed.\n- 3 parser tests, mission lint, location district checks, authored-scene and mission-map freshness, campaign/feasibility regeneration passed.\n- Roslyn rebuild and clean packaging passed; fresh/prebuilt/packaged bytes agree.\n- Exactly two GTA.Script entrypoints remain.\n\n'
     info += '## Scope and live acceptance\n\nMain was brought INTO the separate repair branch; the main branch itself was not changed. PR #28 remains draft. No game installation, personal INI, survey, save or runtime dependency changed.\n\nFailure, abort or quit still restarts the entire Port Heist at M19; no checkpoints return. Test the real water worksite, launch, every reachable work sphere, cargo attachment, boat/road transfers, final deposit and single result. Test police-helicopter sight and roof/tunnel occlusion, score audibility/cleanup, map glyphs, apartment rendering, and the preserved M03/M05/M06/M07/M08 behaviors. These tests do not simulate GTA physics, streaming or pathfinding.\n\nPreserving source is not certifying every inherited design decision. This integration does not rewrite M04, expand weapon policy or silently alter other missions. Follow-up corrections should be independently reviewed.\n'
@@ -189,7 +189,15 @@ def publish():
     run('git','add','--',*staged)
     assert not text('diff','--name-only','--diff-filter=U'), 'Unresolved conflict'
     assert text('rev-parse','MERGE_HEAD')==MAIN, 'Wrong merge parent'
-    run('git','-c','core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol','diff','--cached','--check')
+    # Existing empty last TSV fields must remain eight-column data. Never strip
+    # their final separator just to appease a source-code whitespace rule.
+    raw=git('show',':data/locations.tsv')
+    assert digest(raw)==SHARED_SHA256['data/locations.tsv']
+    rows=list(csv.reader(io.StringIO(raw.decode('utf-8')),delimiter='\t'))
+    assert rows[0]==['key','x','y','z','heading','kind','status','district_hint']
+    assert len(rows)==192 and all(len(row)==8 for row in rows), 'Invalid TSV column structure'
+    assert all(cell==cell.rstrip(' \t') for row in rows for cell in row), 'Stray field whitespace'
+    run('git','-c','core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol','diff','--cached','--check','--','.',':(exclude)data/locations.tsv')
     if remote(MAIN_BRANCH)!=MAIN or remote(BRANCH)!=os.environ['GITHUB_SHA']:
         raise RuntimeError('Branch advanced during checks; refusing to overwrite newer work')
     run('git','commit','-m','merge: preserve main through PR32 and harbor repairs in one verified build')
