@@ -1,0 +1,94 @@
+# One-time binary refresh on Ron's authorized comparison branch; self-removes.
+name: port-heist-binary-refresh
+on:
+  push:
+    branches: [codex/continuous-port-heist]
+    paths: ['.github/workflows/port-heist-binary-refresh.yml']
+permissions:
+  contents: read
+jobs:
+  refresh:
+    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/continuous-port-heist'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Restore committed build inputs
+        shell: python
+        run: |
+          import pathlib, subprocess
+          subprocess.run(['git', 'config', 'core.autocrlf', 'false'], check=True)
+          for name in filter(None, subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
+              pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
+          pathlib.Path('build').mkdir(exist_ok=True)
+      - name: Verify the unchanged source and build twice
+        shell: pwsh
+        run: |
+          python tools/run_story_tests.py *> build/story-refresh.log
+          $result = $LASTEXITCODE
+          Get-Content build/story-refresh.log -Tail 4
+          if ($result -ne 0) { exit $result }
+          python tools/run_regression_tests.py *> build/regression-refresh.log
+          $result = $LASTEXITCODE
+          Get-Content build/regression-refresh.log -Tail 2
+          if ($result -ne 0) { exit $result }
+          python tools/test_dialogue_parser.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/lint_missions.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/validate_locations.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_story.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/audit_campaign.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_roslyn.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item src/Bloodlines/bin/Release/Bloodlines.dll build/first-refresh.dll
+          python tools/build_roslyn.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Publish only the reproducible binary and provenance
+        shell: python
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          import hashlib, os, pathlib, subprocess
+          p = pathlib.Path
+          branch = 'codex/continuous-port-heist'
+          binary = p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
+          assert binary == p('build/first-refresh.dll').read_bytes(), 'Two identical builds differed'
+          digest = hashlib.sha256(binary).hexdigest()
+          assert digest == '6a8aebae8dc6942b1d250019b8ebd358ab9590ac6cefdbbe61c5a7a8f920bf4c', 'Build does not match the independently compiled exact-blob source'
+          remote = subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch],text=True).split()[0]
+          assert remote == os.environ['EXPECTED_HEAD'], 'Branch advanced; refusing to overwrite newer work'
+          old = hashlib.sha256(p('prebuilt/Bloodlines.dll').read_bytes()).hexdigest()
+          p('prebuilt/Bloodlines.dll').write_bytes(binary)
+          report = p('docs/CONTINUOUS-PORT-HEIST-VERIFICATION.md')
+          text = report.read_text(encoding='utf-8')
+          text += '\n## Exact-source reproducible binary refresh\n\nThe first comparison build used mixed Windows checkout line endings. A clean rebuild of the committed source differed only in PE/build/debug identifiers, not gameplay code. The committed DLL has now been rebuilt using exact Git source blobs. Two consecutive builds and the earlier independent exact-blob build match byte-for-byte.\n\n'
+          text += 'Previous DLL SHA-256: `' + old + '`.\n\nCurrent DLL SHA-256: `' + digest + '`.\n\nRefresh input: `' + os.environ['EXPECTED_HEAD'] + '`; Actions run `' + os.environ['GITHUB_RUN_ID'] + '`. No C# or data files changed in this refresh.\n\n'
+          text += '\n'.join(p('build/story-refresh.log').read_text(errors='replace').splitlines()[-4:]) + '\n\n' + '\n'.join(p('build/regression-refresh.log').read_text(errors='replace').splitlines()[-2:]) + '\n\nParser, lint, location and both freshness checks also passed. The read-only preview workflow additionally requires its packaged DLL to equal both a fresh rebuild and this committed binary. Live GTA testing remains pending.\n'
+          report.write_text(text, encoding='utf-8')
+          self_path = '.github/workflows/port-heist-binary-refresh.yml'
+          p(self_path).unlink()
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','--','prebuilt/Bloodlines.dll',str(report),self_path],check=True)
+          names = set(subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines())
+          assert names == {'prebuilt/Bloodlines.dll',str(report).replace('\\','/'),self_path}, names
+          subprocess.run(['git','commit','-m','build: align comparison prebuilt with exact committed source and verify reproducibility'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          print('Published:',subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'DLL SHA-256:',digest)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: port-heist-binary-refresh-evidence
+          retention-days: 14
+          path: |
+            build/*refresh.log
+            src/Bloodlines/bin/Release/Bloodlines.dll
+            docs/CONTINUOUS-PORT-HEIST-VERIFICATION.md
