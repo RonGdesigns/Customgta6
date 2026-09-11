@@ -1,4 +1,7 @@
-"""One-time branch-only integration. Never updates main or a game installation."""
+"""One-time branch-only integration. Never updates main or a game installation.
+Workflow updates/cleanup are separate authorized connector operations, not Actions
+writes: the Actions token is deliberately not granted workflow-edit permissions.
+"""
 from pathlib import Path, PurePosixPath
 import csv
 import hashlib
@@ -16,11 +19,9 @@ REPAIR = 'ea4c54667d60d10f8973bfeccdd9713c97499501'
 BRANCH = 'codex/harbor-playtest-repair'
 MAIN_BRANCH = 'claude/gta-v-custom-version-477edi'
 SELF = 'tools/ci/integrate_harbor.py'
-WORKFLOW = '.github/workflows/harbor-integration.yml'
 REPORT = 'docs/HARBOR-INTEGRATION.md'
 BINARY_REPORT = 'docs/HARBOR-INTEGRATION-BINARIES.json'
 MANIFEST = 'docs/HARBOR-INTEGRATION-PRESERVATION.json'
-PREVIEW = '.github/workflows/harbor-repair-preview.yml'
 SHARED_SHA256 = {
     'data/locations.tsv': '4963bb1c0293bc5ab9017e422b6676d502eea1e9e8e8871042955a2846fcc83e',
     'docs/CHANGE-REGISTER.md': 'dd01a6d7745c4195b36c66a36eede1c7748baf4d540423730dee99c6e3d3e985',
@@ -29,7 +30,7 @@ SHARED_SHA256 = {
     'tests/story/CampaignFlowTests.cs': '992fe5bcbade47657a86289740ecb66a69e2c492c4ffb69d258bde2b270d503c',
     'tests/story/RuntimeStubs.cs': 'b516918d8a21e7433c115ad62d53d3649f5f733ed8c1ecca1f3b6d8548f05c7f',
 }
-METADATA = {PREVIEW, REPORT, BINARY_REPORT, 'docs/LOCATION-AUDIT.md', 'docs/HARBOR-REPAIR-VERIFICATION.md', 'docs/HARBOR-PLAYTEST-REPAIR.md', 'docs/CHANGE-REGISTER.md'}
+METADATA = {REPORT, BINARY_REPORT, 'docs/LOCATION-AUDIT.md', 'docs/HARBOR-REPAIR-VERIFICATION.md', 'docs/HARBOR-PLAYTEST-REPAIR.md', 'docs/CHANGE-REGISTER.md'}
 
 def git(*args): return subprocess.check_output(['git', *args])
 def run(*args): subprocess.run(list(args), check=True)
@@ -78,8 +79,7 @@ def prepare():
         raise RuntimeError('A branch advanced; review new commits before proceeding')
     run('git', 'config', 'core.autocrlf', 'false')
     Path('.git/info/attributes').write_text('* -text\n', encoding='ascii')
-    # Fresh disposable Actions checkout only. Reset alone may retain a cached CRLF
-    # conversion after changing attributes. Restore every committed blob exactly.
+    # Only the fresh disposable CI checkout, never a user's working tree.
     run('git', 'reset', '--hard', 'HEAD')
     with zipfile.ZipFile(io.BytesIO(git('archive', '--format=zip', 'HEAD'))) as archive:
         for item in archive.infolist():
@@ -123,12 +123,8 @@ def prepare():
     manifest = preserve()
     Path('build/harbor-preservation.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     print('Verified 14 main-only and 31 repair-only changes, plus six shared resolutions.')
-    f = Path(PREVIEW); s = f.read_text(encoding='utf-8')
-    s = s.replace("'base':'" + BASE + "','dll_sha256'", "'base':'" + BASE + "','integrated_main':'" + MAIN + "','dll_sha256'", 1)
-    s = s.replace('Based on d295306: includes the main-branch integrated heist, desert missions and apartment tiers.', 'Integrated with main f8a37b9 through PR #32: retains the latest M03-M08 repairs, integrated heist, desert missions and apartment tiers.', 1)
-    s = s.replace("'HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md']", "'HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md','HARBOR-INTEGRATION.md','HARBOR-INTEGRATION-PRESERVATION.json','HARBOR-INTEGRATION-BINARIES.json']", 1)
-    assert MAIN in s and 'HARBOR-INTEGRATION.md' in s
-    f.write_bytes(s.encode('utf-8'))
+    # No workflow file is modified by this job. The authenticated connector will
+    # update package labels and remove the temporary runner after publication.
     f = Path('docs/HARBOR-PLAYTEST-REPAIR.md'); s = f.read_text(encoding='utf-8')
     s = s.replace('## Owner report and scope', '## Integration with current main\n\nThe comparison now includes main `' + MAIN + '` through PR #32. M03-M08 and main-only placement/vehicle helpers are byte-identical to that main snapshot. Shared definitions retain both changes; the DLL is rebuilt from combined source. See HARBOR-INTEGRATION.md and its manifests. Main itself is not updated.\n\n## Owner report and scope', 1)
     f.write_bytes(s.encode('utf-8'))
@@ -172,25 +168,24 @@ def publish():
     assert sc and rc, 'Missing passing check summaries'
     info = '# Harbor integration - both agents preserved\n\n'
     info += 'Main input: `'+MAIN+'` (through merged PR #32).\n\nRepair input: `'+REPAIR+'`. Common base: `'+BASE+'`.\n\nIntegration input: `'+os.environ['GITHUB_SHA']+'`; Actions run `'+os.environ['GITHUB_RUN_ID']+'`.\n\n'
-    info += '## Preservation and resolution\n\nAll 14 paths changed only on main remain byte-identical to main. This includes complete M03, M04, M05, M06, M07 and M08 mission classes; CrewVan, GameUtils and MissionSites; and exclusive tests, QA and handoff entries. No source edits were made to those mission implementations.\n\nAll 31 paths changed only by the repair were checked against the repair input before metadata was updated. They retain marine fixes, the one-sitting rule, police sighting, banner/music/map work and tests. The manifest identifies metadata-only differences explicitly.\n\nThe only source conflict was RuntimeStubs.cs: native names and ground-placement helpers from main are combined with police/music/geometry definitions from the repair. BloodlinesMain keeps the grounded-spawn tick AND presentation. CampaignFlowTests keeps the driving fixture AND simulated sub-surfacing check. The two changed M06 location rows and both new harbor keys are retained. The mission map is regenerated.\n\nThe location audit is regenerated for 191 combined rows instead of its historical 189; it checks district, not physical reachability. Campaign and feasibility documents were fully compared after regeneration with only newline conversion allowed, then restored to committed bytes. No freshness assertion was removed. Locations TSV has eight columns: a trailing tab encodes an empty district_hint, not stray formatting. Its exact reviewed hash and per-field whitespace/schema checks protect it; every other staged file keeps strict git whitespace checks.\n\n'
+    info += '## Preservation and resolution\n\nAll 14 paths changed only on main remain byte-identical to main. This includes complete M03, M04, M05, M06, M07 and M08 mission classes; CrewVan, GameUtils and MissionSites; and exclusive tests, QA and handoff entries. No source edits were made to those mission implementations.\n\nAll 31 paths changed only by the repair were checked against the repair input before metadata was updated. They retain marine fixes, the one-sitting rule, police sighting, banner/music/map work and tests. The manifest identifies metadata-only differences explicitly.\n\nThe only source conflict was RuntimeStubs.cs: native names and ground-placement helpers from main are combined with police/music/geometry definitions from the repair. BloodlinesMain keeps the grounded-spawn tick AND presentation. CampaignFlowTests keeps the driving fixture AND simulated sub-surfacing check. The two changed M06 location rows and both new harbor keys are retained. The mission map is regenerated.\n\nThe location audit is regenerated for 191 combined rows instead of its historical 189; it checks district, not physical reachability. Campaign and feasibility documents were fully compared after regeneration with only newline conversion allowed, then restored to committed bytes. No freshness assertion was removed. The eight-column location TSV retains empty final fields; exact-hash and per-field schema checks supplement strict source whitespace checks.\n\n'
     info += '## Binary comparison\n\nBoth original DLLs and the combined DLL were inspected with PEReader, not executed as plugins. Assembly references, type/method inventories, IL instructions, local signatures and exception regions were read. Token operands were resolved to symbolic names so token reordering is not confused with code changes. HARBOR-INTEGRATION-BINARIES.json records input hashes and checked groups. The 386 compiled methods (including generated helpers) of M03-M08 match main. Selected main placement/forklift helpers and repair marine/police/presentation/operation classes match their own input DLLs. This is preservation evidence, not live GTA validation.\n\nThe DLL conflict is resolved by a fresh combined build, never ours/theirs. SHA-256: `'+sha+'`.\n\n'
     info += '## Actual verification\n\n- Production warnings-as-errors compilation passed.\n- '+sc[-1]+' story/runtime checks passed, retaining both suites.\n- '+rc[-1]+' behavioral regression checks passed.\n- 3 parser tests, mission lint, location district checks, authored-scene and mission-map freshness, campaign/feasibility regeneration passed.\n- Roslyn rebuild and clean packaging passed; fresh/prebuilt/packaged bytes agree.\n- Exactly two GTA.Script entrypoints remain.\n\n'
-    info += '## Scope and live acceptance\n\nMain was brought INTO the separate repair branch; the main branch itself was not changed. PR #28 remains draft. No game installation, personal INI, survey, save or runtime dependency changed.\n\nFailure, abort or quit still restarts the entire Port Heist at M19; no checkpoints return. Test the real water worksite, launch, every reachable work sphere, cargo attachment, boat/road transfers, final deposit and single result. Test police-helicopter sight and roof/tunnel occlusion, score audibility/cleanup, map glyphs, apartment rendering, and the preserved M03/M05/M06/M07/M08 behaviors. These tests do not simulate GTA physics, streaming or pathfinding.\n\nPreserving source is not certifying every inherited design decision. This integration does not rewrite M04, expand weapon policy or silently alter other missions. Follow-up corrections should be independently reviewed.\n'
+    info += '## Scope and live acceptance\n\nMain was brought INTO the separate repair branch; the main branch itself was not changed. PR #28 remains draft. No game installation, personal INI, survey, save or runtime dependency changed. Workflow metadata updates and temporary-runner removal use separate authorized repository operations; this job never modifies workflows or expands its token permissions.\n\nFailure, abort or quit still restarts the entire Port Heist at M19; no checkpoints return. Test the real water worksite, launch, every reachable work sphere, cargo attachment, boat/road transfers, final deposit and single result. Test police-helicopter sight and roof/tunnel occlusion, score audibility/cleanup, map glyphs, apartment rendering, and the preserved M03/M05/M06/M07/M08 behaviors. These tests do not simulate GTA physics, streaming or pathfinding.\n\nPreserving source is not certifying every inherited design decision. This integration does not rewrite M04, expand weapon policy or silently alter other missions. Follow-up corrections should be independently reviewed.\n'
     Path(REPORT).write_text(info,encoding='utf-8')
     f=Path('docs/HARBOR-REPAIR-VERIFICATION.md')
     old=f.read_text(encoding='utf-8').replace('# Harbor repair source verification','# Historical isolated harbor repair verification',1)
     f.write_text('# Current integrated harbor verification\n\nMain input: `'+MAIN+'`. See HARBOR-INTEGRATION.md and manifests.\n\nCombined DLL SHA-256: `'+sha+'`.\n\n'+sc[-1]+' story/runtime checks and '+rc[-1]+' regression checks passed. No live GTA playthrough performed.\n\n---\n\n'+old,encoding='utf-8')
     _,_,mc,_=sides()
-    expected=mc|METADATA|{MANIFEST,SELF,WORKFLOW}
+    expected=mc|METADATA|{MANIFEST,SELF}
     changed=set(text('diff','--name-only','HEAD').splitlines())
     assert changed<=expected, 'Unexpected working changes: '+repr(changed-expected)
-    Path(SELF).unlink();Path(WORKFLOW).unlink()
+    Path(SELF).unlink()
     staged=sorted(expected & (set(tree('HEAD'))|{REPORT,BINARY_REPORT,MANIFEST}))
     run('git','add','--',*staged)
     assert not text('diff','--name-only','--diff-filter=U'), 'Unresolved conflict'
+    assert not text('diff','--cached','--name-only','--','.github/workflows'), 'Actions must not edit workflows'
     assert text('rev-parse','MERGE_HEAD')==MAIN, 'Wrong merge parent'
-    # Existing empty last TSV fields must remain eight-column data. Never strip
-    # their final separator just to appease a source-code whitespace rule.
     raw=git('show',':data/locations.tsv')
     assert digest(raw)==SHARED_SHA256['data/locations.tsv']
     rows=list(csv.reader(io.StringIO(raw.decode('utf-8')),delimiter='\t'))
