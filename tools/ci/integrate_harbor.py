@@ -82,7 +82,7 @@ def preserve(allow_metadata=False):
     for name, expected in SHARED_SHA256.items():
         actual = hashlib.sha256(Path(name).read_bytes()).hexdigest()
         if not (allow_metadata and name in METADATA) and actual != expected:
-            raise RuntimeError('Shared resolution differs from independently reviewed result: ' + name)
+            raise RuntimeError('Shared resolution differs from independently reviewed result: ' + name + ' actual=' + actual)
         manifest['shared_reviewed'][name] = actual
     return manifest
 
@@ -93,8 +93,7 @@ def prepare():
     if remote(MAIN_BRANCH) != MAIN or remote(BRANCH) != os.environ['GITHUB_SHA']:
         raise RuntimeError('A branch advanced; review the new commits before proceeding')
     run('git', 'config', 'core.autocrlf', 'false')
-    # This is a newly checked-out disposable CI workspace, never a user's checkout.
-    # Disable only local EOL conversion so both sides and the new DLL use exact blobs.
+    # Fresh disposable CI checkout, not the user's working tree. Exact compiler inputs.
     Path('.git/info/attributes').write_text('* -text\n', encoding='ascii')
     run('git', 'reset', '--hard', 'HEAD')
     run('git', 'diff', '--exit-code')
@@ -120,13 +119,18 @@ def prepare():
             return ours.replace(' public enum Hash { ', ' public enum Hash { SET_PED_FLEE_ATTRIBUTES,GET_CLOSEST_VEHICLE_NODE_WITH_HEADING,', 1)
         assert ours.count('\n') == 1 and theirs.count('\n') == 1
         assert ours.startswith(' public static class GameUtils ') and theirs.startswith(' public static class GameUtils ')
-        # Main's new ground-placement helpers, repair's new music config fields.
         return theirs.split('\n')[0] + '\n' + ours.split('\n')[1]
     source, count = re.subn(r'<<<<<<< HEAD\n(.*?)\n=======\n(.*?)\n>>>>>>> [^\n]+', resolution, source, flags=re.S)
     assert count == 2, 'Expected exactly the two reviewed test-definition conflicts'
     f.write_bytes(source.encode('utf-8'))
     run('git', 'add', '--', str(f))
-    # The binary conflict intentionally remains until a combined build replaces it.
+    # The binary remains conflicted until compiled from the combined source.
+    # Git versions can emit LF here although the TSV generator/attributes use CRLF.
+    # Check the full reviewed content FIRST; only the newline representation changes.
+    f = Path('data/locations.tsv')
+    normalized = f.read_bytes().replace(b'\r\n', b'\n')
+    assert hashlib.sha256(normalized).hexdigest() == 'a559add78bb7db16489b22834de36055b38ca959346696708e1285893806cab2', 'Unexpected merged location rows'
+    f.write_bytes(normalized.replace(b'\n', b'\r\n'))
     run(sys.executable, 'tools/audit_campaign.py')
     manifest = preserve()
     Path('build/harbor-preservation.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
@@ -140,7 +144,6 @@ def prepare():
     s = s.replace("'HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md']", "'HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md','HARBOR-INTEGRATION.md','HARBOR-INTEGRATION-PRESERVATION.json']", 1)
     assert MAIN in s and 'HARBOR-INTEGRATION.md' in s
     f.write_bytes(s.encode('utf-8'))
-
     f = Path('docs/HARBOR-PLAYTEST-REPAIR.md')
     s = f.read_text(encoding='utf-8')
     s = s.replace('## Owner report and scope',
