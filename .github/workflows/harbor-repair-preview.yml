@@ -1,3 +1,4 @@
+# Read-only comparison artifacts; no commits, merges, or game-install writes.
 name: harbor-repair-preview
 on:
   push:
@@ -20,11 +21,14 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Capture exact source for comparison
-        shell: pwsh
+      - name: Restore exact committed compiler inputs
+        shell: python
         run: |
-          New-Item -ItemType Directory -Force build | Out-Null
-          git archive -o build/Harbor-Repair-Source.zip HEAD
+          import pathlib,subprocess
+          subprocess.run(['git','config','core.autocrlf','false'],check=True)
+          for name in filter(None,subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
+              pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
+          pathlib.Path('build').mkdir(exist_ok=True)
       - name: Build and verify
         shell: pwsh
         run: |
@@ -32,11 +36,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/run_story_tests.py *> build/story-harbor.log
           $result=$LASTEXITCODE
-          Get-Content build/story-harbor.log -Tail 12
+          Get-Content build/story-harbor.log -Tail 8
           if ($result -ne 0) { exit $result }
           python tools/run_regression_tests.py *> build/regression-harbor.log
           $result=$LASTEXITCODE
-          Get-Content build/regression-harbor.log -Tail 5
+          Get-Content build/regression-harbor.log -Tail 3
           if ($result -ne 0) { exit $result }
           python tools/test_dialogue_parser.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -48,12 +52,50 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/audit_campaign.py --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_roslyn.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/package.py --clean
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify packaged bytes and record exact version
+        shell: python
+        run: |
+          import hashlib,json,os,pathlib,shutil,subprocess
+          p=pathlib.Path
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          built=p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
+          assert built==p('prebuilt/Bloodlines.dll').read_bytes(), 'Fresh and committed DLLs differ'
+          assert built==p('build/deploy/scripts/Bloodlines.dll').read_bytes(), 'Fresh and packaged DLLs differ'
+          deploy=p('build/deploy')
+          assert not list(deploy.rglob('savegame.json')), 'Do not package a campaign save'
+          assert not list(deploy.rglob('Bloodlines.Surveyed.ini')), 'Do not package personal surveys'
+          assert not (deploy/'scripts/Bloodlines/Bloodlines.ini').exists(), 'Configuration must remain an example'
+          # This repair uses installed stock models, fonts, blips and music events.
+          # No optional OpenIV import is needed to test it.
+          extra=deploy/'_openiv_import'
+          if extra.exists():shutil.rmtree(extra)
+          provenance={'commit':sha,'branch':'codex/harbor-playtest-repair','base':'d295306764fa137ceda3e1f3741e2a0d766bdb45','dll_sha256':hashlib.sha256(built).hexdigest(),'actions_run':os.environ['GITHUB_RUN_ID'],'live_verified':False,'heist_retry':'whole operation from M19; no checkpoints'}
+          (deploy/'BUILD-PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
+          (deploy/'READ-ME-FIRST.txt').write_text('Bloodlines harbor playtest repair - comparison build, not a live-verified release.\n\nCommit: '+sha+'\nDLL SHA-256: '+provenance['dll_sha256']+'\n\nBased on d295306: includes the main-branch integrated heist, desert missions and apartment tiers. This replaces the old phase-resume preview. Normal Port Heist attempts now always start M19; fail, abort or quit restarts the whole operation. Developer bypass remains an isolated phase diagnostic.\n\nSTORY MODE ONLY. Close GTA before replacing files. Back up scripts/Bloodlines.dll and the entire scripts/Bloodlines directory OUTSIDE the scripts tree. Copy this package\'s scripts contents into the test installation. Use a disposable copied campaign; preserve your active INI, appearance, surveys, runtime dependencies and voice bank. Configuration ships as .example, not an overwrite. Do not put the source ZIP or a backup DLL into scripts.\n\nStart M17/M18 to test dry fittings and the real launch. Start M19 normally with prerequisites/solos complete to test the entire heist. If water preflight refuses, capture the exact key and original/resolved coordinates from Bloodlines.log; do not disable the guard or guess another coordinate. M19.Worksite is the group anchor; derived work/cargo markers are recalculated together.\n\nOn-foot music is requested from the installed game. Music volume and event availability require live checking. Disable it with [Audio] MissionScoreEnabled=False. Letter sprites change map starts, not the ground activation cylinder. Apartment variety is existing work: see the audit section rather than assuming every luxury floor is a unique layout.\n\nRead HARBOR-PLAYTEST-REPAIR.md and HARBOR-REPAIR-VERIFICATION.md. Source/stub checks cannot establish real water geometry, police sighting, animations, music audibility or apartment rendering. No automatic merge or installation was performed.\n',encoding='utf-8')
+          for name in ['HARBOR-PLAYTEST-REPAIR.md','HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md']:
+              shutil.copy2(p('docs')/name,deploy/name)
+          shutil.make_archive('build/Bloodlines-Harbor-Playtest-Preview','zip',deploy)
+          subprocess.run(['git','archive','-o','build/Bloodlines-Harbor-Playtest-Source.zip','HEAD'],check=True)
+          print(json.dumps(provenance,indent=2))
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: harbor-repair-source-and-checks
+          name: Bloodlines-harbor-playtest-preview
           retention-days: 14
+          if-no-files-found: error
           path: |
-            build/Harbor-Repair-Source.zip
+            build/Bloodlines-Harbor-Playtest-Preview.zip
+            build/Bloodlines-Harbor-Playtest-Source.zip
+            build/deploy/BUILD-PROVENANCE.json
+            build/*harbor.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: harbor-repair-failure-evidence
+          retention-days: 7
+          path: |
             build/*harbor.log
             src/Bloodlines/bin/Release/Bloodlines.dll
