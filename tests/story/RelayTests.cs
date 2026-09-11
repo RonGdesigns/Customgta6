@@ -14,7 +14,7 @@ public static partial class StoryTests
  static void RelayChecks()
  {
   // ---- M07: the relay seen, the sniffer clamped, the manifests read, the helicopter shown.
-  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7.json"));var m7=new M07WiretapWaltz();
+  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7.json"));GTA.Native.Function.Seabed=55f;var m7=new M07WiretapWaltz();
   Check(m7.Begin(c)&&c.Cutscenes.IsActive&&m7.Sedan!=null&&crew.PedFor(CrewSlot.Guess).IsInVehicle(m7.Sedan),"M07 opens on the relay, the roof and the pickup lane with Ron already in the lane");
   Check(!crew.PedFor(CrewSlot.Gohan).IsInVehicle()&&crew.PedFor(CrewSlot.Gohan).Position==m7.BuildingBase&&m7.Laptop!=null&&m7.BuildingBase.DistanceTo(c.Locations.Position("M07.GarageRoof"))<60f&&Game.Player.Character.Position.DistanceTo(m7.Roof)<10f,"Ice starts on the roof; Gohan reads the feed at the building's base on the street with a laptop; Ron is in the lane");
   string m7pre=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
@@ -31,6 +31,15 @@ public static partial class StoryTests
   Game.Player.Character.SetIntoVehicle(m7.Sedan,VehicleSeat.LeftRear);m7.Tick();Check(m7.CurrentStage==4&&m7.Status==MissionStatus.Running,"Boarding behind Guess leaves the radio debrief to finish");c.Dialogue.Clear();m7.Tick();Check(m7.Status==MissionStatus.Passed&&m7.OutroBlocking()!=null,"Boarding behind Guess passes M07 with an aftermath shot on the sedan");
   string m7src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
   Check(m7src.Contains("Phase = \"approach\"")&&m7src.Contains("Phase = \"clamp\"")&&m7src.Contains("PlayMoment(Id, \"Aegis helicopter\"")&&!m7src.Contains("_drone.Delete"),"M07 has the approach, the clamp and the helicopter moment; the dish is never destroyed");
+  Check(!m7.RoofLowerThanEstimate&&Math.Abs(m7.Roof.Z-55.1f)<0.01f,"The roof is the surface the world reported, not the estimate handed back");
+  // The roof is a surface the world has over the street, never the estimate certified against its own height.
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.SeabedKnown=false;var m7b=new M07WiretapWaltz();
+  Check(!m7b.Begin(c)&&!m7b.RoofFound&&GameUtils.Message.Contains("M07.GarageRoof")&&GameUtils.Message.Contains("F11")&&World.Created.Count==0,"No surface loaded at the roof key refuses M07 with the key to survey, nobody deployed in the air");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=16f;m7b=new M07WiretapWaltz();
+  Check(!m7b.Begin(c)&&!m7b.RoofFound&&GameUtils.Message.Contains("F11"),"Only the street under the roof key refuses M07 instead of certifying the estimate");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=30f;m7b=new M07WiretapWaltz();
+  Check(m7b.Begin(c)&&m7b.RoofFound&&m7b.RoofLowerThanEstimate&&Math.Abs(m7b.Roof.Z-30.1f)<0.01f&&Math.Abs(Game.Player.Character.Position.Z-30.1f)<0.01f,"A real roof lower than the estimate is used as found, Ice on it, and the key is reported for a survey");
+  GTA.Native.Function.Seabed=-40f;
 
   // ---- M08: the job seen, the loop window, the forklift, two crates counted, the technical shown, the stash recorded.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay8.json"));var m8=new M08SupplyAndSever();
@@ -49,6 +58,9 @@ public static partial class StoryTests
   c.Cutscenes.Skip();Check(m8.Crates[0].AttachedTo==m8.Hauler,"Skipping the loading lands crate one on the bed");
   m8.Tick();Check(m8.TechnicalShown&&c.Cutscenes.IsActive,"The technical is shown coming up the ramp, once");
   c.Cutscenes.Skip();m8.Tick();Check(m8.CurrentStage==4&&!c.Cutscenes.IsActive,"After the moment the stage is Ice's fight and Ron's second crate, in either order");
+  var mixed=Flow(m8)[4].Objectives;Check(mixed[0].GetType().Name=="ForksUnderCrateObjective"&&mixed[0].RequiredCharacter==CrewSlot.Guess&&mixed[1].GetType().Name=="DestroyVehicleObjective"&&!mixed[1].RequiredCharacter.HasValue&&mixed[1].KeepsOwnerOpen,"The forks are Ron's and the technical is under Ice's name for anyone's kill: the stage no longer hands both jobs to Ron");
+  Check(m8.CurrentObjective.StartsWith("Guess")&&m8.RequiredSwitch==null,"With Ron active the HUD line is his crate");
+  Use(crew,CrewSlot.Ice);m8.Tick();Check(m8.CurrentObjective.StartsWith("Ice")&&m8.RequiredSwitch==null,"With Ice active the HUD line is his fight and no switch is demanded");Use(crew,CrewSlot.Guess);m8.Tick();
   Interact(m8,c,CrewSlot.Guess,c.Locations.Position("M08.CratePadTwo"),3,true);
   Check(m8.CurrentStage==4&&m8.Loaded==2&&c.Cutscenes.IsActive&&m8.Crates[1].AttachedTo==m8.Forklift,"Crate two loads while the technical is still up");
   c.Cutscenes.Skip();Check(m8.Crates[1].AttachedTo==m8.Hauler,"Skipping lands crate two on the bed: both counted");
@@ -64,6 +76,18 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay8b.json"));m8=new M08SupplyAndSever();m8.Begin(c);c.Cutscenes.Skip();m8.Tick();
   Interact(m8,c,CrewSlot.Gohan,c.Locations.Position("M08.CameraRoom"),5);Game.GameTime+=M08SupplyAndSever.LoopSeconds*1000+1;m8.Tick();
   Check(m8.Status==MissionStatus.Failed,"The camera loop is a window: when it drops with crates on the ground the job is lost");
+  // Ice first: the technical down before the second crate, then Ron's forks finish the stage with no switch demanded.
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay8c.json"));m8=new M08SupplyAndSever();m8.Begin(c);c.Cutscenes.Skip();m8.Tick();
+  Interact(m8,c,CrewSlot.Gohan,c.Locations.Position("M08.CameraRoom"),5);
+  Use(crew,CrewSlot.Ice);foreach(var s in World.Created.Where(p=>p.Model.Name=="s_m_m_security_01"))s.IsDead=true;m8.Tick();
+  Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m8.Forklift,VehicleSeat.Driver);m8.Tick();
+  Interact(m8,c,CrewSlot.Guess,c.Locations.Position("M08.CratePadOne"),3,true);c.Cutscenes.Skip();m8.Tick();c.Cutscenes.Skip();m8.Tick();
+  Check(m8.CurrentStage==4&&!c.Cutscenes.IsActive&&m8.Loaded==1,"The second run reaches the mixed stage");
+  Use(crew,CrewSlot.Ice);m8.Technical.IsDead=true;m8.Tick();
+  Check(m8.CurrentStage==4&&Flow(m8)[4].Objectives[1].IsFinished,"Ice puts the technical down first: his job is done and the stage waits for Ron's crate");
+  Check(m8.RequiredSwitch==CrewSlot.Guess&&m8.CurrentObjective.Contains("second crate"),"With Ice's job done the HUD points to Ron's crate, the one job left");
+  Interact(m8,c,CrewSlot.Guess,c.Locations.Position("M08.CratePadTwo"),3,true);if(c.Cutscenes.IsActive)c.Cutscenes.Skip();m8.Tick();
+  Check(m8.Loaded==2&&m8.CurrentStage==5,"Ron's second crate then finishes the stage: both orders work");
   string m8src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M08SupplyAndSever.cs"));
   Check(m8src.Contains("Phase = \"approach\"")&&m8src.Contains("Phase = \"loading\"")&&m8src.Contains("PlayMoment(Id, \"Aegis technical\"")&&m8src.Contains("MissionEndpoint.SecuredDelivery")&&!m8src.Contains("Game.Player.WantedLevel = 0"),"M08 has the approach, the counted loading, the technical moment and a secured delivery that clears nothing by itself");
   var beats=File.ReadAllText(Path.Combine(dataDir,"story_beats.txt"));var scenes=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv"));

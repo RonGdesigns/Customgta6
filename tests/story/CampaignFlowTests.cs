@@ -30,6 +30,7 @@ public static partial class StoryTests
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
+   if(m.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
    Check(m.Begin(c),m.Id+" starts with essential assets and valid stages");
    var flow=Flow(m);var cueIds=flow.SelectMany(s=>s.EntryCues.Concat(s.ExitCues)).ToArray();
    Check(cueIds.Length==cueIds.Distinct().Count()&&cueIds.All(id=>c.Data.Cue(id)!=null),m.Id+" uses unique, valid dialogue cues at gameplay events");

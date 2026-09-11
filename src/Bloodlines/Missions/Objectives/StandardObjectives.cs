@@ -355,11 +355,21 @@ namespace Bloodlines.Missions.Objectives
     public sealed class DestroyVehicleObjective : Objective
     {
         private readonly Func<Vehicle> _vehicle;
+        private bool _anyone;
 
         public DestroyVehicleObjective(string label, Func<Vehicle> vehicle) : base(label)
         {
             _vehicle = vehicle;
         }
+
+        /// <summary>
+        /// The kill counts whoever makes it: the label names the brother whose job
+        /// it is, the objective takes no owner, so a stage shared with another
+        /// brother's work never inherits that brother for this one, and a companion's
+        /// kill is not held until the player switches.
+        /// </summary>
+        public DestroyVehicleObjective ByAnyone() { _anyone = true; return this; }
+        public override bool KeepsOwnerOpen => _anyone;
 
         public override void Update(MissionContext context)
         {
@@ -367,7 +377,7 @@ namespace Bloodlines.Missions.Objectives
             if (vehicle == null || !vehicle.Exists()) { Fail("The target vehicle failed to load. Restart the mission."); return; }
             if (vehicle.IsDead || !vehicle.IsDriveable)
             {
-                if (IsOwnerActive(context)) Complete();
+                if (_anyone || IsOwnerActive(context)) Complete();
                 return;
             }
             GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), 1.5f);

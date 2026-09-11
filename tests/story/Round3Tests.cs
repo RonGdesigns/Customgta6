@@ -47,7 +47,7 @@ public static partial class StoryTests
   string m4=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M04SeveredWire.cs"));
   Check(m4.Contains("Station(CrewSlot.Ice, _iceWatch);")&&m4.Contains("Station(CrewSlot.Gohan, _gohanApproach);")&&!m4.Contains("Station(CrewSlot.Ice, _van"),"M04's Ron pulls up alone; Ice and Gohan are already in place");
   string m7=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
-  Check(m7.Contains("RoofTop(Ctx.Locations.Position(\"M07.GarageRoof\"))")&&m7.Contains("World.GetNextPositionOnStreet(Ctx.Locations.Position(\"M07.LandingZone\"))"),"M07 puts Ice on the roof the world has and the sedan on the street");
+  Check(m7.Contains("_roofFound = TryRoofTop(roofKey, _base.Z, out _roof);")&&m7.Contains("World.GetNextPositionOnStreet(Ctx.Locations.Position(\"M07.LandingZone\"))"),"M07 puts Ice on the roof the world has and the sedan on the street");
   string m8=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M08SupplyAndSever.cs"));
   Check(m8.Contains("World.GetNextPositionOnStreet(_gate + new Vector3(22f, -52f, 0f))"),"M08's forklift starts in the open");
   var rows=File.ReadAllLines(Path.Combine(dataDir,"locations.tsv")).Where(l=>l.StartsWith("M08.")).ToDictionary(l=>l.Split('\t')[0],l=>l.Split('\t'));
