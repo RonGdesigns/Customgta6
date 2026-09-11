@@ -267,6 +267,12 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 89. **M07 and M08 placement.** M07: Ice starts on the roof of the building and the mast marker is up there; the sedan waits on the street below, not against the entrance. M08: crates a truck-length apart, the flatbed clear of them, the forklift on the open apron with room to turn.
 90. **The meter.** Any hold or piece of work (the ledger copy, the junction, the breaker, the forks) shows its name and a small yellow meter above the subtitle line, no countdown text.
 
+## Apartment tiers
+
+91. **Three rooms.** Enter Ice's, Gohan's and Ron's homes in turn: a studio, a one-bedroom, a house; three different layouts. Ron's home marker is now the Forum Drive house door in Strawberry (the prologue's drive home goes there).
+92. **The Diamond.** With the dev menu on, from any home marker choose "Preview the next residence" twice across the tiers (or complete M47): the casino penthouse, two floors, furnished (bar, lounge, spa, cinema). If rooms are bare, quote the "Apartment: N entity set(s)" log line; a set name the engine does not know is silently ignored and needs correcting.
+93. **The luxury tier.** After M27 the home markers collapse to the Eclipse Towers door and each brother's penthouse is his own floor, as before.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

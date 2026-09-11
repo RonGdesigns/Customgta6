@@ -21,6 +21,7 @@ namespace Bloodlines.Core
         private float? _heading2;
         private int _started, _interior;
         private string _ipl;
+        private string[] _entitySets = new string[0];
         private bool _ownsIpl;
         public bool Busy { get; private set; }
         public bool Inside { get; private set; }
@@ -29,7 +30,8 @@ namespace Bloodlines.Core
         public ApartmentAccess(CrewRoster crew) { _crew = crew; }
 
         /// <param name="heading">The way to face once inside; null keeps the heading from the street.</param>
-        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null, float? heading = null)
+        /// <param name="entitySets">Interior entity sets to activate once the room is pinned: what furnishes a penthouse shell.</param>
+        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null, float? heading = null, string[] entitySets = null)
         {
             var ped = Game.Player.Character;
             if (Busy || enter == Inside || ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) return false;
@@ -41,7 +43,7 @@ namespace Bloodlines.Core
             {
                 if (enter)
                 {
-                    ExitPosition = _origin; InteriorPosition = target; _ipl = ipl; _interior = 0;
+                    ExitPosition = _origin; InteriorPosition = target; _ipl = ipl; _interior = 0; _entitySets = entitySets ?? new string[0];
                     foreach (var hero in Protagonist.All)
                         if (_crew.CompanionAI.StateOf(hero.Slot) != CompanionState.Scripted)
                         { _held.Add(hero.Slot); _crew.CompanionAI.TakeControl(hero.Slot); }
@@ -97,6 +99,8 @@ namespace Bloodlines.Core
                         if (_wasDisabled) Function.Call(Hash.DISABLE_INTERIOR, _interior, false);
                         if (_wasCapped) Function.Call(Hash.CAP_INTERIOR, _interior, false);
                         Function.Call(Hash.PIN_INTERIOR_IN_MEMORY, _interior);
+                        foreach (var set in _entitySets) if (!string.IsNullOrEmpty(set)) Function.Call(Hash.ACTIVATE_INTERIOR_ENTITY_SET, _interior, set);
+                        if (_entitySets.Length > 0) Logger.Info("Apartment: " + _entitySets.Length + " entity set(s) requested for interior " + _interior + ".");
                         Function.Call(Hash.REFRESH_INTERIOR, _interior);
                     }
                 }
@@ -154,11 +158,12 @@ namespace Bloodlines.Core
         {
             foreach (var slot in _held) Attempt(() => _crew.CompanionAI.ReleaseControl(slot));
             _held.Clear();
+            if (_interior != 0) foreach (var set in _entitySets) { var name = set; if (!string.IsNullOrEmpty(name)) Attempt(() => Function.Call(Hash.DEACTIVATE_INTERIOR_ENTITY_SET, _interior, name)); }
             if (_interior != 0) Attempt(() => Function.Call(Hash.UNPIN_INTERIOR, _interior));
             if (_interior != 0 && _wasCapped) Attempt(() => Function.Call(Hash.CAP_INTERIOR, _interior, true));
             if (_interior != 0 && _wasDisabled) Attempt(() => Function.Call(Hash.DISABLE_INTERIOR, _interior, true));
             if (_ownsIpl && !string.IsNullOrEmpty(_ipl)) Attempt(() => Function.Call(Hash.REMOVE_IPL, _ipl));
-            _interior = 0; _ipl = null; _ownsIpl = false; _wasDisabled = _wasCapped = false;
+            _interior = 0; _ipl = null; _ownsIpl = false; _wasDisabled = _wasCapped = false; _entitySets = new string[0];
         }
         private void Fail()
         {
