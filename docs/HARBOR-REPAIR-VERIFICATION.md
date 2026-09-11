@@ -1,4 +1,14 @@
-# Harbor repair source verification
+# Current integrated harbor verification
+
+Main input: `f8a37b9837b11f6661df081fd59616b7c06e6bb3`. See HARBOR-INTEGRATION.md and manifests.
+
+Combined DLL SHA-256: `75caf923fcb46d116c8ee840f7e8cc132c7d28465a5ce419ef58a2c86b819b72`.
+
+1721 story/runtime checks and 165 regression checks passed. No live GTA playthrough performed.
+
+---
+
+# Historical isolated harbor repair verification
 
 Base: `d295306764fa137ceda3e1f3741e2a0d766bdb45`.
 

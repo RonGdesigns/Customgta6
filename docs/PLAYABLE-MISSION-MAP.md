@@ -55,8 +55,10 @@ Prerequisite: M02. Retry: full mission restart.
 | 3 | Ice | **Breach the depot** — ReachZoneObjective: Ice: walk to the yellow entry marker at the depot gate.<br>QuietRuleObjective: Quiet until the entry marker. |
 | 4 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
 | 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
-| 6 | Guess | **Run it home** — EnterVehicleObjective: Guess: travel to the depot and take the orange-marked Benson truck (driver seat). |
-| 7 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
+| 6 | Guess | **The depot answers** — TravelObjective: Guess: get back to the depot. Ice and Gohan are pinned at the truck. |
+| 7 | Guess | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen and the dogs marked RED. Switch to any brother. |
+| 8 | Guess | **Run it home** — EnterVehicleObjective: Guess: take the orange-marked Benson truck (driver seat). Ice rides with you.<br>ConditionObjective: Ice is boarding the Benson. |
+| 9 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -120,7 +122,7 @@ Prerequisite: M06. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **The mast** — ReachZoneObjective: Ice — get up to the antenna platform. |
+| 1 | Ice | **The mast** — ReachZoneObjective: Ice — get up to the antenna platform on the garage roof. |
 | 2 | Ice | **Clamp the receiver** — MissionInteraction: Clamp the packet sniffer to the dish. |
 | 3 | Ice | **Off the roof** — ReachZoneObjective: Descend from the roof, then reach Guess's marked pickup. Use the parachute only if there is clearance. |
 | 4 | Ice | **Moving pickup** — EnterVehicleObjective: Get in behind Guess. |
@@ -138,8 +140,8 @@ Prerequisite: M07. Retry: full mission restart.
 | 1 | Gohan | **Loop the cameras** — MissionInteraction: Gohan — loop the CCTV feed. |
 | 2 | Ice | **Drop the sentries** — KillTargetsObjective: Ice — drop the sentries at the marked warehouse posts. |
 | 3 | Guess | **Take the forklift** — EnterVehicleObjective: Guess — take the forklift. |
-| 4 | Guess | **Crate one** — MissionInteraction: Guess — bring the forks under the first turbine crate. |
-| 5 | Guess | **Crate two, the technical** — DestroyVehicleObjective: Ice — put the Aegis technical down.<br>MissionInteraction: Guess — bring the forks under the second crate. |
+| 4 | Guess | **Crate one** — ForksUnderCrateObjective: Guess — drive the forks under the first turbine crate and stop. |
+| 5 | Guess | **Crate two, the technical** — DestroyVehicleObjective: Ice — put the Aegis technical down.<br>ForksUnderCrateObjective: Guess — drive the forks under the second crate and stop. |
 | 6 | Guess | **Take the hauler** — EnterVehicleObjective: Guess — take the flatbed. Ice rides with you; Gohan brings the Granger. |
 | 7 | Guess | **Lose the police** — LoseWantedObjective: Lose the police before the stash. |
 | 8 | Guess | **The stash** — DeliverVehicleObjective: Guess: bring the loaded flatbed to the connector stash. |

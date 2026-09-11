@@ -69,26 +69,62 @@ namespace Bloodlines.Core
         private static bool Walkable(Vector3 safe, Vector3 point) =>
             safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, point, 35f) && Math.Abs(safe.Z - point.Z) < 25f;
 
+        /// <summary>Water a boat can float in: the surface must stand this far above whatever ground is under it.</summary>
+        public const float MinWaterDepth = 1.2f;
+
+        /// <summary>
+        /// A water key resolves to real water. The ocean's water plane runs under
+        /// beaches and coast roads, so the surface height alone put a dinghy on the
+        /// Palomino road (Ron, September 11); a point counts only when the ground
+        /// under it is below the surface by <see cref="MinWaterDepth"/>. Unloaded
+        /// seabed (no ground found) counts as open water. Estimates search outward to
+        /// 250 m, nearest ring first; a surveyed key is trusted as it stands.
+        /// </summary>
         public static bool Water(LocationBook book, params string[] keys)
         {
             var resolved=new Dictionary<MissionLocation,Vector3>();
-            foreach(var key in keys)
+            try
             {
-                var location=book.Get(key);if(location==null)return false;
-                Vector3? found=null;
-                int radiusLimit=location.Status==LocationStatus.Surveyed?0:150;
-                for(int radius=0;radius<=radiusLimit&&!found.HasValue;radius+=25)
-                    for(int angle=0;angle<8&&!found.HasValue;angle++)
+                foreach(var key in keys)
+                {
+                    var location=book.Get(key);if(location==null)return false;
+                    Function.Call(Hash.SET_FOCUS_POS_AND_VEL, location.Position.X, location.Position.Y, location.Position.Z, 0f,0f,0f);
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD, location.Position.X, location.Position.Y, location.Position.Z);
+                    Vector3? found=null; bool surfaceSeen=false;
+                    int radiusLimit=location.Status==LocationStatus.Surveyed?0:250;
+                    for(int radius=0;radius<=radiusLimit&&!found.HasValue;radius+=25)
+                        for(int angle=0;angle<8&&!found.HasValue;angle++)
+                        {
+                            var p=location.Position+new Vector3((float)Math.Cos(angle*Math.PI/4)*radius,(float)Math.Sin(angle*Math.PI/4)*radius,0);
+                            var height=new OutputArgument();
+                            if(!Function.Call<bool>(Hash.GET_WATER_HEIGHT,p.X,p.Y,100f,height)) continue;
+                            surfaceSeen=true;
+                            float surface=height.GetResult<float>();
+                            if(!DeepEnough(p.X,p.Y,surface)) continue;
+                            found=new Vector3(p.X,p.Y,surface+.2f);
+                            if(radius>0) Logger.Info("Water key "+key+" resolved "+radius+" m from its estimate to floatable water at "+found.Value);
+                        }
+                    if(!found.HasValue)
                     {
-                        var p=location.Position+new Vector3((float)Math.Cos(angle*Math.PI/4)*radius,(float)Math.Sin(angle*Math.PI/4)*radius,0);
-                        var height=new OutputArgument();
-                        if(Function.Call<bool>(Hash.GET_WATER_HEIGHT,p.X,p.Y,100f,height)) found=new Vector3(p.X,p.Y,height.GetResult<float>()+.2f);
+                        string why=surfaceSeen?"the water there is under land or too shallow to float in":"no water surface";
+                        Logger.Error("No usable water: "+key+" ("+why+")");
+                        GameUtils.Subtitle("~r~No water deep enough at "+key+". Survey the coast and retry.",6000);
+                        return false;
                     }
-                if(!found.HasValue){Logger.Error("No water surface: "+key);GameUtils.Subtitle("~r~No water at "+key+". Survey the coast and retry.",6000);return false;}
-                resolved[location]=found.Value;
+                    resolved[location]=found.Value;
+                }
             }
+            finally { Function.Call(Hash.CLEAR_FOCUS); }
             foreach(var pair in resolved)pair.Key.Position=pair.Value;
             return true;
+        }
+
+        /// <summary>True when no ground stands within <see cref="MinWaterDepth"/> of the surface at this column (or none is loaded).</summary>
+        public static bool DeepEnough(float x, float y, float surface)
+        {
+            var ground=new OutputArgument();
+            if(!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, x, y, surface+30f, ground, true, false)) return true;
+            return ground.GetResult<float>() <= surface-MinWaterDepth;
         }
     }
 }

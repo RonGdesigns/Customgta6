@@ -1,0 +1,243 @@
+{
+  "base": "d295306764fa137ceda3e1f3741e2a0d766bdb45",
+  "integrated_main": "f8a37b9837b11f6661df081fd59616b7c06e6bb3",
+  "repair_input": "ea4c54667d60d10f8973bfeccdd9713c97499501",
+  "main_exclusive": {
+    "docs/HANDOFF-IMPLEMENTATION-UPDATE.md": {
+      "source_blob": "82c717aba04685c996d945c94fcce921a7846496",
+      "sha256": "4fd30e16c4cd33a2f2c546d04ec3d022bc4e96c1af01d28f9b926b747fcd6a3e",
+      "byte_identical": true
+    },
+    "docs/QA.md": {
+      "source_blob": "4741b0a73085afb9d6b449964d8a2f72e257921c",
+      "sha256": "fdc37964462e5e73bcea25212a406cefcccdeccf154281b144025ab5ed2f0bb0",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/CrewVan.cs": {
+      "source_blob": "2a846b40e9f1aaca8e9dd356288a3e1d361a25d7",
+      "sha256": "d2f3bddc33f00c4e3162d0a485b647435ea4cb8c39696432110456dfd90fecfa",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/GameUtils.cs": {
+      "source_blob": "bd4144175bfdd1c9d7621d2b2322d20b613edc74",
+      "sha256": "61692a1f32ba9908a5ef830916a3d52ce958de0427e2a1a5f09af7a45eed7961",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/MissionSites.cs": {
+      "source_blob": "3f4c6839e140e8c1a78973006520ff4055c4cb34",
+      "sha256": "817cfb451d141f735bd59f54c8ad546e41c10d1842c0fdbddeaf6a5039f45881",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M03CypressFoundry.cs": {
+      "source_blob": "09e5132d5bbeb24e33422c407c270d11a5adda77",
+      "sha256": "6e039aa93b74c376c24d0b9fe79a72d0a12d40712fbf6f334017b113f262aa5a",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M04SeveredWire.cs": {
+      "source_blob": "a5172cabd59ad843c7bbc5876169648e04725657",
+      "sha256": "1d1f984fba8b81ac5c980faa80a928eb7a43ef3c4f50ca598a51a9533dce11fd",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M05TidalLock.cs": {
+      "source_blob": "3d74cd5319dedf8c22c957298bffddf237e6ce52",
+      "sha256": "08abfacff86cafa14e9116797c451afcb377bae90f7ce1eb4f74ba951102f93f",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M06CleanSweep.cs": {
+      "source_blob": "b2b69cfe097676bb3563987c51f1ee6c69e298df",
+      "sha256": "2e21fd7a75a3aefd4323cb133637dd45f3203e60098fcc15568d6f4aa4a4cc33",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M07WiretapWaltz.cs": {
+      "source_blob": "38c998e8eecb20d7539ce3c8be55d2903354805e",
+      "sha256": "ebf42110cc5976823d2718afcc9b2a6429224c01b2b87c0ddf08ea3d315821f2",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M08SupplyAndSever.cs": {
+      "source_blob": "3aed21c329b55be1f045162de20850c77c6a54bb",
+      "sha256": "053615cce5e473de208bd3395824aa64e0a451fe3a95eb3e1b15e725d0b43a6c",
+      "byte_identical": true
+    },
+    "tests/story/ClarityMissionTests.cs": {
+      "source_blob": "43b23776faf1208877fd1f73d640a32055c186cb",
+      "sha256": "28a896b9775125f85d8f0d1fb180704ac9c9a318f557341f78e3076c68dc95e4",
+      "byte_identical": true
+    },
+    "tests/story/RelayTests.cs": {
+      "source_blob": "390d13f96b79f15c71df3fa8c1d83046038c2bfb",
+      "sha256": "02177defb1ae4c2ad7e3d3793adad15be29aa9ad34ac53bb2daa89805a845aed",
+      "byte_identical": true
+    },
+    "tests/story/Round2Tests.cs": {
+      "source_blob": "72d8603f1c504fa31f299745be2bf0fcff4e3aba",
+      "sha256": "c84497954dc29fa4aa638ef45773c1f841827a76fcddce2140fc3784fd2dd8e4",
+      "byte_identical": true
+    }
+  },
+  "repair_exclusive": {
+    ".github/workflows/harbor-repair-preview.yml": {
+      "source_blob": "24c580c58e2847eb11fe8ea6120169fe50aa3836",
+      "sha256": "74d8c9ddf397b7b133ac064f6da2739e51270bda50de5dd1aa31cfeff51a7a57",
+      "byte_identical": true
+    },
+    "config/Bloodlines.ini": {
+      "source_blob": "e1ed5e1f4df4fd1b322adf9ba388efde681b011d",
+      "sha256": "2d4ade1e4261451b4ef81fffb274a1f82fd490f78326923531b48947fd3be06a",
+      "byte_identical": true
+    },
+    "docs/CONTINUOUS-PORT-HEIST.md": {
+      "source_blob": "2fc186f42443e5c8f2ae2a51ce0594044a877f89",
+      "sha256": "df7650cfeac5cee7adfbb86bb625f6c383c56f9f84edd36ef955a84b043107d9",
+      "byte_identical": true
+    },
+    "docs/HARBOR-PLAYTEST-REPAIR.md": {
+      "source_blob": "e40f598871c882fdabe7bbb5dc2f534fe2f2a96c",
+      "sha256": "d552c0ca616543ba381fe8d754b08cbdb709776f969ae5e38db7bcebdd0a733d",
+      "byte_identical": false
+    },
+    "docs/HARBOR-REPAIR-VERIFICATION.md": {
+      "source_blob": "9880f42da7f685dd41f9c5dcbf47b1a2659bb7a1",
+      "sha256": "eeebedbc661692c9ee4fafbec175e564f951148088078a884c67fd0328beefbf",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/MarineSites.cs": {
+      "source_blob": "5b916a6c8514f09f19c7a7451627d3e5b5f40f9a",
+      "sha256": "09a34076be375fceee0455db0ee245ef35e8d2ea72806eb0a978d8025922306b",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/MissionMarkers.cs": {
+      "source_blob": "330426c4d70e4076a19ab2e21586339273497f25",
+      "sha256": "97bc92df218c6ffa7d02f2533e9f21b56f78449b70ae346cb9503a074b9b0cb1",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/MissionPresentation.cs": {
+      "source_blob": "810ed3d43c041137d0905b7bd409ce6d73a11b75",
+      "sha256": "221d7e8d9a976ea48fcebbc8edfd375758c409bbb1a4b0e9779de232874204c9",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/ModConfig.cs": {
+      "source_blob": "647d19ae7e0183192156100073b83adf78e121ea",
+      "sha256": "c5250c2fb5ed25680f15987b0ae2ea32dde878dc780d1725779dff2749f83546",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/ObjectiveMarkers.cs": {
+      "source_blob": "d08879ad77e6489188d2ac9ed05f489aff26d3d4",
+      "sha256": "f31bad992bff7bdd40c221adc64d54a443b47ba668d99bf813be18b0469ddb09",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Core/UnderwaterGuidance.cs": {
+      "source_blob": "68a35a2dfd2505423a91eac06d657b78b3c70584",
+      "sha256": "fde30be41fa3c36aad890260a5e87480523d8430b94b3ac8b3b8d25874155d93",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Crew/TacticalResponse.cs": {
+      "source_blob": "5f263a05f3cfd7f1b374c516951de21db8f84c4f",
+      "sha256": "2be0676cbf5b2f98398f7ba4f0f594393edad532837efc8c5d315c85c2192f6e",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M17SubZeroPayload.cs": {
+      "source_blob": "5ae1283e8b07a6e50ab1e0f69b11d5c0f7a9b561",
+      "sha256": "87007061692f1414c33434306e5d83763af5d5fdd7269ce0e04258b48d73f61d",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M18TheStagingLine.cs": {
+      "source_blob": "fa0de7f34ff531cb841d05c707f11b6f826c425c",
+      "sha256": "cac28bb88cd5ab5c314f0c4ce4b8e3e95cc5caa922e8ff83d5f6e249a99bc6f2",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M19UnderwaterBreach.cs": {
+      "source_blob": "0733edb4db97cf7013998b8e20fc4964ca4006c4",
+      "sha256": "5e2adde8c3006b1542b94f59d7344bb6eac23234bc5ca9acdab3abd36fa3973a",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M20SkyHook.cs": {
+      "source_blob": "5aec6260b484893c19b382a61a5403fcc792d984",
+      "sha256": "b2a4aacf3584449d8b95d26f604fa88a04e27041db2009b2865968778e38c1c7",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M21OpenWater.cs": {
+      "source_blob": "8d65cb8670218064b41604c01cf6879de44f5065",
+      "sha256": "c003ff1196058445fe0c0f4de3cf733ec92431aacfad5afbc2894620c870e749",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Campaign/Act1/M22ScorchedBay.cs": {
+      "source_blob": "21705c5d5a3630a3a66ea1f7dc64f6199d3ebf2b",
+      "sha256": "2917770859719a56ce34c087777e49190c283ed6723b4855300fed99f8af4f1a",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/CampaignState.cs": {
+      "source_blob": "041b41fe373cf9f840a6ad54374fd0c9cab4057a",
+      "sha256": "e5faa291415e4f583540c76556c3d1b7b71a4c5c9ee33c58b69f1880e38d6657",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Mission.cs": {
+      "source_blob": "440db63ad853f6ff5cfc28513d92df40767fd528",
+      "sha256": "17e45e93adc5c09bcfd5807c403969b609ab922a17f352a50473cc4bd3e0c63a",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/MissionManager.cs": {
+      "source_blob": "839607376c2959d1b2bdfa278d82ddef1d257bd9",
+      "sha256": "3dcf81fa45271cd97be3d95ae0c4a58e75d55ae06d47d1e76469819945033d3f",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Objectives/AdvancedObjectives.cs": {
+      "source_blob": "49fa5ee2e20d08cf3c44aa2511fe5c9a957f94ff",
+      "sha256": "6691d96a95402ee90966f7563955b31ba6c105c96fefa97a3c878b32bcb8cb0a",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/Objectives/MissionInteraction.cs": {
+      "source_blob": "5c7895712b12b707010ddcdc0c560dfa10c832fa",
+      "sha256": "ea462ad1980635e6e729b3ffbcd63aef66a4d50f1bc5062c01032da67b45147c",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/PortHeistOperation.cs": {
+      "source_blob": "e51fb40e30666915a687e0e2bb2b49061997cad5",
+      "sha256": "ccee076caebfbdb549a580ab50901b504d15398e7e4e8fb96f721f1bb6374bfa",
+      "byte_identical": true
+    },
+    "src/Bloodlines/Missions/PortHeistWorld.cs": {
+      "source_blob": "518362466c9963546b8d44b542809f04e56fe1aa",
+      "sha256": "1830a7790659fd3956f910634a29b9a1ab80f67cfd3c5617737e3180fb2b87ae",
+      "byte_identical": true
+    },
+    "tests/story/ContinuousPortHeistTests.cs": {
+      "source_blob": "d194a74c2eb4255735f6775a3ea18b031cc7edf5",
+      "sha256": "9c461b6a573a92080521fc5710f7492c49d7e536c61d6f472b4bc756d5b28f9c",
+      "byte_identical": true
+    },
+    "tests/story/CorrectionPassTests.cs": {
+      "source_blob": "7117aeb832e14bf744ad06f67ebb0b5ca73e1b39",
+      "sha256": "58e0f947eb06636842483f96e143fd774a5a3e59524d48208a4bc7853ea691bb",
+      "byte_identical": true
+    },
+    "tests/story/HarborRepairTests.cs": {
+      "source_blob": "58298791e0f1c68220156f898dc9b2e076470026",
+      "sha256": "a868eecb35f55788dd1c8138e821ba85a14cf9cf9ada9415724f4d9d55a80556",
+      "byte_identical": true
+    },
+    "tests/story/PortHeistTests.cs": {
+      "source_blob": "1cf4f46a736e986f8ecc7e927b75e7283ab06158",
+      "sha256": "27aed86921d3be636f337523436ac2f183cba00d2aa6e346ed4d54fd0fe3c9ab",
+      "byte_identical": true
+    },
+    "tests/story/StoryTests.cs": {
+      "source_blob": "04a9a9f27d268674edaf0d5e33496e405a7ab84c",
+      "sha256": "e69001ec30b635823ab29bcb834a7d410e8a85c091a16f84e236da48dd1c0ab1",
+      "byte_identical": true
+    },
+    "tools/run_story_tests.py": {
+      "source_blob": "f56587f2585e839374708545511d5e8396d7dce3",
+      "sha256": "de57a512555bc63f84ecd75725de5d493a78a803c29358698b4b99a70977ef85",
+      "byte_identical": true
+    }
+  },
+  "shared_reviewed": {
+    "data/locations.tsv": "4963bb1c0293bc5ab9017e422b6676d502eea1e9e8e8871042955a2846fcc83e",
+    "docs/CHANGE-REGISTER.md": "51296be376964b243fa3acda6f767fb61a20eba03e118cad7c8d9045f4154239",
+    "docs/PLAYABLE-MISSION-MAP.md": "46ed5e42be64cbd3a4ef59175ec0629553ebc12e732bfe2176ce30f04dfbdc07",
+    "src/Bloodlines/BloodlinesMain.cs": "f5799c4cdd327412f984c083bc54e9a8bc4530c270f3e7ba8418ea048b816c29",
+    "tests/story/CampaignFlowTests.cs": "992fe5bcbade47657a86289740ecb66a69e2c492c4ffb69d258bde2b270d503c",
+    "tests/story/RuntimeStubs.cs": "b516918d8a21e7433c115ad62d53d3649f5f733ed8c1ecca1f3b6d8548f05c7f"
+  },
+  "combined_dll_sha256": "75caf923fcb46d116c8ee840f7e8cc132c7d28465a5ce419ef58a2c86b819b72"
+}

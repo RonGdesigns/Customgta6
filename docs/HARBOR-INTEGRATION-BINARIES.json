@@ -1,0 +1,241 @@
+{
+  "method": "PE/CLI metadata plus symbolic-token-normalized IL, locals and exception regions; mod code not executed",
+  "limitations": "Preservation check, not mathematical behavior proof or GTA playthrough. The original main DLL was not independently rebuilt in this job.",
+  "inputs": [
+    {
+      "File": "main-f8a37b9.dll",
+      "Length": 835584,
+      "Sha256": "ae8a81ed1cafae6c398fef59269d0d857910cae309ca914daf86548b0c9de7f6",
+      "Assembly": "Bloodlines",
+      "Version": "0.1.0.0",
+      "MetadataVersion": "v4.0.30319",
+      "Mvid": "7df2de7a-0fa6-401b-8d91-0af15da40dfd",
+      "Machine": "Amd64",
+      "CorFlags": "ILOnly",
+      "References": [
+        {
+          "Name": "mscorlib",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "ScriptHookVDotNet3",
+          "Version": "3.6.0.0"
+        },
+        {
+          "Name": "System.Windows.Forms",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Core",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Drawing",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System",
+          "Version": "4.0.0.0"
+        }
+      ]
+    },
+    {
+      "File": "repair-ea4c546.dll",
+      "Length": 831488,
+      "Sha256": "df6d55276297dafef5c2c018d828f4db80316e7370ead561ca29ab0c0d553c6b",
+      "Assembly": "Bloodlines",
+      "Version": "0.1.0.0",
+      "MetadataVersion": "v4.0.30319",
+      "Mvid": "350e73ce-59d7-4f57-908b-83eebff39920",
+      "Machine": "Amd64",
+      "CorFlags": "ILOnly",
+      "References": [
+        {
+          "Name": "mscorlib",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "ScriptHookVDotNet3",
+          "Version": "3.6.0.0"
+        },
+        {
+          "Name": "System.Windows.Forms",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Core",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Drawing",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System",
+          "Version": "4.0.0.0"
+        }
+      ]
+    },
+    {
+      "File": "Bloodlines.dll",
+      "Length": 847360,
+      "Sha256": "75caf923fcb46d116c8ee840f7e8cc132c7d28465a5ce419ef58a2c86b819b72",
+      "Assembly": "Bloodlines",
+      "Version": "0.1.0.0",
+      "MetadataVersion": "v4.0.30319",
+      "Mvid": "6f1139b7-c1ec-4e28-a009-26300f50bb9d",
+      "Machine": "Amd64",
+      "CorFlags": "ILOnly",
+      "References": [
+        {
+          "Name": "mscorlib",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "ScriptHookVDotNet3",
+          "Version": "3.6.0.0"
+        },
+        {
+          "Name": "System.Windows.Forms",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Core",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System.Drawing",
+          "Version": "4.0.0.0"
+        },
+        {
+          "Name": "System",
+          "Version": "4.0.0.0"
+        }
+      ]
+    }
+  ],
+  "main_groups": {
+    "M03CypressFoundry": {
+      "methods_checked": 115,
+      "changed_or_missing": 0
+    },
+    "M04SeveredWire": {
+      "methods_checked": 55,
+      "changed_or_missing": 0
+    },
+    "M05TidalLock": {
+      "methods_checked": 49,
+      "changed_or_missing": 0
+    },
+    "M06CleanSweep": {
+      "methods_checked": 52,
+      "changed_or_missing": 0
+    },
+    "M07WiretapWaltz": {
+      "methods_checked": 45,
+      "changed_or_missing": 0
+    },
+    "M08SupplyAndSever": {
+      "methods_checked": 70,
+      "changed_or_missing": 0
+    },
+    "ForksUnderCrateObjective": {
+      "methods_checked": 3,
+      "changed_or_missing": 0
+    },
+    "GameUtils": {
+      "methods_checked": 22,
+      "changed_or_missing": 0
+    },
+    "CrewVan": {
+      "methods_checked": 11,
+      "changed_or_missing": 0
+    },
+    "MissionSites": {
+      "methods_checked": 13,
+      "changed_or_missing": 0
+    }
+  },
+  "repair_groups": {
+    "MarineColumn": {
+      "methods_checked": 2,
+      "changed_or_missing": 0
+    },
+    "IMarineProbe": {
+      "methods_checked": 2,
+      "changed_or_missing": 0
+    },
+    "MarineSites": {
+      "methods_checked": 18,
+      "changed_or_missing": 0
+    },
+    "UnderwaterGuidance": {
+      "methods_checked": 3,
+      "changed_or_missing": 0
+    },
+    "MissionPresentation": {
+      "methods_checked": 9,
+      "changed_or_missing": 0
+    },
+    "TacticalResponse": {
+      "methods_checked": 15,
+      "changed_or_missing": 0
+    },
+    "PortHeistOperation": {
+      "methods_checked": 21,
+      "changed_or_missing": 0
+    },
+    "PortHeistWorld": {
+      "methods_checked": 27,
+      "changed_or_missing": 0
+    },
+    "Mission": {
+      "methods_checked": 54,
+      "changed_or_missing": 0
+    },
+    "MissionManager": {
+      "methods_checked": 36,
+      "changed_or_missing": 0
+    },
+    "CampaignState": {
+      "methods_checked": 102,
+      "changed_or_missing": 0
+    },
+    "MissionMarkers": {
+      "methods_checked": 7,
+      "changed_or_missing": 0
+    },
+    "ModConfig": {
+      "methods_checked": 106,
+      "changed_or_missing": 0
+    },
+    "M17SubZeroPayload": {
+      "methods_checked": 38,
+      "changed_or_missing": 0
+    },
+    "M18TheStagingLine": {
+      "methods_checked": 42,
+      "changed_or_missing": 0
+    },
+    "M19UnderwaterBreach": {
+      "methods_checked": 48,
+      "changed_or_missing": 0
+    },
+    "M20SkyHook": {
+      "methods_checked": 52,
+      "changed_or_missing": 0
+    },
+    "M21OpenWater": {
+      "methods_checked": 54,
+      "changed_or_missing": 0
+    },
+    "M22ScorchedBay": {
+      "methods_checked": 60,
+      "changed_or_missing": 0
+    }
+  },
+  "script_entrypoints": [
+    "Bloodlines.BloodlinesMain",
+    "Bloodlines.DevTools"
+  ]
+}

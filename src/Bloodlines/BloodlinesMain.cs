@@ -154,6 +154,7 @@ namespace Bloodlines
             if (_characterWheel.IsOpen && (Game.Player.Character == null || Game.Player.Character.IsDead ||
                 !_crew.IsDeployed || _cutscenes.IsActive || _menu.IsOpen)) _characterWheel.Close();
             if (Game.Player.Character == null || Game.Player.Character.IsDead) Step("cancel apartment", _homes.StopApartment);
+            Step("grounded spawns", GameUtils.SettleHeld);
             Step("death", _death.Update);
             Step("mission presentation", () => _presentation.Update(
                 _missions.IsRunning && _missions.CurrentStage >= 0,

@@ -29,6 +29,8 @@ namespace Bloodlines.Missions.Campaign
     /// </summary>
     public sealed class M07WiretapWaltz : ComposedMission
     {
+        protected override void OnCleanup() { Ctx.Crew.CompanionsHoldPosition = false; }
+
         private Vehicle _drone;
         private Vehicle _sedan;
         private Ped _dronePilot;
@@ -36,7 +38,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _roof;
         private Vector3 _mast;
         private Vector3 _landing;
-        private bool _heliShown, _pickupCalled;
+        private Vector3 _base;
+        private Prop _laptop;
+        private bool _heliShown, _pickupCalled, _roofFound;
 
         public override string Id => "M07";
         public override string Title => "Wiretap Waltz";
@@ -44,7 +48,11 @@ namespace Bloodlines.Missions.Campaign
         public Vehicle Sedan => _sedan;
         public Vehicle Drone => _drone;
         public Prop Sniffer => _sniffer;
+        public Prop Laptop => _laptop;
         public bool HeliShown => _heliShown;
+        public bool RoofFound => _roofFound;
+        public Vector3 Roof => _roof;
+        public Vector3 BuildingBase => _base;
 
         protected override bool Setup()
         {
@@ -54,14 +62,24 @@ namespace Bloodlines.Missions.Campaign
             // September 10: Ice was not on the building; the sedan was against it).
             _roof = RoofTop(Ctx.Locations.Position("M07.GarageRoof"));
             _mast = RoofTop(Ctx.Locations.Position("M07.MastTop"));
+            _roofFound = _roof.Z > Ctx.Locations.Position("M07.GarageRoof").Z - 3f;
+            if (!_roofFound)
+            {
+                Logger.Warn("M07: no roof at or above the estimate for M07.GarageRoof (" + Ctx.Locations.Position("M07.GarageRoof") + "); Ice starts at street level. Survey the roof (F11) and retry.");
+                GameUtils.Notify("~y~M07.GarageRoof has no roof at its estimate. Survey it from the real roof (F11) so Ice starts up there.");
+            }
             var lane = World.GetNextPositionOnStreet(Ctx.Locations.Position("M07.LandingZone"));
             _landing = lane == Vector3.Zero ? Ctx.Locations.Position("M07.LandingZone") : lane;
+            // Gohan at the building's base on the street, reading the feed: where Ice
+            // used to stand (Ron, September 11). Ice starts on the roof itself.
+            _base = StreetBase(Ctx.Locations.Position("M07.GarageRoof"));
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _roof + new Vector3(0f, -8f, 0f),
-                    Ctx.Locations.Heading("M07.GarageRoof")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Ice, new Dictionary<CrewSlot, PedPlacement>
             {
-                return false;
-            }
+                [CrewSlot.Ice] = new PedPlacement(_roof + new Vector3(0f, -8f, 0f), Ctx.Locations.Heading("M07.GarageRoof")),
+                [CrewSlot.Gohan] = new PedPlacement(_base, Ctx.Locations.Heading("M07.GarageRoof")),
+                [CrewSlot.Guess] = new PedPlacement(_landing + new Vector3(2f, 0f, 0f), 0f)
+            })) return false;
 
             ApplyBibleSetting();
 
@@ -70,18 +88,30 @@ namespace Bloodlines.Missions.Campaign
                 Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
 
             SpawnSedan();
+            SpawnLaptop();
             if (!RequireAssets(_sedan)) return false;
+            Ctx.Crew.CompanionsHoldPosition = true;
             Station(CrewSlot.Guess, _sedan, VehicleSeat.Driver);
-            Station(CrewSlot.Gohan, _sedan, VehicleSeat.Passenger);
+            Station(CrewSlot.Gohan, _base);
             PlayApproach();
             return true;
+        }
+
+        /// <summary>The street at the foot of the building the roof estimate names: the navmesh's nearest ground point below it.</summary>
+        private static Vector3 StreetBase(Vector3 roofEstimate)
+        {
+            var street = World.GetNextPositionOnStreet(new Vector3(roofEstimate.X, roofEstimate.Y - 18f, roofEstimate.Z - 40f));
+            if (street != Vector3.Zero) { var walk = World.GetSafeCoordForPed(street, true, 16); if (walk != Vector3.Zero) return walk; return street; }
+            var ground = World.GetSafeCoordForPed(new Vector3(roofEstimate.X, roofEstimate.Y - 18f, roofEstimate.Z - 40f), false, 0);
+            return ground != Vector3.Zero ? ground : roofEstimate + new Vector3(0f, -18f, -40f);
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("The mast",
-                    new ReachZoneObjective("Ice — get up to the antenna platform.", () => _mast, 5f))
+                    new ReachZoneObjective("Ice — get up to the antenna platform on the garage roof.", () => _mast, 5f))
                 .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context => GameUtils.Subtitle("~y~Ice: the dish is on the garage roof. Reach the antenna platform (yellow marker), then clamp the sniffer to it. Gohan reads the feed from the street; Ron waits in the pickup lane.", 7000))
                 .WithCues("M07_S1_01_GOHAN");
 
             yield return new MissionStage("Clamp the receiver",
@@ -233,13 +263,32 @@ namespace Bloodlines.Missions.Campaign
 
             _dronePilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             _dronePilot.IsPersistent = true;
+            _dronePilot.BlockPermanentEvents = true;
             _dronePilot.Task.WarpIntoVehicle(_drone, VehicleSeat.Driver);
-            _dronePilot.Task.ChaseWithHelicopter(Game.Player.Character, new Vector3(0f, 0f, 25f));
+            // An attack, not a shadow: the Buzzard works the roof with its guns (Ron, September 11).
+            _dronePilot.Task.StartHeliMission(_drone, Game.Player.Character, VehicleMissionType.Attack, 30f, 40f, 30, 20, -1f, 30f, (HeliMissionFlags)0);
 
             var blip = Track(_drone.AddBlip());
             blip.Sprite = BlipSprite.Helicopter;
             blip.Color = BlipColor.Red;
             blip.Name = "Aegis helicopter";
+        }
+
+        /// <summary>Gohan's laptop on a case at the building's base: where the feed is read.</summary>
+        private void SpawnLaptop()
+        {
+            var caseModel = new Model("prop_ld_case_01");
+            var laptopModel = new Model("prop_laptop_01a");
+            if (!GameUtils.RequestModel(caseModel) || !GameUtils.RequestModel(laptopModel)) return;
+            var stand = Track(World.CreateProp(caseModel, _base + new Vector3(0.9f, 0.4f, 0f), false, true));
+            caseModel.MarkAsNoLongerNeeded();
+            if (stand == null || !stand.Exists()) { laptopModel.MarkAsNoLongerNeeded(); return; }
+            stand.IsPersistent = true; stand.IsPositionFrozen = true;
+            _laptop = Track(World.CreateProp(laptopModel, stand.Position + new Vector3(0f, 0f, 0.6f), false, false));
+            laptopModel.MarkAsNoLongerNeeded();
+            if (_laptop == null || !_laptop.Exists()) return;
+            _laptop.IsPersistent = true;
+            StowPropStep.Stow(_laptop, stand, new Vector3(0f, 0f, 0.45f));
         }
 
         private void SpawnSedan()

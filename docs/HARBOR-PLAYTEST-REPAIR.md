@@ -2,6 +2,10 @@
 
 Base: `d295306764fa137ceda3e1f3741e2a0d766bdb45`, after the continuous-heist and desert work were combined on main. Work branch: `codex/harbor-playtest-repair`. Do not merge without the live acceptance pass. This report distinguishes source changes from live results; no GTA playthrough was performed in the implementation environment.
 
+## Integration with current main
+
+The comparison now includes main `f8a37b9837b11f6661df081fd59616b7c06e6bb3` through PR #32. M03-M08 and main-only placement/vehicle helpers are byte-identical to that main snapshot. Shared definitions retain both changes; the DLL is rebuilt from combined source. See HARBOR-INTEGRATION.md and its manifests. Main itself is not updated.
+
 ## Owner report and scope
 
 Ron reported empty underwater welding/clamping space, a submarine released onto a freeway, unreachable yellow objectives, a missing expected boat, and a police helicopter not recognizing a plainly visible wanted player. He also requested a centered GTA-like passed panel, installed-game mission music while on foot, letter-style map starts, and verification of apartment variety.
