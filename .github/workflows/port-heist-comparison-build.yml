@@ -23,6 +23,10 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Preserve comparison input for inspection
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          git archive -o build/comparison-input.zip HEAD
       - name: Apply bounded implementation patch
         run: python tools/ci/port_heist_patch.py
       - name: Compile production against the pinned GTA API
@@ -61,6 +65,7 @@ jobs:
         run: |
           python tools/build_roslyn.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item src/Bloodlines/bin/Release/Bloodlines.dll prebuilt/Bloodlines.dll -Force
           python tools/package.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Publish tested implementation to comparison branch only
@@ -69,20 +74,16 @@ jobs:
         shell: python
         run: |
           import hashlib, json, os, pathlib, subprocess
-          root = pathlib.Path('.')
           branch = 'codex/continuous-port-heist'
           remote = subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch], text=True).split()[0]
           if remote != os.environ['EXPECTED_HEAD']:
               raise SystemExit('Comparison branch changed during checks; refusing to overwrite it.')
           changes = json.loads(pathlib.Path('build/port-heist-changed.json').read_text())
-          # The patch utility is not a runtime or permanent repository dependency.
-          utility = pathlib.Path('tools/ci/port_heist_patch.py')
-          utility.unlink()
+          pathlib.Path('tools/ci/port_heist_patch.py').unlink()
           changes += ['tools/ci/port_heist_patch.py', 'docs/PLAYABLE-MISSION-MAP.md', 'prebuilt/Bloodlines.dll']
           report = pathlib.Path('docs/CONTINUOUS-PORT-HEIST-VERIFICATION.md')
           report.write_text('# Continuous Port Heist - source verification\n\n'
               + 'Verified by GitHub Actions from comparison input `' + os.environ['EXPECTED_HEAD'] + '`.\n\n'
-              + '\n'.join(pathlib.Path('build/'+p).read_text(errors='replace').splitlines()[-2:] for p in [])
               + '## Story/runtime output\n```text\n' + '\n'.join(pathlib.Path('build/story-comparison.log').read_text(errors='replace').splitlines()[-4:]) + '\n```\n'
               + '## Regression output\n```text\n' + '\n'.join(pathlib.Path('build/regression-comparison.log').read_text(errors='replace').splitlines()[-2:]) + '\n```\n'
               + '\nProduction build, parser, mission lint, location validator, authored-scene freshness, mission-map freshness and packaging also passed in this job.\n'
@@ -96,3 +97,15 @@ jobs:
           subprocess.run(['git','commit','-m','feat: run Port Heist as one validated continuous operation'], check=True)
           subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch], check=True)
           print('Published source and matching binary:', subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: port-heist-comparison-diagnostics
+          retention-days: 7
+          path: |
+            build/comparison-input.zip
+            build/*comparison.log
+            build/port-heist-changed.json
+            src/Bloodlines/**/*.cs
+            tests/story/*.cs
+            docs/CONTINUOUS-PORT-HEIST*.md
