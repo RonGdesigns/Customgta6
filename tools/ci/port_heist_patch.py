@@ -49,12 +49,30 @@ s=s[:a]+'''  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringCo
   int play=manager.IndexOf("_context.Cutscenes.Play(outroId, \\"outro\\", \\"Aftermath: \\" + outcomeTitle, null, null, outro)",StringComparison.Ordinal);
   Check(ask>=0&&finish>ask&&play>finish,"The manager captures aftermath blocking before teardown and passes it to the final scene");'''+s[b:]
 f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'));paths.append(f.as_posix())
+# An explicit phase request (used by QA) uses its own authored marker; only the
+# single normal operation entrance M19 routes to the saved phase boundary.
+f=Path('src/Bloodlines/Core/MissionMarkers.cs');s=f.read_text(encoding='utf-8')
+old='PortHeistOperation.Contains(mission.Id) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;'
+assert s.count(old)==1
+s=s.replace(old,'mission.Id.Equals("M19", StringComparison.OrdinalIgnoreCase) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;',1)
+f.write_bytes(s.encode('utf-8'))
+f=Path('src/Bloodlines/Missions/MissionManager.cs');s=f.read_text(encoding='utf-8')
+old='public string CurrentTitle => _currentDefinition?.Title;'
+assert s.count(old)==1
+s=s.replace(old,'public string CurrentTitle => _current?.Title ?? _currentDefinition?.Title;',1)
+f.write_bytes(s.encode('utf-8'))
 # MultiHold records its final site first; its next update completes the stage.
 f=Path('tests/story/ContinuousPortHeistTests.cs');s=f.read_text(encoding='utf-8')
 old='foreach (var clamp in m19.Clamps) Interact(m19, c, CrewSlot.Gohan, clamp, 8, afloat: true);'
 assert s.count(old)==1
 s=s.replace(old,old+'\n        manager.Update(); // Evaluate the now-complete multi-site objective.',1)
 s=s.replace('"The parent advances internally to " + next + " without an ordinary mission restart"','"The parent advances internally to " + next + " without an ordinary mission restart [" + manager.CurrentObjective + "; " + manager.LastFailureReason + "]"')
+old='bool rejected = false; try { state.SavePortHeistBoundary("M99"); }'
+assert s.count(old)==1
+s=s.replace(old,'''var points = new MissionMarkers(catalog, state, null, Context(Roster()).Locations, dataDir, "J");
+        Check(points.StartPoint(catalog.All[0])?.Key == "M21.BoatSpawn", "The one normal heist entry routes to its saved phase");
+        Check(points.StartPoint(catalog.All[3])?.Key == "M22.Beach", "An explicit QA phase retains its own authored start point");
+        bool rejected = false; try { state.SavePortHeistBoundary("M99"); }''',1)
 f.write_bytes(s.encode('utf-8'))
 # Run the focused integration cases before the unchanged broader suite.
 f=Path('tests/story/StoryTests.cs');s=f.read_text(encoding='utf-8')
