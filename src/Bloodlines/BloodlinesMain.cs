@@ -151,6 +151,7 @@ namespace Bloodlines
             if (_characterWheel.IsOpen && (Game.Player.Character == null || Game.Player.Character.IsDead ||
                 !_crew.IsDeployed || _cutscenes.IsActive || _menu.IsOpen)) _characterWheel.Close();
             if (Game.Player.Character == null || Game.Player.Character.IsDead) Step("cancel apartment", _homes.StopApartment);
+            Step("grounded spawns", GameUtils.SettleHeld);
             Step("death", _death.Update);
             if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             if (_homes.Apartment.Busy) { Step("apartment loading", _homes.UpdateTransition); return; }

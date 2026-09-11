@@ -124,7 +124,7 @@ namespace Bloodlines.Core
             model.MarkAsNoLongerNeeded();
             if (van == null || !van.Exists()) return null;
             van.IsPersistent = true;
-            van.PlaceOnGround();
+            GameUtils.HoldUntilGrounded(van);
             Apply(van);
             _van = van;
             _wasAboard = false;

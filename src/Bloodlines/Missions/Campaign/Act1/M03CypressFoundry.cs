@@ -563,6 +563,7 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (_car == null || !_car.Exists()) return;
             _car.IsPersistent = true;
+            GameUtils.HoldUntilGrounded(_car);
             _car.IsEngineRunning = true;
             var blip = Track(_car.AddBlip());
             blip.Sprite = BlipSprite.PersonalVehicleCar;
@@ -579,6 +580,7 @@ namespace Bloodlines.Missions.Campaign
                 if (!GameUtils.RequestModel(model)) return;
                 _van = World.CreateVehicle(model, position, heading);
                 model.MarkAsNoLongerNeeded();
+                GameUtils.HoldUntilGrounded(_van);
             }
             if (_van == null || !_van.Exists()) return;
             Track(_van);
@@ -671,7 +673,7 @@ namespace Bloodlines.Missions.Campaign
             _hauler = Track(World.CreateVehicle(model, spot, heading));
             model.MarkAsNoLongerNeeded();
             if (_hauler == null || !_hauler.Exists()) return;
-            _hauler.PlaceOnGround();
+            GameUtils.HoldUntilGrounded(_hauler);
             Logger.Info("M03 Benson at " + _hauler.Position + (spot == authored ? " (authored key)" : " (road node near the key)"));
 
             _hauler.IsPersistent = true;

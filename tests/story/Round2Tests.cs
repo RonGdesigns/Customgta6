@@ -54,6 +54,9 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"m05-shallow.json"));GTA.Native.Function.Seabed=1f;var shallow5=new M05TidalLock();
   Check(!shallow5.Begin(c)&&GameUtils.Message.Contains("deep enough"),"M05 refuses to start on a coast with no floatable water rather than putting the boat on the road");GTA.Native.Function.Seabed=-40f;
   string m5src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M05TidalLock.cs"));
+  string gameUtils=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","GameUtils.cs"));string mainSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","BloodlinesMain.cs"));string vanSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","CrewVan.cs"));
+  Check(gameUtils.Contains("HAS_COLLISION_LOADED_AROUND_ENTITY, vehicle)")&&gameUtils.Contains("vehicle.IsPositionFrozen = true;")&&mainSrc.Contains("GameUtils.SettleHeld")&&vanSrc.Contains("GameUtils.HoldUntilGrounded(van)"),"A fresh vehicle is held frozen until the ground under it has loaded, then set down, and the crew van uses it");
+  GameUtils.Holds=0;Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"van-hold.json"));c.Vans=new CrewVan(c.State,c.Locations);c.Vans.Spawn(new Vector3(1,2,3),0f);Check(GameUtils.Holds==1,"Spawning the crew van asks for the ground under it");
   Check(m5src.Contains("LightCrewPost(i)")&&!m5src.Contains("World.CreatePed(model, _perch + new Vector3(12f + i * 4f, -20f, 0f), 0f)"),"The generator crew stands on real ground at the cave mouth, not at the cliff's height over the road");
 
   // ---- 4. M06: the second and third waves come in by helicopter; the first aircraft is on camera once.

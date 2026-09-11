@@ -269,6 +269,7 @@ namespace Bloodlines.Missions.Campaign
                 if (!GameUtils.RequestModel(model)) return;
                 _van = World.CreateVehicle(model, position, heading);
                 model.MarkAsNoLongerNeeded();
+                GameUtils.HoldUntilGrounded(_van);
             }
             if (_van == null || !_van.Exists()) return;
             Track(_van);

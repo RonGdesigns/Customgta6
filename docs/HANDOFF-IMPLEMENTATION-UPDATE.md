@@ -320,6 +320,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 ## M05 water and shore (Ron, September 11)
 
 117. **M05.** Start M05: the log has "M05 dinghy on the water at ..." and, if the estimate was on land, "Water key M05.DinghySpawn resolved N m from its estimate". The dinghy floats with Ron at the wheel and Gohan beside him; the log says if either had to be warped in. The generator crew stands at the cave mouth on the shore below the cliff (the log gives the first post), not on the road. If the coast has no water deep enough within 250 m the mission refuses with "No water deep enough at <key>"; survey the coast key with F11 and retry.
+118. **Start cars.** Start M04 (and M03): the crew van and Ron's car no longer sink through the ground and pop back up. If the ground was not loaded at spawn the log has "Holding a fresh ..." and then "Ground loaded under ..."; the car sits still for that moment.
 
 ## Not done in this pass
 
