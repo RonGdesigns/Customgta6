@@ -52,16 +52,8 @@ namespace Bloodlines.Missions
         /// having played it, so existing campaigns are never sent back to the airport.
         /// </summary>
         public bool PrologueComplete { get; set; }
-        /// <summary>Safe phase-start bookmark only; never contains live entity handles.</summary>
-        public string PortHeistResumePhase { get; private set; } = "";
         private int _saveBatch;
-        public void SavePortHeistBoundary(string phase)
-        {
-            if (!PortHeistOperation.Contains(phase)) throw new ArgumentException("Unknown Port Heist phase.", nameof(phase));
-            if (IsComplete("M22")) return;
-            PortHeistResumePhase = phase;
-            Save();
-        }
+        // There is deliberately no heist resume field: only final success is saved.
         public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo)
         {
             bool firstPass = !IsComplete("M22");
@@ -71,7 +63,6 @@ namespace Bloodlines.Missions
                 foreach (var phase in PortHeistOperation.PhaseIds) MarkComplete(phase, catalog);
                 if (firstPass && cargo != null)
                     foreach (var pair in cargo) { if (string.IsNullOrEmpty(pair.Value)) Cargo.Remove(pair.Key); else Cargo[pair.Key] = pair.Value; }
-                PortHeistResumePhase = "";
             }
             finally { _saveBatch--; }
             Save();
@@ -162,14 +153,17 @@ namespace Bloodlines.Missions
 
                 var campaign = Json.Object(root.TryGetValue("campaign", out var c) ? c : null);
                 state.CurrentMissionId = Json.String(campaign, "currentMissionId");
-                string resume = Json.String(campaign, "portHeistResumePhase");
-                state.PortHeistResumePhase = PortHeistOperation.Contains(resume) ? resume.ToUpperInvariant() : "";
+                // Ignore the superseded portHeistResumePhase field, valid or not.
+                // Older saves keep earned progress; their unfinished attempt restarts whole.
                 state.ActiveAct = Math.Max(1, Json.Int(campaign, "activeAct", 1));
                 state.PrologueComplete = campaign.TryGetValue("prologueComplete", out var prologue) && prologue is bool played && played;
                 foreach (var entry in Json.Array(campaign, "completedMissions"))
                 {
                     if (entry != null) state.Completed.Add(entry.ToString());
                 }
+
+                if (!state.IsComplete("M22") && PortHeistOperation.Contains(state.CurrentMissionId))
+                    state.CurrentMissionId = "M19";
 
                 var location = Json.Object(campaign.TryGetValue("lastKnownLocation", out var l) ? l : null);
                 if (location.Count > 0)
@@ -269,7 +263,7 @@ namespace Bloodlines.Missions
             }
             var side = catalog.Playable.FirstOrDefault(m => m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
             if (side != null) return CampaignProgress.SideContentOnly;
-            bool anyStoryLeft = catalog.Playable.Any(m => !m.IsSolo && !IsComplete(m.Id));
+            bool anyStoryLeft = catalog.Playable.Any(IsUnfinishedStory);
             return anyStoryLeft ? CampaignProgress.StoryBlocked : CampaignProgress.ImplementedContentComplete;
         }
 
@@ -350,7 +344,12 @@ namespace Bloodlines.Missions
 
         /// <summary>The next main mission in order, gate or no gate. Null when none is playable.</summary>
         public MissionDefinition NextStory(MissionCatalog catalog) =>
-            catalog.Playable.FirstOrDefault(m => !m.IsSolo && !IsComplete(m.Id) && PrerequisiteMet(m));
+            catalog.Playable.FirstOrDefault(m => IsUnfinishedStory(m) && PrerequisiteMet(m));
+
+        private bool IsUnfinishedStory(MissionDefinition mission) => !mission.IsSolo &&
+            (PortHeistOperation.Contains(mission.Id)
+                ? string.Equals(mission.Id, "M19", StringComparison.OrdinalIgnoreCase) && !IsComplete("M22")
+                : !IsComplete(mission.Id));
 
         public bool PrerequisiteMet(MissionDefinition mission)
         {
@@ -441,7 +440,6 @@ namespace Bloodlines.Missions
             CurrentMissionId = "";
             ActiveAct = 1;
             PrologueComplete = false;
-            PortHeistResumePhase = "";
             CashOnHand = 0;
             AlamoGoldDredgedTons = 0f;
             OffshoreEscrowBalance = 0;
@@ -467,7 +465,6 @@ namespace Bloodlines.Missions
                         { "completedMissions", Completed.OrderBy(id => id, StringComparer.Ordinal).ToList() },
                         { "activeAct", ActiveAct },
                         { "prologueComplete", PrologueComplete },
-                        { "portHeistResumePhase", PortHeistResumePhase },
                         {
                             "lastKnownLocation", new Dictionary<string, object>
                             {

@@ -317,11 +317,11 @@ Prerequisite: M18. Story gate: SM01, SM02, SM03 must be complete first (QA may b
 | 1 | Gohan | **Dive** — EnterVehicleObjective: Take the Kraken down. |
 | 2 | Gohan | **Cut the bulkhead** — MissionInteraction: Burn the breach into hold 3. |
 | 3 | Gohan | **Clamp the floats** — MultiHoldObjective: Clamp the ballast floats to the container. |
-| 4 | Gohan | **Surface** — DeliverVehicleObjective: Gohan: surface in the Kraken at the yellow marker. |
+| 4 | Gohan | **Surface** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.PierWatch, M18.SaltHangar, M19.DiveStart, M19.HullBreach, M19.Surface.
+Survey references: M12.PierWatch, M18.SaltHangar, M19.BullionSurface, M19.ClampOne, M19.ClampTwo, M19.DiveStart, M19.HullBreach, M19.Surface, M19.Worksite.
 
 ## M20 — THE PORT HEIST: SKY HOOK
 

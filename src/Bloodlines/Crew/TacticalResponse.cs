@@ -15,6 +15,9 @@ namespace Bloodlines.Crew
         private int _nextScan, _tier = -1, _nextSighting, _lastSightingLog;
         /// <summary>How far a cop can be and still count as having seen the player.</summary>
         public const float SightingRange = 70f;
+        public const float AircraftSightingRange = 240f;
+        public const float AircraftHorizontalRange = 170f;
+        public string LastSightingDiagnostic { get; private set; } = "No sighting scan yet.";
         private static readonly int[] Dispatch = { 1, 2, 4, 6, 8, 13, 14 };
         public static float DispatchInterval(int stars) => stars <= 0 ? 1f : Math.Max(.52f, 1.12f - Math.Min(5, stars) * .12f);
         public void Update(CrewRoster crew)
@@ -39,14 +42,18 @@ namespace Bloodlines.Crew
                 Function.Call(Hash.SET_VEHICLE_IS_WANTED, car, true);
             }
             if (stars == 0) ClearWantedCars();
-            // Smarter, not unlosable (Ron, September 10): while the stars are grayed
-            // out, a cop with a clear line of sight inside 70 m reports the player and
-            // the search re-centers on them. Break the line of sight and the search
-            // still runs down the way it always has.
+            // Smarter, not unlosable: use a separate 3D aerial range for police
+            // helicopter crews. A distant ground cop does not gain the aerial range.
+            // Break LOS and the engine's hidden search timer is left alone.
             if (stars > 0 && Game.GameTime >= _nextSighting)
             {
                 _nextSighting = Game.GameTime + 1500;
-                if (Function.Call<bool>(Hash.ARE_PLAYER_STARS_GREYED_OUT, Game.Player)) ReportSightings(player, crew);
+                // A fresh scripted wanted level can be unseen without yet using the
+                // grey-star presentation. Cover both states, not just one HUD flag.
+                bool searching = Function.Call<bool>(Hash.ARE_PLAYER_STARS_GREYED_OUT, Game.Player) ||
+                    Function.Call<bool>(Hash.ARE_PLAYER_FLASHING_STARS_ABOUT_TO_DROP, Game.Player) ||
+                    !Function.Call<bool>(Hash.IS_WANTED_AND_HAS_BEEN_SEEN_BY_COPS, Game.Player);
+                if (searching) ReportSightings(player, crew);
             }
             if (Game.GameTime < _nextScan) return;
             _nextScan = Game.GameTime + 1000;
@@ -86,15 +93,31 @@ namespace Bloodlines.Crew
         }
         private void ReportSightings(Ped player, CrewRoster crew)
         {
-            foreach (var ped in World.GetNearbyPeds(player, SightingRange))
+            LastSightingDiagnostic = "No eligible police observer had a clear sight line.";
+            foreach (var ped in World.GetNearbyPeds(player, AircraftSightingRange))
             {
                 if (ped == null || !ped.Exists() || ped.IsDead || ped == player || ped.RelationshipGroup == crew.CrewGroup) continue;
-                if (Function.Call<int>(Hash.GET_PED_TYPE, ped) != 6) continue;
-                if (!Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, ped, player, 17)) continue;
+                // Scripted helicopter crews can use a pilot model (not PED_TYPE_COP)
+                // while legitimately belonging to COP. A civilian in a police-model
+                // helicopter alone does not qualify as a law-enforcement observer.
+                if (Function.Call<int>(Hash.GET_PED_TYPE, ped) != 6 &&
+                    Function.Call<int>(Hash.GET_PED_RELATIONSHIP_GROUP_HASH, ped) != Game.GenerateHash("COP")) continue;
+                var vehicle = ped.CurrentVehicle;
+                bool air = vehicle != null && vehicle.Exists() && !vehicle.IsDead && vehicle.Model.IsHelicopter;
+                float distance = ped.Position.DistanceTo(player.Position);
+                if (!air && distance > SightingRange) continue;
+                if (air && (distance > AircraftSightingRange ||
+                    !GameUtils.IsWithinFlat(ped.Position, player.Position, AircraftHorizontalRange) ||
+                    ped.Position.Z < player.Position.Z - 15f)) continue;
+                // Real geometry remains authoritative. The larger aerial search is
+                // not permission to see through a roof, cliff, tunnel or pier.
+                if (!Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, ped, player, 17))
+                { LastSightingDiagnostic = (air ? "Air" : "Ground") + " unit: sight line obstructed."; continue; }
+                LastSightingDiagnostic = (air ? "Air" : "Ground") + " unit reported a clear sighting at " + distance.ToString("0") + " m.";
                 var at = player.Position;
                 Function.Call(Hash.REPORT_POLICE_SPOTTED_PLAYER, Game.Player);
                 Function.Call(Hash.SET_PLAYER_WANTED_CENTRE_POSITION, Game.Player, at.X, at.Y, at.Z);
-                if (Game.GameTime - _lastSightingLog > 10000) { _lastSightingLog = Game.GameTime; Logger.Info("Police sighting: a unit inside " + SightingRange + " m had line of sight; the search re-centered."); }
+                if (Game.GameTime - _lastSightingLog > 10000) { _lastSightingLog = Game.GameTime; Logger.Info("Police sighting: " + LastSightingDiagnostic); }
                 return;
             }
         }
@@ -107,7 +130,8 @@ namespace Bloodlines.Crew
         public void Reset()
         {
             foreach (int service in Dispatch) Function.Call(Hash.SET_DISPATCH_TIME_BETWEEN_SPAWN_ATTEMPTS_MULTIPLIER, service, 1f);
-            ClearWantedCars(); _tuned.Clear(); _tier = -1; _nextScan = 0;
+            ClearWantedCars(); _tuned.Clear(); _tier = -1; _nextScan = _nextSighting = _lastSightingLog = 0;
+            LastSightingDiagnostic = "Sighting service reset.";
         }
     }
 }

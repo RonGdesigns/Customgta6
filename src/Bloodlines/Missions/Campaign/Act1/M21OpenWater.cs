@@ -60,11 +60,11 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _spawn = Ctx.Locations.Position("M21.LaunchSpawn");
-            _breakwater = Ctx.Locations.Position("M21.Breakwater");
+            MissionSites.Ground(Ctx.Locations, "M21.RoadPickup");
+            _spawn = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.LaunchSpawn", 3f, 3f, 6f);
+            _breakwater = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.Breakwater", 3f, 3f, 6f);
             _ridge = Ctx.Locations.Position("M21.RidgeCross");
-            _shore = Ctx.Locations.Position("M21.ShoreLanding");
+            _shore = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.ShoreLanding", 2f, 2f, 4f, 40f);
             _pickup = Ctx.Locations.Position("M21.RoadPickup");
 
             // On the pier, not in the water: a deployment onto a water coordinate

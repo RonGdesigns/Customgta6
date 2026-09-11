@@ -69,3 +69,7 @@ Use a backup/disposable campaign and matching DLL plus data. Keep the working in
 - M20's jammer presentation and broader mission balance are not replaced by this lifecycle patch. The existing M13/M15 escort preparation effects remain.
 - Cargo/evidence transactions outside this operation, weapon acquisition categories, M04's separate handover issues, multiplayer and M31+ remain separate assignments.
 - The combined operation is longer than any one former chapter. Evaluate pacing and recovery with a real uninterrupted playthrough before accepting it as the campaign standard.
+
+## Superseding owner decision: one sitting, no midpoint recovery
+
+The phase-start bookmark/recovery sections above describe the historical first comparison. They no longer define the code in the harbor repair branch. Normal starts, retries and old mid-heist hints all start M19; checkpoint recording is disabled for the parent and its owned sections. No saved phase is read or written. Existing legitimate completion rewards remain, and full success commits only outstanding results. Explicit developer standalone starts remain QA only. Follow `HARBOR-PLAYTEST-REPAIR.md` for the updated test route; replace the earlier step 9's expectation of midpoint retry with a complete restart.

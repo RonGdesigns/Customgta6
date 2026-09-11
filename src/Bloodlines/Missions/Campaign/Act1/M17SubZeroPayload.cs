@@ -49,9 +49,6 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _slip = Ctx.Locations.Position("M17.DrySlip");
-            _weldPoints.Add(Ctx.Locations.Position("M17.WeldOne"));
-            _weldPoints.Add(Ctx.Locations.Position("M17.WeldTwo"));
-            _weldPoints.Add(Ctx.Locations.Position("M17.WeldThree"));
 
             if (!Ctx.Crew.Deploy(CrewSlot.Gohan, _slip, Ctx.Locations.Heading("M17.DrySlip")))
             {
@@ -63,6 +60,18 @@ namespace Bloodlines.Missions.Campaign
             SpawnKraken();
             SpawnGear();
             if (!RequireAssets(_kraken)) return false;
+            var dimensions = _kraken.Model.Dimensions;
+            float side = System.Math.Max(2f, System.Math.Max(System.Math.Abs(dimensions.Item1.X), System.Math.Abs(dimensions.Item2.X))) + 1f;
+            var right = new Vector3(_kraken.ForwardVector.Y, -_kraken.ForwardVector.X, 0f);
+            string[] keys = { "M17.WeldOne", "M17.WeldTwo", "M17.WeldThree" };
+            for (int i = 0; i < keys.Length; i++)
+            {
+                var point = _kraken.Position + right * side + _kraken.ForwardVector * ((i - 1) * 2f);
+                point.Z = _slip.Z;
+                _weldPoints.Add(point);
+                var location = Ctx.Locations.Get(keys[i]);
+                if (location != null) location.Position = point;
+            }
             Station(CrewSlot.Guess, _slip + new Vector3(-8f, 0f, 0f));
             Station(CrewSlot.Ice, _slip + new Vector3(12f, -10f, 0f));
             PlayApproach();

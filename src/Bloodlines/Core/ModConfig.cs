@@ -77,6 +77,9 @@ namespace Bloodlines.Core
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
+        public bool MissionScoreEnabled { get; private set; } = true;
+        public string MissionScoreEvent { get; private set; } = "DHP1_START";
+        public string MissionScoreStopEvent { get; private set; } = "DHP1_STOP";
 
         public bool VehicleDamageEnabled { get; private set; } = true;
         public float DeformationMultiplier { get; private set; } = 2.0f;
@@ -155,6 +158,9 @@ namespace Bloodlines.Core
 
             config.DevToolsEnabled = settings.GetValue<bool>("Dev", "Enabled", config.DevToolsEnabled);
             config.VerboseLogging = settings.GetValue<bool>("Dev", "VerboseLogging", config.VerboseLogging);
+            config.MissionScoreEnabled = settings.GetValue<bool>("Audio", "MissionScoreEnabled", config.MissionScoreEnabled);
+            config.MissionScoreEvent = settings.GetValue<string>("Audio", "MissionScoreEvent", config.MissionScoreEvent);
+            config.MissionScoreStopEvent = settings.GetValue<string>("Audio", "MissionScoreStopEvent", config.MissionScoreStopEvent);
 
             config.VehicleDamageEnabled = settings.GetValue<bool>("VehicleDamage", "Enabled", config.VehicleDamageEnabled);
             config.DeformationMultiplier = settings.GetValue<float>("VehicleDamage", "DeformationMultiplier", config.DeformationMultiplier);

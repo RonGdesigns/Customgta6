@@ -66,8 +66,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _drop = Ctx.Locations.Position("M22.AlamoDrop");
+            MissionSites.Ground(Ctx.Locations, "M22.Beach");
+            MissionSites.Ground(Ctx.Locations, "M22.RoadArrival");
+            _drop = MarineSites.ResolveOrThrow(Ctx.Locations, "M22.AlamoDrop", 5f, 5f, 8f, 40f);
             _beach = Ctx.Locations.Position("M22.Beach");
             _road = Ctx.Locations.Position("M22.RoadArrival");
             _regroup = _beach + new Vector3(-6f, 6f, 0f);

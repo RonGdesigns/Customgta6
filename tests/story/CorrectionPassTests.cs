@@ -39,7 +39,7 @@ public static partial class StoryTests
   Check(manager.Start(cat.All.First(m=>m.Id=="M19")),"An open gate starts normally");manager.Abort();
   // Old save already past the gate.
   var old=CampaignState.Load(Path.Combine(root,"gates-old.json"));foreach(var id in new[]{"M03","M17","M18","M19"})old.Completed.Add(id);
-  Check(old.GateGrandfathered("M19")&&old.NextPlayable(cat).Id=="M20"&&old.Progress(cat)==CampaignProgress.StoryAvailable,"A save that already finished M19 is not sent back to the solo jobs");
+  Check(old.GateGrandfathered("M19")&&old.NextPlayable(cat).Id=="M19"&&old.Progress(cat)==CampaignProgress.StoryAvailable,"A partial legacy heist restarts at M19 without revoking its grandfathered solo gate");
   var later=CampaignState.Load(Path.Combine(root,"gates-later.json"));foreach(var id in new[]{"M03","M17","M18","M20"})later.Completed.Add(id);
   Check(later.GateGrandfathered("M19")&&later.GateSatisfied(cat.All.First(m=>m.Id=="M19"),cat),"A save past a later main mission is grandfathered through an earlier gate it never saw");
   Check(!state.GateGrandfathered("M44"),"Grandfathering is per gate: M44 is still ahead of this save");

@@ -205,3 +205,7 @@ Built on `codex/continuous-port-heist` from `bb073aa` and merged onto main after
 - A separate phase-start bookmark supports cold retry/resume without committing intermediate mission rewards. This is NOT arbitrary mid-stage checkpoint restoration; that remains disabled.
 - Legacy completion/reward records are retained. Full operation success commits remaining phase IDs and final cargo once. Replays cannot reset later recovery or duplicate payment.
 - See `CONTINUOUS-PORT-HEIST.md` for limitations and the live comparison route. Source results are in `CONTINUOUS-PORT-HEIST-VERIFICATION.md`; no live GTA verification is claimed.
+
+## Harbor playtest correction (comparison branch)
+
+See `HARBOR-PLAYTEST-REPAIR.md` for the current bounded water/LOS/HUD/music/map repair and apartment audit. This supersedes the earlier Port Heist phase-resume contract: Ron requires one sitting, no midpoint bookmarks or checkpoints, and full-heist retry from M19. Main's prior continuous-architecture work and desert missions are retained. Marine placement uses sampled, fail-closed world checks; the new worksite anchor and physical route still require live validation. Different starter apartments already exist; luxury floors share a style family. Do not declare the score audible, the sea route reachable or the penthouse layout verified from stub checks.

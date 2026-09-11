@@ -317,10 +317,13 @@ namespace Bloodlines.Missions.Objectives
             if (_vehicle != null && (required == null || !required.Exists() || required.IsDead))
             { Fail("The required work vehicle was lost. Restart the mission."); return; }
 
+            bool underwater = UnderwaterGuidance.IsSub(required);
+            var workPosition = required != null ? required.Position : player.Position;
             for (int i = 0; i < _sites.Count; i++)
             {
                 if (_done.Contains(i)) continue;
-                GameUtils.DrawObjectiveMarker(_sites[i], Color.FromArgb(120, 232, 168, 56), _radius);
+                if (!underwater) GameUtils.DrawObjectiveMarker(_sites[i], Color.FromArgb(120, 232, 168, 56), _radius);
+                else ObjectiveMarkers.Show(_sites[i]);
             }
 
             if (_done.Count >= _sites.Count)
@@ -329,15 +332,16 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            int nearest = Enumerable.Range(0, _sites.Count).Where(i => !_done.Contains(i)).OrderBy(i => player.Position.DistanceTo(_sites[i])).First();
-            ObjectiveMarkers.Navigation(_sites[nearest], _vehicle == null ? RequiredCharacter : null, _vehicle?.Invoke());
+            int nearest = Enumerable.Range(0, _sites.Count).Where(i => !_done.Contains(i)).OrderBy(i => workPosition.DistanceTo(_sites[i])).First();
+            if (!underwater) ObjectiveMarkers.Navigation(_sites[nearest], _vehicle == null ? RequiredCharacter : null, required);
+            if (underwater) UnderwaterGuidance.Draw(required, _sites[nearest], _radius);
             Label = _action + " — " + Remaining + " sites left; press E / D-pad Right at a marker.";
             if (!IsOwnerActive(context) || (_vehicle == null ? player.IsInVehicle() : !player.IsInVehicle(_vehicle()))) { _activeSite = -1; return; }
             int near = -1;
             for (int i = 0; i < _sites.Count; i++)
             {
                 if (_done.Contains(i)) continue;
-                if (GameUtils.IsWithin(player.Position, _sites[i], _radius)) { near = i; break; }
+                if (GameUtils.IsWithin(workPosition, _sites[i], _radius)) { near = i; break; }
             }
 
             if (near < 0)

@@ -47,8 +47,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _channel = Ctx.Locations.Position("M18.ChannelMark");
+            MissionSites.Ground(Ctx.Locations, "M18.SaltHangar");
+            MissionSites.Ground(Ctx.Locations, "M18.HaulerMark");
+            _channel = MarineSites.ResolveOrThrow(Ctx.Locations, "M18.ChannelMark", 6f);
             _hangar = Ctx.Locations.Position("M18.SaltHangar");
             _haulerMark = Ctx.Locations.Position("M18.HaulerMark");
 
@@ -194,7 +195,7 @@ namespace Bloodlines.Missions.Campaign
             var krakenModel = new Model("submersible2");
             if (GameUtils.RequestModel(krakenModel))
             {
-                _kraken = Track(World.CreateVehicle(krakenModel, _channel + new Vector3(-30f, 20f, 0f), 180f));
+                _kraken = Track(World.CreateVehicle(krakenModel, _channel + new Vector3(0f, 0f, -1.4f), 180f));
                 krakenModel.MarkAsNoLongerNeeded();
                 if (_kraken != null && _kraken.Exists())
                 {

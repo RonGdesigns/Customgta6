@@ -16,7 +16,6 @@ namespace Bloodlines.Missions
     {
         public static readonly string[] PhaseIds = { "M19", "M20", "M21", "M22" };
         public const string OperationTitle = "The Port Heist";
-        private readonly string _requestedPhase;
         private readonly CampaignState _state;
         private readonly List<Mission> _phases = new List<Mission>();
         private Mission _phase;
@@ -26,30 +25,25 @@ namespace Bloodlines.Missions
         private bool _committed;
         private SceneBlocking _outro;
 
+        /// <param name="requestedPhase">Legacy caller hint; intentionally ignored. Every attempt starts at M19.</param>
         public PortHeistOperation(string requestedPhase, CampaignState state)
-        { _requestedPhase = requestedPhase; _state = state; }
+        { _state = state ?? throw new ArgumentNullException(nameof(state)); }
         public override string Id => PhaseIds[0];
         public override string Title => OperationTitle;
         public string PhaseId => PhaseIds[_phaseIndex];
         public Mission Phase => _phase;
         public PortHeistWorld WorldState => _world;
-        // These are phase-boundary reconstructions, not arbitrary stage snapshots.
+        // One sitting: neither the parent nor its owned sections record checkpoints.
+        public override bool AllowsCheckpointCapture => false;
         public override bool SupportsCheckpointRestore => false;
         public static bool Contains(string id) => PhaseIds.Contains(id, StringComparer.OrdinalIgnoreCase);
         public static bool IsPhase(Mission mission) => mission is M19UnderwaterBreach || mission is M20SkyHook || mission is M21OpenWater || mission is M22ScorchedBay;
 
-        public static string ResolveEntry(CampaignState state, string requested)
-        {
-            if (Contains(requested) && !string.Equals(requested, "M19", StringComparison.OrdinalIgnoreCase)) return requested.ToUpperInvariant();
-            if (state != null && !state.IsComplete("M22"))
-            {
-                if (Contains(state.PortHeistResumePhase)) return state.PortHeistResumePhase;
-                // Old saves retain their earned rewards and resume at the first
-                // incomplete section; no completion flags are fabricated here.
-                foreach (var id in PhaseIds) if (!state.IsComplete(id)) return id;
-            }
-            return "M19";
-        }
+        /// <summary>
+        /// Compatibility resolver: an old bookmark or section request never skips the
+        /// underwater beginning. Standalone section starts exist only in explicit QA.
+        /// </summary>
+        public static string ResolveEntry(CampaignState state, string requested) => "M19";
 
         protected override bool OnStart()
         {
@@ -57,12 +51,8 @@ namespace Bloodlines.Missions
             _world = new PortHeistWorld(Ctx);
             Ctx.PortHeist = _world;
             _seenScene = Ctx.Cutscenes.FinishedSequence;
-            string start = ResolveEntry(_state, _requestedPhase);
-            _phaseIndex = Array.IndexOf(PhaseIds, start.ToUpperInvariant());
-            if (_phaseIndex < 0) _phaseIndex = 0;
+            _phaseIndex = 0;
             Ctx.Handoffs.Clear();
-            if (_phaseIndex > 0)
-                GameUtils.Notify("~b~The Port Heist~s~ — resuming " + PhaseId + " from its phase start. No earlier work or rewards are replayed.");
             return BeginPhase(false);
         }
 
@@ -81,8 +71,7 @@ namespace Bloodlines.Missions
             _phase.OperationOwned = true;
             _phases.Add(_phase);
             if (!_phase.Begin(Ctx)) return false;
-            if (!_state.IsComplete("M22")) _state.SavePortHeistBoundary(PhaseId);
-            Logger.Info("Port Heist phase entered: " + PhaseId + (continuing ? " (same live world)" : " (validated restart setup)"));
+            Logger.Info("Port Heist phase entered: " + PhaseId + (continuing ? " (same live world)" : " (new whole-mission attempt)"));
             CurrentObjective = _phase.CurrentObjective;
             return true;
         }
@@ -94,20 +83,20 @@ namespace Bloodlines.Missions
             {
                 _seenScene = Ctx.Cutscenes.FinishedSequence;
                 if (Ctx.Cutscenes.LastRequired && Ctx.Cutscenes.LastOutcome != SceneOutcome.Completed && Ctx.Cutscenes.LastOutcome != SceneOutcome.Skipped)
-                { Fail("The required " + PhaseId + " action did not complete. Retry this phase."); return; }
+                { Fail("A required heist action did not complete. Restart the entire Port Heist."); return; }
             }
             if (!_world.ValidateActive(_phase, out string lost)) { Fail(lost); return; }
             if (_phase.Status == MissionStatus.Running)
             {
                 _phase.Tick();
-                CurrentObjective = PhaseId + " — " + _phase.CurrentObjective;
+                CurrentObjective = _phase.CurrentObjective;
                 RequiredSwitch = _phase.RequiredSwitch;
                 int stage = _phaseIndex * 100 + _phase.CurrentStage;
                 if (CurrentStage != stage) GoToStage(stage);
                 return;
             }
             if (_phase.Status != MissionStatus.Passed)
-            { Fail(_phase.FailReason ?? "The phase was interrupted. Retry this phase."); return; }
+            { Fail(_phase.FailReason ?? "The heist was interrupted. Restart the entire Port Heist."); return; }
             if (Ctx.Dialogue.HasPending) return;
             if (!_world.ValidatePhaseEnd(_phase, out string invalid)) { Fail(invalid); return; }
             _phase.RetireOperationPhase();
@@ -117,13 +106,11 @@ namespace Bloodlines.Missions
                 Pass();
                 return;
             }
-            // This bookmark is deliberately separate from campaign completion and
-            // rewards. The next phase rebuilds from its start only on a later retry.
+            // Continue the live operation. No save, payout, restart point or new
+            // mission announcement belongs between these connected objectives.
             _phaseIndex++;
-            if (!_state.IsComplete("M22")) _state.SavePortHeistBoundary(PhaseId);
             RequiredSwitch = null;
-            GameUtils.Subtitle("~b~The Port Heist~s~ — " + PhaseId + ": " + PhaseName(PhaseId), 4500);
-            if (!BeginPhase(true)) Fail("The next phase could not start. Retry " + PhaseId + ".");
+            if (!BeginPhase(true)) Fail("The next part could not start. Restart the entire Port Heist.");
         }
 
         public static string PhaseName(string id)

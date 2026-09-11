@@ -64,7 +64,7 @@ namespace Bloodlines.Missions.Campaign
             _hover = Ctx.Locations.Position("M20.HoverPoint");
             _deck = Ctx.Locations.Position("M20.DeckGunners");
             _climbOut = Ctx.Locations.Position("M20.ClimbOut");
-            _launchMark = Ctx.Locations.Position("M21.LaunchSpawn");
+            _launchMark = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.LaunchSpawn", 3f, 3f, 6f);
 
             // Start on the ground at the crew's own staging hangar from M18: a
             // deployment over open water drops three people into the harbor.
