@@ -87,14 +87,18 @@ public static partial class StoryTests
   var capture=new CaptureBoatObjective(()=>mateo,()=>World.Vehicles[0],()=>dinghy);capture.Enter(c);mateo.IsDead=true;capture.Update(c);Check(capture.Status==ObjectiveStatus.Failed,"A dead witness cannot incorrectly satisfy the capture objective");
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c)&&c.Cutscenes.IsActive,"M06 validates and deploys its separate work stations and opens on the three positions");
-  c.Cutscenes.Skip();var granger=m6.Granger;
+  c.Cutscenes.Skip();var granger=m6.Granger;var alley6=c.Locations.Position("M06.AlleyHold");var port=c.Locations.Get("M06.SallyPort");
+  Check(port.Status==LocationStatus.Surveyed&&Math.Abs(port.Position.X+1170.28f)<0.01f&&Math.Abs(port.Position.Y+1276.46f)<0.01f&&Math.Abs(c.Locations.Heading("M06.SallyPort")-283.4f)<0.01f,"Ice's alley entrance is the point Ron surveyed");
+  Check(m6.FeederPanel!=null&&m6.FeederPanel.IsPositionFrozen&&m6.RackBench!=null&&m6.RackCases.Count==2&&m6.RackCases.All(cs=>cs.AttachedTo==m6.RackBench),"Gohan has a feeder panel to cut and a backup bench to burn: things, not marks in the road");
+  Check(granger.Position.DistanceTo(alley6)>150f&&granger.IsInvincible&&crew.PedFor(CrewSlot.Guess).Position.DistanceTo(alley6)>150f,"Ron and the Granger stage far from the alley, and the truck cannot be lost before the crew boards it");
+  string m6src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M06CleanSweep.cs"));Check(m6src.Contains("var post = StreetPost(_alley + offset);")&&m6src.Contains("World.GetSafeCoordForPed(wanted, false, 0)"),"Every SWAT trooper spawns on a walkable point the navmesh accepts, not a raw offset in a wall");
   Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2&&!m6.CurrentObjective.Contains("No ability"),"M06 power interaction and Ice's breach open the parallel burn and siege, with no ability wording");
   crew.PedFor(CrewSlot.Gohan).Position=c.Locations.Position("M06.ServerRacks");
   for(int i=0;i<45&&m6.CurrentStage==2;i++){foreach(var enemy in World.Created)enemy.IsDead=true;Game.GameTime+=1000;m6.Tick();}
   Check(m6.CurrentStage==3&&m6.PickupCalled&&crew.PedFor(CrewSlot.Guess).Task.Drives>=1,"M06 requires both the completed burn and all response waves; the rotors turned Ron's wait into a pickup and his own AI moved the truck");
   Check(m6.FireBurning&&c.State.EvidenceOf("vespucciBackup")==EvidenceState.Destroyed,"The burn leaves a real fire at the racks and the record's destruction on the books");
   Use(crew,CrewSlot.Guess);m6.Tick();Check(m6.CurrentStage==3&&m6.Roles.For(CrewSlot.Ice).State==RoleState.Extracting,"Guess has to bring the Granger to the alley mouth; Ice and Gohan are coming to it");
-  granger.Position=m6.Pickup;Game.Player.Character.Position=m6.Pickup;m6.Tick();Check(m6.CurrentStage==4,"At the alley mouth the boarding opens");
+  granger.Position=m6.Pickup;Game.Player.Character.Position=m6.Pickup;m6.Tick();Check(m6.CurrentStage==4&&!granger.IsInvincible,"At the alley mouth the boarding opens and the truck is the crew's to lose again");
   m6.Tick();Check(m6.CurrentStage==4,"Guess cannot leave without his teammates");
   crew.PedFor(CrewSlot.Ice).SetIntoVehicle(granger,VehicleSeat.RightFront);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(granger,VehicleSeat.LeftRear);m6.Tick();Game.Player.WantedLevel=2;m6.Tick();Check(m6.CurrentStage==5&&m6.Status==MissionStatus.Running,"With everyone aboard the escape is on the crew: the police are not cleared");
   Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed&&!m6.FireBurning,"M06 completes with both teammates aboard and the police lost, and the fire is put out with the mission");
