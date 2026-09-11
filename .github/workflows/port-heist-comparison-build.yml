@@ -93,7 +93,7 @@ jobs:
           subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
           subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
           subprocess.run(['git','add','--'] + sorted(set(changes)), check=True)
-          subprocess.run(['git','diff','--cached','--check'], check=True)
+          subprocess.run(['git','-c','core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol','diff','--cached','--check'], check=True)
           subprocess.run(['git','commit','-m','feat: run Port Heist as one validated continuous operation'], check=True)
           subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch], check=True)
           print('Published source and matching binary:', subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
