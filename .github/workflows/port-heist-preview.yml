@@ -28,6 +28,23 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+      - name: Restore exact committed source bytes
+        shell: python
+        run: |
+          # Automatic Windows line-ending conversion changes portable-PDB source
+          # checksums and therefore the deterministic DLL. Compile the actual blobs,
+          # not a working-tree conversion, without changing any repository content.
+          import hashlib, json, pathlib, subprocess
+          subprocess.run(['git', 'config', 'core.autocrlf', 'false'], check=True)
+          names = subprocess.check_output(['git', 'ls-files', '-z', '--', 'src']).decode('utf-8').split('\0')
+          manifest = {}
+          for name in filter(None, names):
+              raw = subprocess.check_output(['git', 'show', 'HEAD:' + name])
+              pathlib.Path(name).write_bytes(raw)
+              manifest[name] = hashlib.sha256(raw).hexdigest()
+          pathlib.Path('build').mkdir(exist_ok=True)
+          pathlib.Path('build/source-preview.json').write_text(json.dumps(manifest, sort_keys=True, indent=2), encoding='utf-8')
+          print('Restored', len(manifest), 'tracked source files byte-for-byte from this commit.')
       - name: Compile production
         run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
       - name: Story, regression, parser and data checks
@@ -69,6 +86,7 @@ jobs:
           shipped = root / 'prebuilt/Bloodlines.dll'
           deployed = root / 'build/deploy/scripts/Bloodlines.dll'
           digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+          print('Fresh DLL:', digest(binary), 'Committed DLL:', digest(shipped))
           assert binary.read_bytes() == deployed.read_bytes(), 'Packaged DLL differs from the fresh build'
           assert binary.read_bytes() == shipped.read_bytes(), 'Committed prebuilt differs from the deterministic rebuild'
           deploy = root / 'build/deploy'
@@ -92,6 +110,7 @@ jobs:
             build/Bloodlines-Continuous-Port-Heist-Preview.zip
             build/Bloodlines-Continuous-Port-Heist-Source.zip
             build/deploy/BUILD-PROVENANCE.json
+            build/source-preview.json
             build/story-preview.log
             build/regression-preview.log
       - uses: actions/upload-artifact@v4
@@ -99,4 +118,9 @@ jobs:
         with:
           name: port-heist-preview-failure-logs
           retention-days: 7
-          path: build/*preview.log
+          path: |
+            build/*preview.log
+            build/source-preview.json
+            src/Bloodlines/bin/Release/Bloodlines.dll
+            src/Bloodlines/bin/Release/Bloodlines.pdb
+            prebuilt/Bloodlines.dll
