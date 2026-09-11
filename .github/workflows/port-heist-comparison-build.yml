@@ -1,0 +1,98 @@
+# Temporary runner for the authorized comparison branch. Removed after publication.
+name: port-heist-comparison-build
+on:
+  push:
+    branches: [codex/continuous-port-heist]
+    paths: [tools/ci/port_heist_patch.py]
+permissions:
+  contents: read
+concurrency:
+  group: port-heist-comparison-build
+  cancel-in-progress: true
+jobs:
+  implement-and-verify:
+    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/continuous-port-heist'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Apply bounded implementation patch
+        run: python tools/ci/port_heist_patch.py
+      - name: Compile production against the pinned GTA API
+        run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
+      - name: Regenerate mission map
+        run: python tools/audit_campaign.py
+      - name: Story and runtime checks
+        shell: pwsh
+        run: |
+          python tools/run_story_tests.py *> build/story-comparison.log
+          $result = $LASTEXITCODE
+          Get-Content build/story-comparison.log -Tail 85
+          if ($result -ne 0) { exit $result }
+      - name: Regression checks
+        shell: pwsh
+        run: |
+          python tools/run_regression_tests.py *> build/regression-comparison.log
+          $result = $LASTEXITCODE
+          Get-Content build/regression-comparison.log -Tail 10
+          if ($result -ne 0) { exit $result }
+      - name: Parser, data, and location checks
+        shell: pwsh
+        run: |
+          python tools/test_dialogue_parser.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/lint_missions.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/validate_locations.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_story.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/audit_campaign.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Refresh matching binary and package
+        shell: pwsh
+        run: |
+          python tools/build_roslyn.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/package.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Publish tested implementation to comparison branch only
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path('.')
+          branch = 'codex/continuous-port-heist'
+          remote = subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch], text=True).split()[0]
+          if remote != os.environ['EXPECTED_HEAD']:
+              raise SystemExit('Comparison branch changed during checks; refusing to overwrite it.')
+          changes = json.loads(pathlib.Path('build/port-heist-changed.json').read_text())
+          # The patch utility is not a runtime or permanent repository dependency.
+          utility = pathlib.Path('tools/ci/port_heist_patch.py')
+          utility.unlink()
+          changes += ['tools/ci/port_heist_patch.py', 'docs/PLAYABLE-MISSION-MAP.md', 'prebuilt/Bloodlines.dll']
+          report = pathlib.Path('docs/CONTINUOUS-PORT-HEIST-VERIFICATION.md')
+          report.write_text('# Continuous Port Heist - source verification\n\n'
+              + 'Verified by GitHub Actions from comparison input `' + os.environ['EXPECTED_HEAD'] + '`.\n\n'
+              + '\n'.join(pathlib.Path('build/'+p).read_text(errors='replace').splitlines()[-2:] for p in [])
+              + '## Story/runtime output\n```text\n' + '\n'.join(pathlib.Path('build/story-comparison.log').read_text(errors='replace').splitlines()[-4:]) + '\n```\n'
+              + '## Regression output\n```text\n' + '\n'.join(pathlib.Path('build/regression-comparison.log').read_text(errors='replace').splitlines()[-2:]) + '\n```\n'
+              + '\nProduction build, parser, mission lint, location validator, authored-scene freshness, mission-map freshness and packaging also passed in this job.\n'
+              + '\nPrebuilt SHA-256: `' + hashlib.sha256(pathlib.Path('prebuilt/Bloodlines.dll').read_bytes()).hexdigest() + '`.\n'
+              + '\nNo GTA installation was available. Physics, streaming, pathfinding, animations and live playthrough remain unverified. See CONTINUOUS-PORT-HEIST.md for the acceptance route.\n', encoding='utf-8')
+          changes.append(str(report))
+          subprocess.run(['git','config','user.name','github-actions[bot]'], check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'], check=True)
+          subprocess.run(['git','add','--'] + sorted(set(changes)), check=True)
+          subprocess.run(['git','diff','--cached','--check'], check=True)
+          subprocess.run(['git','commit','-m','feat: run Port Heist as one validated continuous operation'], check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch], check=True)
+          print('Published source and matching binary:', subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
