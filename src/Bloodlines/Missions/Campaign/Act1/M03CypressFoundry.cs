@@ -362,7 +362,26 @@ namespace Bloodlines.Missions.Campaign
                 var rider = Ctx.Crew.PedFor(slot);
                 if (rider != null && rider.Exists() && rider.IsInVehicle(_hauler)) blocking.Then(new ExitVehicleStep(rider));
             }
+            // The keys: Ron puts three down on the truck. The object M22 picks back up
+            // when the foundry is gone.
+            var keys = SpawnKeys(guess);
+            if (keys != null) blocking.Then(new CarryPropStep(guess, keys)).Then(new StowPropStep(guess, keys, _hauler, new Vector3(0.45f, 1.9f, 1.25f)));
             return blocking.Then(new ShotStep(4000, _hauler, new Vector3(-6f, 3f, 1.6f), _hauler, new Vector3(0f, 0f, 0.8f), 1.0f));
+        }
+
+        /// <summary>The foundry keys, established here so M22 can hand Ron the same object. Left in the world with the truck; not a mission entity.</summary>
+        public const string KeysModel = "p_car_keys_01";
+        public Prop FoundryKeys { get; private set; }
+        private Prop SpawnKeys(Ped guess)
+        {
+            var model = new Model(KeysModel);
+            if (!GameUtils.RequestModel(model)) { Logger.Warn("M03: the keys model did not load; the truck locks without them."); return null; }
+            var keys = World.CreateProp(model, guess.Position + new Vector3(0f, 0f, 1f), false, false);
+            model.MarkAsNoLongerNeeded();
+            if (keys == null || !keys.Exists()) return null;
+            GameUtils.SafeRelease(keys);
+            FoundryKeys = keys;
+            return keys;
         }
 
         /// <summary>Every brother out of the Benson and back on his own AI; the player's exit is the aftermath's.</summary>

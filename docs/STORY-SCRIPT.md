@@ -469,6 +469,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M19_SCENE_OUTRO_02_GUESS) — It was already broken. Hook line coming down. Don't settle that argument under thirty tons of metal.
 
+### Approach
+
+**ICE** (M19_SCENE_APPROACH_01_ICE) — Pier's mine. Two launches at the moorings and the Titan Star riding low over hold three. Say when you're under her.
+
+**GUESS** (M19_SCENE_APPROACH_02_GUESS) — Lift's warm in the hangar, pod on the rail, engine off till you call it. Go under, Gohan. We're where we said we'd be.
+
 ## M20 — THE PORT HEIST: SKY HOOK
 
 ### Intro
@@ -482,6 +488,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M20_SCENE_OUTRO_01_GUESS) — She's airborne, barely. I can't dodge anything with this hanging under us. Gohan, I need that water route clear.
 
 **GOHAN** (M20_SCENE_OUTRO_02_GOHAN) — I'm on your flank. Follow my boat. You don't have to invent an exit while you're holding the whole score.
+
+### Approach
+
+**GUESS** (M20_SCENE_APPROACH_01_GUESS) — The load's on the surface with the floats holding. Five on the quay with the rotor disc in their sights. I'm lifting off the flats.
+
+**ICE** (M20_SCENE_APPROACH_02_ICE) — The quay is mine from the pier before you cross the water. Don't come over until I say the deck is quiet.
 
 ## M21 — THE PORT HEIST: OPEN WATER
 
@@ -497,6 +509,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M21_SCENE_OUTRO_02_GUESS) — I want one minute on the beach where nobody asks me to keep moving.
 
+### Approach
+
+**GOHAN** (M21_SCENE_APPROACH_01_GOHAN) — Helm's mine. Ice, you've got the gun and the other seat. Ron, hold her over the basin until we're moving, then follow my wake.
+
+**ICE** (M21_SCENE_APPROACH_02_ICE) — Breakwater's the exit. From there you go north by air and we turn back for the shore. Nobody swaps a seat on the water.
+
 ## M22 — THE PORT HEIST: SCORCHED BAY
 
 ### Intro
@@ -510,6 +528,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M22_SCENE_OUTRO_01_GUESS) — That shop was going to be ours. Not a hideout. A place you two might actually stay.
 
 **ICE** (M22_SCENE_OUTRO_02_ICE) — I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
+
+### Approach
+
+**GUESS** (M22_SCENE_APPROACH_01_GUESS) — Four feet of water at the drop. I'm holding over the lake till I see you two on the beach.
+
+**GOHAN** (M22_SCENE_APPROACH_02_GOHAN) — Granger's coming down the road now, Ice beside me. Land it after the drop; then nobody moves for a minute.
 
 ## M23 — GHOST IN THE SAGE
 
