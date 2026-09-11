@@ -171,6 +171,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M05_SCENE_OUTRO_02_GOHAN) — Mateo's accusation isn't proof yet. First the backup servers. Then we follow the money he was protecting.
 
+### Shore
+
+**GUESS** (M05_SCENE_SHORE_01_GUESS) — That's his boat at the cave mouth, lights on the water. Ice is above us on the cliff. Gohan, when the flare goes up, they'll look at it and not at us.
+
+**GOHAN** (M05_SCENE_SHORE_02_GOHAN) — Four on the lamps, one in the boat. He runs when he sees us and we run him down. Nobody shoots at the man we came to talk to.
+
 ## M06 — CLEAN SWEEP
 
 ### Intro
@@ -184,6 +190,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **ICE** (M06_SCENE_OUTRO_01_ICE) — You called the window and I took it. We made it because you were watching something I couldn't see.
 
 **GOHAN** (M06_SCENE_OUTRO_02_GOHAN) — Now we need their traffic, not their cameras. The microwave dish should tell us what Aegis is moving.
+
+### Positions
+
+**GOHAN** (M06_SCENE_POSITIONS_01_GOHAN) — I'm in the culvert under the feeder. Ice, the sally port is up the alley from you. Ron, keep the engine warm and your eyes on the roofline.
+
+**ICE** (M06_SCENE_POSITIONS_02_ICE) — Say when the lights go. After that the alley is mine until you're done.
 
 ## M07 — WIRETAP WALTZ
 

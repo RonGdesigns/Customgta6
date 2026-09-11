@@ -96,6 +96,21 @@ namespace Bloodlines.Core
 
         private Dictionary<string, Ped> _pendingSupport;
 
+        /// <summary>
+        /// A gameplay stage's own bible lines, played as a scene: the same cues the
+        /// dialogue director would queue, but with a cast, shots and blocking. The
+        /// spec's phase names the scene; the cues are registered under it for this
+        /// play. Nothing is duplicated in the data: the lines stay in dialogue.tsv.
+        /// </summary>
+        public bool PlayStaged(SceneSpec spec, IEnumerable<DialogueCue> cues)
+        {
+            if (spec == null || cues == null) return false;
+            var lines = cues.Where(c => c != null).ToList();
+            if (lines.Count == 0) return false;
+            _scenes[spec.MissionId + ":" + spec.Phase] = lines;
+            return Play(spec);
+        }
+
         public bool Play(string missionId, string phase, string title, Ped actionActor = null, Action sceneAction = null, SceneBlocking blocking = null)
         {
             if (IsActive || !_scenes.TryGetValue(missionId + ":" + phase, out var lines) || lines.Count == 0) return false;

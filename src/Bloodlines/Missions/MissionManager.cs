@@ -161,6 +161,15 @@ namespace Bloodlines.Missions
 
             _current = mission;
             _currentDefinition = definition;
+            // Gameplay owns the player from here. A hand-off that arrived with
+            // control off (the prologue's cut to the dock: the briefing captured
+            // "off" behind the fade and restored it faithfully) must not leave the
+            // player standing in a mission they cannot move in.
+            if (!Game.Player.CanControlCharacter)
+            {
+                Logger.Warn(definition.Id + ": player control was off when gameplay began; restored.");
+                Game.Player.CanControlCharacter = true;
+            }
             GameUtils.Notify("~b~" + definition.Id + "~s~ — " + definition.Title);
             return true;
         }
@@ -188,10 +197,20 @@ namespace Bloodlines.Missions
             Finish();
         }
 
+        private bool _sceneWasActive;
+
         public void Update()
         {
             MissionContextCard.Draw();
-            if (_context.Cutscenes.IsActive) return;
+            if (_context.Cutscenes.IsActive) { _sceneWasActive = true; return; }
+            if (_sceneWasActive)
+            {
+                // The scene restored the control state it found. Mission ticks resume
+                // now; if that state was "off" (a ped change the same tick the scene
+                // began), gameplay would otherwise resume with the player unable to move.
+                _sceneWasActive = false;
+                if (_current != null || _pending != null) GameUtils.AssertPlayerControl("a scene in " + (_currentDefinition?.Id ?? _pending?.Id ?? "the mission"));
+            }
             if (_pending != null)
             {
                 var pending = _pending;

@@ -12,9 +12,15 @@ namespace Bloodlines.Missions.Campaign
     /// <summary>
     /// M05 — "Tidal Lock". Palomino Highlands shoreline, 03:30, storm.
     ///
-    /// The Act I finale and the mission that turns the campaign: Mateo, cornered on a
-    /// sandbar, gives up that Aegis engineered the whole thing to justify a
-    /// forty-million-dollar defence contract.
+    /// The Act I finale and the mission that turns the campaign: Mateo, run down
+    /// on the water and taken aboard the dinghy, says the three contracts were
+    /// bought to put the three of them on that dock. It is an allegation, and the
+    /// mission records it as one; the proof is M46's.
+    ///
+    /// Seen, not told: the cove from the cliff and from the boat before anyone
+    /// moves; Ice coming down to the water once Mateo is stopped, so the three
+    /// voices of the questioning are three men in one place; Mateo pulled aboard
+    /// and questioned in the dinghy; the crew leaving with him in the boat.
     ///
     /// Faked per docs/FEASIBILITY.md: there is no sea-cave interior, so the grotto is
     /// the water at the cave mouth, and the floodlights are the men working them —
@@ -28,13 +34,21 @@ namespace Bloodlines.Missions.Campaign
         private Ped _mateo;
         private Vehicle _mateoBoat;
         private Vehicle _dinghy;
+        private RoleTracks _roles;
         private Vector3 _perch;
         private Vector3 _cove;
         private Vector3 _grotto;
         private Vector3 _sandbar;
+        private Vector3 _shore;
+        private bool _iceDown;
 
         public override string Id => "M05";
         public override string Title => "Tidal Lock";
+
+        public Ped Mateo => _mateo;
+        public Vehicle Dinghy => _dinghy;
+        public RoleTracks Roles => _roles;
+        public bool IceDown => _iceDown;
 
         protected override bool Setup()
         {
@@ -44,6 +58,10 @@ namespace Bloodlines.Missions.Campaign
             _cove = Ctx.Locations.Position("M05.CoveAir");
             _grotto = Ctx.Locations.Position("M05.GrottoMouth");
             _sandbar = Ctx.Locations.Position("M05.Sandbar");
+            // Where Ice comes down to: the nearest ground the navmesh accepts on the
+            // cliff side of the sandbar, or the perch itself if the shore refuses.
+            _shore = World.GetSafeCoordForPed(_sandbar + new Vector3(-30f, 30f, 2f), false, 0);
+            if (_shore == Vector3.Zero) _shore = _perch;
 
             if (!Ctx.Crew.Deploy(CrewSlot.Ice, _perch, Ctx.Locations.Heading("M05.CliffPerch"))) return false;
 
@@ -59,6 +77,8 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(_dinghy, VehicleSeat.RightFront);
             Function.Call(Hash.REQUEST_WEAPON_ASSET, (uint)WeaponHash.FlareGun, 31, 0);
             _mateo.IsInvincible = true;
+            _roles = new RoleTracks(Ctx.Crew, () => _lightCrew);
+            PlayShore();
             return true;
         }
 
@@ -98,22 +118,98 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Run him to the sandbar",
                     new CaptureBoatObjective(() => _mateo, () => _mateoBoat, () => _dinghy))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(context => { _mateo.Task.ClearAll(); _mateoBoat.IsEngineRunning = false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _mateoBoat, 0f); });
+                .OnExit(context => MateoStopped());
 
-            yield return new MissionStage("The revelation",
-                    new MissionInteraction("Gohan: question Mateo alive from the dinghy", () => MateoPosition(), 3, 25f, () => _dinghy))
+            // The questioning happens in the dinghy, not shouted across water: bring
+            // it alongside and take him aboard. That is the stage's whole objective.
+            yield return new MissionStage("Take him aboard",
+                    new MissionInteraction("Gohan: bring the dinghy alongside and take Mateo aboard", () => MateoPosition(), 2, 20f, () => _dinghy))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(context => { Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess); Ctx.Crew.PedFor(CrewSlot.Guess).Task.ClearAll(); _dinghy.IsEngineRunning=false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED,_dinghy,0f); });
+                .OnExit(context => PlayAccount());
 
-            yield return new MissionStage("Mateo's account",new DialogueFinishedObjective())
-                .WithDialogue(2)
+            yield return new MissionStage("Mateo's account", new DialogueFinishedObjective("Hold the dinghy. Mateo is aboard."))
                 .OnExit(context =>
                 {
-                    // Act I ends on information, not a kill: Aegis bought the city council
-                    // and needed a three-man ghost squad to justify the contract.
+                    // Act I ends on information, not a kill: an allegation the crew
+                    // now holds and cannot yet prove. The proof is M46's.
+                    Ctx.State?.SetEvidence("mateoAllegation", EvidenceState.Alleged);
+                    if (_mateo != null && _mateo.Exists() && _dinghy != null && _dinghy.Exists() && !_mateo.IsInVehicle(_dinghy)) _mateo.SetIntoVehicle(_dinghy, VehicleSeat.LeftRear);
                     /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    GameUtils.Subtitle("~y~Aegis built this. All of it. And they're not finished.", 6000);
+                    GameUtils.Subtitle("~y~Aegis built this. All of it. Mateo's word is a lead, not proof.", 6000);
                 });
+        }
+
+        // ---------- beats ----------
+
+        /// <summary>The cove before anyone moves: from the perch, from the dinghy, his boat at the cave mouth.</summary>
+        private void PlayShore()
+        {
+            var blocking = new SceneBlocking()
+                .Then(new ShotStep(3200, null, _perch + new Vector3(2f, 2f, 1.6f), null, _grotto + new Vector3(0f, 0f, 1f), 0f))
+                .Then(new ShotStep(3200, _dinghy, new Vector3(-6f, 2.5f, 1.8f), _dinghy, new Vector3(0f, 0f, 0.8f), 1.0f))
+                .Then(new ShotStep(3000, _mateoBoat, new Vector3(-10f, 4f, 2.5f), _mateoBoat, new Vector3(0f, 0f, 0.8f), 1.5f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "shore", Title = "The cove",
+                Reason = "The recovered location is real: Mateo's boat at the cave mouth under the lamps, Ice above on the cliff, Ron and Gohan in the dinghy below.",
+                Blocking = blocking
+            }.With("MATEO", _mateo);
+            if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M05 shore scene did not play; the overwatch stands on its own.");
+        }
+
+        /// <summary>Mateo is stopped on the water. Ice comes down off the cliff to the shore so the three of them are in one place for what he says.</summary>
+        private void MateoStopped()
+        {
+            if (_mateo != null && _mateo.Exists()) _mateo.Task.ClearAll();
+            if (_mateoBoat != null && _mateoBoat.Exists()) { _mateoBoat.IsEngineRunning = false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _mateoBoat, 0f); }
+            _iceDown = true;
+            _roles.For(CrewSlot.Ice).Extract(_shore);
+            Radio("ICE", "He's stopped. I'm coming down to the water. Keep him breathing until I'm there.", "M05_RADIO_01_ICE");
+        }
+
+        /// <summary>
+        /// The questioning, staged from the bible's own stage-two lines: Mateo is
+        /// pulled aboard the dinghy, and says it over Gohan's shoulder with Ice
+        /// on the shore. Skipping still leaves him in the boat.
+        /// </summary>
+        private void PlayAccount()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            if (_mateo == null || !_mateo.Exists() || _dinghy == null || !_dinghy.Exists()) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+            if (guess != null && guess.Exists()) guess.Task.ClearAll();
+            _dinghy.IsEngineRunning = false;
+            Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _dinghy, 0f);
+            var blocking = new SceneBlocking { DialogueAfterStep = 1 }
+                .Then(new EnterVehicleStep(_mateo, _dinghy, VehicleSeat.LeftRear) { TimeoutMs = 9000 })
+                .Then(gohan != null && gohan.Exists() ? ShotStep.OverShoulder(5000, gohan, _mateo, 0.3f) : (SceneStep)new ShotStep(5000, _dinghy, new Vector3(-3f, 2f, 1.6f), _mateo, new Vector3(0f, 0f, 0.7f)))
+                .Then(new ShotStep(4500, _dinghy, new Vector3(-7f, 3f, 2f), _dinghy, new Vector3(0f, 0f, 0.9f), 1.2f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "account", Title = "Mateo's account",
+                Reason = "Mateo, aboard the dinghy and alive, says the three contracts were bought; Gohan separates what he said from what the data confirms; Ice says what comes next.",
+                Blocking = blocking
+            }.With("MATEO", _mateo);
+            if (!Ctx.Cutscenes.PlayStaged(spec, Ctx.Data?.Stage(Id, 2)))
+            {
+                Logger.Warn("M05 account scene did not play; the lines play as dialogue and Mateo is put aboard.");
+                blocking.Complete();
+                SayStage(2);
+            }
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            _roles?.Update();
+        }
+
+        /// <summary>The aftermath: the dinghy with the four of them in it, leaving. Custody is seen.</summary>
+        public override SceneBlocking OutroBlocking()
+        {
+            if (_dinghy == null || !_dinghy.Exists()) return null;
+            return new SceneBlocking().Then(new ShotStep(4500, _dinghy, new Vector3(-8f, 3f, 2.2f), _dinghy, new Vector3(0f, 0f, 0.8f), 1.5f));
         }
 
         private Vector3 MateoPosition()
@@ -196,6 +292,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            _roles?.Release();
             if (_mateo != null && _mateo.Exists()) { _mateo.IsInvincible=false; Release(_mateo); }
             if (_mateoBoat != null && _mateoBoat.Exists()) Release(_mateoBoat);
             Function.Call(Hash.REMOVE_WEAPON_ASSET,(uint)WeaponHash.FlareGun);

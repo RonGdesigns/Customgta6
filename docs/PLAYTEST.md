@@ -32,13 +32,18 @@
 >   the drive, lose the police. Live-test items 50–55.
 > - The opening is the second slice: the message is read inside the starter
 >   apartment; in M01 Mateo runs for the launch in the open with no clock, Gohan's
->   copy hands you straight back, the laptop is on the table; M02 opens at the curb,
+>   copy leaves you on Gohan, the laptop is on the table; M02 opens at the curb,
 >   the drives ride in Ice's hand and the canal does not clear the police.
 >   Live-test items 58–64.
 > - M03 is the third slice: the split at the base, Ron's junction with its dogs and
 >   street crew, Ice's quiet entry that wakes the yard, Gohan's crates carried into
 >   the Benson on camera, the truck home with the police lost first and locked at
 >   the foundry. Live-test items 65–70.
+> - M05 and M06 are the fourth slice: the cove seen from the cliff and the boat, Ice
+>   coming down, Mateo aboard for the questioning; the depot's three positions, a real
+>   fire at the racks, and the rotors turning Ron's wait into a pickup at the alley
+>   mouth. Also the control fix: you can move after the prologue and after Gohan's
+>   terminal. Live-test items 71–74.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

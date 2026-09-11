@@ -53,7 +53,6 @@ namespace Bloodlines.Missions.Campaign
         private bool _exitRouteSet;
         private CrewSlot? _guidanceSlot;
         private CrewSlot? _workingSlot;
-        private CrewSlot? _slotBeforeGohan;
 
         private int _ripStartedAt;
         private int _yardClearedAt;
@@ -204,21 +203,9 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info("M01 approach complete: Gohan copied the ledger.");
             _ledgerRipped = true;
             NextApproachObjective();
-            SwitchAfterTerminal();
-        }
-
-        /// <summary>
-        /// Gohan's job is done: the player goes straight back to whoever still has
-        /// one, or to the brother they came from. Nobody has to open the wheel to
-        /// leave a finished terminal.
-        /// </summary>
-        private void SwitchAfterTerminal()
-        {
-            var target = !_iceHasEyes ? CrewSlot.Ice : !_prototypeTaken ? CrewSlot.Guess : (_slotBeforeGohan ?? CrewSlot.Ice);
-            if (target == CrewSlot.Gohan || Ctx.Switching == null) return;
-            GameUtils.Subtitle("~g~Ledger copied.~s~ Back to " + Protagonist.Of(target).DisplayName + ".", 3000);
-            if (!Ctx.Switching.TrySwitch(target, missionTransition: true))
-                Logger.Warn("M01: the automatic switch to " + target + " after the terminal was refused; the player switches by hand.");
+            // The player stays on Gohan (Ron's September 10 correction: no automatic
+            // switch back). The objective line names the brother with a job left.
+            GameUtils.Subtitle("~g~Ledger copied.", 3000);
         }
 
         private void UpdateGuessBay(Ped player)
@@ -249,7 +236,6 @@ namespace Bloodlines.Missions.Campaign
         private void UpdateApproachActors()
         {
             if (_workingSlot == Ctx.Crew.ActiveSlot) return;
-            if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan && _workingSlot.HasValue) _slotBeforeGohan = _workingSlot;
             _workingSlot = Ctx.Crew.ActiveSlot;
             foreach (var hero in Protagonist.All)
             {
@@ -385,8 +371,9 @@ namespace Bloodlines.Missions.Campaign
             bool launchReady = _launch != null && _launch.Exists() && _mateo != null && _mateo.Exists();
             bool aboard = launchReady && _mateo.IsInVehicle(_launch);
 
-            if (!_mateoFleeing)
-                GameUtils.Subtitle("~y~Hostiles: " + _guards.Count + "   ~s~" + (aboard ? "Mateo is in the launch." : "Mateo is running for the launch."), 500);
+            // The count only. Where Mateo is belongs to the objective line and his
+            // blip, not to a HUD line that reads as the hostiles announcing him.
+            if (!_mateoFleeing) GameUtils.Subtitle("~y~Hostiles: " + _guards.Count, 500);
 
             // No clock: the yard has to be cleared. The escape then plays once Mateo is
             // at the boat, and a Mateo the navmesh has stranded is brought to it after
