@@ -219,30 +219,45 @@ ICE|The radar bunker gives us cover after Cypress. We clear the outpost, but nob
 GUESS|A door that locks is a start. A way out is better. I'll check the second one while you take the first.
 GOHAN|The bunker holds. I can work here. We still need fuel and money to keep three people alive out here.
 GUESS|Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
+@approach
+ICE|Nine of them in the yard, on the walkway and in the bays. They live here; they'll fight for it. I go up to the dome first.
+GUESS|Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, what's the generator house look like?
 
 M24
 GOHAN|Five tons first. The rest stays hidden. We need operating money, not a convoy that advertises the entire haul.
 ICE|If deputies arrive, call them out. Keep that cable steady; I've got the ridge.
 GUESS|Enough recovered to keep the lights on. The rest can wait. I'm keeping track of what surviving actually costs.
 ICE|Those deputies knew too much. Assume every isolated road can turn into a bounty trap.
+@approach
+GUESS|Truck's sound; the cable's rated for what we're pulling. Five tons, two crates, and we leave. Ice, the road's below you.
+GOHAN|I'm in the water at the container, not on the truck. When the crates are up I walk out and get in; nobody rolls until I'm in the cab.
 
 M25
 ICE|Aegis put five million on us. The deputies in Raton aren't making an arrest. I'm taking the high ground.
 GOHAN|Send the route before you move. You don't have to keep the danger to yourself to keep us out of it.
 ICE|I nearly did it again. Went quiet so neither of you would hear the pressure in my voice. Next time, I'll make the call.
 GUESS|Make it early. Their spotters are over the Alamo now. We protect the water together.
+@approach
+ICE|Route's on your screens: the deck from the north end, the tanker on the south road, the river when it's time. I'm not going quiet.
+GUESS|Boat's under the span with the engine warm. Gohan has your route on the rim. When I say the water's clear, you come down to me.
 
 M26
 GUESS|Those planes are searching for the submerged gold. The Lazer we towed out of Zancudo under the M16 clearance is fueled in the McKenzie hangar. I'll take it. Gohan, keep them from calling in a fix.
 ICE|I'm listening to your channel. If you need me, you get an answer. That's the part I can promise.
 GOHAN|The spotters' traffic points to an Aegis charter. Its flight ledger may show where their arms pipeline goes.
 GUESS|Then we intercept it with an actual pickup plan. Ice isn't jumping into a promise with no boat underneath.
+@approach
+GUESS|Two spotters boxing the lake, right over the container. The Lazer's fueled: the one we towed out of Zancudo on the clearance. I fly, Gohan listens.
+GOHAN|Their traffic's on my screen from the hood. Ice is on the hangar door with the radio. Don't kill the second one until I've heard who he's calling.
 
 M27
 GUESS|I put you over the Shamal. Gohan has the sea pickup. Check your parachute twice; I want an argument about this later.
 ICE|You both get a vote. If either of you says the approach is wrong, I stay in the plane.
 GOHAN|The flight ledger connects the northern relays to an offshore installation. First we cut the network tracking us.
 ICE|I heard your boat before I saw it. For once I knew somebody was waiting. Don't make a joke yet, Guess.
+@approach
+ICE|Second seat, parachute checked twice. The Shamal's track runs over Chiliad; Gohan's already at sea under it. If the approach is wrong, I stay in the plane.
+GUESS|Duster's got the two seats and the legs for it; the Lazer stays parked. I put you on his wing, you cross, I go home the long way. Gohan's the boat.
 
 M28
 GOHAN|The charter's ledger identifies this repeater. Cut it and the northern drone teams lose their coordinated picture.

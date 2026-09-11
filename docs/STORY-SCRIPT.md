@@ -549,6 +549,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M23_SCENE_OUTRO_02_GUESS) — Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
 
+### Approach
+
+**ICE** (M23_SCENE_APPROACH_01_ICE) — Nine of them in the yard, on the walkway and in the bays. They live here; they'll fight for it. I go up to the dome first.
+
+**GUESS** (M23_SCENE_APPROACH_02_GUESS) — Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, what's the generator house look like?
+
 ## M24 — LIQUID GOLD
 
 ### Intro
@@ -562,6 +568,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M24_SCENE_OUTRO_01_GUESS) — Enough recovered to keep the lights on. The rest can wait. I'm keeping track of what surviving actually costs.
 
 **ICE** (M24_SCENE_OUTRO_02_ICE) — Those deputies knew too much. Assume every isolated road can turn into a bounty trap.
+
+### Approach
+
+**GUESS** (M24_SCENE_APPROACH_01_GUESS) — Truck's sound; the cable's rated for what we're pulling. Five tons, two crates, and we leave. Ice, the road's below you.
+
+**GOHAN** (M24_SCENE_APPROACH_02_GOHAN) — I'm in the water at the container, not on the truck. When the crates are up I walk out and get in; nobody rolls until I'm in the cab.
 
 ## M25 — BOUNTY HUNTERS' CANYON
 
@@ -577,6 +589,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M25_SCENE_OUTRO_02_GUESS) — Make it early. Their spotters are over the Alamo now. We protect the water together.
 
+### Approach
+
+**ICE** (M25_SCENE_APPROACH_01_ICE) — Route's on your screens: the deck from the north end, the tanker on the south road, the river when it's time. I'm not going quiet.
+
+**GUESS** (M25_SCENE_APPROACH_02_GUESS) — Boat's under the span with the engine warm. Gohan has your route on the rim. When I say the water's clear, you come down to me.
+
 ## M26 — THE ALAMO SCRAMBLE
 
 ### Intro
@@ -591,6 +609,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M26_SCENE_OUTRO_02_GUESS) — Then we intercept it with an actual pickup plan. Ice isn't jumping into a promise with no boat underneath.
 
+### Approach
+
+**GUESS** (M26_SCENE_APPROACH_01_GUESS) — Two spotters boxing the lake, right over the container. The Lazer's fueled: the one we towed out of Zancudo on the clearance. I fly, Gohan listens.
+
+**GOHAN** (M26_SCENE_APPROACH_02_GOHAN) — Their traffic's on my screen from the hood. Ice is on the hangar door with the radio. Don't kill the second one until I've heard who he's calling.
+
 ## M27 — FLIGHT RISK
 
 ### Intro
@@ -604,6 +628,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M27_SCENE_OUTRO_01_GOHAN) — The flight ledger connects the northern relays to an offshore installation. First we cut the network tracking us.
 
 **ICE** (M27_SCENE_OUTRO_02_ICE) — I heard your boat before I saw it. For once I knew somebody was waiting. Don't make a joke yet, Guess.
+
+### Approach
+
+**ICE** (M27_SCENE_APPROACH_01_ICE) — Second seat, parachute checked twice. The Shamal's track runs over Chiliad; Gohan's already at sea under it. If the approach is wrong, I stay in the plane.
+
+**GUESS** (M27_SCENE_APPROACH_02_GUESS) — Duster's got the two seats and the legs for it; the Lazer stays parked. I put you on his wing, you cross, I go home the long way. Gohan's the boat.
 
 ## M28 — OFF THE GRID
 

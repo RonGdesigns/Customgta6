@@ -117,10 +117,14 @@ M23.BayOne	2012.00	2934.00	48.00	0	land	estimate	Grand Senora Desert
 M23.BayTwo	2026.00	2934.00	48.00	0	land	estimate	Grand Senora Desert
 M23.BayThree	2040.00	2934.00	48.00	0	land	estimate	Grand Senora Desert
 M23.Generator	2032.00	2902.00	48.00	0	land	estimate	Grand Senora Desert
+M23.SecondExit	2050.00	2908.00	48.00	90	land	estimate	Grand Senora Desert
 M24.CraneSpawn	780.00	4160.00	31.00	300	land	estimate	Alamo Sea
 M24.DredgePoint	718.00	4182.00	30.50	0	water	estimate	Alamo Sea
 M24.RidgeLine	840.00	4120.00	36.00	200	land	estimate	Alamo Sea
+M24.RidgeRoad	880.00	4080.00	38.00	200	land	estimate	Alamo Sea
 M25.BridgeDeck	-785.30	4420.10	155.80	315	land	bible	Raton Canyon
+M25.DeckApproach	-810.00	4395.40	155.80	315	land	estimate	Raton Canyon
+M25.RimPost	-735.00	4382.00	155.00	315	land	estimate	Raton Canyon
 M25.TankerSpot	-760.00	4400.00	155.00	315	land	estimate	Raton Canyon
 M25.Riverbed	-800.00	4380.00	48.00	0	water	estimate	Raton Canyon
 M26.DusterPad	2130.00	4790.00	41.00	160	land	estimate	Grapeseed
