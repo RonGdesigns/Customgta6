@@ -66,12 +66,21 @@ GOHAN|Mateo named Aegis. This tap lets us test his story against their own manif
 ICE|I used to trust a uniform to tell me whose side I was on. Give me something I can verify.
 GUESS|Two engines, bound for Paleto. Steal their speed and maybe we stop finishing every job with holes in the doors.
 GOHAN|Elysian warehouse first. This is a supply route. Each shipment should tell us where the next one goes.
+@approach
+GOHAN|That dish carries their logistics. It stays live, Ice: clamp it, don't cut it. I read, you climb.
+GUESS|I'm in the lane under the garage with the engine running. Whatever comes, that's your door down.
 
 M08
 GUESS|Those turbines are the difference between hauling armor and dying inside it. I'll choose what the truck can carry.
 ICE|Take the time you need to secure them. I won't call you slow while I'm standing behind your armor.
 GOHAN|The crates need a quiet transfer before the final run. While they're hidden, we can lift an IFF from Vance's convoy.
 GUESS|Colonel Vance. Same surname as you, Ice. I won't invent a connection, but don't make me ask twice if there is one.
+@approach
+GUESS|Two crates, one flatbed, one forklift. That's the whole job; everything else is what stops me doing it.
+GOHAN|The loop buys minutes, not the afternoon. When it drops they see all of us. Ice, the gate is yours first.
+@loading
+GUESS|On the forks. Easy... easy. Seated. That's one.
+GUESS|Two. Chain them down and we're gone before the loop drops.
 
 M09
 ICE|The colonel isn't family. He's Aegis command. We take his escort's clearance unit; chasing him costs us the route.

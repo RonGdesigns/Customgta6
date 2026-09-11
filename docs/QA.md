@@ -66,6 +66,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 53 | **Room map and survey** | Dev menu inside: "Map this room", then "Survey the room's spots" with F11 on each | `Bloodlines.Room.txt` beside the ini; next session each surveyed spot has its own marker and prompt |
 | 54 | **Start from the menu** | Dev menu, Missions, any job, away from its marker | A short fade, the briefing at the job's marker, no second cut |
 | 55 | **Helicopters stock** | Fly a helicopter with the crew deployed, then stood down | No difference; no "flight handling:" log line for it |
+| 56 | **M07 clamp and helicopter** | Reach the mast, hold E; skip the clamp; watch the moment | A real case on the dish that survives the skip; the manifests read as a scene; the helicopter shown once, then Ron's radio |
+| 57 | **M08 forks and stash** | Loop, clear, forklift to each crate, hold E; deliver | Each crate seen onto the bed and counted; the technical shown once; Ice aboard, Gohan in the Granger; the flatbed locked at the connector with both crates, still there after the mission |
+| 58 | **M08 loop window** | Loop the cameras and wait it out | "Camera loop: Ns" on the HUD; the job fails when it drops |
 
 ## Before you launch: the static checks
 

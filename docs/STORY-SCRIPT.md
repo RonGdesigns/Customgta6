@@ -211,6 +211,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M07_SCENE_OUTRO_02_GOHAN) — Elysian warehouse first. This is a supply route. Each shipment should tell us where the next one goes.
 
+### Approach
+
+**GOHAN** (M07_SCENE_APPROACH_01_GOHAN) — That dish carries their logistics. It stays live, Ice: clamp it, don't cut it. I read, you climb.
+
+**GUESS** (M07_SCENE_APPROACH_02_GUESS) — I'm in the lane under the garage with the engine running. Whatever comes, that's your door down.
+
 ## M08 — SUPPLY & SEVER
 
 ### Intro
@@ -224,6 +230,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M08_SCENE_OUTRO_01_GOHAN) — The crates need a quiet transfer before the final run. While they're hidden, we can lift an IFF from Vance's convoy.
 
 **GUESS** (M08_SCENE_OUTRO_02_GUESS) — Colonel Vance. Same surname as you, Ice. I won't invent a connection, but don't make me ask twice if there is one.
+
+### Approach
+
+**GUESS** (M08_SCENE_APPROACH_01_GUESS) — Two crates, one flatbed, one forklift. That's the whole job; everything else is what stops me doing it.
+
+**GOHAN** (M08_SCENE_APPROACH_02_GOHAN) — The loop buys minutes, not the afternoon. When it drops they see all of us. Ice, the gate is yours first.
+
+### Loading
+
+**GUESS** (M08_SCENE_LOADING_01_GUESS) — On the forks. Easy... easy. Seated. That's one.
+
+**GUESS** (M08_SCENE_LOADING_02_GUESS) — Two. Chain them down and we're gone before the loop drops.
 
 ## M09 — ROLLING THUNDER
 

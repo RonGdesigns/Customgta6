@@ -80,6 +80,10 @@ namespace Bloodlines.Missions
         public Dictionary<string, string> Evidence { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public void SetEvidence(string key, EvidenceState state) { Evidence[key] = state.ToString(); Save(); Logger.Info("Evidence " + key + " -> " + state); }
         public EvidenceState EvidenceOf(string key) => Evidence.TryGetValue(key, out var value) && Enum.TryParse(value, out EvidenceState state) ? state : EvidenceState.None;
+        /// <summary>Where a shipment was left (a location key), by cargo name: the engines at their stash until M10 collects them.</summary>
+        public Dictionary<string, string> Cargo { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public void SetCargo(string key, string locationKey) { if (string.IsNullOrEmpty(locationKey)) Cargo.Remove(key); else Cargo[key] = locationKey; Save(); Logger.Info("Cargo " + key + " -> " + (locationKey ?? "collected")); }
+        public string CargoAt(string key) => Cargo.TryGetValue(key, out var where) ? where : null;
 
         /// <summary>What the crew has done to their Granger. See <see cref="CrewVan"/>.</summary>
         public CrewVanRecord CrewVan { get; } = new CrewVanRecord();
@@ -161,6 +165,7 @@ namespace Bloodlines.Missions
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
                 state.CrewVan.FromJson(Json.Object(root.TryGetValue("crewVan", out var van) ? van : null));
                 foreach (var pair in Json.Object(root.TryGetValue("evidence", out var ev) ? ev : null)) if (pair.Value != null) state.Evidence[pair.Key] = pair.Value.ToString();
+                foreach (var pair in Json.Object(root.TryGetValue("cargo", out var cg) ? cg : null)) if (pair.Value != null) state.Cargo[pair.Key] = pair.Value.ToString();
 
                 var memory = Json.Object(root.TryGetValue("characterMemory", out var m) ? m : null);
                 foreach (var hero in Protagonist.All)
@@ -457,6 +462,7 @@ namespace Bloodlines.Missions
                 { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "crewVan", CrewVan.ToJson() },
                 { "evidence", Evidence.ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "cargo", Cargo.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },
                 { "characterMemory", CharacterMemory },
                 { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }

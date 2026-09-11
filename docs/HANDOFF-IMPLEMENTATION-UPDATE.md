@@ -250,6 +250,13 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 78. **A start from the menu.** Open the dev menu somewhere away from a job, pick any mission from the list: a short fade, then the briefing plays at that job's marker with the crew's car pulling up to that street, and gameplay begins there without a second cut.
 79. **Helicopters.** Deploy the crew and fly a Buzzard: it should feel exactly as it does with the crew stood down. The log has no "flight handling:" line for a helicopter any more (planes still get one).
 
+## The dish and the engines (P3b: M07, M08)
+
+80. **M07, the approach and the clamp.** Start M07: three shots (the dish from the roof edge, Ice, the sedan in the lane) with two lines; skip once. Reach the mast, hold E: a case appears on the dish and the manifests play over it as a scene (two engines, Paleto); skip once and the case is still there. Then the helicopter is shown coming, once, and Ron's radio follows. Get down, board the sedan: an aftermath shot on the car. The log has "Evidence aegisManifests -> CopyHeld".
+81. **M08, the window and the forks.** Start M08: four shots (the crates, the flatbed, the camera room, the gate) with two lines; skip once. Loop the cameras: "Camera loop: Ns" counts down on the HUD. Clear the sentries as Ice, take the forklift as Guess, drive the forks to crate one and hold E: the crate rides the forks to the bed and sets down, counted "1 of 2". Then the technical is shown coming. Switch as you like: Ice puts it down, Guess loads crate two. Take the flatbed: Ice boards beside you, Gohan gets in the Granger and follows. Lose the police, deliver to the connector: the flatbed locks there with both crates on it and stays after the mission. The log has "Cargo turbineEngines -> M08.Connector".
+82. **M08, the loop drops.** Loop the cameras and wait four minutes: the job fails with the loop message.
+83. **The apartment fade.** Enter the apartment from the prologue's door: the screen stays black until the room is ready; never the void.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.
@@ -262,7 +269,8 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - Timecycle modifier names in the visuals defaults are unverified; they are overridable from the ini without a rebuild.
 - The van's stash coordinate is an estimate beside the base; survey it if the van lands in a wall. Wheel type and plate are not yet persisted.
 - The room's spots are desk estimates until surveyed inside (items 76–77); the room map is the tool for laying them out.
-- P3 continues: M07–M08 (the dish and the engines), M09–M11 (the IFF, the truck, the shop) and the first-window solos SM01–SM03 are not started; see the plan's P3 table.
+- M08's bed slots, forklift approach and stash are estimates; M09 showing the stashed crates and M10 collecting them are P3c.
+- P3 continues: M09–M11 (the IFF, the truck, the shop) and the first-window solos SM01–SM03 are not started; see the plan's P3 table.
 - M16 still clears the wanted level at its end marker; the endpoint helper exists, it does not use it yet. M03's bed offsets, pallet, entry marker, watch points and the block's spawn offsets are offsets from the surveyed keys; survey `M03.HaulerSpawn`, `M03.DepotGate` and `M03.RailJunction` and the set moves with them. M02's mid-chase moments are lines, not camera cuts: a scene holds the player's car, and at freeway speed that is a crash.
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.

@@ -137,11 +137,12 @@ Prerequisite: M07. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Loop the cameras** — MissionInteraction: Gohan — loop the CCTV feed. |
 | 2 | Ice | **Drop the sentries** — KillTargetsObjective: Ice — drop the sentries at the marked warehouse posts. |
-| 3 | Guess | **Crate one** — MissionInteraction: Guess — load the first turbine crate. |
-| 4 | Ice | **Technical** — DestroyVehicleObjective: Ice — put the Aegis technical down. |
-| 5 | Guess | **Crate two** — MissionInteraction: Guess — load the second crate. |
-| 6 | Guess | **Del Perro connector** — EnterVehicleObjective: Take the hauler. |
-| 7 | Guess | **Deliver** — DeliverVehicleObjective: Guess: deliver the loaded flatbed to the connector. |
+| 3 | Guess | **Take the forklift** — EnterVehicleObjective: Guess — take the forklift. |
+| 4 | Guess | **Crate one** — MissionInteraction: Guess — bring the forks under the first turbine crate. |
+| 5 | Guess | **Crate two, the technical** — DestroyVehicleObjective: Ice — put the Aegis technical down.<br>MissionInteraction: Guess — bring the forks under the second crate. |
+| 6 | Guess | **Take the hauler** — EnterVehicleObjective: Guess — take the flatbed. Ice rides with you; Gohan brings the Granger. |
+| 7 | Guess | **Lose the police** — LoseWantedObjective: Lose the police before the stash. |
+| 8 | Guess | **The stash** — DeliverVehicleObjective: Guess: bring the loaded flatbed to the connector stash. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

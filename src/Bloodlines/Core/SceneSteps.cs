@@ -159,6 +159,40 @@ namespace Bloodlines.Core
         public override void Cancel() { }
     }
 
+    /// <summary>
+    /// A prop moves from one carrier to another with no actor animation: a crate
+    /// off the forks and onto a bed. The camera watches the subject given (the
+    /// bed, usually). Finishing moves it at once; cancel leaves it where it is.
+    /// </summary>
+    public sealed class TransferPropStep : SceneStep
+    {
+        private readonly Prop _prop;
+        private readonly Entity _into, _subject;
+        private readonly Vector3 _offset;
+        private readonly int _holdMs;
+        private bool _moved;
+
+        public TransferPropStep(Prop prop, Entity into, Vector3 offset, int holdMs = 1200, Entity subject = null)
+        {
+            _prop = prop; _into = into; _offset = offset; _holdMs = holdMs; _subject = subject ?? into; TimeoutMs = holdMs + 2000;
+        }
+
+        public override Entity CameraTarget => Usable(_subject) ? _subject : null;
+        protected override void OnStart() { }
+        public override bool IsComplete
+        {
+            get
+            {
+                if (Game.GameTime - StartedAt < _holdMs) return false;
+                Move();
+                return true;
+            }
+        }
+        private void Move() { if (_moved) return; _moved = true; StowPropStep.Stow(_prop, _into, _offset); }
+        public override void Finish() { Move(); }
+        public override void Cancel() { }
+    }
+
     /// <summary>The prop moves from one hand to another. Finishing moves it at once.</summary>
     public sealed class HandoverStep : SceneStep
     {
