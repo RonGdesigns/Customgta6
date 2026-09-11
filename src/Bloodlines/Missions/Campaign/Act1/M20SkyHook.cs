@@ -69,34 +69,41 @@ namespace Bloodlines.Missions.Campaign
             // Start on the ground at the crew's own staging hangar from M18: a
             // deployment over open water drops three people into the harbor.
             var apron = Ctx.Locations.Position("M18.SaltHangar");
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, apron, Ctx.Locations.Heading("M18.SaltHangar")))
+            if (!PortHeist.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Guess, apron, Ctx.Locations.Heading("M18.SaltHangar")))
             {
                 return false;
             }
 
             ApplyBibleSetting();
-            Game.Player.Character.Weapons.Give(WeaponHash.MG, 400, false, true);
+            Ctx.Crew.PedFor(CrewSlot.Guess).Weapons.Give(WeaponHash.MG, 400, false, true);
 
             // Chapter continuity: if M19 just ended, Gohan is still in the Kraken on
             // the surface, the container is floating beside the mark, and the lift is
             // the aircraft Ron was sitting in.
             var handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
-            _followingRecord = handoff != null || Ctx.State?.CargoAt(PortHeist.BullionCargo) == "M19.Surface";
-            _podLive = Ctx.State?.CargoAt("radarPod") == "M18.SaltHangar";
+            _followingRecord = handoff != null || PortHeist.CargoAt(Ctx, PortHeist.BullionCargo) == "M19.Surface";
+            _podLive = PortHeist.CargoAt(Ctx, "radarPod") == "M18.SaltHangar";
 
             SpawnCargobob(apron);
             SpawnContainer();
             SpawnDeckGunners();
             SpawnLaunch();
-            if (!RequireAssets(_cargobob, _container)) return false;
+            if (!RequireAssets(_cargobob, _container, _launch)) return false;
+            Ctx.PortHeist?.Bind("lift", _cargobob);
+            Ctx.PortHeist?.Bind("bullion", _container);
+            Ctx.PortHeist?.Bind("launch", _launch);
             RequireAsset(_cargobob, "The Cargobob went down.");
             RequireAsset(_container, "The bullion container was lost.");
             Ctx.Crew.CompanionsHoldPosition = true;
             var pier = Ctx.Locations.Position("M12.PierWatch");
             if (handoff != null && handoff.Positions.TryGetValue(CrewSlot.Ice, out var icePost)) pier = icePost;
-            Station(CrewSlot.Ice, pier);
-            if (handoff != null && SpawnKraken(handoff)) Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
-            else Station(CrewSlot.Gohan, apron + new Vector3(-15f, 0f, 0f));
+            if (!PortHeist.IsContinuing(Ctx)) Station(CrewSlot.Ice, pier);
+            else Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+            if (!SpawnKraken(handoff)) return false;
+            Ctx.PortHeist?.Bind("kraken", _kraken);
+            if (!PortHeist.IsContinuing(Ctx)) Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
+            else if (!PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _kraken, VehicleSeat.Driver))
+                throw new System.InvalidOperationException("Gohan did not surface in the operation's Kraken.");
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.HeavySniper, 100, true, true);
             PlayApproach();
             return true;
@@ -104,14 +111,15 @@ namespace Bloodlines.Missions.Campaign
 
         private bool SpawnKraken(OperationHandoff handoff)
         {
+            if (PortHeist.IsContinuing(Ctx)) { _kraken = Track(Ctx.PortHeist.Require<Vehicle>("kraken")); return true; }
             var model = new Model("submersible2");
             if (!GameUtils.RequestModel(model)) return false;
-            var point = handoff.VehicleModel.Length > 0 ? handoff.VehiclePosition : Ctx.Locations.Position("M19.Surface");
+            var point = handoff != null && handoff.VehicleModel.Length > 0 ? handoff.VehiclePosition : Ctx.Locations.Position("M19.Surface");
             // In a continuous run the Kraken chapter one released is still floating
             // there; take it over rather than spawning a second one beside it.
             _kraken = PortHeist.Nearby(model, point, 25f);
             if (_kraken != null) _kraken = Track(_kraken);
-            if (_kraken == null) _kraken = Track(World.CreateVehicle(model, point, handoff.VehicleHeading));
+            if (_kraken == null) _kraken = Track(World.CreateVehicle(model, point, handoff?.VehicleHeading ?? 180f));
             model.MarkAsNoLongerNeeded();
             if (_kraken == null || !_kraken.Exists()) return false;
             _kraken.IsPersistent = true;
@@ -122,13 +130,13 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M21", Ctx.Crew, _cargobob);
-            record.CargoAttached = _container != null && _container.Exists();
+            record.CargoAttached = PortHeistWorld.Attached(_container, _cargobob);
             record.CargoModel = "prop_container_01a";
             record.Notes["launch"] = _transferred ? "Gohan at the helm, Ice in the passenger seat, at M21.LaunchSpawn" : "not boarded on camera";
             record.Notes["kraken"] = "tied off at the pier; retrieved after the operation";
             record.Notes["radarPod"] = _podLive ? "live for the lift window" : "not fitted";
             Ctx.Handoffs.Record(record);
-            Ctx.State?.SetCargo("kraken", "M12.PierWatch");
+            PortHeist.RecordCargo(Ctx, "kraken", "M12.PierWatch");
             // The launch and the sub are the next chapter's; the lift flies on.
             if (_launch != null && _launch.Exists()) Release(_launch);
             if (_kraken != null && _kraken.Exists()) Release(_kraken);
@@ -220,8 +228,9 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void PlayHook()
         {
-            _hooked = true;
             AttachContainer();
+            if (!PortHeistWorld.Attached(_container, _cargobob)) throw new System.InvalidOperationException("The cable did not secure the bullion.");
+            _hooked = true;
             var blocking = new SceneBlocking();
             if (_cargobob != null && _cargobob.Exists() && _container != null && _container.Exists())
                 blocking.Then(new ShotStep(3600, _cargobob, new Vector3(-9f, -5f, 1.5f), _container, new Vector3(0f, 0f, 1f), 0.5f));
@@ -252,7 +261,6 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Ice and Gohan reach the escort launch with actual seats, on camera, and the Kraken's storage plan is said once. M21 starts from those seats.</summary>
         private void PlayTransfer()
         {
-            _transferred = true;
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var blocking = new SceneBlocking();
@@ -263,8 +271,12 @@ namespace Bloodlines.Missions.Campaign
                 blocking.Then(new ShotStep(3200, _launch, new Vector3(-6f, 4f, 2f), _launch, new Vector3(0f, 0f, 0.8f), 0.7f));
             }
             if (_cargobob != null && _cargobob.Exists()) blocking.Then(new ShotStep(3000, _cargobob, new Vector3(-16f, 10f, 4f), _cargobob, new Vector3(0f, 0f, -3f), 1.0f));
+            blocking.Then(new VerifySceneStep("The escort launch is crewed", () =>
+                PortHeistWorld.Seated(gohan, _launch, VehicleSeat.Driver) &&
+                PortHeistWorld.Seated(ice, _launch, VehicleSeat.Passenger), () => _transferred = true));
             var spec = new SceneSpec
             {
+                RequiresCompletion = true,
                 MissionId = Id, Phase = "transfer", Title = "The escort",
                 Reason = "Gohan out of the Kraken and into the launch at the helm, Ice down from the pier into the passenger seat: the escort crewed with the seats the boat has. The Kraken stays tied at the pier until the operation is over. The lift is airborne with the container under it.",
                 Blocking = blocking
@@ -278,7 +290,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M20 transfer scene did not play; the seats are taken directly.");
-                blocking.Complete();
+                PortHeist.RequireFallback(blocking, "Boarding the escort launch");
                 Say("M20_S1_03_GUESS");
             }
             GameUtils.Subtitle("~g~Thirty tons airborne. Gohan and Ice are on the launch; the Kraken stays at the pier.", 5000);
@@ -296,6 +308,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The lift M18 parked and M19 showed Ron sitting in, taken over; or one on the apron where it would be.</summary>
         private void SpawnCargobob(Vector3 apron)
         {
+            if (PortHeist.IsContinuing(Ctx)) { _cargobob = Track(Ctx.PortHeist.Require<Vehicle>("lift")); return; }
             var model = new Model("cargobob");
             if (!GameUtils.RequestModel(model)) return;
 
@@ -317,6 +330,12 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The surfaced load where M19 floated it (the same prop when it is still there), or the authored hover point's water on a cold start.</summary>
         private void SpawnContainer()
         {
+            if (PortHeist.IsContinuing(Ctx))
+            {
+                _container = Track(Ctx.PortHeist.Require<Prop>("bullion"));
+                _hover = new Vector3(_container.Position.X, _container.Position.Y, _hover.Z);
+                return;
+            }
             var model = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(model)) return;
 

@@ -16,6 +16,9 @@ namespace Bloodlines.Missions
         private Mission _current;
         private MissionDefinition _pending;
         private MissionDefinition _currentDefinition;
+        private bool _standalonePhase;
+        private string _retryOperationPhase;
+        public PortHeistOperation ActivePortHeist => _current as PortHeistOperation;
 
         public MissionManager(MissionContext context, CampaignState state, MissionCatalog catalog)
         {
@@ -79,7 +82,7 @@ namespace Bloodlines.Missions
         public Crew.CrewSlot? RequiredSwitch => _current?.RequiredSwitch;
         public string CurrentObjective => _current?.CurrentObjective ?? (_pending != null ? "Watch the briefing, then follow the objective." : "No mission is running.");
 
-        public string CurrentTitle => _currentDefinition?.Title;
+        public string CurrentTitle => _current?.Title ?? _currentDefinition?.Title;
 
         public MissionDefinition LastAttempted => _currentDefinition;
         public bool RetryAvailable { get; private set; }
@@ -113,9 +116,11 @@ namespace Bloodlines.Missions
             if (bypassGates && !_state.PrerequisiteMet(definition)) Logger.Warn("QA started " + definition.Id + " with " + definition.Info.Prerequisite + " unfinished.");
 
             bool retrying = RetryAvailable && _currentDefinition == definition;
+            if (!retrying) _retryOperationPhase = null;
+            _standalonePhase = bypassGates;
             RetryAvailable = false;
             LastFailureReason = "";
-            if (retrying) MissionContextCard.Show(definition.Id, recap: true, ms: 6000);
+            if (retrying) MissionContextCard.Show(!bypassGates && PortHeistOperation.Contains(definition.Id) ? PortHeistOperation.ResolveEntry(_state, _retryOperationPhase ?? definition.Id) : definition.Id, recap: true, ms: 6000);
             _context.Abilities.Stop();
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
@@ -128,7 +133,11 @@ namespace Bloodlines.Missions
             // Everything the crew carries from here until teardown is on loan unless
             // the campaign says otherwise; the baseline is what they owned walking in.
             _context.Crew.Arsenal?.BeginLoan(_context.Crew);
-            if (_context.Cutscenes.Play(definition.Id, "intro", definition.Title))
+            string briefingId = !_standalonePhase && PortHeistOperation.Contains(definition.Id)
+                ? PortHeistOperation.ResolveEntry(_state, _retryOperationPhase ?? definition.Id) : definition.Id;
+            string briefingTitle = !_standalonePhase && PortHeistOperation.Contains(definition.Id)
+                ? PortHeistOperation.OperationTitle + " — " + PortHeistOperation.PhaseName(briefingId) : definition.Title;
+            if (_context.Cutscenes.Play(briefingId, "intro", briefingTitle))
             {
                 _pending = definition;
                 return true;
@@ -151,6 +160,8 @@ namespace Bloodlines.Missions
                 return false;
             }
             if (mission == null) { _context.Crew.Arsenal?.EndLoan(_context.Crew); GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
+            if (!_standalonePhase && PortHeistOperation.IsPhase(mission))
+                mission = new PortHeistOperation(_retryOperationPhase ?? definition.Id, _state);
             if (!mission.Begin(_context))
             {
                 _context.Crew.Arsenal?.EndLoan(_context.Crew);
@@ -165,12 +176,12 @@ namespace Bloodlines.Missions
             // control off (the prologue's cut to the dock: the briefing captured
             // "off" behind the fade and restored it faithfully) must not leave the
             // player standing in a mission they cannot move in.
-            if (!Game.Player.CanControlCharacter)
+            if (!_context.Cutscenes.IsActive && !Game.Player.CanControlCharacter)
             {
                 Logger.Warn(definition.Id + ": player control was off when gameplay began; restored.");
                 Game.Player.CanControlCharacter = true;
             }
-            GameUtils.Notify("~b~" + definition.Id + "~s~ — " + definition.Title);
+            GameUtils.Notify("~b~" + (mission is PortHeistOperation ? PortHeistOperation.OperationTitle : definition.Id + " — " + definition.Title));
             return true;
         }
 
@@ -191,6 +202,7 @@ namespace Bloodlines.Missions
             PendingContinuation = null;
             _context.Cutscenes.Stop();
             _pending = null;
+            if (_current is PortHeistOperation operation) _retryOperationPhase = operation.PhaseId;
             _current?.Abort();
             RetryAvailable = _currentDefinition != null;
             GameUtils.Subtitle("~r~Mission aborted. Mission key retries from the beginning.", 3000);
@@ -209,15 +221,26 @@ namespace Bloodlines.Missions
                 // now; if that state was "off" (a ped change the same tick the scene
                 // began), gameplay would otherwise resume with the player unable to move.
                 _sceneWasActive = false;
+                if (_current != null && _current.Status == MissionStatus.Running && _context.Cutscenes.LastRequired &&
+                    _context.Cutscenes.LastOutcome != SceneOutcome.Completed && _context.Cutscenes.LastOutcome != SceneOutcome.Skipped)
+                    _current.Fail("A required scene action was interrupted. Retry the mission.");
                 if (_current != null || _pending != null) GameUtils.AssertPlayerControl("a scene in " + (_currentDefinition?.Id ?? _pending?.Id ?? "the mission"));
             }
             if (_pending != null)
             {
                 var pending = _pending;
                 _pending = null;
+                if (_context.Cutscenes.LastOutcome != SceneOutcome.Completed && _context.Cutscenes.LastOutcome != SceneOutcome.Skipped)
+                {
+                    LastFailureReason = "The briefing was interrupted. Retry the mission.";
+                    RetryAvailable = true;
+                    Finish();
+                    GameUtils.Notify("~y~" + LastFailureReason);
+                    return;
+                }
                 // A skipped briefing still leaves the player knowing the target, the
                 // reason, the roles and the first destination.
-                if (_context.Cutscenes.LastOutcome == SceneOutcome.Skipped) MissionContextCard.Show(pending.Id, recap: false);
+                if (_context.Cutscenes.LastOutcome == SceneOutcome.Skipped) MissionContextCard.Show(!_standalonePhase && PortHeistOperation.Contains(pending.Id) ? PortHeistOperation.ResolveEntry(_state, _retryOperationPhase ?? pending.Id) : pending.Id, recap: false);
                 BeginGameplay(pending);
                 return;
             }
@@ -242,8 +265,9 @@ namespace Bloodlines.Missions
                 case MissionStatus.Passed:
                     // Finish the last gameplay line before the aftermath takes over.
                     if (_context.Dialogue.HasPending) return;
-                    _state.MarkComplete(_currentDefinition.Id, _catalog);
-                    PendingContinuation = ContinuationOf(_currentDefinition);
+                    if (_current is PortHeistOperation operation) operation.CommitResult(_catalog);
+                    else _state.MarkComplete(_currentDefinition.Id, _catalog);
+                    PendingContinuation = _current is PortHeistOperation || (_standalonePhase && PortHeistOperation.Contains(_currentDefinition.Id)) ? null : ContinuationOf(_currentDefinition);
                     if (PendingContinuation != null)
                     {
                         GameUtils.Notify("~g~CHAPTER COMPLETE~s~ — " + _currentDefinition.Title + "~n~Continuing: " + PendingContinuation.Title);
@@ -251,13 +275,14 @@ namespace Bloodlines.Missions
                     }
                     else
                     {
-                        GameUtils.Notify("~g~MISSION PASSED~s~ — " + _currentDefinition.Title);
-                        GameUtils.Subtitle("~g~" + _currentDefinition.Id + " complete. " +
+                        GameUtils.Notify("~g~MISSION PASSED~s~ — " + _current.Title);
+                        GameUtils.Subtitle("~g~" + (_current is PortHeistOperation ? PortHeistOperation.OperationTitle : _currentDefinition.Id) + " complete. " +
                                            _state.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
                     }
                     break;
 
                 case MissionStatus.Failed:
+                    if (_current is PortHeistOperation failedOperation) _retryOperationPhase = failedOperation.PhaseId;
                     LastFailureReason = _current.FailReason ?? "Mission failed.";
                     RetryAvailable = true;
                     GameUtils.Notify("~r~MISSION FAILED~s~ — " + (_current.FailReason ?? "unknown"));
@@ -268,8 +293,10 @@ namespace Bloodlines.Missions
             bool passed = _current.Status == MissionStatus.Passed;
             SceneBlocking outro = null;
             if (passed) { try { outro = _current.OutroBlocking(); } catch (System.Exception ex) { Logger.Error(_current.Id + " outro blocking", ex); } }
+            string outroId = _current is PortHeistOperation ? "M22" : _currentDefinition.Id;
+            string outcomeTitle = _current.Title;
             Finish();
-            if (passed) _context.Cutscenes.Play(_currentDefinition.Id, "outro", "Aftermath: " + _currentDefinition.Title, null, null, outro);
+            if (passed) _context.Cutscenes.Play(outroId, "outro", "Aftermath: " + outcomeTitle, null, null, outro);
         }
 
         private MissionDefinition ContinuationOf(MissionDefinition definition)
@@ -358,6 +385,7 @@ namespace Bloodlines.Missions
         /// <summary>Called on mod teardown so an aborted session leaves no mission peds behind.</summary>
         public void Shutdown()
         {
+            PendingContinuation = null;
             _context.Cutscenes.Stop();
             _pending = null;
             if (_current != null) { _current.Abort(); _current = null; }

@@ -26,6 +26,8 @@ namespace Bloodlines.Missions
     public abstract class Mission
     {
         private readonly List<Entity> _entities = new List<Entity>();
+        internal bool OperationOwned { get; set; }
+        private bool _cleaned;
         private readonly Dictionary<Ped, string> _survivors = new Dictionary<Ped, string>();
         private readonly Dictionary<Entity, string> _requiredAssets = new Dictionary<Entity, string>();
         protected void RequireSurvivor(Ped ped, string reason) { if (ped != null) _survivors[ped] = reason; }
@@ -70,6 +72,7 @@ namespace Bloodlines.Missions
         public bool Begin(MissionContext context)
         {
             Ctx = context;
+            _cleaned = false;
             Stage = 0;
             StageStartedAt = Game.GameTime;
             FailReason = null;
@@ -178,8 +181,14 @@ namespace Bloodlines.Missions
             // Runs while the world still exists, so a chapter can record where its
             // vehicles, cargo and people are before cleanup takes them.
             try { OnPassed(); }
-            catch (Exception ex) { Logger.Error("Mission " + Id + " handoff record failed", ex); }
-            Cleanup();
+            catch (Exception ex)
+            {
+                Status = MissionStatus.Failed;
+                FailReason = "The mission result could not be verified. See Bloodlines.log.";
+                Logger.Error("Mission " + Id + " result failed", ex);
+            }
+            if (!OperationOwned) Cleanup();
+            else StopObjectives();
         }
 
         /// <summary>Called on pass before cleanup. Override to hand state to the next chapter.</summary>
@@ -204,7 +213,8 @@ namespace Bloodlines.Missions
             FailReason = reason;
             Logger.Info("Mission failed: " + Id + " — " + reason);
             Ctx?.Dialogue?.Clear();
-            Cleanup();
+            if (!OperationOwned) Cleanup();
+            else StopObjectives();
         }
 
         public void Abort()
@@ -213,12 +223,13 @@ namespace Bloodlines.Missions
             Status = MissionStatus.Aborted;
             Logger.Info("Mission aborted by player: " + Id);
             Ctx?.Dialogue?.Clear();
-            Cleanup();
+            if (!OperationOwned) Cleanup();
+            else StopObjectives();
         }
 
         protected T Track<T>(T entity) where T : Entity
         {
-            if (entity != null) _entities.Add(entity);
+            if (entity != null) { _entities.Add(entity); if (OperationOwned) Ctx?.PortHeist?.Own(entity); }
             return entity;
         }
 
@@ -235,7 +246,7 @@ namespace Bloodlines.Missions
         /// the evidence, a wreck the scene refers to): released at cleanup instead of
         /// deleted, whether or not anyone is in it.
         /// </summary>
-        protected void Preserve(Entity entity) { if (entity != null) _preserved.Add(entity); }
+        protected void Preserve(Entity entity) { if (entity != null) { _preserved.Add(entity); if (OperationOwned) Ctx?.PortHeist?.KeepAfterSuccess(entity); } }
 
         /// <summary>A line over the radio, with no camera: the speaker's name and the text, for approaches and check-ins.</summary>
         protected void Radio(string speaker, string line, string cueId)
@@ -246,13 +257,24 @@ namespace Bloodlines.Missions
         /// <summary>Hands an entity back to the world — it survives mission teardown.</summary>
         protected void Release(Entity entity)
         {
+            if (OperationOwned && Ctx?.PortHeist != null) { Ctx.PortHeist.KeepAfterSuccess(entity); return; }
             _entities.Remove(entity);
             GameUtils.SafeRelease(entity);
         }
 
         protected virtual void StopObjectives() { }
+        /// <summary>Retire objectives/blips only; the parent keeps the live world and task owners.</summary>
+        internal void RetireOperationPhase()
+        {
+            StopObjectives();
+            foreach (var blip in _blips) GameUtils.SafeDelete(blip);
+            _blips.Clear();
+        }
+
         public void Cleanup()
         {
+            if (_cleaned) return;
+            _cleaned = true;
             try { StopObjectives(); } catch (Exception ex) { Logger.Error(Id + " objective shutdown", ex); }
             ObjectiveMarkers.Clear();
             try { Ctx?.Cutscenes?.Stop(); } catch (Exception ex) { Logger.Error(Id + " scene shutdown", ex); }
@@ -272,6 +294,7 @@ namespace Bloodlines.Missions
             foreach (var entity in _entities)
             {
                 if (entity == null || !entity.Exists()) continue;
+                if (OperationOwned && Ctx?.PortHeist?.Owns(entity) == true) continue;
                 if (playerPed != null && entity.Handle == playerPed.Handle) continue;
                 // A passed flight/boat mission must not delete the transport under
                 // the player or companions before its aftermath starts. Hand occupied
@@ -320,6 +343,7 @@ namespace Bloodlines.Missions
         /// </summary>
         protected void ApplyBibleSetting()
         {
+            if (OperationOwned && Ctx?.PortHeist?.Continuing == true) return;
             var info = Info;
             if (info == null) return;
 

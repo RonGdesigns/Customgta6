@@ -29,15 +29,19 @@ namespace Bloodlines.Core
         }
 
         /// <summary>The marker a job starts from, or null for a job without one.</summary>
-        public MissionLocation StartPoint(MissionDefinition mission) =>
-            mission != null && _keys.TryGetValue(mission.Id, out var key) ? _locations.Get(key) : null;
+        public MissionLocation StartPoint(MissionDefinition mission)
+        {
+            if (mission == null) return null;
+            string id = mission.Id.Equals("M19", StringComparison.OrdinalIgnoreCase) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;
+            return _keys.TryGetValue(id, out var key) ? _locations.Get(key) : null;
+        }
 
         public void RouteNextAvailable()
         {
             // Same answer as the mission key: story first, a solo only when a gate
             // is waiting on it.
             var mission = _state.NextPlayable(_catalog);
-            if (mission != null && _keys.TryGetValue(mission.Id, out var key) && _locations.Get(key) is MissionLocation point)
+            if (StartPoint(mission) is MissionLocation point)
             {
                 GTA.Native.Function.Call(GTA.Native.Hash.SET_NEW_WAYPOINT, point.Position.X, point.Position.Y);
                 string gate = _state.Progress(_catalog) == CampaignProgress.StoryGated ? " " + _state.DescribeGate(_state.NextStory(_catalog), _catalog) : "";
@@ -56,7 +60,11 @@ namespace Bloodlines.Core
             float closest = 6f;
             foreach (var mission in _catalog.Playable)
             {
-                if (_state.IsComplete(mission.Id) || !_state.PrerequisiteMet(mission) || !_keys.TryGetValue(mission.Id, out var key)) continue;
+                bool operation = PortHeistOperation.Contains(mission.Id);
+                if (operation && (mission.Id != "M19" || _state.IsComplete("M22"))) continue;
+                if ((!operation && _state.IsComplete(mission.Id)) || !_state.PrerequisiteMet(mission)) continue;
+                string markerId = operation ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;
+                if (!_keys.TryGetValue(markerId, out var key)) continue;
                 var location = _locations.All;
                 MissionLocation point = null;
                 foreach (var item in location) if (item.Key.Equals(key, StringComparison.OrdinalIgnoreCase)) { point = item; break; }
@@ -73,7 +81,8 @@ namespace Bloodlines.Core
                         mission.Info.Owner == "GOHAN" ? BlipColor.Green : BlipColor.Orange;
                     blip.IsShortRange = false;
                     blip.ShowRoute = false;
-                    blip.Name = mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
+                    blip.Name = operation ? PortHeistOperation.OperationTitle + (markerId == "M19" ? "" : " — Resume " + PortHeistOperation.PhaseName(markerId)) :
+                        mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
                 }
                 blip.Position = point.Position;
                 if (player == null || !player.Exists() || player.IsDead) continue;
@@ -85,7 +94,7 @@ namespace Bloodlines.Core
             foreach (var id in new List<string>(_blips.Keys))
                 if (!eligible.Contains(id)) { GameUtils.SafeDelete(_blips[id]); _blips.Remove(id); }
             if (Nearby != null)
-                GameUtils.Subtitle("~y~" + Nearby.Title + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
+                GameUtils.Subtitle("~y~" + (PortHeistOperation.Contains(Nearby.Id) ? PortHeistOperation.OperationTitle : Nearby.Title) + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
         }
 
         public void Clear()

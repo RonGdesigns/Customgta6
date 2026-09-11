@@ -26,6 +26,10 @@ namespace Bloodlines.Core
         /// <summary>Outcome of the most recently ended scene; callers that must not treat a cancellation as success read this.</summary>
         public SceneOutcome LastOutcome { get; private set; } = SceneOutcome.None;
         private bool _naturalEnd;
+        public int SceneSequence { get; private set; }
+        public int FinishedSequence { get; private set; }
+        public bool LastRequired { get; private set; }
+        private bool _pendingRequired, _required;
         private sealed class HeldEntity
         {
             public Entity Entity;
@@ -85,13 +89,14 @@ namespace Bloodlines.Core
         {
             if (spec == null) return false;
             _pendingSupport = spec.Support;
+            _pendingRequired = spec.RequiresCompletion;
             try
             {
                 bool started = Play(spec.MissionId, spec.Phase, spec.Title, spec.ActionActor, spec.SceneAction, spec.Blocking);
                 if (started) Logger.Info("Scene " + spec.MissionId + ":" + spec.Phase + " establishes: " + spec.Reason);
                 return started;
             }
-            finally { _pendingSupport = null; }
+            finally { _pendingSupport = null; _pendingRequired = false; }
         }
 
         private Dictionary<string, Ped> _pendingSupport;
@@ -117,6 +122,9 @@ namespace Bloodlines.Core
             var player = Game.Player.Character;
             if (player == null || !player.Exists() || player.IsDead) return false;
             _lines = lines;
+            SceneSequence++;
+            LastOutcome = SceneOutcome.None;
+            _required = _pendingRequired;
             IsSceneRunning = true;
             _index = 0;
             _startedAt = Game.GameTime;
@@ -520,6 +528,9 @@ namespace Bloodlines.Core
             _skipping = false;
             _naturalEnd = false;
             var blockingForOutcome = _blocking;
+            FinishedSequence = SceneSequence;
+            LastRequired = _required;
+            _required = false;
             LastOutcome = skipping ? SceneOutcome.Skipped : natural ? SceneOutcome.Completed : SceneOutcome.Canceled;
             Logger.Info(skipping ? "Scene skipped; finishing its blocking and restoring player camera and controls." : "Scene ended; restoring player camera and controls.");
             _lines = null;
