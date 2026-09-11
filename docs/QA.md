@@ -101,6 +101,8 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 88 | **M26 scramble** | Take off, kill, listen, kill, park | The approach scene with the parked Lazer and the Duster; the listen and the call sign; early kill fails; the park scene |
 | 89 | **M27 flight** | Board, match, transfer, ledger, bail, boat | Ice in the Duster's second seat; the transfer cut; the case in hand; Ron home on his own route; the case in the boat |
 | 90 | **M03 ambush** | Junction, yard, load, return, joint fight, ride | Truck on the road; four dogs attack; red markers on the block; the depot answers after loading; locked to Ron until close, then free switching; Ice rides with Ron |
+| 91 | **M05 water** | Start, look at the boat and the crew | The dinghy floats with Ron and Gohan aboard; the generator crew at the cave mouth on the shore; no boat on the road; a refusal names the key |
+| 92 | **Start cars** | Start M04 and M03, watch the van and Ron's car | Neither sinks through the ground; a held car is logged and released onto the ground |
 
 ## Before you launch: the static checks
 

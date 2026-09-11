@@ -48,6 +48,47 @@ namespace Bloodlines.Core
             }
         }
 
+        private sealed class HeldVehicle { public Vehicle Vehicle; public int Until; }
+        private static readonly System.Collections.Generic.List<HeldVehicle> Held = new System.Collections.Generic.List<HeldVehicle>();
+
+        /// <summary>
+        /// A vehicle created before the ground under it has streamed in falls through
+        /// the map and pops back up when the collision arrives (Ron, September 11:
+        /// Ron's start car). Hold it frozen until the collision is loaded around it,
+        /// then set it on the ground; a bounded wait so nothing stays pinned.
+        /// </summary>
+        public static void HoldUntilGrounded(Vehicle vehicle, int maxMs = 3000)
+        {
+            if (vehicle == null || !vehicle.Exists()) return;
+            var p = vehicle.Position;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, p.X, p.Y, p.Z);
+            if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, vehicle)) { vehicle.PlaceOnGround(); return; }
+            vehicle.IsPositionFrozen = true;
+            Held.Add(new HeldVehicle { Vehicle = vehicle, Until = Game.GameTime + maxMs });
+            Logger.Info("Holding a fresh " + vehicle.DisplayName + " at " + p + " until the ground under it loads.");
+        }
+
+        /// <summary>Each tick: release held vehicles whose ground has loaded (or whose wait is up) onto the ground.</summary>
+        public static void SettleHeld()
+        {
+            for (int i = Held.Count - 1; i >= 0; i--)
+            {
+                var held = Held[i]; var vehicle = held.Vehicle;
+                if (vehicle == null || !vehicle.Exists()) { Held.RemoveAt(i); continue; }
+                bool loaded = Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, vehicle);
+                if (!loaded && Game.GameTime < held.Until)
+                {
+                    var p = vehicle.Position;
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD, p.X, p.Y, p.Z);
+                    continue;
+                }
+                vehicle.IsPositionFrozen = false;
+                vehicle.PlaceOnGround();
+                Held.RemoveAt(i);
+                Logger.Info((loaded ? "Ground loaded under " : "Wait over for ") + vehicle.DisplayName + "; set on the ground at " + vehicle.Position + ".");
+            }
+        }
+
         public static void SafeRelease(Entity entity)
         {
             try { if (entity != null && entity.Exists()) entity.MarkAsNoLongerNeeded(); }
