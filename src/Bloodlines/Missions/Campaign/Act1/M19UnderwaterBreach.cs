@@ -17,6 +17,23 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The cargo key the bullion container is recorded under from the moment it surfaces.</summary>
         public const string BullionCargo = "bullion";
 
+        public static void RecordCargo(MissionContext context, string key, string destination)
+        {
+            if (context.PortHeist != null) context.PortHeist.StageCargo(key, destination);
+            else context.State?.SetCargo(key, destination);
+        }
+
+        public static string CargoAt(MissionContext context, string key) =>
+            context.PortHeist != null ? context.PortHeist.CargoAt(key) : context.State?.CargoAt(key);
+
+        public static bool IsContinuing(MissionContext context) => context.PortHeist?.Continuing == true;
+
+        public static void RequireFallback(SceneBlocking blocking, string action)
+        {
+            blocking.Complete();
+            if (!blocking.Succeeded) throw new System.InvalidOperationException(action + " failed. Retry this phase.");
+        }
+
         /// <summary>
         /// A chapter's released asset, taken over by the next chapter instead of a
         /// second copy spawned beside it: the Kraken chapter one left floating, the
@@ -129,7 +146,10 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             SpawnKraken();
             SpawnLift();
-            if (!RequireAssets(_kraken)) return false;
+            if (!RequireAssets(_kraken, _lift)) return false;
+            Ctx.PortHeist?.Bind("hull", _hull);
+            Ctx.PortHeist?.Bind("kraken", _kraken);
+            Ctx.PortHeist?.Bind("lift", _lift);
             RequireAsset(_kraken, "The Kraken was lost. The breach cannot be cut without it.");
             Ctx.Crew.CompanionsHoldPosition = true;
             Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
@@ -153,8 +173,8 @@ namespace Bloodlines.Missions.Campaign
             record.Notes["lift"] = _lift != null && _lift.Exists() ? "Ron in the Cargobob at M18.SaltHangar, engine off" : "no lift staged";
             if (_hull != null && _hull.Exists()) record.Notes["hull"] = "Titan Star stand-in at " + _hull.Position;
             Ctx.Handoffs.Record(record);
-            Ctx.State?.SetCargo("kraken", "M19.Surface");
-            if (_floated) Ctx.State?.SetCargo(PortHeist.BullionCargo, "M19.Surface");
+            PortHeist.RecordCargo(Ctx, "kraken", "M19.Surface");
+            if (_floated) PortHeist.RecordCargo(Ctx, PortHeist.BullionCargo, "M19.Surface");
             // The freighter does not vanish because chapter one ended; the lift in
             // chapter two hovers over the same water, hooks the same container and
             // takes off in the same aircraft.
@@ -292,34 +312,38 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void PlayFloat()
         {
-            _floated = true;
             SpawnContainer();
+            if (_container == null || !_container.Exists() || _floats.Count != _clamps.Count)
+                throw new InvalidOperationException("The container and both fitted floats are required for the lift.");
+            Ctx.PortHeist?.Bind("bullion", _container);
             var blocking = new SceneBlocking()
                 .Then(new ShotStep(2600, null, _breach + new Vector3(0f, 0f, KeelDepth + SubClearance + 6f), null, _breach + new Vector3(0f, 0f, 2f), 0.5f));
             if (_container != null && _container.Exists())
                 blocking.Then(new ShotStep(3800, _container, new Vector3(-10f, 7f, 3.5f), _container, new Vector3(0f, 0f, 0.8f), 0.7f, SurfaceContainer));
             var spec = new SceneSpec
             {
-                MissionId = Id, Phase = "float", Title = "The floats",
+                MissionId = Id, Phase = "float", Title = "The floats", RequiresCompletion = true,
                 Reason = "Two ballast floats on a thirty-ton container: the hold that was flooding gives it up and it comes to the surface beside the mark. The lift has something to hook because the clamps are on, not because the chapter ended.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M19_S1_02_ICE");
-            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M19 float scene did not play; the container surfaces directly."); blocking.Complete(); SurfaceContainer(); Say("M19_S1_02_ICE"); }
+            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M19 float scene did not play; the container surfaces directly."); PortHeist.RequireFallback(blocking, "Surfacing the bullion"); Say("M19_S1_02_ICE"); }
         }
 
         private void SurfaceContainer()
         {
-            if (_container == null || !_container.Exists()) return;
+            if (_container == null || !_container.Exists()) throw new InvalidOperationException("The bullion container disappeared.");
             _container.Position = _containerPoint + new Vector3(0f, 0f, 0.6f);
             _container.IsPositionFrozen = true;
             for (int i = 0; i < _floats.Count; i++)
             {
                 var f = _floats[i];
-                if (f == null || !f.Exists()) continue;
+                if (f == null || !f.Exists()) throw new InvalidOperationException("A fitted float disappeared.");
                 f.IsPositionFrozen = false;
-                StowPropStep.Stow(f, _container, new Vector3(i == 0 ? -3.2f : 3.2f, 0f, 1.6f));
+                if (!StowPropStep.Stow(f, _container, new Vector3(i == 0 ? -3.2f : 3.2f, 0f, 1.6f)))
+                    throw new InvalidOperationException("A float could not be secured to the surfaced container.");
             }
+            _floated = true;
         }
 
         /// <summary>The aftermath: the sub at the support mark, the container floating beside it, the pier and the lift beyond.</summary>
@@ -339,7 +363,7 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("submersible2");
             if (!GameUtils.RequestModel(model)) return;
 
-            string staged = Ctx.State?.CargoAt("kraken");
+            string staged = PortHeist.CargoAt(Ctx, "kraken");
             var point = _dive + new Vector3(0f, -6f, -3f);
             _stagedAt = "M19.DiveStart";
             if (!string.IsNullOrEmpty(staged) && Ctx.Locations.Get(staged) != null && Ctx.Locations.Get(staged).Kind == "water")

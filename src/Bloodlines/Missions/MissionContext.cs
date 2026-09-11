@@ -23,6 +23,7 @@ namespace Bloodlines.Missions
         }
 
         public CutsceneDirector Cutscenes { get; set; }
+        public PortHeistWorld PortHeist { get; set; }
 
         /// <summary>Chapter-to-chapter state for continuous operations (Port Heist first).</summary>
         public HandoffLedger Handoffs { get; } = new HandoffLedger();

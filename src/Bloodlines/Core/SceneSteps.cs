@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Core
 {
@@ -19,6 +20,8 @@ namespace Bloodlines.Core
         public string Title = "";
         /// <summary>What the player must understand after this scene that they did not before.</summary>
         public string Reason = "";
+        /// <summary>Failure/cancellation cannot be treated as this action succeeding.</summary>
+        public bool RequiresCompletion;
         /// <summary>Speakers who are not brothers: the name used in the authored lines, and the ped playing them.</summary>
         public readonly Dictionary<string, Ped> Support = new Dictionary<string, Ped>(StringComparer.OrdinalIgnoreCase);
         public SceneBlocking Blocking;
@@ -63,7 +66,14 @@ namespace Bloodlines.Core
         public override bool IsComplete => Game.GameTime - StartedAt >= _durationMs;
         /// <summary>A skipped shot still does what the shot did: the action it carries runs once, so skipping leaves the same state as watching.</summary>
         public override void Finish() { if (!HasStarted) RunAction(); }
-        private void RunAction() { try { _onStart?.Invoke(); } catch (Exception ex) { Logger.Error("Shot action failed", ex); } }
+        private bool _actionRan;
+        private void RunAction()
+        {
+            if (_actionRan) return;
+            _actionRan = true;
+            try { _onStart?.Invoke(); }
+            catch (Exception ex) { Failed = true; Logger.Error("Shot action failed", ex); }
+        }
         public override void Cancel() { }
 
         /// <summary>Position and aim the scene camera for this frame. True when the shot drove it.</summary>
@@ -105,13 +115,13 @@ namespace Bloodlines.Core
         public static bool Attach(Ped actor, Prop prop, Vector3 offset, Vector3 rotation)
         {
             if (actor == null || !actor.Exists() || prop == null || !prop.Exists()) return false;
-            try { prop.AttachTo(actor.Bones[Bone.PHRightHand], offset, rotation); return true; }
+            try { prop.AttachTo(actor.Bones[Bone.PHRightHand], offset, rotation); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, actor); }
             catch (Exception ex) { Logger.Error("Prop could not be attached to the hand", ex); return false; }
         }
 
-        protected override void OnStart() { Attach(Actor, _prop, _offset, _rotation); }
+        protected override void OnStart() { if (!Attach(Actor, _prop, _offset, _rotation)) Failed = true; }
         public override bool IsComplete => true;
-        public override void Finish() { if (!HasStarted) Attach(Actor, _prop, _offset, _rotation); }
+        public override void Finish() { if (!Attach(Actor, _prop, _offset, _rotation)) Failed = true; }
         public override void Cancel() { }
     }
 
@@ -137,7 +147,7 @@ namespace Bloodlines.Core
         public static bool Stow(Prop prop, Entity into, Vector3 offset)
         {
             if (prop == null || !prop.Exists() || into == null || !into.Exists()) return false;
-            try { prop.Detach(); prop.AttachTo(into, offset, Vector3.Zero); return true; }
+            try { prop.Detach(); prop.AttachTo(into, offset, Vector3.Zero); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, into); }
             catch (Exception ex) { Logger.Error("Prop could not be stowed", ex); return false; }
         }
 
@@ -156,7 +166,7 @@ namespace Bloodlines.Core
             }
         }
 
-        private void Move() { if (_moved) return; _moved = true; Stow(_prop, _into, _offset); }
+        private void Move() { if (_moved || Failed) return; _moved = Stow(_prop, _into, _offset); Failed = !_moved; }
         public override void Finish() { Move(); }
         public override void Cancel() { }
     }
@@ -190,7 +200,7 @@ namespace Bloodlines.Core
                 return true;
             }
         }
-        private void Move() { if (_moved) return; _moved = true; StowPropStep.Stow(_prop, _into, _offset); }
+        private void Move() { if (_moved || Failed) return; _moved = StowPropStep.Stow(_prop, _into, _offset); Failed = !_moved; }
         public override void Finish() { Move(); }
         public override void Cancel() { }
     }
@@ -226,7 +236,7 @@ namespace Bloodlines.Core
             }
         }
 
-        private void Move() { CarryPropStep.Attach(_to, _prop, new Vector3(0.12f, 0.02f, -0.02f), new Vector3(0f, 90f, 0f)); }
+        private void Move() { if (!CarryPropStep.Attach(_to, _prop, new Vector3(0.12f, 0.02f, -0.02f), new Vector3(0f, 90f, 0f))) Failed = true; }
         public override void Finish() { Move(); }
         public override void Cancel() { }
     }
@@ -250,8 +260,16 @@ namespace Bloodlines.Core
             Actor.Task.StartScenario(_scenario, Actor.Position, Actor.Heading);
         }
 
-        public override bool IsComplete => !Usable(Actor) || Game.GameTime - StartedAt >= _durationMs;
-        public override void Finish() { if (Usable(Actor) && HasStarted && !IsComplete) Actor.Task.ClearAllImmediately(); }
+        public override bool IsComplete
+        {
+            get
+            {
+                if (!Usable(Actor)) { Failed = true; return true; }
+                if (Game.GameTime - StartedAt < _durationMs) return false;
+                Finish(); return true;
+            }
+        }
+        public override void Finish() { if (Usable(Actor) && HasStarted) Actor.Task.ClearAllImmediately(); }
     }
 
     /// <summary>Move to a cover point and stay. Finishing places the actor there.</summary>

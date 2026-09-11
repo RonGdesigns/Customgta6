@@ -42,7 +42,7 @@ namespace Bloodlines.Core
         {
             StartedAt = Game.GameTime;
             try { OnStart(); }
-            catch (Exception ex) { Logger.Error("Scene step failed to start: " + GetType().Name, ex); }
+            catch (Exception ex) { Failed = true; Logger.Error("Scene step failed to start: " + GetType().Name, ex); }
         }
 
         protected abstract void OnStart();
@@ -129,12 +129,25 @@ namespace Bloodlines.Core
             Actor.Task.EnterVehicle(_vehicle, _seat, TimeoutMs, 1f, EnterVehicleFlags.None);
         }
 
-        public override bool IsComplete => !Usable(Actor) || !Usable(_vehicle) || Actor.IsInVehicle(_vehicle);
+        public override bool IsComplete
+        {
+            get
+            {
+                if (!Usable(Actor) || !Usable(_vehicle) || !_vehicle.IsDriveable) { Failed = true; return true; }
+                return Actor.IsInVehicle(_vehicle) && (_seat == VehicleSeat.Any || _vehicle.GetPedOnSeat(_seat) == Actor);
+            }
+        }
 
         public override void Finish()
         {
-            if (!Usable(Actor) || !Usable(_vehicle)) return;
-            if (!Actor.IsInVehicle(_vehicle)) { Actor.Task.ClearAllImmediately(); Actor.SetIntoVehicle(_vehicle, _seat); }
+            if (!Usable(Actor) || !Usable(_vehicle) || !_vehicle.IsDriveable) { Failed = true; return; }
+            if (!IsComplete)
+            {
+                var occupant = _seat == VehicleSeat.Any ? null : _vehicle.GetPedOnSeat(_seat);
+                if (occupant != null && occupant.Exists() && occupant != Actor) { Failed = true; return; }
+                Actor.Task.ClearAllImmediately(); Actor.SetIntoVehicle(_vehicle, _seat);
+            }
+            if (!IsComplete) Failed = true;
         }
     }
 
@@ -386,17 +399,18 @@ namespace Bloodlines.Core
         {
             var step = Current;
             if (step == null) return;
-            if (!step.HasStarted) { step.Start(); return; }
-            if (!step.IsComplete && !step.TimedOut) return;
-            if (step.TimedOut && !step.IsComplete)
+            try
             {
-                Logger.Warn("Scene step timed out; finishing it instantly: " + step.GetType().Name);
-                step.Finish();
-                // A watched step that could not reach its end state stops the
-                // blocking exactly as a skip would; nothing later may assume it.
+                if (!step.HasStarted) { step.Start(); if (step.Failed) Cancel(); return; }
                 if (step.Failed) { Cancel(); return; }
+                bool done = step.IsComplete;
+                if (step.Failed) { Cancel(); return; }
+                if (!done && !step.TimedOut) return;
+                if (!done) { Logger.Warn("Scene step timed out: " + step.GetType().Name); step.Finish(); }
+                if (step.Failed) { Cancel(); return; }
+                _index++;
             }
-            _index++;
+            catch (Exception ex) { Logger.Error("Scene step update failed", ex); Cancel(); }
         }
 
         /// <summary>Finished, not canceled, and every step reached its end state.</summary>

@@ -12,7 +12,9 @@ namespace Bloodlines.Missions
     /// active, where everybody was, which vehicle they were in and whether the
     /// cargo was still attached to it.
     ///
-    /// This is a capture, not a restore. Every mission tears its world down and the
+    /// Legacy standalone/QA phases use this capture, not a restore. Normal Port
+    /// Heist play now uses PortHeistOperation/PortHeistWorld for exact live ownership;
+    /// this log record never owns those entities. Standalone missions tear their world down and the
     /// next builds its own, so the record describes the state the story needs the
     /// receiving chapter to reproduce, and each receiver decides which fields it
     /// consumes. Today: M20 uses the vehicle position and heading to put Gohan back

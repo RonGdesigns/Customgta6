@@ -192,3 +192,16 @@ The "$3 billion" in M11 is a manifest claim, not spendable money, and stays that
 - M51 blackout timing: choose one of blackout now / test outage / charges staged; the tower sequence must respect it. Not yet scripted.
 - M60 civilians: any large explosive event needs evacuation or placement justification. Not yet scripted.
 - Evidence chain: M05 allegation → verification → M46 proof → M59 publication → later records deny containment. M05 now conforms.
+
+
+## Continuous Port Heist (adopted September 11)
+
+Built on `codex/continuous-port-heist` from `bb073aa` and merged onto main after the desert slice (P5a). Ron's decision: one continuous mission rather than four chapters with checkpoints between them. The chapter scripts and IDs stay for QA starts and old saves.
+
+- M19-M22 now run under `PortHeistOperation` in normal play. Their IDs/classes remain available for QA and old saves.
+- One live world, one initial briefing/loan session, one final mission result. Phase boundaries do not invoke the ordinary mission Start/Finish path.
+- Exact aircraft/cargo/crew references survive live transitions; a missing essential asset fails instead of being replaced by a nearby copy. M21-to-M22 includes real inland flight and the road team's travel.
+- Required scene results, seat claims and prop attachments are verified; transfer/arrival flags no longer certify a started scene as completed.
+- A separate phase-start bookmark supports cold retry/resume without committing intermediate mission rewards. This is NOT arbitrary mid-stage checkpoint restoration; that remains disabled.
+- Legacy completion/reward records are retained. Full operation success commits remaining phase IDs and final cargo once. Replays cannot reset later recovery or duplicate payment.
+- See `CONTINUOUS-PORT-HEIST.md` for limitations and the live comparison route. Source results are in `CONTINUOUS-PORT-HEIST-VERIFICATION.md`; no live GTA verification is claimed.
