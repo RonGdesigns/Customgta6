@@ -76,6 +76,8 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 63 | **Police sightings** | Grayed stars, drive past a patrol in view | The stars flash and they pursue; out of sight the search runs down |
 | 64 | **M07/M08 placement** | Start each | Ice on the roof, the sedan on the street; the M08 yard spread out with the forklift in the open |
 | 65 | **The meter** | Any hold or work | Name and a small yellow meter, no countdown text |
+| 66 | **Three starter rooms** | Enter each brother's home | A studio, a one-bedroom, a house; nobody shares a layout |
+| 67 | **The Diamond** | Preview the next residence past Eclipse, or finish M47 | Two floors, furnished; "Apartment: 16 entity set(s)" in the log |
 
 ## Before you launch: the static checks
 

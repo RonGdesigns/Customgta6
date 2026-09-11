@@ -20,38 +20,37 @@ namespace Bloodlines.Core
         private static readonly string[] Unlocks = { "canalLogisticsLoft", "littleSeoulStudio", "burroHeightsChopShop" };
         private int _nextRest;
         public ApartmentAccess Apartment { get; private set; }
-        public bool LuxuryUnlocked => _state.IsComplete("M27");
-        public string ResidenceName => LuxuryUnlocked ? "Eclipse Towers - " + _crew.Active.DisplayName + " suite" : _crew.Active.DisplayName + " - furnished starter apartment";
-        public string Progression => LuxuryUnlocked ? "Luxury apartment available" : "Luxury apartments unlock after M27";
+        /// <summary>The crew's current tier, from the campaign: starter rooms, the Eclipse penthouses after M27, the Diamond penthouse after M47.</summary>
+        public ApartmentTier Tier => ApartmentTiers.Current(_state);
+        public bool LuxuryUnlocked => Tier != ApartmentTier.Starter;
+        /// <summary>The active brother's residence at the current tier.</summary>
+        public Residence Current => ApartmentTiers.For(_crew.ActiveSlot, Tier);
+        public string ResidenceName => Current.Name;
+        public string Progression => ApartmentTiers.Progression(Tier);
         public Vector3 SavePosition => Apartment.Inside || Apartment.Busy ? Apartment.ExitPosition : Game.Player.Character.Position;
-        public void EnterApartment(bool previewLuxury = false)
+        /// <param name="previewNext">QA only: the next tier's residence without unlocking it.</param>
+        public void EnterApartment(bool previewNext = false)
         {
             if (!CanUse(3f) || Apartment.Inside || Apartment.Busy || Game.Player.Character.IsInVehicle()) return;
-            bool luxury = LuxuryUnlocked || previewLuxury;
-            string key = luxury ? "Apartment.Luxury." + _crew.ActiveSlot : "Apartment.Starter.Interior";
-            var location = _locations.Get(key);
-            if (location == null) { GameUtils.Notify("~y~Apartment location is missing."); return; }
-            // Each penthouse occupies a different floor; no overlapping themes are loaded.
-            string ipl = luxury ? (_crew.ActiveSlot == CrewSlot.Ice ? "apa_v_mp_h_01_a" : _crew.ActiveSlot == CrewSlot.Gohan ? "apa_v_mp_h_01_b" : "apa_v_mp_h_01_c") : null;
-            // Room-center probes identify the requested floor when a doorway's
-            // coordinate lookup returns zero. Teleport still uses LocationBook.
-            Vector3? probe = !luxury ? (Vector3?)null : _crew.ActiveSlot == CrewSlot.Ice
-                ? new Vector3(-787.7805f, 334.9232f, 215.8384f) : _crew.ActiveSlot == CrewSlot.Gohan
-                ? new Vector3(-773.2258f, 322.8252f, 194.8862f) : new Vector3(-787.7805f, 334.9232f, 186.1134f);
-            Apartment.Begin(location.Position, ipl, true, probe, location.Heading);
+            var tier = Tier;
+            if (previewNext) { var next = ApartmentTiers.Next(tier); if (!next.HasValue) return; tier = next.Value; }
+            var residence = ApartmentTiers.For(_crew.ActiveSlot, tier);
+            var location = _locations.Get(residence.InteriorKey);
+            if (location == null) { GameUtils.Notify("~y~Apartment location is missing: " + residence.InteriorKey); return; }
+            Logger.Info("Home: entering " + residence.Name + " (" + residence.Tier + ", " + residence.Floors + " floor" + (residence.Floors == 1 ? "" : "s") + ").");
+            Apartment.Begin(location.Position, residence.Ipl, true, residence.Probe, location.Heading, residence.EntitySets);
         }
-        /// <summary>The room survey, in walking order: the entry first, then the spots.</summary>
-        public static readonly string[] RoomSurveyKeys = { "Apartment.Starter.Interior", "Apartment.Room.Door", "Apartment.Room.Message", "Apartment.Room.Wardrobe", "Apartment.Room.Bed", "Apartment.Room.Locker" };
+        /// <summary>The room survey for the active brother's residence, in walking order: the entry first, then the spots.</summary>
+        public string[] RoomSurveyKeys => ApartmentTiers.RoomSurveyKeys(Current);
         private static readonly string[] RoomSpots = { "Wardrobe", "Bed", "Locker", "Door" };
         /// <summary>
-        /// A spot in the starter room once Ron has surveyed it on foot; null while it
-        /// is still a desk estimate, when it stays folded into the entry marker rather
-        /// than sending the player into a wall.
+        /// A spot in the current room once Ron has surveyed it on foot; null while it
+        /// is still a desk estimate (or has no estimate at all), when it stays folded
+        /// into the entry marker rather than sending the player into a wall.
         /// </summary>
         public MissionLocation RoomSpot(string name)
         {
-            if (LuxuryUnlocked) return null;
-            var spot = _locations.Get("Apartment.Room." + name);
+            var spot = _locations.Get(Current.RoomPrefix + "." + name);
             return spot != null && spot.Status == LocationStatus.Surveyed ? spot : null;
         }
         public Action OpenWardrobe { get; set; }
@@ -119,7 +118,7 @@ namespace Bloodlines.Core
         }
         public CrewHomes(CrewRoster crew, CampaignState state, LocationBook locations, WeaponProgression weapons)
         { _crew = crew; _state = state; _locations = locations; _weapons = weapons; Apartment = new ApartmentAccess(crew); }
-        public Vector3? Position(CrewSlot slot) => _state.IsUnlocked(Unlocks[(int)slot]) ? (_locations.Get(LuxuryUnlocked ? "Apartment.Luxury.Entrance" : "Apartment.Starter." + slot) ?? _locations.Get("Home." + slot))?.Position : null;
+        public Vector3? Position(CrewSlot slot) => _state.IsUnlocked(Unlocks[(int)slot]) ? (_locations.Get(ApartmentTiers.For(slot, Tier).EntranceKey) ?? _locations.Get("Home." + slot))?.Position : null;
         public void RouteHome()
         {
             var point = Position(_crew.ActiveSlot);
@@ -152,10 +151,10 @@ namespace Bloodlines.Core
                 {
                     blip = World.CreateBlip(position.Value); if (blip == null) continue;
                     blip.Sprite = BlipSprite.Safehouse; blip.Color = hero.BlipColor;
-                    blip.Name = hero.DisplayName + (LuxuryUnlocked ? " - Eclipse Towers" : " - apartment"); _blips[hero.Slot] = blip;
+                    blip.Name = hero.DisplayName + " - " + ApartmentTiers.For(hero.Slot, Tier).Short; _blips[hero.Slot] = blip;
                 }
                 else if (blip.Position != position.Value)
-                { blip.Position = position.Value; blip.Name = hero.DisplayName + " - Eclipse Towers"; }
+                { blip.Position = position.Value; blip.Name = hero.DisplayName + " - " + ApartmentTiers.For(hero.Slot, Tier).Short; }
             }
             var home = Position(_crew.ActiveSlot);
             if (!home.HasValue || !GameUtils.IsWithinFlat(player.Position, home.Value, 60f)) return;

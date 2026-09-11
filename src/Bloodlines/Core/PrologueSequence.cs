@@ -182,14 +182,15 @@ namespace Bloodlines.Core
         /// </summary>
         private void BeginInterior()
         {
-            var room = _apartment == null ? null : _locations.Get("Apartment.Starter.Interior");
+            var home = ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter);
+            var room = _apartment == null ? null : _locations.Get(home.InteriorKey);
             if (room == null || _apartment.Inside || _apartment.Busy)
             {
                 if (_apartment != null && room == null) Logger.Warn("Prologue: no starter interior location; the job is read at the door.");
                 PlayCall(atDoor: true);
                 return;
             }
-            if (!_apartment.Begin(room.Position, null, true))
+            if (!_apartment.Begin(room.Position, null, true, null, room.Heading))
             {
                 Logger.Warn("Prologue: the apartment could not be entered; the job is read at the door.");
                 PlayCall(atDoor: true);
@@ -239,7 +240,7 @@ namespace Bloodlines.Core
             {
                 // The message spot once Ron has surveyed the room; until then two
                 // meters into it from the door.
-                var spot = _locations.Get("Apartment.Room.Message");
+                var spot = _locations.Get(ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter).RoomPrefix + ".Message");
                 var across = spot != null && spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f;
                 blocking.DialogueAfterStep = 2;
                 blocking.Then(new WalkToStep(guess, across, 0.9f)).Then(new WaitStep(1400, guess));

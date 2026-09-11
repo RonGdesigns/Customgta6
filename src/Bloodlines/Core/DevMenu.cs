@@ -469,12 +469,12 @@ namespace Bloodlines.Core
             else
             {
                 page.Add("Enter apartment", () => _homes.Progression, () => { Close(); _homes.EnterApartment(); });
-                if (_config.DevToolsEnabled && !_homes.LuxuryUnlocked)
-                    page.Add("Preview luxury apartment", () => "QA only - does not unlock", () => { Close(); _homes.EnterApartment(true); });
+                if (_config.DevToolsEnabled && ApartmentTiers.Next(_homes.Tier).HasValue)
+                    page.Add("Preview the next residence", () => "QA only - does not unlock", () => { Close(); _homes.EnterApartment(true); });
             }
             if (_homes.Apartment.Inside && _config.DevToolsEnabled)
             {
-                page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(CrewHomes.RoomSurveyKeys); });
+                page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(_homes.RoomSurveyKeys); });
                 page.Add("Map this room", () => "writes Bloodlines.Room.txt", () => { Close(); MapRoom(); });
             }
             page.Add("Wardrobe", () => "clothes / facial hair", () => _stack.Push(BuildWardrobe(_crew.ActiveSlot)));

@@ -60,6 +60,9 @@
 >   in M03, Ron arriving alone in M04, police that pursue when they see you, Ice on
 >   the roof in M07, the M08 yard spread out, and a small meter instead of "stay in
 >   the marker". Live-test items 84–90.
+> - Apartment tiers: each brother's starter room is its own interior (Ron's is the
+>   Forum Drive house), Eclipse Towers after M27, the two-floor Diamond penthouse
+>   after M47. Live-test items 91–93.
 
 Thirty missions are written and none have been played. This is the script for the
 first hour at the machine, in the order that finds the most for the least time.

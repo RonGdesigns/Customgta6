@@ -44,7 +44,7 @@ DLC rewards are availability-checked. Unsupported hashes stay recorded as unlock
 
 | When | What changes |
 |---|---|
-| Start | Each brother has an exterior home marker and access to a furnished starter interior. Rest, wardrobe and personal locker are available between jobs after losing police. |
+| Start | Each brother has an exterior home marker and his own furnished starter interior (a studio, a one-bedroom, a house); Eclipse Towers after M27, the Diamond penthouse after M47. Rest, wardrobe and personal locker are available between jobs after losing police. |
 | M03 | Cypress foundry is recorded as the crew's base. This is a story/base flag, not a new walkable foundry interior. |
 | SM01 | Ice's armor-piercing supply line: every locker restock issues his rifles double the usual ammunition. Ice only. |
 | SM03 | Racing transmission: any car or motorcycle repaired at Guess's chop bay leaves with the race transmission mod fitted, once per vehicle. KJ remains a supporting NPC. |

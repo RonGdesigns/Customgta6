@@ -129,14 +129,28 @@ Home.Gohan	-693.0	-1004.0	20.0	90	land	estimate	Little Seoul
 Home.Guess	1169.0	-1650.0	36.0	90	land	estimate	El Burro Heights
 Apartment.Starter.Ice	-667.02	-1105.24	14.63	242	land	estimate	Little Seoul
 Apartment.Starter.Gohan	-1288.52	-430.51	35.15	124	land	estimate	Richards Majestic
-Apartment.Starter.Guess	291.517	-1078.674	29.405	270	land	estimate	Mission Row
+Apartment.Starter.Guess	-9.96	-1438.20	31.10	180	land	estimate	Strawberry, Forum Drive
 Apartment.Luxury.Entrance	-773.6176	299.3455	85.7201	3	land	estimate	Rockford Hills
-Apartment.Starter.Interior	347.2686	-999.2955	-99.19622	0	underground	estimate	
-Apartment.Room.Door	347.27	-999.30	-99.20	180	interior	estimate	starter room; survey inside
-Apartment.Room.Message	347.27	-997.30	-99.20	0	interior	estimate	starter room; survey inside
-Apartment.Room.Wardrobe	349.00	-999.30	-99.20	90	interior	estimate	starter room; survey inside
-Apartment.Room.Bed	345.50	-999.30	-99.20	270	interior	estimate	starter room; survey inside
-Apartment.Room.Locker	348.50	-997.50	-99.20	0	interior	estimate	starter room; survey inside
+Apartment.Starter.Interior.Ice	261.4586	-998.8196	-99.00863	0	underground	estimate	
+Apartment.Starter.Interior.Gohan	347.2686	-999.2955	-99.19622	0	underground	estimate	
+Apartment.Starter.Interior.Guess	-14.30	-1438.50	31.10	180	interior	estimate	Forum Drive house (stock Strawberry house)
+Apartment.Top.Entrance	925.30	46.60	81.10	60	land	estimate	The Diamond, front doors
+Apartment.Top.Interior	976.636	70.295	115.164	0	interior	estimate	The Diamond penthouse (two floors; IPL vw_casino_penthouse)
+Apartment.Room.Ice.Door	261.46	-998.82	-99.01	180	underground	estimate	Ice's studio; survey inside
+Apartment.Room.Ice.Message	261.46	-996.82	-99.01	0	underground	estimate	Ice's studio; survey inside
+Apartment.Room.Ice.Wardrobe	263.16	-998.82	-99.01	90	underground	estimate	Ice's studio; survey inside
+Apartment.Room.Ice.Bed	259.76	-998.82	-99.01	270	underground	estimate	Ice's studio; survey inside
+Apartment.Room.Ice.Locker	262.66	-997.02	-99.01	0	underground	estimate	Ice's studio; survey inside
+Apartment.Room.Gohan.Door	347.27	-999.30	-99.20	180	underground	estimate	Gohan's one-bedroom; survey inside
+Apartment.Room.Gohan.Message	347.27	-997.30	-99.20	0	underground	estimate	Gohan's one-bedroom; survey inside
+Apartment.Room.Gohan.Wardrobe	348.97	-999.30	-99.20	90	underground	estimate	Gohan's one-bedroom; survey inside
+Apartment.Room.Gohan.Bed	345.57	-999.30	-99.20	270	underground	estimate	Gohan's one-bedroom; survey inside
+Apartment.Room.Gohan.Locker	348.47	-997.50	-99.20	0	underground	estimate	Gohan's one-bedroom; survey inside
+Apartment.Room.Guess.Door	-14.30	-1438.50	31.10	180	interior	estimate	Strawberry house; survey inside
+Apartment.Room.Guess.Message	-14.30	-1436.50	31.10	0	interior	estimate	Strawberry house; survey inside
+Apartment.Room.Guess.Wardrobe	-12.60	-1438.50	31.10	90	interior	estimate	Strawberry house; survey inside
+Apartment.Room.Guess.Bed	-16.00	-1438.50	31.10	270	interior	estimate	Strawberry house; survey inside
+Apartment.Room.Guess.Locker	-13.10	-1436.70	31.10	0	interior	estimate	Strawberry house; survey inside
 Apartment.Luxury.Ice	-786.8663	315.7642	217.6385	0	interior	estimate	
 Apartment.Luxury.Gohan	-774.0126	342.0428	196.6864	0	interior	estimate	
 Apartment.Luxury.Guess	-786.9563	315.6229	187.9136	0	interior	estimate	

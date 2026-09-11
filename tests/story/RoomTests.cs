@@ -29,17 +29,17 @@ public static partial class StoryTests
 
   // ---- The room's spots stay folded into the entry until surveyed on foot.
   var c=Context(crew);var state=CampaignState.Load(Path.Combine(root,"room.json"));var homes=new CrewHomes(crew,state,c.Locations,new WeaponProgression(state));
-  Check(CrewHomes.RoomSurveyKeys.Length==6&&CrewHomes.RoomSurveyKeys.All(k=>c.Locations.Get(k)!=null),"Every room survey key exists in the location book");
+  Check(homes.RoomSurveyKeys.Length==6&&homes.RoomSurveyKeys.All(k=>c.Locations.Get(k)!=null),"Every room survey key for the active brother's room exists in the location book");
   Check(homes.RoomSpot("Bed")==null&&homes.RoomSpot("Door")==null&&homes.RoomSpot("Wardrobe")==null&&homes.RoomSpot("Locker")==null,"An estimated spot is not offered: nobody is sent into a wall");
-  c.Locations.Record("Apartment.Room.Bed",new Vector3(345.5f,-1001f,-99.2f),270f);
+  c.Locations.Record(homes.Current.RoomPrefix+".Bed",new Vector3(345.5f,-1001f,-99.2f),270f);
   Check(homes.RoomSpot("Bed")!=null&&homes.RoomSpot("Bed").Position.Y==-1001f&&homes.RoomSpot("Door")==null,"A surveyed spot is offered where it was captured, and only that one");
   string homesSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","CrewHomes.cs"));
   Check(homesSrc.Contains("UpdateRoomSpots(player, atEntry)")&&homesSrc.Contains("case \"Bed\": Rest(); break;")&&homesSrc.Contains("case \"Locker\": RestockLocker(); break;")&&homesSrc.Contains("default: ExitApartment(); break;")&&homesSrc.Contains("(OpenWardrobe ?? OpenMenu)?.Invoke()"),"Inside, each surveyed spot has its own prompt: the wardrobe opens, the bed rests, the locker restocks, the door leaves");
-  Check(homesSrc.Contains("Apartment.Begin(location.Position, ipl, true, probe, location.Heading)"),"Entering faces the way the entry's heading says");
+  Check(homesSrc.Contains("Apartment.Begin(location.Position, residence.Ipl, true, residence.Probe, location.Heading, residence.EntitySets)"),"Entering faces the way the entry's heading says");
   string prologueSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","PrologueSequence.cs"));
-  Check(prologueSrc.Contains("_locations.Get(\"Apartment.Room.Message\")")&&prologueSrc.Contains("spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f"),"The message is read at the surveyed spot, else two meters into the room");
+  Check(prologueSrc.Contains("ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter).RoomPrefix + \".Message\"")&&prologueSrc.Contains("spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f"),"The message is read at the surveyed spot of Ron's own room, else two meters into it");
   var rows=File.ReadAllLines(Path.Combine(dataDir,"locations.tsv")).Where(l=>l.StartsWith("Apartment.Room.")).ToList();
-  Check(rows.Count==5&&rows.All(r=>r.Split('\t')[5]=="interior"&&r.Split('\t')[6]=="estimate"),"The five room spots ship as interior estimates, to be surveyed inside");
+  Check(rows.Count==15&&rows.All(r=>r.Split('\t')[6]=="estimate"),"Five spots per starter room, three rooms, all estimates to be surveyed inside");
 
   // ---- The room map reads the floor from collision.
   World.RaycastHandler=(s,t)=>{
@@ -56,7 +56,7 @@ public static partial class StoryTests
   string menu=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","DevMenu.cs"));
   int warp=menu.IndexOf("WarpToStart(captured);",StringComparison.Ordinal),start=menu.IndexOf("_missions.Start(captured, bypassGates: true);",StringComparison.Ordinal);
   Check(warp>0&&start>warp&&start-warp<120&&menu.Contains("PrologueSequence.PlaceForColdOpen(player, point.Position)")&&menu.Contains("player.Heading = point.Heading;"),"A start from the menu moves the player to the job's marker, facing its way, before the briefing plays");
-  Check(menu.Contains("_survey.Start(CrewHomes.RoomSurveyKeys)")&&menu.Contains("InteriorMapper.Map(player.Position, 12f, player)"),"Inside the room the dev menu offers the spot survey and the room map");
+  Check(menu.Contains("_survey.Start(_homes.RoomSurveyKeys)")&&menu.Contains("InteriorMapper.Map(player.Position, 12f, player)"),"Inside the room the dev menu offers the spot survey and the room map");
   string hostSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","BloodlinesMain.cs"));
   Check(hostSrc.Contains("_menu.StartPoint = _missionMarkers.StartPoint;")&&hostSrc.Contains("_homes.OpenWardrobe = _menu.OpenWardrobe;"),"The host hands the menu the markers and the room its wardrobe");
   var catalog=new MissionCatalog();catalog.All.Add(Def("M22","main"));var markers=new MissionMarkers(catalog,state,null,c.Locations,dataDir,"J");
