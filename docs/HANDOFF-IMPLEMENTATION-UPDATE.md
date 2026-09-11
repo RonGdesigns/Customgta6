@@ -257,6 +257,16 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 82. **M08, the loop drops.** Loop the cameras and wait four minutes: the job fails with the loop message.
 83. **The apartment fade.** Enter the apartment from the prologue's door: the screen stays black until the room is ready; never the void.
 
+## Ron's third round (September 10)
+
+84. **M01 marks and escape.** In the firefight every hostile has a red mark on the map that disappears when he drops. The moment the last one drops the escape plays; Mateo is at the boat for it even if he was short of it.
+85. **M02 boarding.** Take the drives as Ice, walk to the stopped Granger, press E at its door: you are in. No "return to the Granger" loop.
+86. **M03 junction.** Arrive as Guess, get out, hold the marker: the street crew comes; you fight them as Guess; only when they are down does the depot become Ice's and the switch is asked for. No freeze on arrival. At the depot no guard is inside the Benson. After delivery Gohan gets out of the truck on his own and follows you.
+87. **M04 arrival.** Guess drives up alone. Ice and Gohan are already at their positions when you arrive and the meeting never saw them come.
+88. **Police.** With grayed stars, drive past a patrol in plain view: the stars flash and they come. Break line of sight for a while: the search runs down as before.
+89. **M07 and M08 placement.** M07: Ice starts on the roof of the building and the mast marker is up there; the sedan waits on the street below, not against the entrance. M08: crates a truck-length apart, the flatbed clear of them, the forklift on the open apron with room to turn.
+90. **The meter.** Any hold or piece of work (the ledger copy, the junction, the breaker, the forks) shows its name and a small yellow meter above the subtitle line, no countdown text.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

@@ -417,7 +417,22 @@ namespace Bloodlines.Missions.Campaign
             }
 
             StowDrives();
-            if (!player.IsInVehicle(_chase)) { GameUtils.Subtitle("~y~Return to the crew's Granger.", 500); return; }
+            if (!player.IsInVehicle(_chase))
+            {
+                // The Granger is stopped for him. A press at its door is a seat,
+                // whatever the engine makes of the drives in his hand or of the
+                // scripted state the pursuit left his ped in (Ron, September 10).
+                if (_chase.LockStatus != VehicleLockStatus.Unlocked) _chase.LockStatus = VehicleLockStatus.Unlocked;
+                if (Ctx.Crew.CompanionAI.StateOf(Ctx.Crew.ActiveSlot) == CompanionState.Scripted) Ctx.Crew.CompanionAI.ReleaseControl(Ctx.Crew.ActiveSlot);
+                if (!player.IsInVehicle() && GameUtils.IsWithinFlat(player.Position, _chase.Position, 4.5f))
+                {
+                    GameUtils.Subtitle("~y~Press E / D-pad Right to get in the Granger.", 500);
+                    if (Game.IsControlJustPressed(GTA.Control.Context)) player.SetIntoVehicle(_chase, FreeSeat());
+                    return;
+                }
+                GameUtils.Subtitle("~y~Return to the crew's Granger.", 500);
+                return;
+            }
             foreach (var hero in Protagonist.All)
             {
                 var member = Ctx.Crew.PedFor(hero.Slot);
@@ -431,6 +446,13 @@ namespace Bloodlines.Missions.Campaign
 
             GameUtils.Subtitle("~g~Server drives secured. The upload never landed.", 5000);
             Pass();
+        }
+
+        private VehicleSeat FreeSeat()
+        {
+            foreach (var seat in new[] { VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear, VehicleSeat.Driver })
+                if (_chase.GetPedOnSeat(seat) == null) return seat;
+            return VehicleSeat.Any;
         }
 
         /// <summary>The drives leave Ice's hand once he is in the Granger: stowed, not carried into the next scene.</summary>

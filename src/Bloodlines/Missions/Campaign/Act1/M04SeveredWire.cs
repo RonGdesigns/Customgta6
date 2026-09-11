@@ -84,10 +84,14 @@ namespace Bloodlines.Missions.Campaign
 
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
             Station(CrewSlot.Guess, _van, VehicleSeat.Driver);
-            Station(CrewSlot.Ice, _van, VehicleSeat.RightFront);
-            Station(CrewSlot.Gohan, _van, VehicleSeat.LeftRear);
+            // Ron pulls up alone. Ice and Gohan are already on the lot, in their
+            // positions, and were never seen arriving (Ron, September 10).
+            Station(CrewSlot.Ice, _iceWatch);
+            Station(CrewSlot.Gohan, _gohanApproach);
             // Guards are a threat to the brothers only once the lights go out; before that they are a meeting, not a fight.
             _roles = new RoleTracks(Ctx.Crew, () => _hostile ? (IEnumerable<Ped>)_bodyguards : Enumerable.Empty<Ped>());
+            _roles.For(CrewSlot.Ice).Observe(_iceWatch, _iceCover);
+            _roles.For(CrewSlot.Gohan).Observe(_gohanApproach, _gohanCover);
             _miller.IsInvincible = true;
             return true;
         }
@@ -96,13 +100,13 @@ namespace Bloodlines.Missions.Campaign
         {
             yield return new MissionStage("Drive to the lot",
                     new TravelObjective("Guess: drive the crew to the Pillbox Hill lot.", () => _exit, 12f, () => _van)
-                        .Cue(0.6f, () => Radio("GOHAN", "Breaker's on the east side of the lot, outside the fence. Drop me at the corner and I'll walk in.", "M04_RADIO_01_GOHAN"))
-                        .Cue(0.3f, () => Radio("ICE", "I take the ramp side and watch the meeting. Ron, nose the van at the exit and keep it running.", "M04_RADIO_02_ICE")))
+                        .Cue(0.6f, () => Radio("GOHAN", "I'm on the breaker already, east side of the lot, outside the fence. Nobody has looked at me twice.", "M04_RADIO_01_GOHAN"))
+                        .Cue(0.3f, () => Radio("ICE", "I've got the ramp side and the meeting. Ron, nose the van at the exit and keep it running.", "M04_RADIO_02_ICE")))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => DropOff());
 
-            yield return new MissionStage("Get in position",
-                    new WaitForRolesObjective("Hold at the exit while Ice and Gohan get in position.", _roles, RoleState.Observing, 25000, CrewSlot.Ice, CrewSlot.Gohan))
+            yield return new MissionStage("In position",
+                    new WaitForRolesObjective("Hold at the exit. Ice and Gohan are in position.", _roles, RoleState.Observing, 25000, CrewSlot.Ice, CrewSlot.Gohan))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => Say("M04_S1_01_GOHAN"));
 
@@ -140,14 +144,9 @@ namespace Bloodlines.Missions.Campaign
 
         private void DropOff()
         {
-            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
-            if (ice != null && ice.Exists()) ice.Task.LeaveVehicle();
-            if (gohan != null && gohan.Exists()) gohan.Task.LeaveVehicle();
-            _roles.For(CrewSlot.Gohan).Approach(_gohanApproach, _gohanCover);
-            _roles.For(CrewSlot.Ice).Approach(_iceWatch, _iceCover);
+            // Nobody gets out of the van: the others were never in it.
             _roles.For(CrewSlot.Guess).Observe(_exit, _exit);
-            Objective("Hold at the exit. Ice and Gohan are moving into position.");
+            Objective("Hold at the exit. Ice and Gohan are in position.");
         }
 
         /// <summary>The sale is real: seen before anyone touches it, from the lot, from the case, from the exit.</summary>

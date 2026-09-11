@@ -352,7 +352,10 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("forklift");
             if (!GameUtils.RequestModel(model)) return;
-            _forklift = Track(World.CreateVehicle(model, _padOne + new Vector3(-12f, 6f, 0f), 90f));
+            // In the open, on the apron's street, not against the sheds (Ron, September 10).
+            var spot = World.GetNextPositionOnStreet(_gate + new Vector3(22f, -52f, 0f));
+            if (spot == Vector3.Zero) spot = _gate + new Vector3(22f, -52f, 0f);
+            _forklift = Track(World.CreateVehicle(model, spot, 90f));
             model.MarkAsNoLongerNeeded();
             if (_forklift == null || !_forklift.Exists()) return;
             _forklift.IsPersistent = true;

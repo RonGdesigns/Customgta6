@@ -51,7 +51,7 @@ Prerequisite: M02. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Drive to the junction** — TravelObjective: Guess: drive to the Davis rail junction. |
-| 2 | Guess | **Seal the response routes** — HoldZoneObjective: Guess: get out and hold the junction marker. |
+| 2 | Guess | **Seal the response routes** — HoldZoneObjective: Guess: get out and hold the junction marker.<br>ConditionObjective: Guess: put the street crew down. |
 | 3 | Ice | **Breach the depot** — ReachZoneObjective: Ice: walk to the yellow entry marker at the depot gate.<br>QuietRuleObjective: Quiet until the entry marker. |
 | 4 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
 | 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
@@ -69,7 +69,7 @@ Prerequisite: M03. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Drive to the lot** — TravelObjective: Guess: drive the crew to the Pillbox Hill lot. |
-| 2 | Guess | **Get in position** — WaitForRolesObjective: Hold at the exit while Ice and Gohan get in position. |
+| 2 | Guess | **In position** — WaitForRolesObjective: Hold at the exit. Ice and Gohan are in position. |
 | 3 | Gohan | **Kill the lights** — MissionInteraction: Gohan: cut the marked surface-lot breaker |
 | 4 | Gohan | **Miller runs** — SwitchWindowObjective: Miller is running. Take Guess to intercept; Ron is already on him |
 | 5 | Guess | **Run him down** — PursueTargetObjective: Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive. |

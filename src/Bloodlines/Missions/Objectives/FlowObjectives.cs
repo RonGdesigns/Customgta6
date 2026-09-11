@@ -132,6 +132,14 @@ namespace Bloodlines.Missions.Objectives
     /// fails with the stated reason. The scope is the caller's (which brother, how
     /// near what), so one brother's quiet approach never punishes another's fight.
     /// </summary>
+    /// <summary>Waits for a stated condition of the world: the street crew down, the door open. Nothing to press.</summary>
+    public sealed class ConditionObjective : Objective
+    {
+        private readonly Func<bool> _done;
+        public ConditionObjective(string label, Func<bool> done) : base(label) { _done = done; }
+        public override void Update(MissionContext c) { if (_done()) Complete(); }
+    }
+
     public sealed class QuietRuleObjective : Objective
     {
         private readonly Func<bool> _applies;
