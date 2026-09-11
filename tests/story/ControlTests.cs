@@ -32,6 +32,7 @@ public static partial class StoryTests
   Check(roster.Contains("GameUtils.AssertPlayerControl(\"solo deployment\")")&&roster.Contains("GameUtils.AssertPlayerControl(\"crew deployment\")")&&roster.Contains("GameUtils.AssertPlayerControl(\"the story character's return\")"),"Deployments and the story character's return assert control after CHANGE_PLAYER_PED");
   // The HUD count in M01 is a count.
   string m01=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M01GhostInTheDockyard.cs"));
+  Check(!m01.Contains("SwitchAfterTerminal")&&!m01.Contains("TrySwitch("),"M01 never switches the player by itself after Gohan's terminal");
   Check(m01.Contains("GameUtils.Subtitle(\"~y~Hostiles: \" + _guards.Count, 500);")&&!m01.Contains("Mateo is in the launch."),"The hostiles line is a count, not an announcement about Mateo");
  }
 }

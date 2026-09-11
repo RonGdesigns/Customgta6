@@ -54,7 +54,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 41 | **Companion shield** | Firefight as one brother while the other two are in it | Their health does not drop; switching into one makes him mortal |
 | 42 | **Prologue room** | Fresh save; stop at the door; watch once, skip once; once with the room failing to load | Inside: cross, phone, three lines; skip lands the same; a failed room plays the call at the door with a notice; the cut to the dock follows |
 | 43 | **Mateo's run** | Recognition, then watch the yard with guards alive; then clear it | He and the technician run in the open; no countdown; the launch leaves only after the last guard, and only once he is at the boat |
-| 44 | **Terminal hand-back** | Finish Gohan's copy last; finish it with a job still open | Straight to the brother you came from; straight to the brother with the job |
+| 44 | **After the terminal** | Finish Gohan's copy last; finish it with a job still open | You stay on Gohan either way; "Ledger copied." and the objective line names the brother with the job; no automatic switch |
 | 45 | **M02 opening and custody** | Start M02; breach; board with a wanted level | Curb scene, clock after it, van on the move; case in Ice's hand, stowed on boarding; canal refuses until the police are lost |
 | 46 | **M03 junction** | Drive to Davis; roll through once; stop; sit; get out | No ejection at speed; nothing in the car; the hold starts on foot; dogs on arrival; the block after five seconds with a moment |
 | 47 | **M03 depot rules** | As Ice, fire before the marker once; reach it quietly once; as Ron, fire at the junction during Ice's stage | Failure with the reason; the yard wakes on the marker; Ron's shots are not Ice's |

@@ -32,7 +32,7 @@
 >   the drive, lose the police. Live-test items 50–55.
 > - The opening is the second slice: the message is read inside the starter
 >   apartment; in M01 Mateo runs for the launch in the open with no clock, Gohan's
->   copy hands you straight back, the laptop is on the table; M02 opens at the curb,
+>   copy leaves you on Gohan, the laptop is on the table; M02 opens at the curb,
 >   the drives ride in Ice's hand and the canal does not clear the police.
 >   Live-test items 58–64.
 > - M03 is the third slice: the split at the base, Ron's junction with its dogs and

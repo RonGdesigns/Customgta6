@@ -162,7 +162,7 @@ public static partial class StoryTests
   Check(mission.CurrentStage==0,"Waiting at Gohan's entry point does not copy the distant ledger");
   Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.Accept=true;World.CollisionReady=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==1&&c.Cutscenes.IsActive,"All three assignments trigger the recognition scene exactly once");
-  Check(crew.ActiveSlot==CrewSlot.Ice&&Game.Player.Character==crew.Peds[CrewSlot.Ice]&&crew.Peds[CrewSlot.Gohan].Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Copying the ledger hands the player straight back to the brother he came from; recognition preserves split positions and the actual driver's seat");
+  Check(crew.ActiveSlot==CrewSlot.Gohan&&Game.Player.Character==crew.Peds[CrewSlot.Gohan]&&crew.Peds[CrewSlot.Gohan].Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Copying the ledger leaves the player on Gohan, with no automatic switch; recognition preserves split positions and the actual driver's seat");
   c.Cutscenes.Stop();mission.Tick();
   Check(mission.CurrentStage==2&&World.Created.Count>=9,"Combat spawns after recognition resumes gameplay");
   var mateo=World.Created[0];var technician=World.Created[1];var launch=World.Vehicles.Last();
