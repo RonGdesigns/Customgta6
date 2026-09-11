@@ -313,6 +313,10 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 114. **M26.** Start M26: a spotter over the lake, the Lazer on the apron, Gohan at the laptop on the Granger's hood, Ice at the hangar, the Duster beside the Lazer, two lines; skip once. Take off, splash the first: Gohan's radio to hold the second; keep it in sight 12 seconds: his second radio and the log's "Evidence charterCallSign -> CopyHeld". Splash it early instead: the failure names the call sign. Splash the second, land at McKenzie and stop: the park scene with the Duster beside the Lazer; skip once. The log has "Cargo lazer -> M26.DusterPad".
 115. **M27.** Start M27 after M26: the same Lazer parked, the Duster, Ice checking his parachute and boarding the second seat, the track, Gohan's boat, two lines; skip once and Ice is in the seat. Take off, hold station on the Shamal: the transfer scene, a fade in the middle; skip once and you are Ice in the Shamal with the screen lit. Take the ledger: a case in Ice's hand; Ron's radio and the Duster turns for McKenzie on the map. Bail, chute, board Gohan's boat: the case in the boat. The log has "Evidence flightLedger -> CopyHeld".
 
+## M03 depot ambush (Ron, September 11)
+
+116. **M03.** Start M03: the log has "M03 Benson at ... (road node near the key)" and the truck stands on the road, not in a wall. At the junction, four dogs come at Ron within seconds of him stopping; the street crew (six) and the dogs are red on the map while they are his fight. Ice wakes ten guards. After the loading scene Gohan is in the cab; then Ice's radio: the gate opens again, seven gunmen and three dogs come at the truck, Gohan gets out into cover. You are locked to Ron until you are within 45 m of the depot; then the switch is free and the targets are red. Clear them; take the Benson as Ron: Ice's radio, he walks to the passenger seat (20 s, then seated), Gohan takes the van behind you. Deliver as before; Ron and Ice get out before the keys go down.
+
 ## Not done in this pass
 
 - Checkpoint reconstruction (audit §5) remains off by design.

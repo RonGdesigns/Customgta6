@@ -100,6 +100,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 87 | **M25 canyon** | Deck, tanker, waves, jump, board | The approach scene with the boat running; the escape scene before the jump; Ron's radio on the way down |
 | 88 | **M26 scramble** | Take off, kill, listen, kill, park | The approach scene with the parked Lazer and the Duster; the listen and the call sign; early kill fails; the park scene |
 | 89 | **M27 flight** | Board, match, transfer, ledger, bail, boat | Ice in the Duster's second seat; the transfer cut; the case in hand; Ron home on his own route; the case in the boat |
+| 90 | **M03 ambush** | Junction, yard, load, return, joint fight, ride | Truck on the road; four dogs attack; red markers on the block; the depot answers after loading; locked to Ron until close, then free switching; Ice rides with Ron |
 
 ## Before you launch: the static checks
 
