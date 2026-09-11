@@ -49,8 +49,7 @@ s=s[:a]+'''  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringCo
   int play=manager.IndexOf("_context.Cutscenes.Play(outroId, \\"outro\\", \\"Aftermath: \\" + outcomeTitle, null, null, outro)",StringComparison.Ordinal);
   Check(ask>=0&&finish>ask&&play>finish,"The manager captures aftermath blocking before teardown and passes it to the final scene");'''+s[b:]
 f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'));paths.append(f.as_posix())
-# An explicit phase request (used by QA) uses its own authored marker; only the
-# single normal operation entrance M19 routes to the saved phase boundary.
+# Explicit phase QA uses its authored marker; the normal entrance resumes M19-M22.
 f=Path('src/Bloodlines/Core/MissionMarkers.cs');s=f.read_text(encoding='utf-8')
 old='PortHeistOperation.Contains(mission.Id) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;'
 assert s.count(old)==1
@@ -70,7 +69,7 @@ s=s.replace('"The parent advances internally to " + next + " without an ordinary
 old='bool rejected = false; try { state.SavePortHeistBoundary("M99"); }'
 assert s.count(old)==1
 s=s.replace(old,'''var points = new MissionMarkers(catalog, state, null, Context(Roster()).Locations, dataDir, "J");
-        Check(points.StartPoint(catalog.All[0])?.Key == "M21.BoatSpawn", "The one normal heist entry routes to its saved phase");
+        Check(points.StartPoint(catalog.All[0])?.Key == "M21.LaunchSpawn", "The one normal heist entry routes to its saved phase");
         Check(points.StartPoint(catalog.All[3])?.Key == "M22.Beach", "An explicit QA phase retains its own authored start point");
         bool rejected = false; try { state.SavePortHeistBoundary("M99"); }''',1)
 f.write_bytes(s.encode('utf-8'))
