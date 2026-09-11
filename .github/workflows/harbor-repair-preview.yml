@@ -56,7 +56,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/package.py --clean
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify packaged bytes and record exact version
+      - name: Verify packaged bytes, preservation evidence and exact version
         shell: python
         run: |
           import hashlib,json,os,pathlib,shutil,subprocess
@@ -65,18 +65,28 @@ jobs:
           built=p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
           assert built==p('prebuilt/Bloodlines.dll').read_bytes(), 'Fresh and committed DLLs differ'
           assert built==p('build/deploy/scripts/Bloodlines.dll').read_bytes(), 'Fresh and packaged DLLs differ'
+          digest=hashlib.sha256(built).hexdigest()
+          manifest=json.loads(p('docs/HARBOR-INTEGRATION-PRESERVATION.json').read_text(encoding='utf-8'))
+          assert manifest['integrated_main']=='f8a37b9837b11f6661df081fd59616b7c06e6bb3'
+          assert manifest['combined_dll_sha256']==digest, 'Binary no longer matches reviewed integration'
+          for side in ('main_exclusive','repair_exclusive'):
+              for name,entry in manifest[side].items():
+                  if name.startswith(('src/','tests/','data/','config/')):
+                      raw=subprocess.check_output(['git','show','HEAD:'+name])
+                      assert hashlib.sha256(raw).hexdigest()==entry['sha256'], 'Preserved source changed: '+name
+          for name,expected in manifest['shared_reviewed'].items():
+              if name.startswith(('src/','tests/','data/')):
+                  assert hashlib.sha256(subprocess.check_output(['git','show','HEAD:'+name])).hexdigest()==expected, 'Shared resolution changed: '+name
           deploy=p('build/deploy')
           assert not list(deploy.rglob('savegame.json')), 'Do not package a campaign save'
           assert not list(deploy.rglob('Bloodlines.Surveyed.ini')), 'Do not package personal surveys'
           assert not (deploy/'scripts/Bloodlines/Bloodlines.ini').exists(), 'Configuration must remain an example'
-          # This repair uses installed stock models, fonts, blips and music events.
-          # No optional OpenIV import is needed to test it.
           extra=deploy/'_openiv_import'
           if extra.exists():shutil.rmtree(extra)
-          provenance={'commit':sha,'branch':'codex/harbor-playtest-repair','base':'d295306764fa137ceda3e1f3741e2a0d766bdb45','dll_sha256':hashlib.sha256(built).hexdigest(),'actions_run':os.environ['GITHUB_RUN_ID'],'live_verified':False,'heist_retry':'whole operation from M19; no checkpoints'}
+          provenance={'commit':sha,'branch':'codex/harbor-playtest-repair','base':'d295306764fa137ceda3e1f3741e2a0d766bdb45','integrated_main':manifest['integrated_main'],'integration_commit':'75274fd2f8e209cca1a86b6b7f871bd3c64b58d4','dll_sha256':digest,'actions_run':os.environ['GITHUB_RUN_ID'],'live_verified':False,'heist_retry':'whole operation from M19; no checkpoints'}
           (deploy/'BUILD-PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
-          (deploy/'READ-ME-FIRST.txt').write_text('Bloodlines harbor playtest repair - comparison build, not a live-verified release.\n\nCommit: '+sha+'\nDLL SHA-256: '+provenance['dll_sha256']+'\n\nBased on d295306: includes the main-branch integrated heist, desert missions and apartment tiers. This replaces the old phase-resume preview. Normal Port Heist attempts now always start M19; fail, abort or quit restarts the whole operation. Developer bypass remains an isolated phase diagnostic.\n\nSTORY MODE ONLY. Close GTA before replacing files. Back up scripts/Bloodlines.dll and the entire scripts/Bloodlines directory OUTSIDE the scripts tree. Copy this package\'s scripts contents into the test installation. Use a disposable copied campaign; preserve your active INI, appearance, surveys, runtime dependencies and voice bank. Configuration ships as .example, not an overwrite. Do not put the source ZIP or a backup DLL into scripts.\n\nStart M17/M18 to test dry fittings and the real launch. Start M19 normally with prerequisites/solos complete to test the entire heist. If water preflight refuses, capture the exact key and original/resolved coordinates from Bloodlines.log; do not disable the guard or guess another coordinate. M19.Worksite is the group anchor; derived work/cargo markers are recalculated together.\n\nOn-foot music is requested from the installed game. Music volume and event availability require live checking. Disable it with [Audio] MissionScoreEnabled=False. Letter sprites change map starts, not the ground activation cylinder. Apartment variety is existing work: see the audit section rather than assuming every luxury floor is a unique layout.\n\nRead HARBOR-PLAYTEST-REPAIR.md and HARBOR-REPAIR-VERIFICATION.md. Source/stub checks cannot establish real water geometry, police sighting, animations, music audibility or apartment rendering. No automatic merge or installation was performed.\n',encoding='utf-8')
-          for name in ['HARBOR-PLAYTEST-REPAIR.md','HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md']:
+          (deploy/'READ-ME-FIRST.txt').write_text('Bloodlines integrated harbor playtest repair - comparison build, not a live-verified release.\n\nCommit: '+sha+'\nDLL SHA-256: '+digest+'\n\nIncludes main f8a37b9 through PR #32 AND the harbor repair. The latest M03-M08 changes, desert missions and apartment tiers are retained. The original agents\' exclusive source was preserved and one combined DLL rebuilt; do not install two alternative DLLs together. Main itself has not been updated by this comparison. Read HARBOR-INTEGRATION.md and the two preservation/binary manifests.\n\nThis supersedes the old isolated and phase-resume previews. Normal Port Heist attempts always start M19; failure, abort or quit restarts the whole operation. No midpoint checkpoints. Developer bypass remains an isolated phase diagnostic, not a combined-heist test.\n\nSTORY MODE ONLY. Close GTA before replacing files. Back up scripts/Bloodlines.dll and the entire scripts/Bloodlines directory OUTSIDE the scripts tree. Copy this package\'s scripts contents into a test installation. Use a disposable copied campaign; preserve your active INI, appearance, surveys, runtime dependencies and voice bank. Configuration ships as .example, not an overwrite. Do not put the source ZIP or a backup DLL into scripts.\n\nTest the preserved M03-M08 repairs, then M17/M18 dry fittings and the actual launch. Start M19 normally with prerequisites and required solos complete. If water preflight refuses, capture the exact key and original/resolved coordinates from Bloodlines.log; do not disable validation or guess another coordinate. M19.Worksite is the group anchor; derived work/cargo markers are recalculated together.\n\nOn-foot music uses installed-game events and still needs an audible check. Disable it with [Audio] MissionScoreEnabled=False. Letter sprites affect the radar/map, not ground activation cylinders. Existing apartments are retained, not newly certified as unique layouts.\n\nHARBOR-INTEGRATION-REVIEW.md records two inherited follow-ups in the M07 roof fallback and M08 mixed-role assignment; the preservation merge does not silently rewrite them. Source/stub checks do not establish actual water geometry, police sighting, animations, score audibility, road navigation or apartment rendering. No game installation or main-branch merge was performed.\n',encoding='utf-8')
+          for name in ['HARBOR-PLAYTEST-REPAIR.md','HARBOR-REPAIR-VERIFICATION.md','CONTINUOUS-PORT-HEIST.md','HARBOR-INTEGRATION.md','HARBOR-INTEGRATION-PRESERVATION.json','HARBOR-INTEGRATION-BINARIES.json','HARBOR-INTEGRATION-REVIEW.md']:
               shutil.copy2(p('docs')/name,deploy/name)
           shutil.make_archive('build/Bloodlines-Harbor-Playtest-Preview','zip',deploy)
           subprocess.run(['git','archive','-o','build/Bloodlines-Harbor-Playtest-Source.zip','HEAD'],check=True)
