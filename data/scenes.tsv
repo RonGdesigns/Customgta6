@@ -342,14 +342,20 @@ SM01_SCENE_INTRO_01_ICE	SM01	intro	ICE	Briefing; intent before tactics	Sergei so
 SM01_SCENE_INTRO_02_GUESS	SM01	intro	GUESS	Briefing; intent before tactics	You can work alone without pretending you don't have anyone to call. Tell us when you're leaving the warehouse.
 SM01_SCENE_OUTRO_01_ICE	SM01	outro	ICE	Reflective; allow the response to land	Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.
 SM01_SCENE_OUTRO_02_GOHAN	SM01	outro	GOHAN	Reflective; allow the response to land	I heard you. That's enough for tonight. We'll check the ammunition together when you get back.
+SM01_SCENE_APPROACH_01_ICE	SM01	approach	ICE	On the approach; the place and the job seen before anyone moves	Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+SM01_SCENE_APPROACH_02_GUESS	SM01	approach	GUESS	On the approach; the place and the job seen before anyone moves	Say when you're leaving. That's the whole of what I'm asking.
 SM02_SCENE_INTRO_01_GOHAN	SM02	intro	GOHAN	Briefing; intent before tactics	The annex gives me municipal optical access for the drone work. One person can reach it quietly. That's why I'm going alone.
 SM02_SCENE_INTRO_02_ICE	SM02	intro	ICE	Briefing; intent before tactics	Send the check-in time. You aren't asking permission. You're giving us a chance to notice if you need help.
 SM02_SCENE_OUTRO_01_GOHAN	SM02	outro	GOHAN	Reflective; allow the response to land	The tap is live. The camera archive is open; that doesn't wipe the dock recording or a human witness.
 SM02_SCENE_OUTRO_02_GUESS	SM02	outro	GUESS	Reflective; allow the response to land	And you're back on the radio. I like that part of the upgrade best.
+SM02_SCENE_APPROACH_01_GOHAN	SM02	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Roof access on the service side, the server bay one floor down, the terminal at the back. Camera archive, nothing else. Check-in in twenty minutes.
+SM02_SCENE_APPROACH_02_ICE	SM02	approach	ICE	On the approach; the place and the job seen before anyone moves	Twenty minutes. If we don't hear you we notice; we don't come. That's the deal.
 SM03_SCENE_INTRO_01_KJ	SM03	intro	KJ	Briefing; intent before tactics	Guess, I checked the prize. Transmission and clutch are real. Marabunta's promise to race clean? I wouldn't put money on that.
 SM03_SCENE_INTRO_02_GUESS	SM03	intro	GUESS	Briefing; intent before tactics	You got me a place on the grid, KJ. That's enough. Stay clear when it starts; I need my friend around after the finish.
 SM03_SCENE_OUTRO_01_KJ	SM03	outro	KJ	Reflective; allow the response to land	I saw the guns. Prize is secured, but don't come back here tonight. Winning doesn't make those people good losers.
 SM03_SCENE_OUTRO_02_GUESS	SM03	outro	GUESS	Reflective; allow the response to land	Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call when the parts get back to the crew.
+SM03_SCENE_APPROACH_01_KJ	SM03	approach	KJ	On the approach; the place and the job seen before anyone moves	Transmission and clutch, real, in the crate on your tail. Those Elegys are tuned and the men in them are not clean.
+SM03_SCENE_APPROACH_02_GUESS	SM03	approach	GUESS	On the approach; the place and the job seen before anyone moves	Then I'll be clean for both of us. Stay off the grid when it starts, KJ. I want you around after.
 SM04_SCENE_INTRO_01_ICE	SM04	intro	ICE	Briefing; intent before tactics	The quarry snipers are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
 SM04_SCENE_INTRO_02_GOHAN	SM04	intro	GOHAN	Briefing; intent before tactics	I can monitor your check-ins. Being quiet around them doesn't mean being silent with us.
 SM04_SCENE_OUTRO_01_ICE	SM04	outro	ICE	Reflective; allow the response to land	Both nests cleared. Their radios give us a warning channel. I sent the frequencies to both of you.

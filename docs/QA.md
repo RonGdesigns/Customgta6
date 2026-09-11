@@ -81,6 +81,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 68 | **M09 unit** | Take the driver; hold E at the cab; land on the flat | The colonel shown leaving; the unit in Ice's hand; Gohan's read; a landed pickup; a burned escort fails |
 | 69 | **M10 stash to shop** | Start at the connector; deliver to Burro Heights | Both crates checked, the Buzzard shown, the window named, the truck stopped there by Ron's AI, the engines recorded at the shop |
 | 70 | **M11 shop** | Start; dyno; Berth 44 | The shop mid-work instead of a briefing; the meter on the dyno; Gohan at the window; the Granger shown |
+| 71 | **SM01 broker and crates** | Hold E at Sergei; then at the crates; drive home | Sergei alive and running; two crates into the car on camera; a dead Sergei fails; the reward said as the Mk II plus double rifle ammunition |
+| 72 | **SM02 tap and trace** | Stun, tap, leave | The tap as a scene; camera archive named, not the dock recording; 75 s to the fire escape or the job fails |
+| 73 | **SM03 grid and bay** | Watch KJ, race, ambush, deliver | KJ walks the prize; the guns shown once; the coupe and prize to the chop bay; $25,000 and the transmission named |
 
 ## Before you launch: the static checks
 
