@@ -41,28 +41,31 @@ patch_path = Path('build/port-heist-implementation.diff')
 patch_path.write_bytes(patch.replace(b'\r\n', b'\n'))
 subprocess.run(['git', 'apply', '--unidiff-zero', '--whitespace=nowarn', '--check', str(patch_path)], check=True)
 subprocess.run(['git', 'apply', '--unidiff-zero', '--whitespace=nowarn', str(patch_path)], check=True)
-# The previous test matched the old display-title expression rather than ordering.
-# Keep the ordering assertion and verify the current call passes the captured blocking.
-f = Path('tests/story/OpenSliceTests.cs')
-s = f.read_text(encoding='utf-8')
-a = s.index('  int ask=manager.IndexOf(')
-b = s.index('\n\n  // ---- Prologue:', a)
-s = s[:a] + '''  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringComparison.Ordinal);
+# Keep the existing aftermath-ordering check, allowing the operation's shared title.
+f = Path('tests/story/OpenSliceTests.cs'); s=f.read_text(encoding='utf-8')
+a=s.index('  int ask=manager.IndexOf('); b=s.index('\n\n  // ---- Prologue:',a)
+s=s[:a]+'''  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringComparison.Ordinal);
   int finish=ask<0?-1:manager.IndexOf("Finish();",ask,StringComparison.Ordinal);
   int play=manager.IndexOf("_context.Cutscenes.Play(outroId, \\"outro\\", \\"Aftermath: \\" + outcomeTitle, null, null, outro)",StringComparison.Ordinal);
-  Check(ask>=0&&finish>ask&&play>finish,"The manager captures aftermath blocking before teardown and passes it to the final scene");''' + s[b:]
-f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'))
-paths.append(f.as_posix())
-# Run the new focused integration cases before the unchanged broader suite.
-f = Path('tests/story/StoryTests.cs'); s=f.read_text(encoding='utf-8')
+  Check(ask>=0&&finish>ask&&play>finish,"The manager captures aftermath blocking before teardown and passes it to the final scene");'''+s[b:]
+f.write_bytes(s.replace('\r\n','\n').replace('\n','\r\n').encode('utf-8'));paths.append(f.as_posix())
+# MultiHold records its final site first; its next update completes the stage.
+f=Path('tests/story/ContinuousPortHeistTests.cs');s=f.read_text(encoding='utf-8')
+old='foreach (var clamp in m19.Clamps) Interact(m19, c, CrewSlot.Gohan, clamp, 8, true);'
+assert s.count(old)==1
+s=s.replace(old,old+'\n        manager.Update(); // Evaluate the now-complete multi-site objective.',1)
+s=s.replace('"The parent advances internally to " + next + " without an ordinary mission restart"','"The parent advances internally to " + next + " without an ordinary mission restart [" + manager.CurrentObjective + "; " + manager.LastFailureReason + "]"')
+f.write_bytes(s.encode('utf-8'))
+# Run the focused integration cases before the unchanged broader suite.
+f=Path('tests/story/StoryTests.cs');s=f.read_text(encoding='utf-8')
 s=s.replace('HeistChecks();ContinuousPortHeistChecks();','HeistChecks();',1)
 assert s.count('root=args[1];MarketChecks();')==1
 s=s.replace('root=args[1];MarketChecks();','root=args[1];ContinuousPortHeistChecks();MarketChecks();',1)
 f.write_bytes(s.encode('utf-8'))
 for path in crlf:
-    target = Path(path)
-    if target.exists(): target.write_bytes(target.read_bytes().replace(b'\r\n', b'\n').replace(b'\n', b'\r\n'))
-for p in parts + [tail]:
-    p.unlink(); paths.append(p.as_posix())
-Path('build/port-heist-changed.json').write_text(json.dumps(paths), encoding='utf-8')
+    target=Path(path)
+    if target.exists(): target.write_bytes(target.read_bytes().replace(b'\r\n',b'\n').replace(b'\n',b'\r\n'))
+for p in parts+[tail]:
+    p.unlink();paths.append(p.as_posix())
+Path('build/port-heist-changed.json').write_text(json.dumps(paths),encoding='utf-8')
 print('Applied scoped source, tests and documentation. Production and behavior verification follow.')
