@@ -257,6 +257,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M09_SCENE_OUTRO_02_GUESS) — Then we finish the job we parked. No fresh score until those crates are off the road.
 
+### Approach
+
+**ICE** (M09_SCENE_APPROACH_01_ICE) — Three Insurgents. The rear one carries the clearance unit. The colonel rides the middle one, and I don't care where he goes.
+
+**GUESS** (M09_SCENE_APPROACH_02_GUESS) — Frogger on the ridge, you on the rock. When it stops I land on the flat past the culvert, not on his roof.
+
 ## M10 — OPEN THROTTLE
 
 ### Intro
@@ -271,6 +277,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M10_SCENE_OUTRO_02_GUESS) — I joke when I'm nervous too. Learn the difference. Tomorrow we bolt these things into something that brings us home.
 
+### Inspect
+
+**GUESS** (M10_SCENE_INSPECT_01_GUESS) — Both crates, chained where we left them. Nobody touched the stash.
+
+**ICE** (M10_SCENE_INSPECT_02_ICE) — I ride the passenger seat with the launcher. Gohan calls the route from the shop; when he names a window, that's where I get out.
+
 ## M11 — IRONCLAD DYNO
 
 ### Intro
@@ -284,6 +296,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M11_SCENE_OUTRO_01_GOHAN) — Berth 44 has gold and bonds on the manifest. Three billion is the shipment's claim, not money we can spend.
 
 **GUESS** (M11_SCENE_OUTRO_02_GUESS) — We survey it before we dream about it. And if we get rich, nobody buys the right to vanish without a goodbye.
+
+### Shop
+
+**GUESS** (M11_SCENE_SHOP_01_GUESS) — Hand me the eleven and don't talk to me until the mounts are true. First crate's open; the second stays on the truck.
+
+**ICE** (M11_SCENE_SHOP_02_ICE) — You've had that wrench since the car wash. Say the word on the throttle and I'll hold it where you want it.
 
 ## M12 — BLACK TIDE RECON
 

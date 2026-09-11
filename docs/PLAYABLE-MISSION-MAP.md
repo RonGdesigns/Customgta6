@@ -158,11 +158,13 @@ Prerequisite: M08. Retry: full mission restart.
 | 2 | Guess | **Shadow the convoy** — ShadowTargetObjective: Hold the ridgeline behind the convoy. |
 | 3 | Ice | **Take the driver** — KillTargetsObjective: Ice: wait at the ambush point and shoot the marked escort driver. |
 | 4 | Ice | **Rip the transponder** — MissionInteraction: Ice: get out, approach the stopped escort cab, and take its IFF transponder. |
-| 5 | Ice | **Transponder extraction** — ReachZoneObjective: Get the transponder to the temporary drop point. |
+| 5 | Guess | **The pickup** — DeliverVehicleObjective: Guess: land the Frogger on the marked flat past the culvert. |
+| 6 | Ice | **Ice aboard** — EnterVehicleObjective: Ice — board the Frogger. |
+| 7 | Ice | **Transponder extraction** — ReachZoneObjective: Get the transponder to the temporary drop point. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M09.AmbushPoint, M09.Bunker, M09.ConvoyStart, M09.HeliSpawn.
+Survey references: M09.AmbushPoint, M09.Bunker, M09.ConvoyStart, M09.HeliSpawn, M09.Pickup.
 
 ## M10 — OPEN THROTTLE
 
@@ -170,14 +172,16 @@ Prerequisite: M09. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Roll out** — EnterVehicleObjective: Guess — take the flatbed. |
-| 2 | Guess | **Del Perro run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
-| 3 | Ice | **Gunship** — DestroyVehicleObjective: Ice: have Guess stop, get out, and use the RPG on the marked Buzzard. |
-| 4 | Guess | **Tunnel mouth** — DeliverVehicleObjective: Guess: get back in the flatbed and deliver the engines to the tunnel. |
+| 1 | Guess | **Check the load** — MissionInteraction: Guess: check the crates on the flatbed |
+| 2 | Guess | **Roll out** — EnterVehicleObjective: Guess — take the flatbed. Ice rides beside you. |
+| 3 | Guess | **The run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
+| 4 | Guess | **The firing window** — DeliverVehicleObjective: Guess: get the flatbed to the tunnel mouth. That is Ice's firing window. |
+| 5 | Ice | **Gunship** — DestroyVehicleObjective: Ice: out of the cab, launcher on the marked Buzzard from the tunnel mouth. |
+| 6 | Guess | **Burro Heights** — DeliverVehicleObjective: Guess: get back in the flatbed and deliver the engines to the shop.<br>LoseWantedObjective: Lose the police before the shop. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M10.ConvoyStart, M10.TunnelMouth.
+Survey references: M08.Connector, M10.TunnelMouth, M11.ChopShop.
 
 ## M11 — IRONCLAD DYNO
 
@@ -188,7 +192,7 @@ Prerequisite: M10. Retry: full mission restart.
 | 1 | Guess | **Mount the turbine** — MissionInteraction: Guess — fabricate the motor mounts. |
 | 2 | Ice | **On the dyno** — EnterVehicleObjective: Ice — get in and hold it on the dyno. |
 | 3 | Ice | **Manifold pressure** — DynoObjective: Ice: use partial RT or tap W to hold 22-28 PSI. Stay in the driver seat. |
-| 4 | Ice | **Berth 44** — DialogueFinishedObjective: Listen to Gohan's Berth 44 briefing. |
+| 4 | Ice | **Berth 44** — DialogueFinishedObjective: Gohan has the manifest. Hear him out. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

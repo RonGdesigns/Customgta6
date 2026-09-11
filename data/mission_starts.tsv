@@ -8,7 +8,7 @@ M06	M06.GrangerSpawn
 M07	Base.CypressFlats
 M08	M08.WarehouseGate
 M09	M09.HeliSpawn
-M10	M10.ConvoyStart
+M10	M08.Connector
 M11	M11.ChopShop
 M12	M12.SouthJetty
 M13	M13.KayakLaunch

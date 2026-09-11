@@ -17,7 +17,9 @@ PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers 
                    'loading': 'At the Benson; crates carried into the bed by hand',
                    'shore': 'From the cliff and the dinghy; the cove, the lamps, his boat',
                    'positions': 'The depot from three places; nobody has moved yet',
-                   'approach': 'On the approach; the place and the job seen before anyone moves'}
+                   'approach': 'On the approach; the place and the job seen before anyone moves',
+                   'inspect': 'At the stash; the load checked before the run',
+                   'shop': 'In the shop, mid-work; nobody stops for a briefing'}
 
 def blocks(path, key_pattern, phases=None):
     """Lines per block. With `phases`, a block may contain '@name' lines that open a named phase;
