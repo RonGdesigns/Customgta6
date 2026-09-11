@@ -22,7 +22,8 @@ namespace Bloodlines.Core
         public string Report => _report.Count == 0 ? "flight handling: nothing requested" : "flight handling: " + string.Join("; ", _report);
         public void Apply(HandlingData data,Model model)
         {
-            if(model.IsPlane||model.IsHelicopter)
+            // Planes only: helicopters fly stock.
+            if(model.IsPlane)
             {
                 Adjust(data,"FlyingHandlingData","ThrustFallOff",false);
                 Adjust(data,"FlyingHandlingData","VectorSpeedResistance",true);

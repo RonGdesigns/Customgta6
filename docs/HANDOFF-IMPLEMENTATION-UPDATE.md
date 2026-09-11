@@ -248,6 +248,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 76. **Map the room.** With `[Dev] Enabled = True`, inside the room open the menu at the entry marker and choose "Map this room". `Bloodlines.Room.txt` appears beside `Bloodlines.ini`: a floor map with '@' where you stood. Send it, or read it, before surveying: it says where the floor, walls and furniture are.
 77. **Survey the spots.** Same menu, "Survey the room's spots": stand where the door, the message spot (a window or the couch), the wardrobe, the bed and the locker belong, pressing F11 on each; the entry key comes first, so stand at the door facing into the room for that one. From the next session those spots have their own markers and prompts, and the prologue's message walks to the message spot.
 78. **A start from the menu.** Open the dev menu somewhere away from a job, pick any mission from the list: a short fade, then the briefing plays at that job's marker with the crew's car pulling up to that street, and gameplay begins there without a second cut.
+79. **Helicopters.** Deploy the crew and fly a Buzzard: it should feel exactly as it does with the crew stood down. The log has no "flight handling:" line for a helicopter any more (planes still get one).
 
 ## Not done in this pass
 

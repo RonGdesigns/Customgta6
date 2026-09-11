@@ -65,6 +65,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 52 | **The room loads** | Enter the starter apartment; leave it | Inside with control within a few seconds; "was disabled"/"was enabled" and "entered" in the log; no timeout; put back on leaving |
 | 53 | **Room map and survey** | Dev menu inside: "Map this room", then "Survey the room's spots" with F11 on each | `Bloodlines.Room.txt` beside the ini; next session each surveyed spot has its own marker and prompt |
 | 54 | **Start from the menu** | Dev menu, Missions, any job, away from its marker | A short fade, the briefing at the job's marker, no second cut |
+| 55 | **Helicopters stock** | Fly a helicopter with the crew deployed, then stood down | No difference; no "flight handling:" log line for it |
 
 ## Before you launch: the static checks
 
