@@ -46,6 +46,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _regroup;
         private Vector3 _road;
         private bool _arrived, _dropped, _landed, _struck, _cargoRecorded;
+        private bool _arrivalStarted;
+        private int _roadStarted, _roadOrder;
+        public bool RoadArrivalPending => !_arrivalStarted;
 
         public override string Id => "M22";
         public override string Title => "The Port Heist: Scorched Bay";
@@ -71,7 +74,7 @@ namespace Bloodlines.Missions.Campaign
 
             // On the shore. Deploying sixty meters above the Alamo drops the crew
             // into it.
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _beach, Ctx.Locations.Heading("M22.Beach")))
+            if (!PortHeist.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Guess, _beach, Ctx.Locations.Heading("M22.Beach")))
             {
                 return false;
             }
@@ -80,10 +83,31 @@ namespace Bloodlines.Missions.Campaign
             var handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
             SpawnLift();
             SpawnGranger();
-            if (!RequireAssets(_cargobob, _container)) return false;
+            if (!RequireAssets(_cargobob, _container, _granger)) return false;
+            Ctx.PortHeist?.Bind("lift", _cargobob);
+            Ctx.PortHeist?.Bind("bullion", _container);
+            Ctx.PortHeist?.Bind("granger", _granger);
+            RequireAsset(_container, "The bullion was lost before the operation finished.");
+            RequireAsset(_granger, "The road team lost its transport.");
             if (handoff != null && !handoff.CargoAttached) Logger.Warn("M22: M21 recorded the lift without cargo; the Alamo drop still uses a container.");
             RequireAsset(_cargobob, "The Cargobob went down. The bullion never reached the Alamo.");
             Ctx.Crew.CompanionsHoldPosition = true;
+            if (PortHeist.IsContinuing(Ctx))
+            {
+                if (!PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Guess), _cargobob, VehicleSeat.Driver) ||
+                    !PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _granger, VehicleSeat.Driver) ||
+                    !PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Ice), _granger, VehicleSeat.Passenger))
+                    throw new System.InvalidOperationException("The inland transfer requires the original pilot and road team.");
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+                _roadStarted = Game.GameTime;
+                _roadOrder = Game.GameTime;
+                OrderRoadTeam();
+                HoldLift();
+                Radio("GOHAN", "We have the road north. You fly the bullion over the ridge; we'll meet you on the beach.", "M22_OPERATION_ROAD");
+                return true;
+            }
             Station(CrewSlot.Guess, _cargobob, VehicleSeat.Driver);
             if (_granger != null && _granger.Exists())
             {
@@ -98,6 +122,31 @@ namespace Bloodlines.Missions.Campaign
             HoldLift();
             PlayApproach();
             return true;
+        }
+
+        private void OrderRoadTeam()
+        {
+            var driver = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (!PortHeistWorld.Seated(driver, _granger, VehicleSeat.Driver))
+                throw new System.InvalidOperationException("Gohan must remain at the wheel of the road pickup.");
+            _granger.IsEngineRunning = true;
+            driver.Task.DriveTo(_granger, _road, 10f, 27f, DrivingStyle.Rushed);
+            _roadOrder = Game.GameTime;
+        }
+
+        protected override void OnUpdate()
+        {
+            if (PortHeist.IsContinuing(Ctx) && !_arrivalStarted)
+            {
+                if (_granger == null || !_granger.Exists() || !_granger.IsDriveable)
+                { Fail("The road team lost the Granger."); return; }
+                if (_granger.Position.DistanceTo(_road) < 55f)
+                { PlayApproach(); return; }
+                if (Game.GameTime - _roadStarted > 600000)
+                { Fail("The road team could not reach the Alamo. Retry Scorched Bay."); return; }
+                if (Game.GameTime - _roadOrder > 15000) OrderRoadTeam();
+            }
+            base.OnUpdate();
         }
 
         private void HoldLift()
@@ -134,7 +183,11 @@ namespace Bloodlines.Missions.Campaign
             // A short, real regroup: Ron out of the aircraft and over to the others on
             // foot. The strike arrives while they are checking gear, not in a lineup.
             yield return new MissionStage("Regroup",
-                    new ReachZoneObjective("Guess: on foot to Ice and Gohan on the beach.", () => _regroup, 4f))
+                    new ConditionObjective("Guess: on foot to Ice and Gohan on the beach. Wait for their road arrival.", () =>
+                        _arrived && Game.Player.Character != null && !Game.Player.Character.IsInVehicle() &&
+                        Game.Player.Character.Position.DistanceTo(_regroup) <= 4f &&
+                        Ctx.Crew.PedFor(CrewSlot.Ice).Position.DistanceTo(_regroup) <= 8f &&
+                        Ctx.Crew.PedFor(CrewSlot.Gohan).Position.DistanceTo(_regroup) <= 8f))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => PlayStrike());
 
@@ -155,6 +208,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The shallow drop point, the lift held over the water with the load, and the Granger coming down the road: each brother's arrival, no plan.</summary>
         private void PlayApproach()
         {
+            _arrivalStarted = true;
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var blocking = new SceneBlocking();
@@ -169,21 +223,28 @@ namespace Bloodlines.Missions.Campaign
                 blocking.Then(new WalkToStep(gohan, _regroup + new Vector3(-1.5f, 0f, 0f), 1.5f));
                 if (ice != null && ice.Exists()) blocking.Then(new WalkToStep(ice, _regroup + new Vector3(1.5f, 0f, 0f), 1.5f));
             }
+            blocking.Then(new VerifySceneStep("The road team reached the beach", () =>
+            {
+                return gohan != null && gohan.Exists() && !gohan.IsDead && !gohan.IsInVehicle() && gohan.Position.DistanceTo(_regroup) < 8f &&
+                    ice != null && ice.Exists() && !ice.IsDead && !ice.IsInVehicle() && ice.Position.DistanceTo(_regroup) < 8f;
+            }, () => _arrived = true));
             var spec = new SceneSpec
             {
+                RequiresCompletion = true,
                 MissionId = Id, Phase = "approach", Title = "The Alamo",
                 Reason = "Four feet of water at the drop point, the lift held over the lake with the container under it, and the Granger from the coast coming down the road with Gohan driving and Ice beside him. Everyone arrives the way they left the ocean. The deposit is thirty tons in the shallows, not spendable money.",
                 Blocking = blocking
             };
-            if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M22 approach scene did not play; the beach stands on its own.");
-            _arrived = true;
+            if (!Ctx.Cutscenes.Play(spec)) PortHeist.RequireFallback(blocking, "The road team's beach arrival");
         }
 
         /// <summary>The drop as an insert: the container leaves the cable and settles in the shallows. The hidden cargo is recorded once.</summary>
         private void PlayDrop()
         {
-            _dropped = true;
             ReleaseContainer();
+            if (_container == null || !_container.Exists() || PortHeistWorld.Attached(_container, _cargobob) || _container.Position.DistanceTo(_drop) > 3f)
+                throw new System.InvalidOperationException("The bullion drop did not reach the shallows.");
+            _dropped = true;
             var blocking = new SceneBlocking();
             if (_container != null && _container.Exists()) blocking.Then(new ShotStep(3800, _container, new Vector3(-12f, 8f, 5f), _container, new Vector3(0f, 0f, 0.5f), 0.8f));
             var spec = new SceneSpec
@@ -196,7 +257,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M22 drop scene did not play; the line plays as dialogue."); blocking.Complete(); Say("M22_S1_01_GUESS"); }
             if (Ctx.State != null && !Ctx.State.IsComplete(Id))
             {
-                Ctx.State.SetCargo(PortHeist.BullionCargo, "M22.AlamoDrop");
+                PortHeist.RecordCargo(Ctx, PortHeist.BullionCargo, "M22.AlamoDrop");
                 _cargoRecorded = true;
             }
             else Logger.Info("M22: the Alamo cargo was recorded on the first pass; the replay leaves the ledger alone.");
@@ -211,7 +272,6 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void PlayStrike()
         {
-            _struck = true;
             var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
@@ -229,8 +289,12 @@ namespace Bloodlines.Missions.Campaign
                 blocking.Then(ShotStep.Low(3600, guess, 1.8f, 0.9f, 1.1f));
                 if (_keys != null && _keys.Exists() && _granger != null && _granger.Exists()) blocking.Then(new StowPropStep(guess, _keys, _granger, new Vector3(0.45f, 0.9f, 0.55f)));
             }
+            blocking.Then(new VerifySceneStep("The beach aftermath is complete", () =>
+                _dropped && _landed && _arrived && guess != null && guess.Exists() && !guess.IsDead,
+                () => _struck = true));
             var spec = new SceneSpec
             {
+                RequiresCompletion = true,
                 MissionId = Id, Phase = "strike", Title = "The foundry",
                 Reason = "The foundry's alarm line on Ron's phone, then the strike itself at Cypress Flats and the column over the mountains from the beach: learned before anyone explains it. Ron with the three keys from M03 in his hand; one reaction, one next step; the keys go into the Granger.",
                 Blocking = blocking
@@ -245,8 +309,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M22 strike scene did not play; the strike and the lines play directly.");
-                blocking.Complete();
-                Detonate(foundry);
+                PortHeist.RequireFallback(blocking, "The foundry aftermath");
                 Say("M22_S1_02_ICE"); Say("M22_S1_03_GOHAN"); Say("M22_S1_04_GUESS"); Say("M22_S1_05_ICE");
             }
         }
@@ -254,13 +317,16 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The detonation at the foundry's real coordinates behind a short fade; the fire and the column stand for as long as the engine keeps them.</summary>
         private void Detonate(Vector3 foundry)
         {
-            GameUtils.FadeOut(400);
-            World.AddExplosion(foundry, ExplosionType.Plane, 25f, 3f, null, true, false);
-            World.AddExplosion(foundry + new Vector3(8f, 6f, 0f), ExplosionType.Tanker, 20f, 2.5f, null, true, false);
-            GameUtils.FadeIn(1200);
+            try
+            {
+                GameUtils.FadeOut(400);
+                World.AddExplosion(foundry, ExplosionType.Plane, 25f, 3f, null, true, false);
+                World.AddExplosion(foundry + new Vector3(8f, 6f, 0f), ExplosionType.Tanker, 20f, 2.5f, null, true, false);
+            }
+            finally { GameUtils.FadeIn(1200); }
             GameUtils.PlayFrontendSound("Explosion_Textured", "GTAO_Speed_Convoy_Soundset");
-            GameUtils.Subtitle("~r~A black column over the mountains, where the shop used to be.", 7000);
-            Logger.Info("M22: foundry destroyed at " + foundry);
+            GameUtils.Subtitle("~r~The foundry alarm went dark. Aegis struck Cypress.", 7000);
+            Logger.Info("M22: foundry strike staged at " + foundry + "; distant rendering requires live validation.");
         }
 
         private void ReleaseContainer()
@@ -290,6 +356,13 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The loaded lift, airborne and held over the water south of the drop: Ron arrives by air, as he left the coast.</summary>
         private void SpawnLift()
         {
+            if (PortHeist.IsContinuing(Ctx))
+            {
+                _cargobob = Track(Ctx.PortHeist.Require<Vehicle>("lift"));
+                _container = Track(Ctx.PortHeist.Require<Prop>("bullion"));
+                if (!PortHeistWorld.Attached(_container, _cargobob)) throw new System.InvalidOperationException("The bullion separated during the inland flight.");
+                return;
+            }
             var heliModel = new Model("cargobob");
             var containerModel = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(heliModel)) return;
@@ -322,6 +395,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The crew's Granger on the road above the beach with Ice and Gohan in it: the transport M21 put them in, arriving.</summary>
         private void SpawnGranger()
         {
+            if (PortHeist.IsContinuing(Ctx)) { _granger = Track(Ctx.PortHeist.Require<Vehicle>("granger")); return; }
             Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(_road, Ctx.Locations.Heading("M22.RoadArrival")) : null;
             if (granger == null)
             {
@@ -368,7 +442,12 @@ namespace Bloodlines.Missions.Campaign
             if (_container != null && _container.Exists()) Release(_container);
             if (_granger != null && _granger.Exists()) Release(_granger);
             if (_cargobob != null && _cargobob.Exists()) Release(_cargobob);
-            Ctx.State?.SetCargo("cargobob", "M22.Beach");
+            PortHeist.RecordCargo(Ctx, "cargobob", "M22.Beach");
+            if (Ctx.PortHeist != null)
+            {
+                PortHeist.RecordCargo(Ctx, "kraken", "M12.PierWatch");
+                PortHeist.RecordCargo(Ctx, PortHeist.BullionCargo, "M22.AlamoDrop");
+            }
         }
 
         protected override void OnCleanup()

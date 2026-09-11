@@ -28,8 +28,10 @@ public static partial class StoryTests
   var car=new Vehicle();crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(car,VehicleSeat.LeftRear);var outro=m1.OutroBlocking();
   Check(outro!=null&&outro.Steps.Count==1&&outro.Steps[0] is ShotStep,"With the crew in the prototype the aftermath opens on a shot through Gohan's window");m1.Abort();
   string manager=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","MissionManager.cs"));
-  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringComparison.Ordinal),finish=manager.IndexOf("Finish();\n",StringComparison.Ordinal);
-  Check(ask>0&&manager.Contains("\"Aftermath: \" + _currentDefinition.Title, null, null, outro)"),"The manager asks the mission for its aftermath blocking before teardown and plays it");
+  int ask=manager.IndexOf("outro = _current.OutroBlocking()",StringComparison.Ordinal);
+  int finish=ask<0?-1:manager.IndexOf("Finish();",ask,StringComparison.Ordinal);
+  int play=manager.IndexOf("_context.Cutscenes.Play(outroId, \"outro\", \"Aftermath: \" + outcomeTitle, null, null, outro)",StringComparison.Ordinal);
+  Check(ask>=0&&finish>ask&&play>finish,"The manager captures aftermath blocking before teardown and passes it to the final scene");
 
   // ---- Prologue: the message is read inside the starter apartment.
   Reset();crew=Roster();c=Context(crew);var save=CampaignState.Load(Path.Combine(root,"prologue-room.json"));var access=new ApartmentAccess(crew);int handoffs=0;var home=new Vector3(291,-1078,29);

@@ -363,12 +363,12 @@ Prerequisite: M21. Retry: full mission restart.
 | 1 | Guess | **Bring it in** — EnterVehicleObjective: Guess — fly the bullion into the Alamo. |
 | 2 | Guess | **Drop the container** — MissionInteraction: Guess: hover 20m over the water marker and release the container |
 | 3 | Guess | **The beach** — DeliverVehicleObjective: Guess: land the Cargobob on the marked shore and stop. |
-| 4 | Guess | **Regroup** — ReachZoneObjective: Guess: on foot to Ice and Gohan on the beach. |
+| 4 | Guess | **Regroup** — ConditionObjective: Guess: on foot to Ice and Gohan on the beach. Wait for their road arrival. |
 | 5 | Guess | **Blaine County** — DialogueFinishedObjective: The foundry is gone. Listen. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: Base.CypressFlats, M22.AlamoDrop, M22.Beach, M22.RoadArrival.
+Survey references: Base.CypressFlats, M12.PierWatch, M22.AlamoDrop, M22.Beach, M22.RoadArrival.
 
 ## M23 — GHOST IN THE SAGE
 

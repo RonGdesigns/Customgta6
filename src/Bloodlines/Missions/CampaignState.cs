@@ -52,6 +52,30 @@ namespace Bloodlines.Missions
         /// having played it, so existing campaigns are never sent back to the airport.
         /// </summary>
         public bool PrologueComplete { get; set; }
+        /// <summary>Safe phase-start bookmark only; never contains live entity handles.</summary>
+        public string PortHeistResumePhase { get; private set; } = "";
+        private int _saveBatch;
+        public void SavePortHeistBoundary(string phase)
+        {
+            if (!PortHeistOperation.Contains(phase)) throw new ArgumentException("Unknown Port Heist phase.", nameof(phase));
+            if (IsComplete("M22")) return;
+            PortHeistResumePhase = phase;
+            Save();
+        }
+        public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo)
+        {
+            bool firstPass = !IsComplete("M22");
+            _saveBatch++;
+            try
+            {
+                foreach (var phase in PortHeistOperation.PhaseIds) MarkComplete(phase, catalog);
+                if (firstPass && cargo != null)
+                    foreach (var pair in cargo) { if (string.IsNullOrEmpty(pair.Value)) Cargo.Remove(pair.Key); else Cargo[pair.Key] = pair.Value; }
+                PortHeistResumePhase = "";
+            }
+            finally { _saveBatch--; }
+            Save();
+        }
         public bool PrologueDue => !PrologueComplete && !IsComplete("M01");
 
         // --- economy (bible §2 and the heist payouts) ---
@@ -138,6 +162,8 @@ namespace Bloodlines.Missions
 
                 var campaign = Json.Object(root.TryGetValue("campaign", out var c) ? c : null);
                 state.CurrentMissionId = Json.String(campaign, "currentMissionId");
+                string resume = Json.String(campaign, "portHeistResumePhase");
+                state.PortHeistResumePhase = PortHeistOperation.Contains(resume) ? resume.ToUpperInvariant() : "";
                 state.ActiveAct = Math.Max(1, Json.Int(campaign, "activeAct", 1));
                 state.PrologueComplete = campaign.TryGetValue("prologueComplete", out var prologue) && prologue is bool played && played;
                 foreach (var entry in Json.Array(campaign, "completedMissions"))
@@ -415,6 +441,7 @@ namespace Bloodlines.Missions
             CurrentMissionId = "";
             ActiveAct = 1;
             PrologueComplete = false;
+            PortHeistResumePhase = "";
             CashOnHand = 0;
             AlamoGoldDredgedTons = 0f;
             OffshoreEscrowBalance = 0;
@@ -430,6 +457,7 @@ namespace Bloodlines.Missions
 
         public void Save()
         {
+            if (_saveBatch > 0) return;
             var document = new Dictionary<string, object>
             {
                 {
@@ -439,6 +467,7 @@ namespace Bloodlines.Missions
                         { "completedMissions", Completed.OrderBy(id => id, StringComparer.Ordinal).ToList() },
                         { "activeAct", ActiveAct },
                         { "prologueComplete", PrologueComplete },
+                        { "portHeistResumePhase", PortHeistResumePhase },
                         {
                             "lastKnownLocation", new Dictionary<string, object>
                             {

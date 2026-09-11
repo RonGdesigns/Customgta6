@@ -69,14 +69,14 @@ namespace Bloodlines.Missions.Campaign
 
             // On the pier, not in the water: a deployment onto a water coordinate
             // starts the mission with everyone swimming.
-            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, Ctx.Locations.Position("M12.PierWatch"),
+            if (!PortHeist.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Gohan, Ctx.Locations.Position("M12.PierWatch"),
                     Ctx.Locations.Heading("M12.PierWatch")))
             {
                 return false;
             }
 
             ApplyBibleSetting();
-            Game.Player.Character.Weapons.Give(WeaponHash.MG, 400, false, true);
+            Ctx.Crew.PedFor(CrewSlot.Gohan).Weapons.Give(WeaponHash.MG, 400, false, true);
 
             _handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
             _patrolsReduced = Ctx.State != null && Ctx.State.FleetUpgrades.TryGetValue("harborPatrolsReduced", out var thinned) && thinned;
@@ -84,12 +84,28 @@ namespace Bloodlines.Missions.Campaign
             SpawnLaunch();
             SpawnCargobob();
             SpawnGranger();
-            if (!RequireAssets(_launch, _cargobob, _cargobobPilot, _container)) return false;
+            if (!RequireAssets(_launch, _cargobob, _cargobobPilot, _container, _granger)) return false;
+            Ctx.PortHeist?.Bind("launch", _launch);
+            Ctx.PortHeist?.Bind("lift", _cargobob);
+            Ctx.PortHeist?.Bind("bullion", _container);
+            Ctx.PortHeist?.Bind("granger", _granger);
+            RequireAsset(_granger, "The road pickup was destroyed. The crew cannot make the inland transfer.");
             RequireAsset(_cargobob, "The Cargobob went down with the bullion.");
             RequireAsset(_container, "The bullion container was lost.");
             RequireAsset(_launch, "The armed launch was destroyed. The lift has no escort.");
-            Station(CrewSlot.Gohan, _launch, VehicleSeat.Driver);
-            Station(CrewSlot.Ice, _launch, VehicleSeat.Passenger);
+            if (!PortHeist.IsContinuing(Ctx))
+            {
+                Station(CrewSlot.Gohan, _launch, VehicleSeat.Driver);
+                Station(CrewSlot.Ice, _launch, VehicleSeat.Passenger);
+            }
+            else
+            {
+                if (!PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _launch, VehicleSeat.Driver) ||
+                    !PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Ice), _launch, VehicleSeat.Passenger))
+                    throw new System.InvalidOperationException("The escort cannot start before Ice and Gohan board it.");
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+            }
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.MicroSMG, 500, true, true);
             // The lift waits, airborne and rotors turning, until the escort is actually
             // on the water. Nothing flies toward the breakwater while Gohan is still
@@ -190,7 +206,6 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Ice and Gohan land, walk to the staged Granger, board with real seats and pull away: the road north, compressed but seen.</summary>
         private void PlayTransfer()
         {
-            _transferred = true;
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var blocking = new SceneBlocking { DialogueAfterStep = 0 };
@@ -209,21 +224,25 @@ namespace Bloodlines.Missions.Campaign
                 if (gohan != null && gohan.Exists()) blocking.Then(new DriveUpStep(gohan, _granger, away, DriveUpStep.HeadingBetween(_pickup, away)));
                 else blocking.Then(new ShotStep(3200, _granger, new Vector3(-6f, 3f, 1.8f), _granger, new Vector3(0f, 0f, 0.8f), 0.7f));
             }
+            blocking.Then(new VerifySceneStep("The road pickup is crewed", () =>
+                PortHeistWorld.Seated(gohan, _granger, VehicleSeat.Driver) &&
+                PortHeistWorld.Seated(ice, _granger, VehicleSeat.Passenger), () => _transferred = true));
             var spec = new SceneSpec
             {
+                RequiresCompletion = true,
                 MissionId = Id, Phase = "transfer", Title = "The road north",
                 Reason = "The launch on the shore, Gohan and Ice out of it and into the crew's Granger at the road, Gohan driving, Ice beside him, pulling away north. The boat stays on the coast; the Granger arrives at the Alamo.",
                 Blocking = blocking
             };
             var lines = new[]
             {
-                new DialogueCue { CueId = "M21_RADIO_03_GOHAN", MissionId = Id, Speaker = "GOHAN", Line = "Launch is on the sand. We're in the Granger; road north, two hours behind you if the freeway is clear." },
-                new DialogueCue { CueId = "M21_RADIO_04_GUESS", MissionId = Id, Speaker = "GUESS", Line = "Then I hold her over the shallows until you're on the beach. Nobody drops thirty tons with nobody watching." }
+                new DialogueCue { CueId = "M21_RADIO_03_GOHAN", MissionId = Id, Speaker = "GOHAN", Line = "Launch is on the sand. We're in the Granger; taking the road north. Keep the lift in sight until we clear the coast." },
+                new DialogueCue { CueId = "M21_RADIO_04_GUESS", MissionId = Id, Speaker = "GUESS", Line = "I'm taking the ridge toward the shallows. Call when you reach the beach; I'll bring the load down then." }
             };
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M21 transfer scene did not play; the seats are taken directly.");
-                blocking.Complete();
+                PortHeist.RequireFallback(blocking, "Boarding the road pickup");
             }
             GameUtils.Subtitle("~g~Ice and Gohan on the road north in the Granger. The lift is over the mountains; the Alamo is next.", 6000);
         }
@@ -242,6 +261,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The launch M20 boarded on camera, taken over at its mark; or one there.</summary>
         private void SpawnLaunch()
         {
+            if (PortHeist.IsContinuing(Ctx)) { _launch = Track(Ctx.PortHeist.Require<Vehicle>("launch")); return; }
             var model = new Model("dinghy4");
             if (!GameUtils.RequestModel(model)) return;
 
@@ -262,6 +282,16 @@ namespace Bloodlines.Missions.Campaign
 
         private void SpawnCargobob()
         {
+            if (PortHeist.IsContinuing(Ctx))
+            {
+                _cargobob = Track(Ctx.PortHeist.Require<Vehicle>("lift"));
+                _container = Track(Ctx.PortHeist.Require<Prop>("bullion"));
+                _cargobobPilot = Ctx.Crew.PedFor(CrewSlot.Guess);
+                if (!PortHeistWorld.Attached(_container, _cargobob) || !PortHeistWorld.Seated(_cargobobPilot, _cargobob, VehicleSeat.Driver))
+                    throw new System.InvalidOperationException("The lift must continue with its pilot and attached bullion.");
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                return;
+            }
             var model = new Model("cargobob");
             var pilotModel = new Model("g_m_y_famca_01");
             if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(pilotModel)) return;
@@ -334,12 +364,14 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M22", Ctx.Crew, _cargobob);
-            record.CargoAttached = _container != null && _container.Exists();
+            record.CargoAttached = PortHeistWorld.Attached(_container, _cargobob);
             record.CargoModel = "prop_container_01a";
             record.Notes["granger"] = _transferred ? "Gohan driving, Ice beside him, north from M21.RoadPickup" : "not boarded on camera";
             record.Notes["launch"] = "left at M21.ShoreLanding";
             record.Notes["harbor"] = (_patrolsReduced ? "launches thinned by M13" : "launches at full strength") + "; " + (_gateAccess ? "breakwater gate opened by M15" : "no gate access");
             Ctx.Handoffs.Record(record);
+            if (_container != null && _container.Exists()) Release(_container);
+            if (_cargobob != null && _cargobob.Exists()) Release(_cargobob);
             if (_granger != null && _granger.Exists()) Release(_granger);
             if (_launch != null && _launch.Exists()) Release(_launch);
         }
@@ -412,7 +444,7 @@ namespace Bloodlines.Missions.Campaign
             // A held lift that outlives the attempt (occupied transports are released,
             // not deleted) must not stay pinned in the air.
             ReleaseLift();
-            if (_container != null && _container.Exists()) Function.Call(Hash.DETACH_ENTITY, _container, true, true);
+            if (Status != MissionStatus.Passed && _container != null && _container.Exists()) Function.Call(Hash.DETACH_ENTITY, _container, true, true);
             _hostileCrews.Clear();
         }
     }

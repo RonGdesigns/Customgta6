@@ -58,7 +58,7 @@ public static partial class StoryTests
   Check(state.IsComplete("M19")&&manager.PendingContinuation==m20def&&GameUtils.Message.Contains("operation continues")&&manager.IsRunning,"Passing chapter one commits it and queues chapter two instead of ending the operation");
   c.Cutscenes.Stop();manager.Update();
   Check(manager.PendingContinuation==null&&manager.IsRunning&&manager.LastAttempted==m20def,"Chapter two starts on its own once the aftermath is over");
-  c.Cutscenes.Stop();manager.Update();Check(manager.CurrentStage==0,"Chapter two's briefing hands over to its gameplay");
+  c.Cutscenes.Skip();manager.Update();Check(manager.CurrentStage==0,"Chapter two's briefing hands over to its gameplay");
   manager.ForceFail("The lift went down.");manager.Update();
   Check(!manager.IsRunning&&manager.RetryAvailable&&manager.PendingContinuation==null&&manager.LastAttempted==m20def,"A failed chapter stops the operation and retries that chapter alone");
   Check(manager.Start(m20def)&&manager.IsRunning,"The retry starts chapter two again");manager.Abort();
