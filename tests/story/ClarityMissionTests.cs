@@ -54,7 +54,7 @@ public static partial class StoryTests
   Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==6&&Game.Player.WantedLevel==2,"Guess takes the required Benson and the police come");
   var destination=basePoint;Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
   hauler.Position=destination;Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running&&m3.CurrentObjective.Contains("Lose the police"),"Arriving with the police on the truck is not delivery: the foundry is a safehouse, the heat is lost on the way");
-  var outro=m3.OutroBlocking();Check(outro!=null&&outro.Steps.Count==2&&outro.Steps[0] is ExitVehicleStep,"The aftermath gets Ron out of the truck before the lines");
+  var outro=m3.OutroBlocking();Check(outro!=null&&outro.Steps.Count==4&&outro.Steps[0] is ExitVehicleStep&&outro.Steps[1] is CarryPropStep&&outro.Steps[2] is StowPropStep&&outro.DialogueAfterStep==1&&m3.FoundryKeys!=null&&m3.FoundryKeys.Model.Name==M03CypressFoundry.KeysModel,"The aftermath gets Ron out of the truck before the lines, then the three keys go down on it: the object M22 picks back up");
   gohan.SetIntoVehicle(hauler,VehicleSeat.RightFront);Game.Player.WantedLevel=0;m3.Tick();
   Check(!gohan.IsInVehicle(hauler),"Gohan is out of the Benson before it locks");
   Check(m3.Status==MissionStatus.Passed&&hauler.LockStatus==VehicleLockStatus.CannotEnter&&hauler.Present&&hauler.Released&&van.Present&&car.Present,"Delivered with the police lost: the Benson locks at the foundry and the crew's vehicles remain");

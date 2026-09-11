@@ -183,24 +183,36 @@ GOHAN|I'm taking the sub under Berth 44. Listen for my breathing. If the radio g
 ICE|What did Guess break at the car wash? I've got enough answers to keep you talking all night.
 GOHAN|Ballast attached. Cargo is coming up. Guess, your turn. And Ice... it was the owner's new radio.
 GUESS|It was already broken. Hook line coming down. Don't settle that argument under thirty tons of metal.
+@approach
+ICE|Pier's mine. Two launches at the moorings and the Titan Star riding low over hold three. Say when you're under her.
+GUESS|Lift's warm in the hangar, pod on the rail, engine off till you call it. Go under, Gohan. We're where we said we'd be.
 
 M20
 GUESS|Gohan floated the load. I hook it; Ice keeps the quayside gunners off the rotor. Nobody mistakes altitude for safety.
 ICE|Call the strain before the engine does. We can lose weight. We can't lose you.
 GUESS|She's airborne, barely. I can't dodge anything with this hanging under us. Gohan, I need that water route clear.
 GOHAN|I'm on your flank. Follow my boat. You don't have to invent an exit while you're holding the whole score.
+@approach
+GUESS|The load's on the surface with the floats holding. Five on the quay with the rotor disc in their sights. I'm lifting off the flats.
+ICE|The quay is mine from the pier before you cross the water. Don't come over until I say the deck is quiet.
 
 M21
 GOHAN|The Cargobob can't outrun a missile with the container attached. I'll draw the surface boats away from its path.
 GUESS|Stay where I can see you. Protecting me doesn't mean you're allowed to disappear under the water.
 ICE|We have a route to the Alamo. Drop the load shallow enough to recover. Everybody lands before we count it.
 GUESS|I want one minute on the beach where nobody asks me to keep moving.
+@approach
+GOHAN|Helm's mine. Ice, you've got the gun and the other seat. Ron, hold her over the basin until we're moving, then follow my wake.
+ICE|Breakwater's the exit. From there you go north by air and we turn back for the shore. Nobody swaps a seat on the water.
 
 M22
 ICE|The container goes into the shallows. Nobody takes the whole shipment home in one night. We recover it in pieces.
 GOHAN|That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 GUESS|That shop was going to be ours. Not a hideout. A place you two might actually stay.
 ICE|I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
+@approach
+GUESS|Four feet of water at the drop. I'm holding over the lake till I see you two on the beach.
+GOHAN|Granger's coming down the road now, Ice beside me. Land it after the drop; then nobody moves for a minute.
 
 M23
 ICE|The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.

@@ -106,8 +106,11 @@ M20.ClimbOut	1240.00	-3420.00	80.00	20	air	estimate	Pacific Ocean
 M21.LaunchSpawn	1132.00	-3202.00	0.00	20	water	estimate	Terminal
 M21.Breakwater	1320.00	-3520.00	0.00	20	water	estimate	Pacific Ocean
 M21.RidgeCross	900.00	1200.00	260.00	0	air	estimate	Galileo Park
+M21.ShoreLanding	1140.00	-3215.00	0.00	20	water	estimate	Terminal
+M21.RoadPickup	1126.00	-3170.00	5.00	250	land	estimate	Terminal
 M22.AlamoDrop	715.40	4180.90	30.50	0	water	bible	Alamo Sea
 M22.Beach	760.00	4210.00	31.00	200	land	estimate	Alamo Sea
+M22.RoadArrival	800.00	4262.00	32.00	200	land	estimate	Alamo Sea
 M23.DomeApproach	2000.00	2880.00	48.00	0	land	estimate	Grand Senora Desert
 M23.BunkerDoor	2020.00	2920.00	48.00	0	land	estimate	Grand Senora Desert
 M23.BayOne	2012.00	2934.00	48.00	0	land	estimate	Grand Senora Desert

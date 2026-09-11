@@ -15,6 +15,14 @@ namespace Bloodlines.Missions.Campaign
     /// runs an armed launch alongside it, pulling missile locks onto his own wake and
     /// killing the Aegis speedboats before they get in range.
     ///
+    /// Seen, not told: Gohan at the helm and Ice in the launch's other seat, Ron's
+    /// loaded lift held over the water until the escort is on it; the harbor as the
+    /// preparation missions left it (M13's burn thins the launches, M15's tap opens
+    /// the breakwater gate) said on the radio and felt in the spawn, not assumed;
+    /// the split after the breakwater announced; the two men landing at the shore
+    /// and boarding the staged Granger on camera, so nobody arrives at an inland
+    /// lake in an ocean boat.
+    ///
     /// The mission is an escort played from the escort's side — the thing being
     /// protected is flown by an ally, not by the player, which is the only way the
     /// bible's three-vehicle convergence works without three players.
@@ -25,15 +33,30 @@ namespace Bloodlines.Missions.Campaign
 
         private Vehicle _launch;
         private Vehicle _cargobob;
+        private Vehicle _granger;
         private Prop _container;
         private Ped _cargobobPilot;
         private OperationHandoff _handoff;
         private Vector3 _spawn;
         private Vector3 _breakwater;
         private Vector3 _ridge;
+        private Vector3 _shore;
+        private Vector3 _pickup;
+        private bool _patrolsReduced, _gateAccess, _harborReported, _split, _transferred;
 
         public override string Id => "M21";
         public override string Title => "The Port Heist: Open Water";
+        protected override MissionEndpoint Endpoint => MissionEndpoint.ContinuousNext;
+
+        public Vehicle Launch => _launch;
+        public Vehicle Cargobob => _cargobob;
+        public Vehicle Granger => _granger;
+        public IReadOnlyList<Ped> HostileCrews => _hostileCrews;
+        public bool PatrolsReduced => _patrolsReduced;
+        public bool GateAccess => _gateAccess;
+        public bool HarborReported => _harborReported;
+        public bool Split => _split;
+        public bool Transferred => _transferred;
 
         protected override bool Setup()
         {
@@ -41,6 +64,8 @@ namespace Bloodlines.Missions.Campaign
             _spawn = Ctx.Locations.Position("M21.LaunchSpawn");
             _breakwater = Ctx.Locations.Position("M21.Breakwater");
             _ridge = Ctx.Locations.Position("M21.RidgeCross");
+            _shore = Ctx.Locations.Position("M21.ShoreLanding");
+            _pickup = Ctx.Locations.Position("M21.RoadPickup");
 
             // On the pier, not in the water: a deployment onto a water coordinate
             // starts the mission with everyone swimming.
@@ -54,8 +79,11 @@ namespace Bloodlines.Missions.Campaign
             Game.Player.Character.Weapons.Give(WeaponHash.MG, 400, false, true);
 
             _handoff = Ctx.Handoffs.Take(PortHeist.Operation, Id);
+            _patrolsReduced = Ctx.State != null && Ctx.State.FleetUpgrades.TryGetValue("harborPatrolsReduced", out var thinned) && thinned;
+            _gateAccess = Ctx.State != null && Ctx.State.FleetUpgrades.TryGetValue("harborGateAccess", out var gate) && gate;
             SpawnLaunch();
             SpawnCargobob();
+            SpawnGranger();
             if (!RequireAssets(_launch, _cargobob, _cargobobPilot, _container)) return false;
             RequireAsset(_cargobob, "The Cargobob went down with the bullion.");
             RequireAsset(_container, "The bullion container was lost.");
@@ -67,6 +95,7 @@ namespace Bloodlines.Missions.Campaign
             // on the water. Nothing flies toward the breakwater while Gohan is still
             // boarding the launch.
             HoldLift();
+            PlayApproach();
             return true;
         }
 
@@ -89,42 +118,141 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Get on the water",
                     new EnterVehicleObjective("Gohan — take the armed launch.", () => _launch,
                         VehicleSeat.Driver))
-                .OwnedBy(CrewSlot.Gohan)
-                ;
+                .OwnedBy(CrewSlot.Gohan);
 
             yield return new MissionStage("Draw the locks",
                     new ShadowTargetObjective("Stay on the Cargobob's wing.", () => _cargobob, 240f, 15,
                         "The launch lost contact with the Cargobob.", acquireSeconds: 60),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .OnEnter(context => { ReleaseLift(); StartCargobob(); SpawnHostileBoats(); })
+                .OnEnter(context => { ReleaseLift(); StartCargobob(); SpawnHostileBoats(); ReportHarbor(); })
                 .WithCues("M21_S1_01_GOHAN");
 
             yield return new MissionStage("Kill the speedboats",
                     new KillTargetsObjective("Clear the Aegis boats before they close.",
                         () => _hostileCrews),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                
                 .AfterCues("M21_S1_02_ICE");
 
-            yield return new MissionStage("Over the ridge",
-                    new DeliverVehicleObjective("Gohan: take the launch through the yellow breakwater exit. Guess will continue inland by air.", () => _launch, () => _breakwater, 50f),
+            // The breakwater is where the operation splits: the lift goes north by air,
+            // the launch turns back for the shore.
+            yield return new MissionStage("The breakwater",
+                    new DeliverVehicleObjective("Gohan: take the launch through the yellow breakwater exit.", () => _launch, () => _breakwater, 50f),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
-                .OnExit(context =>
-                    GameUtils.Subtitle("~g~Water route clear. Guess is taking the bullion north to the Alamo.", 5000))
+                .OnExit(context => AnnounceSplit())
                 .AfterCues("M21_S1_03_GUESS");
+
+            yield return new MissionStage("Shore transfer",
+                    new DeliverVehicleObjective("Gohan: bring the launch in to the marked shore landing.", () => _launch, () => _shore, 15f))
+                .OnExit(context => PlayTransfer());
         }
 
+        // ---------- beats ----------
+
+        /// <summary>Gohan at the helm, Ice in the other seat, Ron's loaded lift held over the water: the three roles seen before any of them move.</summary>
+        private void PlayApproach()
+        {
+            var blocking = new SceneBlocking();
+            if (_launch != null && _launch.Exists()) blocking.Then(new ShotStep(3200, _launch, new Vector3(-5f, 3.5f, 1.8f), _launch, new Vector3(0f, 0f, 0.8f), 0.6f));
+            if (_cargobob != null && _cargobob.Exists()) blocking.Then(new ShotStep(3200, _cargobob, new Vector3(-18f, 10f, 2f), _cargobob, new Vector3(0f, 0f, -4f), 1.2f));
+            blocking.Then(ShotStep.Wide(2800, _breakwater + new Vector3(0f, 0f, 2f), 60f, 22f, 20f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "approach", Title = "The escort",
+                Reason = "Gohan at the launch's helm, Ice in its other seat with the gun, Ron's lift held over the basin with the container under it. The breakwater is the exit: the lift goes north from there by air, the launch turns back. No swap, no fourth man.",
+                Blocking = blocking
+            };
+            if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M21 approach scene did not play; the pier stands on its own.");
+        }
+
+        /// <summary>The harbor as the preparation left it: M13's burn and M15's tap, each said once and each reflected in what comes at the launch.</summary>
+        private void ReportHarbor()
+        {
+            _harborReported = true;
+            if (_patrolsReduced) Radio("ICE", "Two launches left in the basin after the slipway burn. Not none: two.", "M21_RADIO_01_ICE");
+            else Radio("ICE", "Three launches with full tanks. Nothing we did thinned them; they come as they are.", "M21_RADIO_01_ICE");
+            if (_gateAccess) Radio("GOHAN", "Gate one is answering the tap. The breakwater opens for us and closes behind; they come the long way round.", "M21_RADIO_02_GOHAN");
+            else Radio("GOHAN", "No gate access. The breakwater is theirs; we go through it under fire.", "M21_RADIO_02_GOHAN");
+        }
+
+        /// <summary>After the breakwater: Ron's inland flight announced, the launch turned for the shore.</summary>
+        private void AnnounceSplit()
+        {
+            _split = true;
+            if (_cargobobPilot != null && _cargobobPilot.Exists() && _cargobob != null && _cargobob.Exists())
+            {
+                var north = _ridge + new Vector3(0f, 0f, 40f);
+                _cargobobPilot.Task.StartHeliMission(_cargobob, north, VehicleMissionType.GoTo, 20f, 30f,
+                    (int)north.Z, 60, -1f, 60f, (HeliMissionFlags)(256 | 4096));
+            }
+            GameUtils.Subtitle("~g~Water route clear. Ron takes the bullion north by air; the launch turns for the shore and the Granger.", 6000);
+        }
+
+        /// <summary>Ice and Gohan land, walk to the staged Granger, board with real seats and pull away: the road north, compressed but seen.</summary>
+        private void PlayTransfer()
+        {
+            _transferred = true;
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var blocking = new SceneBlocking { DialogueAfterStep = 0 };
+            bool granger = _granger != null && _granger.Exists();
+            foreach (var rider in new[] { gohan, ice })
+            {
+                if (rider == null || !rider.Exists()) continue;
+                if (rider.IsInVehicle()) blocking.Then(new ExitVehicleStep(rider));
+                if (granger) blocking.Then(new WalkToStep(rider, _granger.Position + new Vector3(rider == gohan ? -2f : 2f, 0f, 0f), 1.5f, true));
+            }
+            if (granger)
+            {
+                if (gohan != null && gohan.Exists()) blocking.Then(new EnterVehicleStep(gohan, _granger, VehicleSeat.Driver));
+                if (ice != null && ice.Exists()) blocking.Then(new EnterVehicleStep(ice, _granger, VehicleSeat.Passenger));
+                var away = World.GetNextPositionOnStreet(_pickup + new Vector3(0f, 45f, 0f));
+                if (gohan != null && gohan.Exists()) blocking.Then(new DriveUpStep(gohan, _granger, away, DriveUpStep.HeadingBetween(_pickup, away)));
+                else blocking.Then(new ShotStep(3200, _granger, new Vector3(-6f, 3f, 1.8f), _granger, new Vector3(0f, 0f, 0.8f), 0.7f));
+            }
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "transfer", Title = "The road north",
+                Reason = "The launch on the shore, Gohan and Ice out of it and into the crew's Granger at the road, Gohan driving, Ice beside him, pulling away north. The boat stays on the coast; the Granger arrives at the Alamo.",
+                Blocking = blocking
+            };
+            var lines = new[]
+            {
+                new DialogueCue { CueId = "M21_RADIO_03_GOHAN", MissionId = Id, Speaker = "GOHAN", Line = "Launch is on the sand. We're in the Granger; road north, two hours behind you if the freeway is clear." },
+                new DialogueCue { CueId = "M21_RADIO_04_GUESS", MissionId = Id, Speaker = "GUESS", Line = "Then I hold her over the shallows until you're on the beach. Nobody drops thirty tons with nobody watching." }
+            };
+            if (!Ctx.Cutscenes.PlayStaged(spec, lines))
+            {
+                Logger.Warn("M21 transfer scene did not play; the seats are taken directly.");
+                blocking.Complete();
+            }
+            GameUtils.Subtitle("~g~Ice and Gohan on the road north in the Granger. The lift is over the mountains; the Alamo is next.", 6000);
+        }
+
+        /// <summary>The aftermath: the Granger leaving the coast, the launch left on the shore.</summary>
+        public override SceneBlocking OutroBlocking()
+        {
+            if (_granger != null && _granger.Exists())
+                return new SceneBlocking().Then(new ShotStep(4500, _granger, new Vector3(-7f, -4f, 2f), _granger, new Vector3(0f, 0f, 0.8f), 1.0f));
+            if (_launch == null || !_launch.Exists()) return null;
+            return new SceneBlocking().Then(new ShotStep(4500, _launch, new Vector3(-8f, 5f, 3f), _launch, new Vector3(0f, 0f, 0.5f), 1.0f));
+        }
+
+        // ---------- world building ----------
+
+        /// <summary>The launch M20 boarded on camera, taken over at its mark; or one there.</summary>
         private void SpawnLaunch()
         {
             var model = new Model("dinghy4");
             if (!GameUtils.RequestModel(model)) return;
 
-            _launch = Track(World.CreateVehicle(model, _spawn, Ctx.Locations.Heading("M21.LaunchSpawn")));
+            var existing = PortHeist.Nearby(model, _spawn, 40f);
+            _launch = Track(existing ?? World.CreateVehicle(model, _spawn, Ctx.Locations.Heading("M21.LaunchSpawn")));
             model.MarkAsNoLongerNeeded();
             if (_launch == null || !_launch.Exists()) return;
 
             _launch.IsPersistent = true;
             _launch.EnginePowerMultiplier = 6f;
+            Logger.Info("M21: launch " + (existing != null ? "taken over from M20" : "spawned") + " at M21.LaunchSpawn.");
 
             var blip = Track(_launch.AddBlip());
             blip.Sprite = BlipSprite.Boat;
@@ -142,7 +270,8 @@ namespace Bloodlines.Missions.Campaign
             // still flies heavy; otherwise the default staging above the launch.
             var start = _handoff != null && _handoff.VehicleModel.Length > 0 ? _handoff.VehiclePosition : _spawn + new Vector3(-40f, 30f, 45f);
             float heading = _handoff != null && _handoff.VehicleModel.Length > 0 ? _handoff.VehicleHeading : 20f;
-            _cargobob = Track(World.CreateVehicle(model, start, heading));
+            var existing = _handoff != null ? PortHeist.Nearby(model, start, 30f) : null;
+            _cargobob = Track(existing ?? World.CreateVehicle(model, start, heading));
             if (_cargobob == null || !_cargobob.Exists()) return;
             _cargobob.IsPersistent = true;
             AttachContainer();
@@ -166,29 +295,53 @@ namespace Bloodlines.Missions.Campaign
 
         /// <summary>
         /// The story says this is the bullion lift, so the bullion has to be visible
-        /// under it. M20 attached the container to the aircraft; the same attachment
-        /// is rebuilt here so the escort protects something the player can see.
+        /// under it. M20 attached the container to the aircraft; the same prop is
+        /// re-attached here when it is still under the lift, and rebuilt when it is
+        /// not, so the escort protects something the player can see.
         /// </summary>
         private void AttachContainer()
         {
             var containerModel = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(containerModel)) return;
-            _container = Track(World.CreateProp(containerModel, _cargobob.Position - new Vector3(0f, 0f, 7f), false, false));
+            var existing = PortHeist.NearbyProp(containerModel, _cargobob.Position, 12f);
+            _container = Track(existing ?? World.CreateProp(containerModel, _cargobob.Position - new Vector3(0f, 0f, 7f), false, false));
             containerModel.MarkAsNoLongerNeeded();
             if (_container == null || !_container.Exists()) return;
             _container.IsPersistent = true;
             Function.Call(Hash.ATTACH_ENTITY_TO_ENTITY, _container, _cargobob, 0,
                 0f, 0f, -6.5f, 0f, 0f, 0f, false, false, true, false, 2, true);
-            Logger.Info("M21: bullion container attached under the escorted lift" + (_handoff != null ? " (continuing M20's lift)." : " (default staging)."));
+            Logger.Info("M21: bullion container " + (existing != null ? "carried on" : "rebuilt") + " under the escorted lift" + (_handoff != null ? " (continuing M20's lift)." : " (default staging)."));
         }
 
-        /// <summary>The lift crosses the ridge with the bullion; M22 starts from that state.</summary>
+        /// <summary>The crew's Granger at the road above the shore landing: the transport that takes two men to an inland lake.</summary>
+        private void SpawnGranger()
+        {
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(_pickup, Ctx.Locations.Heading("M21.RoadPickup")) : null;
+            if (granger == null)
+            {
+                var model = new Model("granger");
+                if (!GameUtils.RequestModel(model)) return;
+                granger = World.CreateVehicle(model, _pickup, Ctx.Locations.Heading("M21.RoadPickup"));
+                model.MarkAsNoLongerNeeded();
+            }
+            _granger = Track(granger);
+            if (_granger == null || !_granger.Exists()) return;
+            _granger.IsPersistent = true;
+            _granger.IsEngineRunning = false;
+        }
+
+        /// <summary>The lift crosses the ridge with the bullion and the other two are on the road; M22 starts from that state.</summary>
         protected override void OnPassed()
         {
             var record = OperationHandoff.Capture(PortHeist.Operation, Id, "M22", Ctx.Crew, _cargobob);
             record.CargoAttached = _container != null && _container.Exists();
             record.CargoModel = "prop_container_01a";
+            record.Notes["granger"] = _transferred ? "Gohan driving, Ice beside him, north from M21.RoadPickup" : "not boarded on camera";
+            record.Notes["launch"] = "left at M21.ShoreLanding";
+            record.Notes["harbor"] = (_patrolsReduced ? "launches thinned by M13" : "launches at full strength") + "; " + (_gateAccess ? "breakwater gate opened by M15" : "no gate access");
             Ctx.Handoffs.Record(record);
+            if (_granger != null && _granger.Exists()) Release(_granger);
+            if (_launch != null && _launch.Exists()) Release(_launch);
         }
 
         private void StartCargobob()
@@ -204,6 +357,7 @@ namespace Bloodlines.Missions.Campaign
                 (int)target.Z, 35, -1f, 50f, (HeliMissionFlags)(256 | 4096));
         }
 
+        /// <summary>The Aegis launches: two after M13's burn, three without it; from beyond the gate when M15 opened it, from the breakwater when it did not.</summary>
         private void SpawnHostileBoats()
         {
             var boatModel = new Model("predator");
@@ -211,11 +365,13 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(boatModel) || !GameUtils.RequestModel(crewModel)) return;
 
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+            int count = _patrolsReduced ? 2 : 3;
+            float standoff = _gateAccess ? 90f : 20f;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < count; i++)
             {
                 var boat = Track(World.CreateVehicle(boatModel,
-                    _breakwater + new Vector3(-40f + i * 40f, 20f, 0f), 200f));
+                    _breakwater + new Vector3(-40f + i * 40f, standoff, 0f), 200f));
                 if (boat == null || !boat.Exists()) continue;
                 boat.IsPersistent = true;
 
@@ -245,6 +401,7 @@ namespace Bloodlines.Missions.Campaign
                 blip.Color = BlipColor.Red;
                 blip.Name = "Aegis launch";
             }
+            Logger.Info("M21: " + count + " Aegis launches" + (_patrolsReduced ? " (thinned by M13)" : "") + (_gateAccess ? ", held beyond the gate M15 opened." : " at the breakwater."));
 
             boatModel.MarkAsNoLongerNeeded();
             crewModel.MarkAsNoLongerNeeded();

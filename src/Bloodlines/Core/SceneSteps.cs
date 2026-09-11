@@ -59,9 +59,11 @@ namespace Bloodlines.Core
 
         public override Entity CameraTarget => null;
 
-        protected override void OnStart() { try { _onStart?.Invoke(); } catch (Exception ex) { Logger.Error("Shot action failed", ex); } }
+        protected override void OnStart() { RunAction(); }
         public override bool IsComplete => Game.GameTime - StartedAt >= _durationMs;
-        public override void Finish() { }
+        /// <summary>A skipped shot still does what the shot did: the action it carries runs once, so skipping leaves the same state as watching.</summary>
+        public override void Finish() { if (!HasStarted) RunAction(); }
+        private void RunAction() { try { _onStart?.Invoke(); } catch (Exception ex) { Logger.Error("Shot action failed", ex); } }
         public override void Cancel() { }
 
         /// <summary>Position and aim the scene camera for this frame. True when the shot drove it.</summary>

@@ -144,18 +144,26 @@ M19_SCENE_INTRO_01_GOHAN	M19	intro	GOHAN	Briefing; intent before tactics	I'm tak
 M19_SCENE_INTRO_02_ICE	M19	intro	ICE	Briefing; intent before tactics	What did Guess break at the car wash? I've got enough answers to keep you talking all night.
 M19_SCENE_OUTRO_01_GOHAN	M19	outro	GOHAN	Reflective; allow the response to land	Ballast attached. Cargo is coming up. Guess, your turn. And Ice... it was the owner's new radio.
 M19_SCENE_OUTRO_02_GUESS	M19	outro	GUESS	Reflective; allow the response to land	It was already broken. Hook line coming down. Don't settle that argument under thirty tons of metal.
+M19_SCENE_APPROACH_01_ICE	M19	approach	ICE	On the approach; the place and the job seen before anyone moves	Pier's mine. Two launches at the moorings and the Titan Star riding low over hold three. Say when you're under her.
+M19_SCENE_APPROACH_02_GUESS	M19	approach	GUESS	On the approach; the place and the job seen before anyone moves	Lift's warm in the hangar, pod on the rail, engine off till you call it. Go under, Gohan. We're where we said we'd be.
 M20_SCENE_INTRO_01_GUESS	M20	intro	GUESS	Briefing; intent before tactics	Gohan floated the load. I hook it; Ice keeps the quayside gunners off the rotor. Nobody mistakes altitude for safety.
 M20_SCENE_INTRO_02_ICE	M20	intro	ICE	Briefing; intent before tactics	Call the strain before the engine does. We can lose weight. We can't lose you.
 M20_SCENE_OUTRO_01_GUESS	M20	outro	GUESS	Reflective; allow the response to land	She's airborne, barely. I can't dodge anything with this hanging under us. Gohan, I need that water route clear.
 M20_SCENE_OUTRO_02_GOHAN	M20	outro	GOHAN	Reflective; allow the response to land	I'm on your flank. Follow my boat. You don't have to invent an exit while you're holding the whole score.
+M20_SCENE_APPROACH_01_GUESS	M20	approach	GUESS	On the approach; the place and the job seen before anyone moves	The load's on the surface with the floats holding. Five on the quay with the rotor disc in their sights. I'm lifting off the flats.
+M20_SCENE_APPROACH_02_ICE	M20	approach	ICE	On the approach; the place and the job seen before anyone moves	The quay is mine from the pier before you cross the water. Don't come over until I say the deck is quiet.
 M21_SCENE_INTRO_01_GOHAN	M21	intro	GOHAN	Briefing; intent before tactics	The Cargobob can't outrun a missile with the container attached. I'll draw the surface boats away from its path.
 M21_SCENE_INTRO_02_GUESS	M21	intro	GUESS	Briefing; intent before tactics	Stay where I can see you. Protecting me doesn't mean you're allowed to disappear under the water.
 M21_SCENE_OUTRO_01_ICE	M21	outro	ICE	Reflective; allow the response to land	We have a route to the Alamo. Drop the load shallow enough to recover. Everybody lands before we count it.
 M21_SCENE_OUTRO_02_GUESS	M21	outro	GUESS	Reflective; allow the response to land	I want one minute on the beach where nobody asks me to keep moving.
+M21_SCENE_APPROACH_01_GOHAN	M21	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Helm's mine. Ice, you've got the gun and the other seat. Ron, hold her over the basin until we're moving, then follow my wake.
+M21_SCENE_APPROACH_02_ICE	M21	approach	ICE	On the approach; the place and the job seen before anyone moves	Breakwater's the exit. From there you go north by air and we turn back for the shore. Nobody swaps a seat on the water.
 M22_SCENE_INTRO_01_ICE	M22	intro	ICE	Briefing; intent before tactics	The container goes into the shallows. Nobody takes the whole shipment home in one night. We recover it in pieces.
 M22_SCENE_INTRO_02_GOHAN	M22	intro	GOHAN	Briefing; intent before tactics	That strike came off a contract airframe with a city permit and our address on file. They spent the one shot they can explain. The next one needs a target they can prove.
 M22_SCENE_OUTRO_01_GUESS	M22	outro	GUESS	Reflective; allow the response to land	That shop was going to be ours. Not a hideout. A place you two might actually stay.
 M22_SCENE_OUTRO_02_ICE	M22	outro	ICE	Reflective; allow the response to land	I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
+M22_SCENE_APPROACH_01_GUESS	M22	approach	GUESS	On the approach; the place and the job seen before anyone moves	Four feet of water at the drop. I'm holding over the lake till I see you two on the beach.
+M22_SCENE_APPROACH_02_GOHAN	M22	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Granger's coming down the road now, Ice beside me. Land it after the drop; then nobody moves for a minute.
 M23_SCENE_INTRO_01_ICE	M23	intro	ICE	Briefing; intent before tactics	The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
 M23_SCENE_INTRO_02_GUESS	M23	intro	GUESS	Briefing; intent before tactics	A door that locks is a start. A way out is better. I'll check the second one while you take the first.
 M23_SCENE_OUTRO_01_GOHAN	M23	outro	GOHAN	Reflective; allow the response to land	The bunker holds. I can work here. We still need fuel and money to keep three people alive out here.

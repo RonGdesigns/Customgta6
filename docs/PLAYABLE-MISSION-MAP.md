@@ -321,7 +321,7 @@ Prerequisite: M18. Story gate: SM01, SM02, SM03 must be complete first (QA may b
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M19.DiveStart, M19.HullBreach, M19.Surface.
+Survey references: M12.PierWatch, M18.SaltHangar, M19.DiveStart, M19.HullBreach, M19.Surface.
 
 ## M20 — THE PORT HEIST: SKY HOOK
 
@@ -336,7 +336,7 @@ Prerequisite: M19. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.PierWatch, M18.SaltHangar, M19.Surface, M20.ClimbOut, M20.DeckGunners, M20.HoverPoint.
+Survey references: M12.PierWatch, M18.SaltHangar, M19.Surface, M20.ClimbOut, M20.DeckGunners, M20.HoverPoint, M21.LaunchSpawn.
 
 ## M21 — THE PORT HEIST: OPEN WATER
 
@@ -347,11 +347,12 @@ Prerequisite: M20. Retry: full mission restart.
 | 1 | Gohan | **Get on the water** — EnterVehicleObjective: Gohan — take the armed launch. |
 | 2 | Gohan | **Draw the locks** — ShadowTargetObjective: Stay on the Cargobob's wing. |
 | 3 | Gohan | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
-| 4 | Gohan | **Over the ridge** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. Guess will continue inland by air. |
+| 4 | Gohan | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
+| 5 | Gohan | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.PierWatch, M21.Breakwater, M21.LaunchSpawn, M21.RidgeCross.
+Survey references: M12.PierWatch, M21.Breakwater, M21.LaunchSpawn, M21.RidgeCross, M21.RoadPickup, M21.ShoreLanding.
 
 ## M22 — THE PORT HEIST: SCORCHED BAY
 
@@ -362,11 +363,12 @@ Prerequisite: M21. Retry: full mission restart.
 | 1 | Guess | **Bring it in** — EnterVehicleObjective: Guess — fly the bullion into the Alamo. |
 | 2 | Guess | **Drop the container** — MissionInteraction: Guess: hover 20m over the water marker and release the container |
 | 3 | Guess | **The beach** — DeliverVehicleObjective: Guess: land the Cargobob on the marked shore and stop. |
-| 4 | Guess | **Blaine County** — DialogueFinishedObjective: Listen to the emergency call. The foundry has been hit. |
+| 4 | Guess | **Regroup** — ReachZoneObjective: Guess: on foot to Ice and Gohan on the beach. |
+| 5 | Guess | **Blaine County** — DialogueFinishedObjective: The foundry is gone. Listen. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: Base.CypressFlats, M22.AlamoDrop, M22.Beach.
+Survey references: Base.CypressFlats, M22.AlamoDrop, M22.Beach, M22.RoadArrival.
 
 ## M23 — GHOST IN THE SAGE
 

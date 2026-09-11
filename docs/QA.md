@@ -91,6 +91,10 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 78 | **M16 lift** | Cross the pad, take the lift, canyon, land | The challenge on the net; Ice boards, Gohan by road; pursuit lost first; the lift scene and record |
 | 79 | **M17 parts and handle** | Weld three, test, move the release | Three parts on the hull; the handle scene; the sub recorded ready |
 | 80 | **M18 staging** | Deliver three, fit the pod, load | The plan scene; the pod on the lift; the roll call scene in seats; one clock recorded |
+| 81 | **M19 breach** | Continue from M18, cut, clamp two, surface | The staged cut; the sub taken over at the channel; a float per clamp; the container surfaced as a scene beside the mark; sub and cargo recorded |
+| 82 | **M20 hook** | Take off, clear the quay, hover, climb | The handoff cut; no duplicate lift, sub or container; the pod radio; the hook insert and heavy flight; the transfer scene with both in real seats |
+| 83 | **M21 escort** | Board, escort, breakwater, shore | The escort cut; boats and gate per M13/M15 said and felt; the split; the road transfer scene into the Granger |
+| 84 | **M22 bay** | Drop, land, regroup, replay | The arrivals cut; the drop insert; cargo recorded once; the strike learned from the phone and seen; the keys in Ron's hand then in the Granger; a replay leaves the ledger |
 
 ## Before you launch: the static checks
 
