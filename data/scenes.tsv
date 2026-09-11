@@ -122,14 +122,24 @@ M16_SCENE_INTRO_01_ICE	M16	intro	ICE	Briefing; intent before tactics	The convoy'
 M16_SCENE_INTRO_02_GUESS	M16	intro	GUESS	Briefing; intent before tactics	I'll call when the aircraft is ready. You leave the fight then, even if there's somebody left to be angry at.
 M16_SCENE_OUTRO_01_ICE	M16	outro	ICE	Reflective; allow the response to land	I heard you. You got the lift out. We'll meet at Terminal. The helicopter is ours and the clearance trick is burned.
 M16_SCENE_OUTRO_02_GOHAN	M16	outro	GOHAN	Reflective; allow the response to land	Now the submerged load needs a way to float. Bring that lifting capacity to the dry dock.
+M16_SCENE_APPROACH_01_ICE	M16	approach	ICE	On the approach; the place and the job seen before anyone moves	The unit's on the dash: 7-Echo-Victor, one gate, once. The outer yard reads us as friendly. The inner pad won't.
+M16_SCENE_APPROACH_02_GUESS	M16	approach	GUESS	On the approach; the place and the job seen before anyone moves	The Cargobob on the pad is mine. You clear it, I spool it, we leave through Raton Canyon low and set down on the flats at Terminal.
+M16_SCENE_LIFT_01_GUESS	M16	lift	GUESS	On the flats; the lift landed, its job named	Lift's on the flats. Its job is one container out of Berth 44, once, and then it's a parked helicopter again.
+M16_SCENE_LIFT_02_ICE	M16	lift	ICE	On the flats; the lift landed, its job named	Under a tarp until Gohan cuts the hull. The clearance trick is burned; that was the price of it.
 M17_SCENE_INTRO_01_GOHAN	M17	intro	GOHAN	Briefing; intent before tactics	The Kraken needs cutters and ballast grapples. A hole in a ship means nothing if the cargo stays on the bottom.
 M17_SCENE_INTRO_02_GUESS	M17	intro	GUESS	Briefing; intent before tactics	You build like you expect nobody to come get you. Put a release on this thing that another person can reach.
 M17_SCENE_OUTRO_01_GOHAN	M17	outro	GOHAN	Reflective; allow the response to land	All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 M17_SCENE_OUTRO_02_ICE	M17	outro	ICE	Reflective; allow the response to land	We rehearse the pickups at staging. Everybody knows how to bring the other two back.
+M17_SCENE_APPROACH_01_GUESS	M17	approach	GUESS	On the approach; the place and the job seen before anyone moves	Same sub that mapped the hull, hauled into the slip. Torches on the nose, grapples on the belly, and I want to see where the release is.
+M17_SCENE_APPROACH_02_ICE	M17	approach	ICE	On the approach; the place and the job seen before anyone moves	I've got the pickup gear. When it's done, we test it before anybody sleeps.
+M17_SCENE_RELEASE_01_GOHAN	M17	release	GOHAN	At the slip; the handle fitted where either can reach it	Outside the hull, rear quarter, a handle either of you can pull. I learned to work alone. That doesn't mean I want to die that way.
+M17_SCENE_RELEASE_02_GUESS	M17	release	GUESS	At the slip; the handle fitted where either can reach it	Pull it once so I can hear it. Good. Now it's a boat with a door.
 M18_SCENE_INTRO_01_ICE	M18	intro	ICE	Briefing; intent before tactics	Sub, Cargobob, hauler. Check the fuel and the exits now. Once Gohan cuts the hull, this stops being preparation.
 M18_SCENE_INTRO_02_GUESS	M18	intro	GUESS	Briefing; intent before tactics	One rule from me: if somebody calls abort, we answer before we argue. A container isn't a fourth brother.
 M18_SCENE_OUTRO_01_GOHAN	M18	outro	GOHAN	Reflective; allow the response to land	I used to think being useful was how I earned a place here. Tonight, if I need help, I'll say it.
 M18_SCENE_OUTRO_02_ICE	M18	outro	ICE	Reflective; allow the response to land	Then we go in with that understood. Hold three first. No one starts a different fight.
+M18_SCENE_APPROACH_01_ICE	M18	approach	ICE	On the approach; the place and the job seen before anyone moves	Map's on the hood. Gohan takes the sub down the channel to hold three. Ron lifts the container out from the flats. The launch runs the water route with me on it; the load goes inland.
+M18_SCENE_APPROACH_02_GOHAN	M18	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Sub, lift, launch, pickup: one man each. The pod goes on the lift tonight so I can switch it on from the channel. Nobody is a fourth man.
 M19_SCENE_INTRO_01_GOHAN	M19	intro	GOHAN	Briefing; intent before tactics	I'm taking the sub under Berth 44. Listen for my breathing. If the radio gets too quiet, ask me a question.
 M19_SCENE_INTRO_02_ICE	M19	intro	ICE	Briefing; intent before tactics	What did Guess break at the car wash? I've got enough answers to keep you talking all night.
 M19_SCENE_OUTRO_01_GOHAN	M19	outro	GOHAN	Reflective; allow the response to land	Ballast attached. Cargo is coming up. Guess, your turn. And Ice... it was the owner's new radio.

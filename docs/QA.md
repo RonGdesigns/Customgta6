@@ -88,6 +88,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 75 | **M13 basin** | Plant three, leave, board, trigger | The alarm launch shown; charges dark until aboard; the burn seen from the slipway; "harborPatrolsReduced" |
 | 76 | **M14 pod** | Clear, take the plane, fly low, land | Ice and Gohan leave by road; the pod shown at McKenzie; "radarPod" recorded |
 | 77 | **M15 splice** | Stun three, splice, leave | The splice as a scene; one gate answers; "harborGateAccess" recorded |
+| 78 | **M16 lift** | Cross the pad, take the lift, canyon, land | The challenge on the net; Ice boards, Gohan by road; pursuit lost first; the lift scene and record |
+| 79 | **M17 parts and handle** | Weld three, test, move the release | Three parts on the hull; the handle scene; the sub recorded ready |
+| 80 | **M18 staging** | Deliver three, fit the pod, load | The plan scene; the pod on the lift; the roll call scene in seats; one clock recorded |
 
 ## Before you launch: the static checks
 

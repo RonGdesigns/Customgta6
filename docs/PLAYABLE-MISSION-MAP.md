@@ -267,8 +267,10 @@ Prerequisite: M15. Retry: full mission restart.
 | 1 | Ice | **Walk in** — ReachZoneObjective: Ice — cross the outer depot on the transponder. |
 | 2 | Ice | **Take the helipad** — KillTargetsObjective: Clear the military police off the pad. |
 | 3 | Guess | **Spool the twins** — EnterVehicleObjective: Guess — take the Cargobob. |
-| 4 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 meters above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
-| 5 | Guess | **Terminal Island** — DeliverVehicleObjective: Put the Cargobob down at Terminal Island. |
+| 4 | Guess | **Ice aboard** — ConditionObjective: Hold the pad while Ice boards. |
+| 5 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 meters above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
+| 6 | Guess | **Lose the Lazers** — LoseWantedObjective: Lose the pursuit before Terminal Island. |
+| 7 | Guess | **Terminal Island** — DeliverVehicleObjective: Put the Cargobob down at Terminal Island. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -280,9 +282,10 @@ Prerequisite: M16. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Calibrate the torches** — MultiHoldObjective: Weld the plasma-arc torches to the hull. |
+| 1 | Gohan | **Calibrate the torches** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Guess | **Grapple test** — MissionInteraction: Guess — test the fifty-ton magnetic lock. |
-| 3 | Guess | **Ready** — DialogueFinishedObjective: Finish the radio check before staging the heist. |
+| 3 | Gohan | **The release** — MissionInteraction: Gohan — move the release to the outside of the hull. |
+| 4 | Gohan | **Ready** — DialogueFinishedObjective: Finish the radio check before staging the heist. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -296,9 +299,10 @@ Prerequisite: M17. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Sub into the channel** — EnterVehicleObjective: Gohan — take the Kraken out.<br>DeliverVehicleObjective: Hold her in the channel. |
 | 2 | Guess | **Bird in the hangar** — DeliverVehicleObjective: Guess — put the Cargobob in the salt hangar. |
-| 3 | Ice | **Load the launchers** — DeliverVehicleObjective: Ice — bring the hauler onto the line. |
-| 4 | Ice | **Load the parked hauler** — MissionInteraction: Load the anti-air launchers. |
-| 5 | Ice | **Countdown** — DialogueFinishedObjective: Keep your assigned vehicle in place. Listen to the final radio check. |
+| 3 | Guess | **Fit the pod** — MissionInteraction: Guess — fit the jammer pod to the Cargobob. |
+| 4 | Ice | **Load the launchers** — DeliverVehicleObjective: Ice — bring the hauler onto the line. |
+| 5 | Ice | **Load the parked hauler** — MissionInteraction: Load the anti-air launchers. |
+| 6 | Ice | **Countdown** — DialogueFinishedObjective: Keep your assigned vehicle in place. Listen to the final radio check. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

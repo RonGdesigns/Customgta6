@@ -150,18 +150,33 @@ ICE|The convoy's IFF buys an approach to Zancudo. It won't make us invisible onc
 GUESS|I'll call when the aircraft is ready. You leave the fight then, even if there's somebody left to be angry at.
 ICE|I heard you. You got the lift out. We'll meet at Terminal. The helicopter is ours and the clearance trick is burned.
 GOHAN|Now the submerged load needs a way to float. Bring that lifting capacity to the dry dock.
+@approach
+ICE|The unit's on the dash: 7-Echo-Victor, one gate, once. The outer yard reads us as friendly. The inner pad won't.
+GUESS|The Cargobob on the pad is mine. You clear it, I spool it, we leave through Raton Canyon low and set down on the flats at Terminal.
+@lift
+GUESS|Lift's on the flats. Its job is one container out of Berth 44, once, and then it's a parked helicopter again.
+ICE|Under a tarp until Gohan cuts the hull. The clearance trick is burned; that was the price of it.
 
 M17
 GOHAN|The Kraken needs cutters and ballast grapples. A hole in a ship means nothing if the cargo stays on the bottom.
 GUESS|You build like you expect nobody to come get you. Put a release on this thing that another person can reach.
 GOHAN|All right. External release, where either of you can reach it. I learned to work alone. That doesn't mean I want to die that way.
 ICE|We rehearse the pickups at staging. Everybody knows how to bring the other two back.
+@approach
+GUESS|Same sub that mapped the hull, hauled into the slip. Torches on the nose, grapples on the belly, and I want to see where the release is.
+ICE|I've got the pickup gear. When it's done, we test it before anybody sleeps.
+@release
+GOHAN|Outside the hull, rear quarter, a handle either of you can pull. I learned to work alone. That doesn't mean I want to die that way.
+GUESS|Pull it once so I can hear it. Good. Now it's a boat with a door.
 
 M18
 ICE|Sub, Cargobob, hauler. Check the fuel and the exits now. Once Gohan cuts the hull, this stops being preparation.
 GUESS|One rule from me: if somebody calls abort, we answer before we argue. A container isn't a fourth brother.
 GOHAN|I used to think being useful was how I earned a place here. Tonight, if I need help, I'll say it.
 ICE|Then we go in with that understood. Hold three first. No one starts a different fight.
+@approach
+ICE|Map's on the hood. Gohan takes the sub down the channel to hold three. Ron lifts the container out from the flats. The launch runs the water route with me on it; the load goes inland.
+GOHAN|Sub, lift, launch, pickup: one man each. The pod goes on the lift tonight so I can switch it on from the channel. Nobody is a fourth man.
 
 M19
 GOHAN|I'm taking the sub under Berth 44. Listen for my breathing. If the radio gets too quiet, ask me a question.
