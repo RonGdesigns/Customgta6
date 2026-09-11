@@ -1,0 +1,102 @@
+# Comparison artifacts only: this workflow cannot publish commits or touch a game install.
+name: port-heist-preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/continuous-port-heist]
+    paths:
+      - '.github/workflows/port-heist-preview.yml'
+      - 'src/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'data/**'
+      - 'prebuilt/**'
+permissions:
+  contents: read
+concurrency:
+  group: port-heist-preview
+  cancel-in-progress: true
+jobs:
+  verify-and-package:
+    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/continuous-port-heist'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile production
+        run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
+      - name: Story, regression, parser and data checks
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force build | Out-Null
+          python tools/run_story_tests.py *> build/story-preview.log
+          $result = $LASTEXITCODE
+          Get-Content build/story-preview.log -Tail 6
+          if ($result -ne 0) { exit $result }
+          python tools/run_regression_tests.py *> build/regression-preview.log
+          $result = $LASTEXITCODE
+          Get-Content build/regression-preview.log -Tail 3
+          if ($result -ne 0) { exit $result }
+          python tools/test_dialogue_parser.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/lint_missions.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/validate_locations.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/build_story.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/audit_campaign.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Rebuild with the prebuilt toolchain and stage a clean package
+        shell: pwsh
+        run: |
+          python tools/build_roslyn.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/package.py --clean
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify packaged bytes and write provenance
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, shutil, subprocess
+          root = pathlib.Path('.')
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          binary = root / 'src/Bloodlines/bin/Release/Bloodlines.dll'
+          shipped = root / 'prebuilt/Bloodlines.dll'
+          deployed = root / 'build/deploy/scripts/Bloodlines.dll'
+          digest = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+          assert binary.read_bytes() == deployed.read_bytes(), 'Packaged DLL differs from the fresh build'
+          assert binary.read_bytes() == shipped.read_bytes(), 'Committed prebuilt differs from the deterministic rebuild'
+          deploy = root / 'build/deploy'
+          assert not list(deploy.rglob('savegame.json')), 'A user save must not ship in a preview'
+          assert not list(deploy.rglob('Bloodlines.Surveyed.ini')), 'Personal surveyed positions must not ship'
+          assert not (deploy / 'scripts/Bloodlines/Bloodlines.ini').exists(), 'Configuration must ship as an example'
+          provenance = {'commit': sha, 'branch': 'codex/continuous-port-heist', 'comparison_base': 'bb073aa9b73d4cb5421c922ad01f0e85d402bb3b', 'dll_sha256': digest(binary), 'actions_run': os.environ['GITHUB_RUN_ID'], 'live_verified': False}
+          (deploy / 'BUILD-PROVENANCE.json').write_text(json.dumps(provenance, indent=2) + '\n', encoding='utf-8')
+          (deploy / 'READ-ME-FIRST.txt').write_text('Bloodlines - continuous Port Heist comparison, not a release.\n\nCommit: ' + sha + '\nDLL SHA-256: ' + digest(binary) + '\n\nBack up your installed scripts/Bloodlines.dll, Bloodlines configuration, savegame.json, appearance files and surveyed positions before testing. Keep backup DLLs outside scripts. Use Story Mode and a disposable copied campaign. This preview is based on bb073aa9; it does not include newer main-branch M23-M27/Sage changes. Do not resolve the PR by replacing newer work with this package.\n\nCopy only the packaged scripts directory into the test installation after backup. Configuration ships as .example and no user save is included. Retain your runtime dependencies and existing audio bank.\n\nStart M19 through normal campaign progression with the required prerequisites/solos complete. Developer bypass starts standalone phases, not the combined operation. See CONTINUOUS-PORT-HEIST.md for the acceptance route and limits. Nothing has been live-verified in GTA.\n', encoding='utf-8')
+          for name in ['CONTINUOUS-PORT-HEIST.md', 'CONTINUOUS-PORT-HEIST-VERIFICATION.md']:
+              shutil.copy2(root / 'docs' / name, deploy / name)
+          shutil.make_archive(str(root / 'build/Bloodlines-Continuous-Port-Heist-Preview'), 'zip', deploy)
+          subprocess.run(['git', 'archive', '-o', 'build/Bloodlines-Continuous-Port-Heist-Source.zip', 'HEAD'], check=True)
+          print(json.dumps(provenance, indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bloodlines-continuous-port-heist-preview
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            build/Bloodlines-Continuous-Port-Heist-Preview.zip
+            build/Bloodlines-Continuous-Port-Heist-Source.zip
+            build/deploy/BUILD-PROVENANCE.json
+            build/story-preview.log
+            build/regression-preview.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: port-heist-preview-failure-logs
+          retention-days: 7
+          path: build/*preview.log
