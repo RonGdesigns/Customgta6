@@ -93,8 +93,8 @@ def prepare():
     if remote(MAIN_BRANCH) != MAIN or remote(BRANCH) != os.environ['GITHUB_SHA']:
         raise RuntimeError('A branch advanced; review the new commits before proceeding')
     run('git', 'config', 'core.autocrlf', 'false')
-    # Fresh disposable CI checkout, not the user's working tree. Exact compiler inputs.
     Path('.git/info/attributes').write_text('* -text\n', encoding='ascii')
+    # Fresh disposable CI checkout, never the user's working tree.
     run('git', 'reset', '--hard', 'HEAD')
     run('git', 'diff', '--exit-code')
     run('git', 'config', 'user.name', 'github-actions[bot]')
@@ -124,14 +124,16 @@ def prepare():
     assert count == 2, 'Expected exactly the two reviewed test-definition conflicts'
     f.write_bytes(source.encode('utf-8'))
     run('git', 'add', '--', str(f))
-    # The binary remains conflicted until compiled from the combined source.
-    # Git versions can emit LF here although the TSV generator/attributes use CRLF.
-    # Check the full reviewed content FIRST; only the newline representation changes.
+    # Keep strict full-content checks; only normalize the two generated files' EOLs.
     f = Path('data/locations.tsv')
     normalized = f.read_bytes().replace(b'\r\n', b'\n')
     assert hashlib.sha256(normalized).hexdigest() == 'a559add78bb7db16489b22834de36055b38ca959346696708e1285893806cab2', 'Unexpected merged location rows'
     f.write_bytes(normalized.replace(b'\n', b'\r\n'))
     run(sys.executable, 'tools/audit_campaign.py')
+    f = Path('docs/PLAYABLE-MISSION-MAP.md')
+    normalized = f.read_bytes().replace(b'\r\n', b'\n')
+    assert hashlib.sha256(normalized).hexdigest() == SHARED_SHA256[str(f).replace('\\', '/')], 'Unexpected generated map content'
+    f.write_bytes(normalized)
     manifest = preserve()
     Path('build/harbor-preservation.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     print('Verified all 14 main-only and 31 repair-only changes, plus six shared resolutions.')
