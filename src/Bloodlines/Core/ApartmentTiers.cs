@@ -89,8 +89,12 @@ namespace Bloodlines.Core
                             ? new Vector3(-773.2258f, 322.8252f, 194.8862f) : new Vector3(-787.7805f, 334.9232f, 186.1134f)
                     };
                 default:
-                    // Three different rooms: a studio, a one-bedroom, a house.
-                    string name = slot == CrewSlot.Ice ? "Little Seoul studio" : slot == CrewSlot.Gohan ? "Richards Majestic one-bedroom" : "Forum Drive house";
+                    // Three different rooms behind each brother's own door: a studio, a
+                    // one-bedroom, a house. The doors stay where they always were (Ron,
+                    // September 11: the interior changes, never the home's location);
+                    // Ron's is the Mission Row apartment, the room behind it the stock
+                    // Strawberry house, entered through the fade like the other two.
+                    string name = slot == CrewSlot.Ice ? "Little Seoul studio" : slot == CrewSlot.Gohan ? "Richards Majestic one-bedroom" : "Mission Row apartment";
                     return new Residence
                     {
                         Tier = tier, Slot = slot, Name = Protagonist.Of(slot).DisplayName + " - " + name, Short = name,

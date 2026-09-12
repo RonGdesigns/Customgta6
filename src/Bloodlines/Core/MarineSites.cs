@@ -11,6 +11,8 @@ namespace Bloodlines.Core
     {
         public float Surface, Floor;
         public bool Known;
+        /// <summary>Water with nothing under the probe: the seabed had not streamed in or lies deeper than the ray. Open water, not a verdict against it.</summary>
+        public bool Assumed;
         public bool HasDepth(float depth) => Known && IsFinite(Surface) && IsFinite(Floor) && Floor <= Surface - depth;
         private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
     }
@@ -89,13 +91,30 @@ namespace Bloodlines.Core
             var original = location.Position;
             // A real user survey is not silently moved around the harbor.
             float radius = location.Status == LocationStatus.Surveyed ? 0f : Math.Max(0f, Math.Min(SearchLimit, searchRadius));
-            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, original.X, original.Y, original.Z);
-            Script.Wait(350);
-            if (!TryResolve(original, depth, halfWidth, halfLength, location.Heading, radius, out var water, out var error))
+            Vector3 water; string error;
+            var native = Native as NativeMarineProbe;
+            // The harbor's seabed streams in around the focus, not around a player
+            // standing at a hangar: focus the site, ask for its collision and give it
+            // a bounded moment to load before judging it (Ron, September 11: M18,
+            // M19 and M20 refused to start at Terminal Island on an unloaded seabed).
+            Function.Call(Hash.SET_FOCUS_POS_AND_VEL, original.X, original.Y, original.Z, 0f, 0f, 0f);
+            try
             {
-                Logger.Error("Marine preflight " + key + " at " + original + " (" + location.Status + "): " + error);
-                throw new InvalidOperationException("Water placement unavailable at " + key + ". Survey open water with enough depth; see Bloodlines.log.");
+                for (int attempt = 0; attempt < 8; attempt++)
+                {
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD, original.X, original.Y, original.Z);
+                    if (native == null || native.SeabedSeen(original)) break;
+                    Script.Wait(300);
+                }
+                if (!TryResolve(original, depth, halfWidth, halfLength, location.Heading, radius, out water, out error))
+                {
+                    Logger.Error("Marine preflight " + key + " at " + original + " (" + location.Status + "): " + error);
+                    throw new InvalidOperationException("Water placement unavailable at " + key + ". Survey open water with enough depth; see Bloodlines.log.");
+                }
+                var chosen = Native.Column(water);
+                if (chosen.Assumed) Logger.Warn("Marine preflight " + key + ": the seabed under " + water + " had not streamed in; open water assumed. Survey the key if the site is wrong.");
             }
+            finally { Function.Call(Hash.CLEAR_FOCUS); }
             // Runtime adjustment retains estimate provenance; it is not a survey.
             location.Position = water;
             Logger.Info("Marine preflight " + key + ": " + original + " -> " + water +
@@ -112,6 +131,15 @@ namespace Bloodlines.Core
 
         private sealed class NativeMarineProbe : IMarineProbe
         {
+            /// <summary>True once a probe under the water at this point actually hits the seabed: the site's collision has streamed in.</summary>
+            public bool SeabedSeen(Vector3 point)
+            {
+                var height = new OutputArgument();
+                if (!Function.Call<bool>(Hash.GET_WATER_HEIGHT_NO_WAVES, point.X, point.Y, 1000f, height)) return false;
+                float water = height.GetResult<float>();
+                return Trace(new Vector3(point.X, point.Y, water + 80f), new Vector3(point.X, point.Y, water - 120f), out bool hit, out _) && hit;
+            }
+
             public MarineColumn Column(Vector3 point)
             {
                 var height = new OutputArgument();
@@ -122,13 +150,19 @@ namespace Bloodlines.Core
                 // underwater; querying a water plane beneath dry terrain is not enough.
                 Function.Call(Hash.REQUEST_COLLISION_AT_COORD, point.X, point.Y, water);
                 if (!Trace(new Vector3(point.X, point.Y, water + 80f),
-                    new Vector3(point.X, point.Y, water - 120f), out bool hit, out var bottom) || !hit) return default;
+                    new Vector3(point.X, point.Y, water - 120f), out bool hit, out var bottom) || !hit)
+                    // Nothing under the ray: open water whose seabed has not streamed
+                    // in, or water deeper than the probe. A deck over the water or a
+                    // shallow bottom is a hit and is still rejected.
+                    return new MarineColumn { Known = true, Assumed = true, Surface = water, Floor = water - 500f };
                 return new MarineColumn { Known = true, Surface = water, Floor = bottom.Z };
             }
             public bool Clear(Vector3 from, Vector3 to)
             {
                 if (from.DistanceTo(to) < .05f) return true;
-                return Trace(from, to, out bool hit, out _) && !hit;
+                // A probe with no result has nothing loaded to hit: clear, not blocked.
+                if (!Trace(from, to, out bool hit, out _)) return true;
+                return !hit;
             }
             private static bool Trace(Vector3 from, Vector3 to, out bool hit, out Vector3 end)
             {

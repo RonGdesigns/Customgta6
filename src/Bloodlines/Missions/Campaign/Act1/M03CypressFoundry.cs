@@ -177,10 +177,12 @@ namespace Bloodlines.Missions.Campaign
                 .AnyOf()
                 .OnEnter(context => GameUtils.Subtitle("~y~Ron is at the depot. Switch freely; the yard is everyone's fight.", 5000));
 
-            // Ron drives, Ice rides with him; Gohan takes the van behind them.
+            // Ron drives, Ice rides in the cab, Gohan rides in the back with the
+            // crates (Ron, September 11): the Benson has two seats, so Gohan is put
+            // inside the box at the rear doors and the doors close on him.
             yield return new MissionStage("Run it home",
-                    new EnterVehicleObjective("Guess: take the orange-marked Benson truck (driver seat). Ice rides with you.", () => _hauler, VehicleSeat.Driver),
-                    new ConditionObjective("Ice is boarding the Benson.", IceAboard),
+                    new EnterVehicleObjective("Guess: take the orange-marked Benson truck (driver seat). Ice rides with you; Gohan rides in the back.", () => _hauler, VehicleSeat.Driver),
+                    new ConditionObjective("Ice is boarding the cab and Gohan the back of the Benson.", CrewAboard),
                     new ProtectObjective("", () => _hauler, "The hauler was destroyed."),
                     new ReactionTrigger(() => !_iceCalled, CallIceAboard))
                 .OwnedBy(CrewSlot.Guess)
@@ -451,16 +453,63 @@ namespace Bloodlines.Missions.Campaign
         private void CallIceAboard()
         {
             _iceCalled = true;
-            // Gohan is back on his own AI: he takes the van and follows the truck.
             Ctx.Crew.CompanionsHoldPosition = false;
-            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Gohan);
+            CallGohanToTheBack();
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             if (ice == null || !ice.Exists() || _hauler == null || !_hauler.Exists()) return;
             Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
             ice.Task.ClearAll();
             ice.Task.EnterVehicle(_hauler, VehicleSeat.RightFront, 20000, 2f, EnterVehicleFlags.None);
-            Radio("ICE", "I'm riding with you. Gohan brings the van behind us.", "M03_RADIO_03_ICE");
+            Radio("ICE", "I'm riding with you. Gohan's in the back with the crates.", "M03_RADIO_03_ICE");
         }
+
+        /// <summary>Inside the box: the ped fixed to the truck at the rear doors, on the floor between the crates and the doors.</summary>
+        private static readonly Vector3 BackOfBox = new Vector3(0f, -3.2f, 1.3f);
+
+        /// <summary>Gohan walks to the rear doors; the doors open for him. The mission keeps his AI so nothing retasks him on the way.</summary>
+        private void CallGohanToTheBack()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists() || _hauler == null || !_hauler.Exists()) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            if (gohan.IsInVehicle()) ExitVehicleStep.ForceOut(gohan);
+            OpenDoors();
+            gohan.Task.ClearAll();
+            gohan.Task.GoTo(RearOfHauler());
+        }
+
+        /// <summary>Gohan in the back: at the rear doors he is fixed inside the box and the doors close; past the boarding window he is put there directly.</summary>
+        private bool GohanInTheBack()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists() || _hauler == null || !_hauler.Exists()) return true;
+            if (Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, gohan, _hauler)) return true;
+            bool atTheDoors = gohan.Position.DistanceTo(RearOfHauler()) <= 3f;
+            if (!atTheDoors && Game.GameTime < _boardBy) return false;
+            if (!atTheDoors) Logger.Warn("M03: Gohan did not reach the back of the Benson in time; loaded directly.");
+            if (gohan.IsInVehicle()) ExitVehicleStep.ForceOut(gohan);
+            gohan.Task.ClearAllImmediately();
+            Function.Call(Hash.ATTACH_ENTITY_TO_ENTITY, gohan, _hauler, 0,
+                BackOfBox.X, BackOfBox.Y, BackOfBox.Z, 0f, 0f, 0f, false, false, false, true, 2, true);
+            CloseDoors();
+            Logger.Info("M03: Gohan is in the back of the Benson.");
+            return true;
+        }
+
+        /// <summary>Gohan out of the box, standing at the rear doors, on his own AI again.</summary>
+        private void UnloadGohan()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists() || _hauler == null || !_hauler.Exists()) return;
+            if (!Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, gohan, _hauler)) return;
+            Function.Call(Hash.DETACH_ENTITY, gohan, true, true);
+            gohan.Position = RearOfHauler();
+            gohan.Task.ClearAllImmediately();
+            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Gohan);
+            Logger.Info("M03: Gohan is out of the back of the Benson.");
+        }
+
+        private bool CrewAboard() => IceAboard() & GohanInTheBack();
 
         private bool IceAboard()
         {
@@ -525,6 +574,7 @@ namespace Bloodlines.Missions.Campaign
         private void UnseatCrew()
         {
             if (_hauler == null || !_hauler.Exists()) return;
+            UnloadGohan();
             foreach (var hero in Protagonist.All)
             {
                 var ped = Ctx.Crew.PedFor(hero.Slot);
@@ -543,6 +593,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            UnloadGohan();
             _roles?.Release();
             Ctx.Crew.CompanionsHoldPosition = false;
             _guards.Clear();

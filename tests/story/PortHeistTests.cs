@@ -33,7 +33,7 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"heist-m19b.json"));Function.Seabed=-6f;var shallow=new M19UnderwaterBreach();
   Check(!shallow.Begin(c),"A whole search area too shallow for the sub is rejected, not accepted after arbitrary shifts");Function.Seabed=-40f;
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"heist-m19c.json"));Function.SeabedKnown=false;
-  Check(!new M19UnderwaterBreach().Begin(c),"An unknown or pending seabed probe refuses unsafe mission startup");Function.SeabedKnown=true;
+  Check(new M19UnderwaterBreach().Begin(c)&&Script.Waited>=8,"A seabed that has not streamed in is waited for, then treated as open water: the mission starts rather than refusing");Function.SeabedKnown=true;
 
   // ---- M20 takes over the Kraken chapter one left floating.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"heist-m20.json"));

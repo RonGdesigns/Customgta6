@@ -11,6 +11,7 @@ namespace Bloodlines.Core
         private static readonly List<Blip> Blips = new List<Blip>();
         private static bool _enabled;
         private static Blip _route;
+        private static bool _routeRoad;
         public static CrewSlot? ActiveSlot { get; set; }
         private static int _used;
         private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; public bool Road; }
@@ -70,9 +71,16 @@ namespace Bloodlines.Core
                 if (_route == null || !_route.Exists())
                 {
                     _route = World.CreateBlip(routes[0].Position);
-                    if (_route != null) { _route.Color = BlipColor.Yellow; _route.Name = "Next objective"; _route.IsShortRange = false; _route.ShowRoute = true; }
+                    if (_route != null) { _route.Color = BlipColor.Yellow; _route.Name = "Next objective"; _route.IsShortRange = false; _routeRoad = routes[0].Road; _route.ShowRoute = _routeRoad; }
                 }
-                if (_route != null && _route.Exists()) { _route.Position = routes[0].Position; _route.ShowRoute = routes[0].Road; }
+                // The route flag is set only when it changes: re-setting it every
+                // frame made the yellow route vanish from the radar while it still
+                // showed on the pause map (Ron, September 11).
+                if (_route != null && _route.Exists())
+                {
+                    _route.Position = routes[0].Position;
+                    if (_routeRoad != routes[0].Road) { _routeRoad = routes[0].Road; _route.ShowRoute = _routeRoad; }
+                }
             }
             else { GameUtils.SafeDelete(_route); _route = null; }
             while (Blips.Count > _used)

@@ -26,7 +26,7 @@ Clothing choices are limited to the model's available variants. Some tops need a
 
 ## Enterable apartments and progression
 
-Each hero has a furnished starter home, separate from the earlier workplace markers, and each is a different stock interior (September 11): Ice's Little Seoul studio (the stock low-end room), Gohan's Richards Majestic one-bedroom (the stock mid room), and Ron's Forum Drive house in Strawberry, whose door is now his home marker. **Route home** sets the destination. At the home marker, press E / D-pad Right and choose **Enter apartment**.
+Each hero has a furnished starter home, separate from the earlier workplace markers, and each is a different stock interior (September 11): Ice's Little Seoul studio (the stock low-end room), Gohan's Richards Majestic one-bedroom (the stock mid room), and Ron's Mission Row apartment, the stock Strawberry house interior behind his own door (the door itself never moved). **Route home** sets the destination. At the home marker, press E / D-pad Right and choose **Enter apartment**.
 
 The residences are three tiers, each an upgrade on the last (`ApartmentTiers`): the starter rooms; after **M27** the three Eclipse Towers penthouse floors, one per brother, behind one door; after **M47** the Diamond penthouse, two floors, shared by the crew, entered from the casino's front doors. The Diamond is a shell until its interior entity sets are activated; entry activates a furnished set (bar, lounge, spa, cinema, office, guest room, arcade) and puts it back on leaving. The home menu says what the next step up is; with the dev menu on, **Preview the next residence** visits it without unlocking it.
 

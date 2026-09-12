@@ -72,12 +72,36 @@ namespace Bloodlines.Core
         /// Ron's start car). Hold it frozen until the collision is loaded around it,
         /// then set it on the ground; a bounded wait so nothing stays pinned.
         /// </summary>
+        /// <summary>
+        /// Puts a vehicle on the ground the world has under the sky at its X and Y.
+        /// PlaceOnGround alone looks for ground under the wheels, so a spawn whose
+        /// estimate lies below the terrain stayed under the map until physics pushed
+        /// it up (Ron, September 11, M03's Primo, twice): the ground is found from
+        /// above first, the vehicle lifted onto it, then set on its wheels.
+        /// </summary>
+        public static void SetOnGround(Vehicle vehicle)
+        {
+            if (vehicle == null || !vehicle.Exists()) return;
+            var p = vehicle.Position;
+            var z = new OutputArgument();
+            if (Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, p.X, p.Y, p.Z + 40f, z, false, false))
+            {
+                float ground = z.GetResult<float>();
+                if (Math.Abs(ground - p.Z) > 0.75f)
+                {
+                    vehicle.Position = new Vector3(p.X, p.Y, ground + 0.5f);
+                    Logger.Info("Lifted a fresh " + vehicle.DisplayName + " from Z " + p.Z.ToString("0.0") + " to the ground at " + ground.ToString("0.0") + ".");
+                }
+            }
+            vehicle.PlaceOnGround();
+        }
+
         public static void HoldUntilGrounded(Vehicle vehicle, int maxMs = 3000)
         {
             if (vehicle == null || !vehicle.Exists()) return;
             var p = vehicle.Position;
             Function.Call(Hash.REQUEST_COLLISION_AT_COORD, p.X, p.Y, p.Z);
-            if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, vehicle)) { vehicle.PlaceOnGround(); return; }
+            if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, vehicle)) { SetOnGround(vehicle); return; }
             vehicle.IsPositionFrozen = true;
             Held.Add(new HeldVehicle { Vehicle = vehicle, Until = Game.GameTime + maxMs });
             Logger.Info("Holding a fresh " + vehicle.DisplayName + " at " + p + " until the ground under it loads.");
@@ -98,7 +122,7 @@ namespace Bloodlines.Core
                     continue;
                 }
                 vehicle.IsPositionFrozen = false;
-                vehicle.PlaceOnGround();
+                SetOnGround(vehicle);
                 Held.RemoveAt(i);
                 Logger.Info((loaded ? "Ground loaded under " : "Wait over for ") + vehicle.DisplayName + "; set on the ground at " + vehicle.Position + ".");
             }
