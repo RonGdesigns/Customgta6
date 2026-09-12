@@ -24,6 +24,7 @@ namespace Bloodlines.Missions.Objectives
         private readonly bool _stopVehicle;
         private readonly string _animation;
         private bool _animating;
+        private Ped _worker;
         /// <summary>Bent over, both hands inside something at waist height: a car window, a bin, a crate.</summary>
         public const string ReachInside = "amb@prop_human_bum_bin@idle_a|idle_a";
         public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null) : base(action)
@@ -32,7 +33,8 @@ namespace Bloodlines.Missions.Objectives
         {
             if (!_animating) return;
             _animating = false;
-            if (ped != null && ped.Exists()) ped.Task.ClearAll();
+            if (_worker != null && _worker.Exists()) _worker.Task.ClearAll();
+            _worker = null;
         }
         private void StartAnimation(Ped ped, Vector3 point)
         {
@@ -41,7 +43,7 @@ namespace Bloodlines.Missions.Objectives
             if (parts.Length != 2) return;
             ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, point);
             ped.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
-            _animating = true;
+            _animating = true; _worker = ped;
         }
         public override void Exit(MissionContext c) { StopAnimation(Game.Player.Character); base.Exit(c); }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
@@ -52,11 +54,12 @@ namespace Bloodlines.Missions.Objectives
             if (_vehicle != null && (requiredVehicle == null || !requiredVehicle.Exists() || requiredVehicle.IsDead))
             { Fail("The required work vehicle is lost. Restart this mission."); return; }
             var point = _position(); var ped = Game.Player.Character;
-            ObjectiveMarkers.Navigation(point, _vehicle == null ? RequiredCharacter : null, _vehicle?.Invoke());
-            GameUtils.DrawObjectiveMarker(point, Color.Yellow, Math.Max(1f, _radius * .4f));
+            bool underwater = UnderwaterGuidance.IsSub(requiredVehicle);
+            if (underwater) UnderwaterGuidance.Draw(requiredVehicle, point, _radius);
+            else { ObjectiveMarkers.Navigation(point, _vehicle == null ? RequiredCharacter : null, requiredVehicle); GameUtils.DrawObjectiveMarker(point, Color.Yellow, Math.Max(1f, _radius * .4f)); }
             if (!IsOwnerActive(c)) { _started = -1; StopAnimation(ped); Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
             bool seated = _vehicle != null && ped != null && ped.IsInVehicle(_vehicle());
-            bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && ped.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
+            bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && requiredVehicle.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
             if (!near) { _started = -1; StopAnimation(ped); Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : " — take the marked vehicle to the yellow marker."); return; }
             if (_stopVehicle && requiredVehicle != null && requiredVehicle.Speed > 1f) { _started = -1; Label = _action + " — stop the vehicle to begin unloading."; return; }
             if (_started < 0)

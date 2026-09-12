@@ -43,6 +43,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _shore;
         private Vector3 _pickup;
         private bool _patrolsReduced, _gateAccess, _harborReported, _split, _transferred;
+        private LiveHandoff _liveTransfer;
 
         public override string Id => "M21";
         public override string Title => "The Port Heist: Open Water";
@@ -60,11 +61,11 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _spawn = Ctx.Locations.Position("M21.LaunchSpawn");
-            _breakwater = Ctx.Locations.Position("M21.Breakwater");
+            MissionSites.Ground(Ctx.Locations, "M21.RoadPickup");
+            _spawn = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.LaunchSpawn", 3f, 3f, 6f);
+            _breakwater = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.Breakwater", 3f, 3f, 6f);
             _ridge = Ctx.Locations.Position("M21.RidgeCross");
-            _shore = Ctx.Locations.Position("M21.ShoreLanding");
+            _shore = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.ShoreLanding", 2f, 2f, 4f, 40f);
             _pickup = Ctx.Locations.Position("M21.RoadPickup");
 
             // On the pier, not in the water: a deployment onto a water coordinate
@@ -111,7 +112,8 @@ namespace Bloodlines.Missions.Campaign
             // on the water. Nothing flies toward the breakwater while Gohan is still
             // boarding the launch.
             HoldLift();
-            PlayApproach();
+            // Inside the one continuous heist nothing stops the action at the join.
+            if (!PortHeist.IsContinuing(Ctx)) PlayApproach();
             return true;
         }
 
@@ -159,7 +161,57 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Shore transfer",
                     new DeliverVehicleObjective("Gohan: bring the launch in to the marked shore landing.", () => _launch, () => _shore, 15f))
-                .OnExit(context => PlayTransfer());
+                .OnExit(context => { if (!PortHeist.IsContinuing(Ctx)) PlayTransfer(); });
+
+            // In the one continuous heist the road transfer is not a cut: whoever is
+            // played walks to the Granger and takes a seat, the other boards under AI,
+            // and the part ends on their real seats (Ron, September 11).
+            if (PortHeist.IsContinuing(Ctx))
+                yield return new MissionStage("The road north",
+                        new ConditionObjective("Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel.", RoadTeamAboard),
+                        new ReactionTrigger(() => _liveTransfer == null, StartLiveTransfer))
+                    .OnExit(context =>
+                    {
+                        _transferred = true;
+                        _liveTransfer?.Cancel(); _liveTransfer = null;
+                        GameUtils.Subtitle("~g~Ice and Gohan on the road north in the Granger. The lift is over the mountains; the Alamo is next.", 6000);
+                    });
+        }
+
+        private bool RoadTeamAboard() =>
+            PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _granger, VehicleSeat.Driver) &&
+            PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Ice), _granger, VehicleSeat.Passenger);
+
+        /// <summary>The road pickup crewed live: out of the launch, up to the Granger, into its seats, under AI for whoever is not being played; the lines over the radio.</summary>
+        private void StartLiveTransfer()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+            var live = new LiveHandoff("M21 road pickup");
+            bool granger = _granger != null && _granger.Exists();
+            foreach (var rider in new[] { gohan, ice })
+            {
+                if (rider == null || !rider.Exists()) continue;
+                if (rider.IsInVehicle()) live.Then(new ExitVehicleStep(rider));
+                if (granger) live.Then(new WalkToStep(rider, _granger.Position + new Vector3(rider == gohan ? -2f : 2f, 0f, 0f), 1.5f, true));
+            }
+            if (granger)
+            {
+                if (gohan != null && gohan.Exists()) live.Then(new EnterVehicleStep(gohan, _granger, VehicleSeat.Driver));
+                if (ice != null && ice.Exists()) live.Then(new EnterVehicleStep(ice, _granger, VehicleSeat.Passenger));
+            }
+            _liveTransfer = live;
+            Radio("GOHAN", "Launch is on the sand. We're in the Granger; taking the road north. Keep the lift in sight until we clear the coast.", "M21_RADIO_03_GOHAN");
+            Radio("GUESS", "I'm taking the ridge toward the shallows. Call when you reach the beach; I'll bring the load down then.", "M21_RADIO_04_GUESS");
+            Logger.Info("M21: the road pickup boards live; no cut at the join.");
+        }
+
+        protected override void OnUpdate()
+        {
+            _liveTransfer?.Update();
+            base.OnUpdate();
         }
 
         // ---------- beats ----------

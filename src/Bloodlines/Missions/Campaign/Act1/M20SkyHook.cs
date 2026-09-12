@@ -43,6 +43,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _climbOut;
         private Vector3 _launchMark;
         private bool _followingRecord, _podLive, _podCalled, _hooked, _transferred;
+        private LiveHandoff _liveTransfer;
 
         public override string Id => "M20";
         public override string Title => "The Port Heist: Sky Hook";
@@ -64,7 +65,7 @@ namespace Bloodlines.Missions.Campaign
             _hover = Ctx.Locations.Position("M20.HoverPoint");
             _deck = Ctx.Locations.Position("M20.DeckGunners");
             _climbOut = Ctx.Locations.Position("M20.ClimbOut");
-            _launchMark = Ctx.Locations.Position("M21.LaunchSpawn");
+            _launchMark = MarineSites.ResolveOrThrow(Ctx.Locations, "M21.LaunchSpawn", 3f, 3f, 6f);
 
             // Start on the ground at the crew's own staging hangar from M18: a
             // deployment over open water drops three people into the harbor.
@@ -105,7 +106,9 @@ namespace Bloodlines.Missions.Campaign
             else if (!PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _kraken, VehicleSeat.Driver))
                 throw new System.InvalidOperationException("Gohan did not surface in the operation's Kraken.");
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.HeavySniper, 100, true, true);
-            PlayApproach();
+            // Inside the one continuous heist nothing stops the action at the join:
+            // the approach is a scene only when this part starts on its own.
+            if (!PortHeist.IsContinuing(Ctx)) PlayApproach();
             return true;
         }
 
@@ -172,7 +175,53 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Climb out",
                     new DeliverVehicleObjective("Guess: climb in the Cargobob to the elevated yellow marker.", () => _cargobob, () => _climbOut, 30f),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down."))
-                .OnExit(context => PlayTransfer());
+                .OnExit(context => { if (!PortHeist.IsContinuing(Ctx)) PlayTransfer(); });
+
+            // In the one continuous heist the transfer is not a cut: Gohan and Ice
+            // board the escort launch under AI while Ron holds the lift, and the part
+            // ends on their real seats (Ron, September 11).
+            if (PortHeist.IsContinuing(Ctx))
+                yield return new MissionStage("The escort",
+                        new ConditionObjective("Guess: hold the lift over the basin while Gohan and Ice board the escort launch.", EscortCrewed),
+                        new ProtectObjective("", () => _cargobob, "The Cargobob went down."),
+                        new ReactionTrigger(() => _liveTransfer == null, StartLiveTransfer))
+                    .OwnedBy(CrewSlot.Guess)
+                    .OnExit(context =>
+                    {
+                        _transferred = true;
+                        _liveTransfer?.Cancel(); _liveTransfer = null;
+                        GameUtils.Subtitle("~g~Thirty tons airborne. Gohan and Ice are on the launch; the Kraken stays at the pier.", 5000);
+                    });
+        }
+
+        private bool EscortCrewed() =>
+            PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Gohan), _launch, VehicleSeat.Driver) &&
+            PortHeistWorld.Seated(Ctx.Crew.PedFor(CrewSlot.Ice), _launch, VehicleSeat.Passenger);
+
+        /// <summary>The escort crewed live: Gohan out of the Kraken and into the launch at the helm, Ice down from the pier into the other seat, under AI, no camera; the lines over the radio.</summary>
+        private void StartLiveTransfer()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+            var live = new LiveHandoff("M20 escort");
+            if (_launch != null && _launch.Exists())
+            {
+                if (gohan != null && gohan.Exists()) { if (gohan.IsInVehicle()) live.Then(new ExitVehicleStep(gohan)); live.Then(new EnterVehicleStep(gohan, _launch, VehicleSeat.Driver)); }
+                if (ice != null && ice.Exists()) live.Then(new EnterVehicleStep(ice, _launch, VehicleSeat.Passenger));
+            }
+            _liveTransfer = live;
+            Say("M20_S1_03_GUESS");
+            Radio("GOHAN", "Kraken's tied off at the pier; she stays until this is over. I'm on the launch, Ice is on the gun. We're under you from here.", "M20_RADIO_02_GOHAN");
+            Radio("ICE", "Two seats, two of us. Fly the water route and don't look back for us; that's what the boat is for.", "M20_RADIO_03_ICE");
+            Logger.Info("M20: the escort boards live; no cut at the join.");
+        }
+
+        protected override void OnUpdate()
+        {
+            _liveTransfer?.Update();
+            base.OnUpdate();
         }
 
         // ---------- beats ----------
