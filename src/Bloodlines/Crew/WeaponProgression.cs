@@ -141,6 +141,21 @@ namespace Bloodlines.Crew
             ((mission == "SM02" || mission == "SM05") && slot == CrewSlot.Gohan) ||
             ((mission == "SM03" || mission == "SM06") && slot == CrewSlot.Guess);
         private static WeaponHash Dlc(string key) => (WeaponHash)Game.GenerateHash(key);
+        /// <summary>A weapon's name for a notice: the enum's name with spaces, or "a DLC weapon" for a hash the enum does not name.</summary>
+        public static string NameOf(WeaponHash weapon)
+        {
+            string raw = weapon.ToString();
+            if (raw.Length == 0 || char.IsDigit(raw[0]) || raw[0] == '-') return "a DLC weapon";
+            var text = new System.Text.StringBuilder();
+            for (int i = 0; i < raw.Length; i++)
+            {
+                bool boundary = i > 0 && char.IsUpper(raw[i]) &&
+                    (char.IsLower(raw[i - 1]) || (i + 1 < raw.Length && char.IsLower(raw[i + 1]) && char.IsUpper(raw[i - 1])));
+                if (boundary) text.Append(' ');
+                text.Append(raw[i]);
+            }
+            return text.ToString();
+        }
         public static WeaponHash[] Rewards(string mission)
         {
             switch (mission)

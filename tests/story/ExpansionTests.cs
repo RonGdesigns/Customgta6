@@ -12,14 +12,14 @@ public static partial class StoryTests
  static void ExpansionChecks()
  {
   Reset();var vehicles=new StoryVehicles();var player=Game.Player.Character;
-  Check(StoryVehicles.Catalog.Length==74&&StoryVehicles.Catalog.Select(v=>v.Model).Distinct().Count()==74,"Expanded vehicle catalog has 74 distinct models");
-  Check(StoryVehicles.Catalog.Select(v=>v.Category).Distinct().Count()==6,"Vehicle browsing separates six transport categories");
+  Check(StoryVehicles.Catalog.Length==118&&StoryVehicles.Catalog.Select(v=>v.Model).Distinct().Count()==118,"Expanded vehicle catalog has 118 distinct models, the jets, the jetpack, the Oppressors and the newer cars among them");
+  Check(StoryVehicles.Catalog.Select(v=>v.Category).Distinct().Count()==8,"Vehicle browsing separates 8 transport categories");
   player.Position=new Vector3(100,100,0);var boat=StoryVehicles.Catalog.First(v=>v.Model=="longfin");World.WaterAvailable=false;
   Check(!vehicles.Spawn(boat)&&World.Vehicles.Count==0,"Boat request refuses dry land without creating an entity");
   World.WaterAvailable=true;Check(vehicles.Spawn(boat)&&World.Vehicles.Last().Model.IsBoat,"Boat request uses a water footprint");vehicles.Clear();
-  var plane=StoryVehicles.Catalog.First(v=>v.Model=="vestra");Check(!vehicles.Spawn(plane),"Plane request refuses an ordinary city location");
+  var plane=StoryVehicles.Catalog.First(v=>v.Model=="vestra");Check(vehicles.Spawn(plane)&&World.Vehicles.Last().Model.IsPlane,"Away from a runway a plane is set on the clear road ahead");vehicles.Clear();
   player.Position=new Vector3(1730,3230,41);Check(vehicles.Spawn(plane)&&!World.Vehicles.Last().IsEngineRunning,"Plane is created at a runway with its engine off");vehicles.Clear();
-  var heli=StoryVehicles.Catalog.First(v=>v.Model=="supervolito");World.FailNavigation=true;Check(!vehicles.Spawn(heli),"Helicopter request rejects missing ground navigation");
+  var heli=StoryVehicles.Catalog.First(v=>v.Model=="supervolito");World.FailNavigation=true;Check(vehicles.Spawn(heli)&&World.Vehicles.Last().Model.IsHelicopter,"With no ground query a helicopter is still set down ahead when the spot is clear");vehicles.Clear();
   World.FailNavigation=false;Check(vehicles.Spawn(heli)&&!World.Vehicles.Last().IsEngineRunning,"Helicopter request starts grounded with its engine off");vehicles.Clear();
   var bike=StoryVehicles.Catalog.First(v=>v.Model=="shinobi");Check(vehicles.Spawn(bike)&&World.Vehicles.Last().Model.IsBike,"Motorcycle request uses road placement");vehicles.Clear();
   Reset();var crew=Roster();var c=Context(crew);var path=Path.Combine(root,"dispatches.json");var state=CampaignState.Load(path);var feed=new CampaignDispatches(state);

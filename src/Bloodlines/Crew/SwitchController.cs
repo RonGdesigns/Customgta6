@@ -180,6 +180,8 @@ namespace Bloodlines.Crew
                     incomingWanted = System.Math.Max(incomingWanted, System.Math.Max(departingWanted, _crew.CompanionAI.Life.Wanted.Get(departingSlot)));
                 var riding = preservedRide;
                 var seat = preservedSeat;
+                Logger.Info("Switch heat: " + departingSlot + " " + departingWanted + " -> " + target + " " + incomingWanted +
+                    (personalHeat ? " (personal)" : " (mission: shared)") + (riding != null && currentPed.IsInVehicle(riding) ? ", same ride" : ""));
                 if (riding != null && (!riding.Exists() || !riding.IsDriveable || !targetPed.IsInVehicle(riding)))
                 { GameUtils.Subtitle("That vehicle is unavailable. Staying with the current character.", 3000); return false; }
                 Function.Call(Hash.CHANGE_PLAYER_PED, Game.Player, targetPed, true, true);

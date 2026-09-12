@@ -326,6 +326,13 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 121. **M07.** Start M07: Ice on the roof, Gohan at the foot of the building at a laptop, Ron in the lane. A notice naming `M07.GarageRoof` means the key had no roof at its point: Ice is on the nearest roof, or at street level when there is none near; stand on the real roof and survey it (F11) to correct the key. If a notice says the roof is lower than the estimate, Ice is on the real roof. The Buzzard fires on the roof once the sniffer is clamped.
 122. **M08.** Drive the forklift to a crate pad and stop: after a second the crate is on the forks with no button, then the loading scene. The crates cannot be knocked over. The five sentries stand apart; shooting one wakes the rest.
 123. **M08's two jobs.** At the second crate the technical is Ice's job in name and anyone's kill: whoever puts it down, it counts, and the forks under the second crate are Ron's. Nothing demands a switch to Ron for the fight or to Ice after it.
+136. **One heat in one car.** Three in a car with stars: switch around; the stars are the same for all three. The log's "Switch heat" line shows the numbers.
+137. **Pay and weapons.** Finish any mission: a notice says what it paid and the crew total, and which weapon each brother unlocked.
+138. **No bars.** Mission passed is words alone; a scene's title is words alone.
+139. **Sunset.** 17:00 to 20:30 shows the game's own colors.
+140. **Ron's ability.** More grip and a wider steering lock while it runs.
+141. **The spawner.** Request a car inside a mission; a helicopter near buildings; a jet on a road; the jetpack, the Oppressors and the newer cars are in the list.
+142. **A brother upside down.** Flip a brother's car and wait three seconds: it rolls back.
 133. **M05 again.** The marker on the road above the cove. Ice on his perch, the generator crew on the beach below, Mateo's boat off the beach, Ron and Gohan in the dinghy on the water. Nothing in the mountain.
 134. **M06 again.** The marker at the power box; Gohan reaches into it; Ice a few steps from him. Waves two and three: two Mavericks and two SWAT Grangers from both ends of the alley. Ice and Gohan shoot back while waiting at the pickup.
 135. **M07 again.** Ice on the Maze Bank roof with a chute: jump to the marked roof, clamp the sniffer, grab the chute by the platform, jump to Ron's lane below. Ron and Gohan in the sedan the whole time.

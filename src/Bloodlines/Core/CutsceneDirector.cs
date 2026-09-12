@@ -503,7 +503,6 @@ namespace Bloodlines.Core
                 Game.DisableControlThisFrame(GTA.Control.CharacterWheel);
                 Game.DisableControlThisFrame(GTA.Control.Attack);
                 Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
-                new GTA.UI.ContainerElement(new PointF(640, 30), new SizeF(1280, 60), Color.Black).Draw();
                 new GTA.UI.TextElement(_title + (_radioScene ? " — phone / radio" : "") + "   |   Enter / controller A: skip", new PointF(35, 15), 0.32f, Color.White).Draw();
                 if (SkipInputAllowed && Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
                 _dialogue.Update();

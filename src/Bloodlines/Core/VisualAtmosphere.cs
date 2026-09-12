@@ -131,8 +131,10 @@ namespace Bloodlines.Core
             }
             if (hours >= 17.0 && hours < 20.5)
             {
+                // No grade at dusk unless the ini names one: the saturation filter
+                // made the sunset garish (Ron, September 12); the game's own is right.
                 strength = contrast * 0.85f;
-                return string.IsNullOrWhiteSpace(_config.DuskModifier) ? "rply_saturation" : _config.DuskModifier;
+                return string.IsNullOrWhiteSpace(_config.DuskModifier) ? null : _config.DuskModifier;
             }
             if (hours >= 20.5 || hours < 5.5)
             {

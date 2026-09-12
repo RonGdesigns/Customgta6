@@ -51,9 +51,9 @@ public static partial class StoryTests
   var boat=new Vehicle{Model=new Model("longfin")};Game.Player.Character.SetIntoVehicle(boat,VehicleSeat.Driver);visuals.Update(false,false);visuals.Update(false,false);
   Check(Function.Calls.Count(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION)==2&&Function.Calls.Last(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION).Item2[0]==boat,"The vehicle the player is in gets the reflection flag once too");
   Game.GameTime+=300;World.CurrentTimeOfDay=TimeSpan.FromHours(18);visuals.Update(false,false);
-  Check(visuals.ActiveModifier=="rply_saturation"&&Math.Abs(visuals.ActiveStrength-.35f*.85f)<1e-4,"Dusk switches to the warm grade at its reduced strength");
+  Check(visuals.ActiveModifier==null,"Dusk is the game's own sunset: no grade unless the ini names one");
   Game.GameTime+=300;World.CurrentTimeOfDay=TimeSpan.FromHours(23);visuals.Update(false,false);Check(visuals.ActiveModifier=="cinema","Night takes the night grade");
-  visuals.Update(true,false);Check(visuals.ActiveModifier==null&&Calls(Hash.CLEAR_TIMECYCLE_MODIFIER)==1&&Calls(Hash.OVERRIDE_LODSCALE_THIS_FRAME)>3,"A scene releases the grade and keeps the rest");
+  visuals.Update(true,false);Check(visuals.ActiveModifier==null&&Calls(Hash.CLEAR_TIMECYCLE_MODIFIER)==2&&Calls(Hash.OVERRIDE_LODSCALE_THIS_FRAME)>3,"A scene releases the grade and keeps the rest (the dusk hour had already cleared it once)");
   Game.GameTime+=300;World.CurrentTimeOfDay=TimeSpan.FromHours(13);var noSmog=new VisualAtmosphere(new ModConfig{DeSmogEnabled=false});noSmog.Update(false,false);
   Check(noSmog.ActiveModifier==null,"DeSmog off means no daytime grade");
   var named=new VisualAtmosphere(new ModConfig{DayModifier="my_daytime",VisualPreset="SunnyCoast"});named.Update(false,false);
