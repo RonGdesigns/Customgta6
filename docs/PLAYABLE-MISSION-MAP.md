@@ -57,7 +57,7 @@ Prerequisite: M02. Retry: full mission restart.
 | 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
 | 6 | Guess | **The depot answers** — TravelObjective: Guess: get back to the depot. Ice and Gohan are pinned at the truck. |
 | 7 | Guess | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen and the dogs marked RED. Switch to any brother. |
-| 8 | Guess | **Run it home** — EnterVehicleObjective: Guess: take the orange-marked Benson truck (driver seat). Ice rides with you.<br>ConditionObjective: Ice is boarding the Benson. |
+| 8 | Guess | **Run it home** — EnterVehicleObjective: Guess: take the orange-marked Benson truck (driver seat). Ice rides with you; Gohan rides in the back.<br>ConditionObjective: Ice is boarding the cab and Gohan the back of the Benson. |
 | 9 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.

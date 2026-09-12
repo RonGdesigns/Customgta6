@@ -34,9 +34,9 @@ public static partial class StoryTests
   Check(!m7.RoofLowerThanEstimate&&Math.Abs(m7.Roof.Z-55.1f)<0.01f,"The roof is the surface the world reported, not the estimate handed back");
   // The roof is a surface the world has over the street, never the estimate certified against its own height.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.SeabedKnown=false;var m7b=new M07WiretapWaltz();
-  Check(!m7b.Begin(c)&&!m7b.RoofFound&&GameUtils.Message.Contains("M07.GarageRoof")&&GameUtils.Message.Contains("F11")&&World.Created.Count==0,"No surface loaded at the roof key refuses M07 with the key to survey, nobody deployed in the air");
+  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-15f)<0.2f&&Math.Abs(Game.Player.Character.Position.Z-15f)<0.2f,"No surface at or near the roof key: M07 still starts, Ice at street level, never in the air");
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=16f;m7b=new M07WiretapWaltz();
-  Check(!m7b.Begin(c)&&!m7b.RoofFound&&GameUtils.Message.Contains("F11"),"Only the street under the roof key refuses M07 instead of certifying the estimate");
+  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-15f)<0.2f,"Only the street under and around the roof key: M07 starts at street level instead of certifying the estimate");
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=30f;m7b=new M07WiretapWaltz();
   Check(m7b.Begin(c)&&m7b.RoofFound&&m7b.RoofLowerThanEstimate&&Math.Abs(m7b.Roof.Z-30.1f)<0.01f&&Math.Abs(Game.Player.Character.Position.Z-30.1f)<0.01f,"A real roof lower than the estimate is used as found, Ice on it, and the key is reported for a survey");
   GTA.Native.Function.Seabed=-40f;

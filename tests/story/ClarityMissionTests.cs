@@ -55,13 +55,14 @@ public static partial class StoryTests
   Check(Flow(m3)[5].LockedTo==CrewSlot.Guess&&Flow(m3)[6].LockedTo==null,"Ron alone on the road back; the depot fight is anyone's");
   Use(crew,CrewSlot.Guess);Game.Player.Character.Position=depot;c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==6&&m3.CurrentObjective.Contains("RED"),"Ron in close, the depot fight is on with the targets marked");
   foreach(var r in m3.Reinforcements)r.IsDead=true;m3.Tick();Check(m3.CurrentStage==7,"The depot cleared, the truck is the job");
-  Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==7&&ice.Task.Enters>=1&&c.Dialogue.HasPending&&!c.Crew.CompanionsHoldPosition,"Ron in the cab: Ice is called aboard and Gohan is back on his own AI for the van");
-  ice.SetIntoVehicle(hauler,VehicleSeat.RightFront);c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==8&&Game.Player.WantedLevel==2,"Ice aboard with Ron, the police come");
+  Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==7&&ice.Task.Enters>=1&&gohan.Task.Gotos>=1&&c.Dialogue.HasPending&&!c.Crew.CompanionsHoldPosition,"Ron in the cab: Ice is called to the cab and Gohan to the back of the truck");
+  ice.SetIntoVehicle(hauler,VehicleSeat.RightFront);c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==7&&gohan.AttachedTo!=hauler,"Ice in the cab alone is not the crew: the truck waits for Gohan at the back");
+  gohan.Position=hauler.Position-hauler.ForwardVector*4f;m3.Tick();Check(m3.CurrentStage==8&&gohan.AttachedTo==hauler&&!gohan.IsInVehicle()&&Game.Player.WantedLevel==2,"Gohan at the rear doors is loaded into the back of the Benson; the crew aboard, the police come");
   var destination=basePoint;Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
   hauler.Position=destination;Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running&&m3.CurrentObjective.Contains("Lose the police"),"Arriving with the police on the truck is not delivery: the foundry is a safehouse, the heat is lost on the way");
   var outro=m3.OutroBlocking();Check(outro!=null&&outro.Steps.Count==5&&outro.Steps[0] is ExitVehicleStep&&outro.Steps[1] is ExitVehicleStep&&outro.Steps[2] is CarryPropStep&&outro.Steps[3] is StowPropStep&&outro.DialogueAfterStep==1&&m3.FoundryKeys!=null&&m3.FoundryKeys.Model.Name==M03CypressFoundry.KeysModel,"The aftermath gets Ron and Ice out of the truck before the lines, then the three keys go down on it: the object M22 picks back up");
   gohan.SetIntoVehicle(hauler,VehicleSeat.RightFront);Game.Player.WantedLevel=0;m3.Tick();
-  Check(!gohan.IsInVehicle(hauler),"Gohan is out of the Benson before it locks");
+  Check(!gohan.IsInVehicle(hauler)&&gohan.AttachedTo==null,"Gohan is out of the cab and off the back of the Benson before it locks");
   Check(m3.Status==MissionStatus.Passed&&hauler.LockStatus==VehicleLockStatus.CannotEnter&&hauler.Present&&hauler.Released&&van.Present&&car.Present,"Delivered with the police lost: the Benson locks at the foundry and the crew's vehicles remain");
   Reset();crew=Roster();c=Context(crew);bool scope=false;var quiet=new QuietRuleObjective("Quiet","Heard",()=>scope);quiet.Enter(c);Game.Player.Character.IsShooting=true;quiet.Update(c);
   Check(quiet.IsPassive&&!quiet.IsFinished,"Out of its scope the quiet rule allows the shot");scope=true;quiet.Update(c);

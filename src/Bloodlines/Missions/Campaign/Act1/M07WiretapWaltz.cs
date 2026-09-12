@@ -70,16 +70,29 @@ namespace Bloodlines.Missions.Campaign
             // The roof is whatever the world has under the sky at the key, and it is
             // a roof only when it stands clear of the street at the base. The old
             // check certified the estimate against its own height, so a key with no
-            // roof put Ice in the air over whatever stood below it (Ron, September
-            // 11): no roof now refuses the start with the key to survey.
+            // roof put Ice in the air over whatever stood below it. The mission
+            // always starts (Ron, September 11): a surveyed key is trusted at its own
+            // height, a key with no roof takes the nearest roof, and with no roof
+            // anywhere near Ice starts at street level, the key named for a survey.
             _roofFound = TryRoofTop(roofKey, _base.Z, out _roof);
+            if (!_roofFound && Ctx.Locations.Get("M07.GarageRoof")?.Status == LocationStatus.Surveyed)
+            {
+                _roof = new Vector3(roofKey.X, roofKey.Y, roofKey.Z + 0.1f); _roofFound = true;
+                Logger.Warn("M07: the probes saw no roof at the surveyed key; its own height " + roofKey.Z.ToString("0.0") + " is the roof.");
+            }
+            if (!_roofFound && TryRoofNear(roofKey, _base.Z, out var nearby))
+            {
+                _roof = nearby; _roofFound = true;
+                Logger.Warn("M07: no roof at M07.GarageRoof itself (" + roofKey + "); the nearest roof " + nearby.DistanceTo(roofKey).ToString("0") + " m away at " + nearby + " is used. Survey the key from the real roof (F11) to correct it.");
+                GameUtils.Notify("~y~M07.GarageRoof has no roof at its point; the nearest roof is used. Survey it (F11) to correct the key.");
+            }
             if (!_roofFound)
             {
-                Logger.Error("M07: no roof under the sky at M07.GarageRoof (" + roofKey + "); the street at the base is at " + _base.Z.ToString("0.0") + ". Survey the key from the real roof (F11) and retry.");
-                GameUtils.Subtitle("~r~M07.GarageRoof has no roof at its estimate. Survey it from the real roof (F11) and retry.", 8000);
-                return false;
+                _roof = new Vector3(roofKey.X, roofKey.Y, _base.Z);
+                Logger.Error("M07: no roof under the sky at or near M07.GarageRoof (" + roofKey + "); the street at the base is at " + _base.Z.ToString("0.0") + ". Ice starts at street level. Survey the key from the real roof (F11).");
+                GameUtils.Notify("~y~M07.GarageRoof has no roof near it; Ice starts at street level. Survey it from the real roof (F11).");
             }
-            RoofLowerThanEstimate = _roof.Z < roofKey.Z - 3f;
+            RoofLowerThanEstimate = _roofFound && _roof.Z < roofKey.Z - 3f;
             if (RoofLowerThanEstimate)
             {
                 Logger.Warn("M07: the roof at M07.GarageRoof stands at " + _roof.Z.ToString("0.0") + ", below the estimate's " + roofKey.Z.ToString("0.0") + "; Ice starts on the real roof. Survey the roof (F11) to correct the key.");
@@ -166,21 +179,40 @@ namespace Bloodlines.Missions.Campaign
         public const float MinRoofRise = 4f;
 
         /// <summary>
-        /// The highest surface under the sky at the point's X and Y, when it stands
-        /// <see cref="MinRoofRise"/> over the street: a roof, not the street below
-        /// it. False when nothing is loaded there or the only surface is the street;
-        /// the point itself is never handed back as if it had been found.
+        /// The highest surface at the point's X and Y, probed from several heights
+        /// above it (a probe from far up can miss a thin roof and report the street),
+        /// when it stands <see cref="MinRoofRise"/> over the street: a roof, not the
+        /// street below it. False when nothing is loaded there or the only surface is
+        /// the street; the point itself is never handed back as if it had been found.
         /// </summary>
         private static bool TryRoofTop(Vector3 point, float street, out Vector3 top)
         {
             top = point;
             Function.Call(Hash.REQUEST_COLLISION_AT_COORD, point.X, point.Y, point.Z);
-            var z = new OutputArgument();
-            if (!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + 120f, z, false, false)) return false;
-            float surface = z.GetResult<float>();
-            if (surface < street + MinRoofRise) return false;
-            top = new Vector3(point.X, point.Y, surface + 0.1f);
+            float best = float.MinValue;
+            foreach (float rise in new[] { 3f, 15f, 40f, 120f })
+            {
+                var z = new OutputArgument();
+                if (!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + rise, z, false, false)) continue;
+                float surface = z.GetResult<float>();
+                if (surface > best) best = surface;
+            }
+            if (best == float.MinValue || best < street + MinRoofRise) return false;
+            top = new Vector3(point.X, point.Y, best + 0.1f);
             return true;
+        }
+
+        /// <summary>The nearest roof around the key, rings of ten meters out to sixty: the building the key was meant for when its point falls beside it.</summary>
+        private static bool TryRoofNear(Vector3 key, float street, out Vector3 roof)
+        {
+            roof = key;
+            for (float radius = 10f; radius <= 60f; radius += 10f)
+                for (int i = 0; i < 8; i++)
+                {
+                    var p = key + new Vector3((float)System.Math.Cos(i * System.Math.PI / 4) * radius, (float)System.Math.Sin(i * System.Math.PI / 4) * radius, 0f);
+                    if (TryRoofTop(p, street, out roof)) return true;
+                }
+            return false;
         }
 
         // ---------- beats ----------
