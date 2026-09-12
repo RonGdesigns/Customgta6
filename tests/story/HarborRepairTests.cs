@@ -49,7 +49,7 @@ public static partial class StoryTests
         Reset();crew=Roster();c=Context(crew);Use(crew,CrewSlot.Gohan);var sub=new Vehicle {Model=new Model("submersible2"),Position=new Vector3(10,20,-8)};
         Game.Player.Character.SetIntoVehicle(sub,VehicleSeat.Driver);Game.Player.Character.Position=sub.Position+new Vector3(0,0,5);
         var work=new MissionInteraction("Cut the seam",()=>sub.Position,1,2,()=>sub);work.RequiredCharacter=CrewSlot.Gohan;work.Enter(c);
-        Game.Accept=true;work.Update(c);Game.Accept=false;Game.GameTime+=1100;work.Update(c);
+        Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;work.Update(c);Game.Accept=false;Game.GameTime+=1100;work.Update(c);
         Check(work.Status==ObjectiveStatus.Complete,"Underwater hold measures the craft center, not the offset pilot origin");
         Check(UnderwaterGuidance.DistanceText(new Vector3(0,0,-3),new Vector3(0,0,-8)).Contains("dive 5"),"Underwater HUD explains the depth difference");
         ObjectiveMarkers.Clear();ObjectiveMarkers.BeginFrame(true);ObjectiveMarkers.ActiveSlot=CrewSlot.Gohan;

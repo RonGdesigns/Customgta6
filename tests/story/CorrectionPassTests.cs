@@ -98,12 +98,12 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);int applied=-1;
   var choice=new TechnicalChoiceObjective("Cut a system",()=>new Vector3(5,5,0),new[]{new TechnicalOption("A","a",x=>applied=0),new TechnicalOption("B","b",x=>applied=1)});
   choice.RequiredCharacter=CrewSlot.Gohan;choice.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,5,0);
-  Game.Accept=true;Game.Pressed.Add(GTA.Control.Detonate);choice.Update(c);
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;Game.Pressed.Add(GTA.Control.Detonate);choice.Update(c);
   Check(!choice.IsFinished&&choice.SelectedIndex==0&&!Game.Accept&&!Game.Pressed.Contains(GTA.Control.Detonate),"The arrival frame consumes both buttons and commits nothing");
   Check(Game.Disabled.Contains(GTA.Control.Detonate),"The Detonate control is disabled while the panel owns it, so cycling cannot throw a detonator");
   choice.Update(c);Check(!choice.IsFinished,"No input on the next frame leaves the choice open");
   Game.Pressed.Add(GTA.Control.Detonate);choice.Update(c);Check(choice.SelectedIndex==1&&!choice.IsFinished,"Cycling reads the disabled control, not the live one");
-  Game.Accept=true;choice.Update(c);Check(choice.IsFinished&&applied==1,"A fresh confirm press commits the highlighted option");
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;choice.Update(c);Check(choice.IsFinished&&applied==1,"A fresh confirm press commits the highlighted option");
   var dialogue=File.ReadAllText(Path.Combine(dataDir,"dialogue.tsv"));
   Check(!Regex.IsMatch(dialogue,@"M28_S1_0\d_\w+\t.*\t(?:[^\t]*\t){2}[^\t]*(?:D-pad|press E|Detonate)",RegexOptions.IgnoreCase),"M28's spoken lines carry no button instructions; the panel HUD does");
 
@@ -116,7 +116,10 @@ public static partial class StoryTests
   Check(!c.Cutscenes.IsActive&&ron.IsInVehicle(car)&&Game.Player.CanControlCharacter,"Deliberate skip finishes the blocking: seated, in control");
   // cancel (abort/teardown) mid-walk
   Reset();crew=Roster();c=Context(crew);ron=Game.Player.Character;car=new Vehicle{Position=new Vector3(30,0,0)};var walk=Walk(ron,car);
-  c.Cutscenes.Play("M01","prologue","Arrival",null,null,walk);c.Cutscenes.Update();int clears=ron.Task.Clears;c.Cutscenes.Stop();
+  c.Cutscenes.Play("M01","prologue","Arrival",null,null,walk);c.Cutscenes.Update();int clears=ron.Task.Clears;
+  Check(!c.Cutscenes.SkipInputAllowed,"A skip press in a scene's first second is not a skip: the button that stopped the car cannot end the door scene");
+  Game.GameTime+=CutsceneDirector.SkipGraceMs-1;Check(!c.Cutscenes.SkipInputAllowed,"Still held just under the grace");Game.GameTime+=1;Check(c.Cutscenes.SkipInputAllowed,"Past the grace a press skips as before");
+  c.Cutscenes.Stop();
   Check(!c.Cutscenes.IsActive&&!ron.IsInVehicle()&&ron.Position!=car.Position&&Game.Player.CanControlCharacter&&walk.Canceled&&ron.Task.Clears>clears,"Cancel stops the walk where it is, restores control and warps nobody");
   // director error mid-scene
   Reset();crew=Roster();c=Context(crew);ron=Game.Player.Character;car=new Vehicle{Position=new Vector3(30,0,0)};walk=Walk(ron,car);

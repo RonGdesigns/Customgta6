@@ -62,6 +62,11 @@ namespace Bloodlines.Core
         public static bool IsSceneRunning { get; private set; }
         public bool IsActive => _lines != null;
 
+        /// <summary>A skip press counts only after this long into the scene: the button that ended the drive, held into the door scene, skipped it 50 ms in (Ron, September 11).</summary>
+        public const int SkipGraceMs = 1000;
+        /// <summary>True once a skip press may end the running scene: past the grace, so a press carried in from gameplay is not a skip.</summary>
+        public bool SkipInputAllowed => IsActive && Game.GameTime - _startedAt >= SkipGraceMs;
+
         public CutsceneDirector(CrewRoster crew, DialogueDirector dialogue, LocationBook locations, string dataDirectory)
         {
             _crew = crew;
@@ -472,7 +477,7 @@ namespace Bloodlines.Core
                 Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
                 new GTA.UI.ContainerElement(new PointF(640, 30), new SizeF(1280, 60), Color.Black).Draw();
                 new GTA.UI.TextElement(_title + (_radioScene ? " — phone / radio" : "") + "   |   Enter / controller A: skip", new PointF(35, 15), 0.32f, Color.White).Draw();
-                if (Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
+                if (SkipInputAllowed && Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
                 _dialogue.Update();
                 if (_blocking != null)
                 {

@@ -16,7 +16,7 @@ public static partial class StoryTests
   Use(c.Crew,slot);if(!afloat)Game.Player.Character.Task.LeaveVehicle();
   Game.Player.Character.Position=p;
   if(afloat)Game.Player.Character.CurrentVehicle.Position=p;
-  Game.Accept=false;mission.Tick();Game.Accept=true;mission.Tick();Game.GameTime+=seconds*1000+1;mission.Tick();Game.Accept=false;
+  Game.Accept=false;mission.Tick();Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;mission.Tick();Game.GameTime+=seconds*1000+1;mission.Tick();Game.Accept=false;
  }
  static void ClarityMissionChecks()
  {
@@ -106,7 +106,7 @@ public static partial class StoryTests
   Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed&&!m6.FireBurning,"M06 completes with both teammates aboard and the police lost, and the fire is put out with the mission");
 
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;Check(!new M04SeveredWire().Begin(c)&&World.Created.Count==0,"Unavailable walkable surfaces reject setup before spawning actors underground");World.FailNavigation=false;
-  var interaction=new MissionInteraction("Terminal",()=>new Vector3(5,0,0),3);interaction.RequiredCharacter=CrewSlot.Gohan;interaction.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,0,0);Game.Accept=true;interaction.Update(c);Game.GameTime+=1500;Game.Player.Character.Position=Vector3.Zero;interaction.Update(c);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=5000;interaction.Update(c);Check(!interaction.IsFinished&&interaction.Label.Contains("press"),"Leaving an interaction resets its timer and requires a new button press");
+  var interaction=new MissionInteraction("Terminal",()=>new Vector3(5,0,0),3);interaction.RequiredCharacter=CrewSlot.Gohan;interaction.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;interaction.Update(c);Game.GameTime+=1500;Game.Player.Character.Position=Vector3.Zero;interaction.Update(c);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=5000;interaction.Update(c);Check(!interaction.IsFinished&&interaction.Label.Contains("press"),"Leaving an interaction resets its timer and requires a new button press");
   var lines=MissionObjectiveHud.Wrap(new string('a',80)+" objective description").ToArray();Check(lines.All(l=>l.Length<=68)&&lines.Length>=2,"Long objective text wraps without overflowing the HUD");
   var injured=new Ped{Health=200,MaxHealth=200,Armor=0,CanSufferCriticalHits=true};CrewDurability.RestoreAfterSwitch(injured,430,65);Check(injured.MaxHealth==900&&injured.Health==430&&injured.Armor==65&&!injured.CanSufferCriticalHits,"Handover restores the larger health cap and existing injuries without a free heal");
   CrewDurability.RestoreAfterSwitch(injured,430,65);Check(injured.Health==430&&CrewDurability.Armor==100,"Repeated switches preserve damage and the increased armor limit");

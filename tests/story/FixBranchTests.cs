@@ -126,7 +126,7 @@ public static partial class StoryTests
   Check(Field<bool>(m28,"_responseAlerted")&&loud.All(p=>p.Task.HatedFights==1),"Feed first: the response is already hunting when it arrives");m28.Abort();
   Reset();crew=Roster();c=Context(crew);
   var broken=new TechnicalChoiceObjective("Cut",()=>new Vector3(5,5,0),new[]{new TechnicalOption("A","a",x=>throw new InvalidOperationException("no")),new TechnicalOption("B","b",x=>{})});
-  broken.RequiredCharacter=CrewSlot.Gohan;broken.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,5,0);broken.Update(c);Game.Accept=true;broken.Update(c);
+  broken.RequiredCharacter=CrewSlot.Gohan;broken.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,5,0);broken.Update(c);Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;broken.Update(c);
   Check(broken.Status==ObjectiveStatus.Failed&&broken.Chosen==null&&broken.FailReason.Contains("A"),"A consequence that fails to apply fails the objective rather than completing on a promise");
 
   // ---- R06. The generated map binds the choice to the stage that yields it and shows gates.

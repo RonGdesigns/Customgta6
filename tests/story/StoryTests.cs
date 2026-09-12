@@ -121,7 +121,8 @@ public static partial class StoryTests
   Check(Game.Player.CanControlCharacter&&car.IsInvincible&&car.IsPositionFrozen,"Cleanup failure in one native does not skip control or original vehicle state restoration");
   World.FailCamera=true;Check(!c.Cutscenes.Play("M02","intro","Setup failure")&&!c.Cutscenes.IsActive&&Game.Player.CanControlCharacter&&World.Created.All(p=>!p.Present),"Camera creation failure unwinds partially spawned scene");World.FailCamera=false;
   Check(!c.Cutscenes.Play("UNKNOWN","intro","Missing")&&Game.Player.CanControlCharacter,"Missing scene data leaves gameplay available");
-  c.Cutscenes.Play("M02","outro","Aftermath");Game.Accept=true;c.Cutscenes.Update();Check(!c.Cutscenes.IsActive,"Controller accept skips scene");
+  c.Cutscenes.Play("M02","outro","Aftermath");Game.Accept=true;c.Cutscenes.Update();Check(c.Cutscenes.IsActive,"Controller accept in a scene's first second is not a skip");
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;c.Cutscenes.Update();Check(!c.Cutscenes.IsActive,"Controller accept skips scene once the grace has passed");
   c.Cutscenes.Play("M02","outro","Aftermath");Game.GameTime+=240001;c.Cutscenes.Update();Check(!c.Cutscenes.IsActive&&Game.Player.CanControlCharacter,"Scene watchdog restores controls on a stalled timeline");
   World.Created.Clear();c.Cutscenes.Play("SM03","intro","KJ");c.Cutscenes.Update();
   Check(World.Created.Count==1&&GTA.UI.Screen.Subtitle.Contains("KJ")&&Protagonist.All.Length==3,"KJ gets a speaking supporting actor beside Guess without a fourth playable slot");c.Cutscenes.Stop();
@@ -160,7 +161,7 @@ public static partial class StoryTests
   Check(GameUtils.Message.Contains("Switch to Gohan"),"Free aim identifies Mateo from the lookout without lock-on targeting");
   crew.ActiveSlot=CrewSlot.Gohan;Game.Player.Character=crew.Peds[CrewSlot.Gohan];mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==0,"Waiting at Gohan's entry point does not copy the distant ledger");
-  Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.Accept=true;World.CollisionReady=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
+  Game.Player.Character.Position=c.Locations.Position("M01.ServiceTerminal");Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;World.CollisionReady=true;mission.Tick();Game.GameTime+=8001;mission.Tick();
   Check(mission.CurrentStage==1&&c.Cutscenes.IsActive,"All three assignments trigger the recognition scene exactly once");
   Check(crew.ActiveSlot==CrewSlot.Gohan&&Game.Player.Character==crew.Peds[CrewSlot.Gohan]&&crew.Peds[CrewSlot.Gohan].Position==c.Locations.Position("M01.ServiceTerminal")&&crew.Peds[CrewSlot.Ice].Position==c.Locations.Position("M01.CraneNest")&&crew.Peds[CrewSlot.Guess].IsInVehicle(car),"Copying the ledger leaves the player on Gohan, with no automatic switch; recognition preserves split positions and the actual driver's seat");
   c.Cutscenes.Stop();mission.Tick();

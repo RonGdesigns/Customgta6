@@ -32,7 +32,7 @@ public static partial class StoryTests
   Game.GameTime+=90000;feed.Update(true);Check(state.ReadDispatches.Contains("SM03")&&feed.Inbox.Any(m=>m.Sender=="KJ"),"KJ follows up after Guess's solo race without becoming playable");
   var locker=new WeaponProgression(state);var homes=new CrewHomes(crew,state,c.Locations,locker);Game.Player.Character.Position=homes.Position(crew.ActiveSlot).Value;
   Game.Player.Character.Armor=0;homes.UseWorkbench();Check(Game.Player.Character.Armor==CrewDurability.Armor,"Ice's home bench replaces armor without resting");
-  int opens=0;homes.OpenMenu=()=>opens++;Game.Accept=true;homes.Update(true);Check(opens==1,"Home interaction opens the home menu instead of forcing rest");
+  int opens=0;homes.OpenMenu=()=>opens++;Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;homes.Update(true);Check(opens==1,"Home interaction opens the home menu instead of forcing rest");
   homes.Allowed=()=>false;Game.Player.Character.Armor=0;homes.UseWorkbench();Check(Game.Player.Character.Armor==0,"Workbench refuses actions while mission context blocks home use");homes.Allowed=()=>true;
   crew.ActiveSlot=CrewSlot.Gohan;Game.Player.Character=crew.Peds[CrewSlot.Gohan];Game.Player.Character.Position=homes.Position(CrewSlot.Gohan).Value;int leads=0;homes.RouteNextLead=()=>leads++;homes.UseWorkbench();Check(leads==1,"Gohan's workstation requests a real available mission lead");
   crew.ActiveSlot=CrewSlot.Guess;Game.Player.Character=crew.Peds[CrewSlot.Guess];Game.Player.Character.Position=homes.Position(CrewSlot.Guess).Value;

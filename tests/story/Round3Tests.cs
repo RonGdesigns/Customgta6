@@ -29,7 +29,7 @@ public static partial class StoryTests
   Reset();crew=Roster();var c=Context(crew);player=Game.Player.Character;var point=new Vector3(100,100,10);player.Position=point;
   var work=new MissionInteraction("Copy the ledger",()=>point,4,3f);work.Enter(c);GameUtils.LastProgress=-1f;
   work.Update(c);Check(work.Label.Contains("press E"),"Before the press the prompt says what to press");
-  Game.Accept=true;work.Update(c);Game.Accept=false;Game.GameTime+=2000;work.Update(c);
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;work.Update(c);Game.Accept=false;Game.GameTime+=2000;work.Update(c);
   Check(work.Label=="Copy the ledger"&&Math.Abs(GameUtils.LastProgress-0.5f)<0.05f&&!work.Label.Contains("stay in"),"During the work the label is the work and a small meter shows the progress");
   Game.GameTime+=2100;work.Update(c);Check(work.Status==ObjectiveStatus.Complete,"The meter fills and the work completes");
   var hold=new HoldZoneObjective("Hold the junction",()=>point,4,3f,"Locking the junction");hold.Enter(c);GameUtils.LastProgress=-1f;hold.Update(c);Game.GameTime+=2000;hold.Update(c);

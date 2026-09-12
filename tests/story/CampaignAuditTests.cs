@@ -62,7 +62,7 @@ public static partial class StoryTests
   Check(!cargo.IsFinished,"A different coupled trailer cannot satisfy a fuel delivery");
   GTA.Native.Function.Trailers[tractor.Handle]=tanker;tractor.Speed=10;cargo.Update(c);Check(!cargo.IsFinished,"Fuel delivery cannot complete while the rig is moving");
   tractor.Speed=0;cargo.Update(c);Check(cargo.Status==ObjectiveStatus.Complete,"The specified attached tanker completes delivery when both vehicles stop at the destination");
-  var unloading=new MissionInteraction("Unload",()=>target,2,30,()=>tractor,true);unloading.Enter(c);tractor.Speed=5;Game.Accept=true;unloading.Update(c);Game.GameTime+=5000;unloading.Update(c);
+  var unloading=new MissionInteraction("Unload",()=>target,2,30,()=>tractor,true);unloading.Enter(c);tractor.Speed=5;Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;unloading.Update(c);Game.GameTime+=5000;unloading.Update(c);
   Check(!unloading.IsFinished&&unloading.Label.Contains("stop"),"Driving through an unloading marker cannot complete the work timer");
   var arsenal=new WeaponProgression(loaded);loaded.Completed.Add("M23");arsenal.UnlockRewards();
   Check(Protagonist.All.All(h=>loaded.Weapons[h.Slot.ToString()].Contains((uint)WeaponProgression.Rewards("M23")[(int)h.Slot])),"Bunker completion grants each hero a distinct Mk II locker rifle");
