@@ -49,7 +49,8 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);var spawn=c.Locations.Get("M05.DinghySpawn");var authoredSpawn=spawn.Position;GTA.Native.Function.Seabed=1f;
   Check(!MissionSites.Water(c.Locations,"M05.DinghySpawn")&&GameUtils.Message.Contains("deep enough")&&spawn.Position==authoredSpawn,"Water under a road is not a boat spawn: the key refuses and says the water is not deep enough");
   GTA.Native.Function.Seabed=-3f;Check(MissionSites.Water(c.Locations,"M05.DinghySpawn")&&Math.Abs(spawn.Position.Z-0.2f)<0.01f,"Ground three meters under the surface floats the dinghy");
-  GTA.Native.Function.Seabed=-0.5f;Check(!MissionSites.Water(c.Locations,"M05.DinghySpawn"),"Half a meter of water does not");
+  GTA.Native.Function.Seabed=-0.5f;Check(MissionSites.Water(c.Locations,"M05.DinghySpawn"),"Half a meter of water under a surveyed spot is trusted: the boats moor there");
+  var cove=c.Locations.Get("M05.CoveAir");GTA.Native.Function.Seabed=-0.5f;Check(!MissionSites.Water(c.Locations,"M05.CoveAir")&&GameUtils.Message.Contains("deep enough"),"Half a meter of water does not float an estimate");
   GTA.Native.Function.SeabedKnown=false;GTA.Native.Function.Seabed=1f;Check(MissionSites.Water(c.Locations,"M05.DinghySpawn"),"Unloaded seabed counts as open water");GTA.Native.Function.SeabedKnown=true;GTA.Native.Function.Seabed=-40f;
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"m05-shallow.json"));GTA.Native.Function.Seabed=1f;var shallow5=new M05TidalLock();
   Check(!shallow5.Begin(c)&&GameUtils.Message.Contains("deep enough"),"M05 refuses to start on a coast with no floatable water rather than putting the boat on the road");GTA.Native.Function.Seabed=-40f;
