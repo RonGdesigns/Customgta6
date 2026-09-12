@@ -106,6 +106,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 93 | **M06 places** | Start, cut, burn, pickup | Panel and bench off the road; Ice's entrance at the surveyed point; Granger staged far off and safe until boarded; no trooper in a wall |
 | 94 | **M07 roof** | Start, climb, clamp, jump | Ice on the roof, Gohan at the base with the laptop; a notice if the roof estimate is wrong; the Buzzard fires |
 | 95 | **M08 forks** | Stop at each pad, sentries | Crate on the forks after a second stopped, no button; crates do not topple; sentries apart and alerted |
+| 99 | **M03 car on the ground** | Start M03 | The Primo on the lot; a log line if it was lifted |
+| 100 | **Yellow route on the radar** | Any mission, one destination | The route line on the radar while playing, same as on the pause map |
+| 98 | **Ron's home** | Fresh save, prologue | The drive home ends at the Mission Row apartment door; the marker is there; the house interior is behind it; exit returns to Mission Row |
 | 97 | **The Port Heist seamless** | M19 through M22 in one run | No scene or wait at the three joins; the escort, the Granger and the beach arrival crewed under AI while you play; the heist restarts at M19 on fail, abort or quit; the harbor sites resolve on real water |
 | 96 | **M07 roof check, M08 jobs** | Start M07 with the roof key wrong; M08's second crate | M07 refuses with the key when there is no roof, uses a lower real roof with a notice, never Ice in the air; in M08 the technical counts for whoever kills it and the HUD never demands Ron for it |
 

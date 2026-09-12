@@ -56,7 +56,7 @@ Normal mission map starts use stock B (Bloodlines), S (solo) and H (Port Heist) 
 
 `ApartmentTiers.cs` and `CrewHomes.cs` are already on the base branch:
 
-- Starter: Ice's Little Seoul studio, Gohan's Richards Majestic one-bedroom, and Guess's Forum Drive house each have a separate interior key.
+- Starter: Ice's Little Seoul studio, Gohan's Richards Majestic one-bedroom, and Guess's Mission Row apartment (the stock Strawberry house interior behind it) each have a separate interior key.
 - Luxury after M27: separate Eclipse penthouse floors (`apa_v_mp_h_01_a`, `_b`, `_c`), but the same style family. Different floor coordinates do NOT establish three wholly distinct floor plans or decoration themes.
 - Top after M47: one shared Diamond penthouse with requested furnishing entity sets. The source labels it two floors; this inspection does not certify the accessible layout in GTA.
 - Interior entry uses loading/collision checks. Wardrobe/bed/locker room spots activate independently only after their keys are surveyed; otherwise the entry service menu is the honest fallback.

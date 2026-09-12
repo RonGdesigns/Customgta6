@@ -269,7 +269,7 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 
 ## Apartment tiers
 
-91. **Three rooms.** Enter Ice's, Gohan's and Ron's homes in turn: a studio, a one-bedroom, a house; three different layouts. Ron's home marker is now the Forum Drive house door in Strawberry (the prologue's drive home goes there).
+91. **Three rooms.** Enter Ice's, Gohan's and Ron's homes in turn: a studio, a one-bedroom, a house; three different layouts, each behind that brother's own door where it always was. Ron's is the Mission Row apartment door (the prologue's drive home goes there); the room behind it is the stock Strawberry house interior.
 92. **The Diamond.** With the dev menu on, from any home marker choose "Preview the next residence" twice across the tiers (or complete M47): the casino penthouse, two floors, furnished (bar, lounge, spa, cinema). If rooms are bare, quote the "Apartment: N entity set(s)" log line; a set name the engine does not know is silently ignored and needs correcting.
 93. **The luxury tier.** After M27 the home markers collapse to the Eclipse Towers door and each brother's penthouse is his own floor, as before.
 
@@ -326,6 +326,9 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 121. **M07.** Start M07: Ice on the roof, Gohan at the foot of the building at a laptop, Ron in the lane. If the mission refuses to start and names `M07.GarageRoof`, there is no roof under the sky at that key: stand on the real roof and survey it (F11), then retry. If a notice says the roof is lower than the estimate, Ice is on the real roof; survey it to correct the key. The Buzzard fires on the roof once the sniffer is clamped.
 122. **M08.** Drive the forklift to a crate pad and stop: after a second the crate is on the forks with no button, then the loading scene. The crates cannot be knocked over. The five sentries stand apart; shooting one wakes the rest.
 123. **M08's two jobs.** At the second crate the technical is Ice's job in name and anyone's kill: whoever puts it down, it counts, and the forks under the second crate are Ron's. Nothing demands a switch to Ron for the fight or to Ice after it.
+126. **M03's car on the ground.** Start M03: Ron's Primo stands on the lot, not under it; the log says "Lifted a fresh PRIMO" when the estimate was below the ground.
+127. **The yellow route.** In any mission with one next destination, the yellow route line shows on the radar while driving, not only on the pause map.
+125. **Ron's home.** Fresh save: the prologue's drive home ends at the Mission Row apartment door, not Franklin's house; the home marker is there; through the door is the house interior; leaving puts Ron back at the Mission Row door.
 124. **The Port Heist as one seamless mission.** Start M19 from its marker with M18 and the three solos done. Between the four parts nothing should stop: no scene opens the lift, the escort or the Alamo; when Ron climbs out with the load, Gohan and Ice board the launch on their own while you hold the lift; at the shore you (Gohan) walk to the Granger and Ice follows; at the Alamo the Granger comes down the road and the two walk to the beach while you fly. Fail, abort or quit restarts the whole heist at M19. If a boarding stalls, the log names the step that was finished directly; if a water key refuses, the log names the key.
 
 ## Not done in this pass

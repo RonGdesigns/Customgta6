@@ -137,11 +137,11 @@ Home.Gohan	-693.0	-1004.0	20.0	90	land	estimate	Little Seoul
 Home.Guess	1169.0	-1650.0	36.0	90	land	estimate	El Burro Heights
 Apartment.Starter.Ice	-667.02	-1105.24	14.63	242	land	estimate	Little Seoul
 Apartment.Starter.Gohan	-1288.52	-430.51	35.15	124	land	estimate	Richards Majestic
-Apartment.Starter.Guess	-9.96	-1438.20	31.10	180	land	estimate	Strawberry, Forum Drive
+Apartment.Starter.Guess	291.517	-1078.674	29.405	270	land	estimate	Mission Row
 Apartment.Luxury.Entrance	-773.6176	299.3455	85.7201	3	land	estimate	Rockford Hills
 Apartment.Starter.Interior.Ice	261.4586	-998.8196	-99.00863	0	underground	estimate	
 Apartment.Starter.Interior.Gohan	347.2686	-999.2955	-99.19622	0	underground	estimate	
-Apartment.Starter.Interior.Guess	-14.30	-1438.50	31.10	180	interior	estimate	Forum Drive house (stock Strawberry house)
+Apartment.Starter.Interior.Guess	-14.30	-1438.50	31.10	180	interior	estimate	the stock Strawberry house interior, behind the Mission Row door
 Apartment.Top.Entrance	925.30	46.60	81.10	60	land	estimate	The Diamond, front doors
 Apartment.Top.Interior	976.636	70.295	115.164	0	interior	estimate	The Diamond penthouse (two floors; IPL vw_casino_penthouse)
 Apartment.Room.Ice.Door	261.46	-998.82	-99.01	180	underground	estimate	Ice's studio; survey inside
