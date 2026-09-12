@@ -36,10 +36,16 @@ namespace Bloodlines.Missions.Campaign
 
         private Ped _miller, _buyer;
         private Vehicle _millerCar, _buyerCar, _van;
-        private Prop _case;
+        private Prop _case, _breakerBox;
         private RoleTracks _roles;
-        private Vector3 _lot, _breaker, _meet, _exit, _gohanCover, _iceCover, _iceWatch, _gohanApproach;
-        private bool _flightStarted, _hostile;
+        private Vector3 _lot, _breaker, _meet, _exit, _gohanCover, _iceCover, _iceWatch, _gohanApproach, _basePoint;
+        private bool _flightStarted, _hostile, _lightsOut, _pursuit, _gohanOffered, _homeSent;
+        /// <summary>Gohan's optional work from the van's passenger seat: within range of Miller's car for this long, the car is dead.</summary>
+        public const int CarHackSeconds = 12;
+        public const float CarHackRange = 35f;
+        private readonly ProximityHack _carHack = new ProximityHack(CarHackSeconds);
+        public float CarHackProgress => _carHack.Progress;
+        public bool LotDark => _lightsOut;
 
         public override string Id => "M04";
         public override string Title => "Severed Wire";
@@ -53,27 +59,31 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Ground(Ctx.Locations, "M04.GarageEntry", "M04.Breaker", "M04.RampGuards", "M04.ChaseCar", "Base.CypressFlats")) return false;
+            if (!MissionSites.Ground(Ctx.Locations, "M04.GarageEntry", "M04.Breaker", "M04.RampGuards", "M04.ChaseCar", "M04.IceWatch", "Base.CypressFlats")) return false;
             _lot = Ctx.Locations.Position("M04.GarageEntry");
             _breaker = Ctx.Locations.Position("M04.Breaker");
             _meet = Ctx.Locations.Position("M04.RampGuards");
             _exit = Ctx.Locations.Position("M04.ChaseCar");
-            // Where the inactive brothers stand and where they fight from: derived
-            // from the surveyed keys so a survey moves the whole set.
-            _gohanApproach = _breaker + new Vector3(-4f, -4f, 0f);
-            _gohanCover = _breaker + new Vector3(-9f, -7f, 0f);
-            _iceWatch = _meet + new Vector3(-12f, 9f, 0f);
-            _iceCover = _meet + new Vector3(-16f, 12f, 0f);
+            // Gohan at the breaker and Ice above the lot are Ron's surveyed spots
+            // (September 12); the cover points are steps from them, so a survey moves
+            // the set. Ice's cover stays on his height: he shoots down from there.
+            _gohanApproach = _breaker + new Vector3(-2f, -2f, 0f);
+            _gohanCover = _breaker + new Vector3(-6f, -5f, 0f);
+            _iceWatch = Ctx.Locations.Position("M04.IceWatch");
+            _iceCover = _iceWatch + new Vector3(2f, 0f, 0f);
 
             // The briefing played at the base; the crew leaves from there in their own van.
-            var basePoint = Ctx.Locations.Position("Base.CypressFlats");
+            _basePoint = Ctx.Locations.Position("Base.CypressFlats");
+            var basePoint = _basePoint;
             float baseHeading = Ctx.Locations.Heading("Base.CypressFlats");
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, basePoint, baseHeading)) return false;
 
             ApplyBibleSetting();
             Ctx.Abilities.Refill();
 
-            SpawnVan(basePoint + new Vector3(6f, 0f, 0f), baseHeading);
+            var carSpot = MissionSites.CrewCarSpot(Ctx.Locations, "Base.CypressFlats", new Vector3(6f, 0f, 0f), out float carHeading);
+            SpawnVan(carSpot, carHeading);
+            SpawnBreakerBox();
             SpawnMiller();
             SpawnBuyer();
             SpawnBodyguards();
@@ -111,7 +121,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(context => Say("M04_S1_01_GOHAN"));
 
             yield return new MissionStage("Kill the lights",
-                    new MissionInteraction("Gohan: cut the marked surface-lot breaker", () => _breaker, 5, 3f))
+                    new MissionInteraction("Gohan: cut the marked surface-lot breaker", () => _breaker, 5, 3f, animation: MissionInteraction.ReachInside))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context => PlayTransaction())
                 .OnExit(context => LightsOut());
@@ -121,23 +131,34 @@ namespace Bloodlines.Missions.Campaign
                         shadow: ShadowMiller, onSwitched: () => Say("M04_S2_03_GUESS")))
                 .OnEnter(context => StartFlight());
 
+            // Gohan in the van beside Ron can kill Miller's car from his seat, the way
+            // he killed the comm-van in M02: optional, in range, said once (Ron,
+            // September 12). Miller keeps driving; he never shoots back.
             yield return new MissionStage("Run him down",
                     new PursueTargetObjective("Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive.", () => _miller,
-                        "Miller reached his handler and the forensics went with him."))
+                        "Miller reached his handler and the forensics went with him."),
+                    new ReactionTrigger(() => !_gohanOffered && GohanRidingAlong(), OfferCarHack))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => { var guess = Ctx.Crew.PedFor(CrewSlot.Guess); if (guess != null && guess.Exists() && guess.Handle == Game.Player.Character.Handle) guess.Task.ClearAll(); Say("M04_S2_04_ICE"); });
+                .OnEnter(context => { _pursuit = true; var guess = Ctx.Crew.PedFor(CrewSlot.Guess); if (guess != null && guess.Exists() && guess.Handle == Game.Player.Character.Handle) guess.Task.ClearAll(); Say("M04_S2_04_ICE"); })
+                .OnExit(context => _pursuit = false);
 
             yield return new MissionStage("Recover the drive",
                     new MissionInteraction("Guess: collect Miller's drive", () => MillerPosition(), 3, 6f, animation: MissionInteraction.ReachInside))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => DriveRecovered());
 
-            yield return new MissionStage("Lose them and regroup",
-                    new LoseWantedObjective("Lose the police."),
-                    new EnterVehicleObjective("Pick up Ice and Gohan in the van.", () => _van, VehicleSeat.Driver, requireCrew: true))
+            // Nobody is pulled to Ron (Ron, September 12): he loses the police on his
+            // own, Ice and Gohan make their own way back, and the meet is the hideout.
+            yield return new MissionStage("Lose them",
+                    new LoseWantedObjective("Lose the police. Ice and Gohan are making their own way back to the hideout."))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => Regroup())
-                .OnExit(context => GameUtils.Subtitle("~g~Drive secured. Gohan's reading it on the way back.", 5000));
+                .OnExit(context => SendCrewHome());
+
+            yield return new MissionStage("Back to the hideout",
+                    new TravelObjective("Guess: meet Ice and Gohan back at the Cypress Flats hideout.", () => _basePoint, 20f, () => _van))
+                .OwnedBy(CrewSlot.Guess)
+                .OnExit(context => ArriveHome());
         }
 
         // ---------- beats ----------
@@ -171,11 +192,18 @@ namespace Bloodlines.Missions.Campaign
             _roles.For(CrewSlot.Gohan).Work(_gohanApproach, _gohanCover);
         }
 
-        /// <summary>Power cut: the buyer ducks, the escort covers Miller, Miller grabs the case and goes for his car.</summary>
+        /// <summary>Power cut: the lot goes dark, the buyer ducks, the escort covers Miller, Miller grabs the case and goes for his car.</summary>
         private void LightsOut()
         {
             Say("M04_S1_02_ICE");
             _hostile = true;
+            // The lot's lights die with the breaker (Ron, September 12). The engine
+            // has one switch for artificial light, so the blackout is lifted again
+            // once the chase has left the lot behind, and on any exit.
+            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE, true);
+            _lightsOut = true;
+            var iceShooter = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (iceShooter != null && iceShooter.Exists()) Function.Call(Hash.SET_PED_COMBAT_MOVEMENT, iceShooter, 1);
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             foreach (var guard in _bodyguards)
                 if (guard != null && guard.Exists() && !guard.IsDead) { guard.RelationshipGroup = aegis; guard.Task.FightAgainstHatedTargets(60f); }
@@ -186,7 +214,87 @@ namespace Bloodlines.Missions.Campaign
                 _miller.Task.EnterVehicle(_millerCar, VehicleSeat.Driver, 8000, 2f, EnterVehicleFlags.None);
             }
             _roles.For(CrewSlot.Gohan).TakeCover(_gohanCover);
-            _roles.For(CrewSlot.Ice).Observe(_iceWatch, _iceCover);
+            // Ice shoots down from his height the moment it is a fight (Ron, September 12).
+            _roles.For(CrewSlot.Ice).TakeCover(_iceCover);
+        }
+
+        private void RestoreLights()
+        {
+            if (!_lightsOut) return;
+            _lightsOut = false;
+            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE, false);
+        }
+
+        private bool GohanRidingAlong()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var player = Game.Player.Character;
+            return _van != null && _van.Exists() && gohan != null && gohan.Exists() && !gohan.IsDead && gohan.IsInVehicle(_van) &&
+                _van.GetPedOnSeat(VehicleSeat.Driver) != gohan && player != null && player.IsInVehicle(_van);
+        }
+
+        private void OfferCarHack()
+        {
+            _gohanOffered = true;
+            Radio("GOHAN", "I can kill his car from here, Ron. Stay close and hold it steady; I need him inside thirty-five meters.", "M04_RADIO_03_GOHAN");
+        }
+
+        /// <summary>Gohan's hack from the passenger seat: progress only while he rides with Ron inside range of Miller's car; at the end the car is dead and the chase is over.</summary>
+        private void MaintainCarHack()
+        {
+            if (!_pursuit || _millerCar == null || !_millerCar.Exists() || !_millerCar.IsDriveable) return;
+            bool riding = GohanRidingAlong();
+            float distance = riding ? _van.Position.DistanceTo(_millerCar.Position) : float.MaxValue;
+            bool connected = riding && distance <= CarHackRange;
+            _carHack.Update(Game.GameTime, connected);
+            if (!riding) return;
+            int percent = (int)(_carHack.Progress * 100f);
+            GameUtils.Subtitle("~y~Gohan on Miller's car: " + percent + "%  ~s~" + (int)distance + "/" + (int)CarHackRange + "m  " + (connected ? "Connected - hold the gap." : "Out of range - close the gap."), 500);
+            if (_carHack.Progress < 1f) return;
+            _millerCar.EngineHealth = -4000f;
+            _millerCar.IsDriveable = false;
+            Function.Call(Hash.SET_VEHICLE_UNDRIVEABLE, _millerCar, true);
+            Say("M04_S2_05_ICE");
+            GameUtils.Subtitle("~g~Miller's car is dead. Get his drive.", 4000);
+            Logger.Info("M04: Gohan killed Miller's car from the van.");
+        }
+
+        /// <summary>The police lost: Ice and Gohan are already on their way to the hideout, off camera when Ron is far, on foot when he is near.</summary>
+        private void SendCrewHome()
+        {
+            if (_homeSent) return;
+            _homeSent = true;
+            var player = Game.Player.Character;
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan })
+            {
+                var ped = Ctx.Crew.PedFor(slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                Ctx.Crew.CompanionAI.TakeControl(slot);
+                if (ped.IsInVehicle()) ExitVehicleStep.ForceOut(ped);
+                var spot = _basePoint + new Vector3(slot == CrewSlot.Ice ? -3f : 3f, 4f, 0f);
+                bool far = player == null || !player.Exists() || player.Position.DistanceTo(_basePoint) > 120f;
+                if (far)
+                {
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD, spot.X, spot.Y, spot.Z);
+                    ped.Position = spot;
+                    ped.Task.ClearAllImmediately();
+                    ped.Task.GuardCurrentPosition();
+                }
+                else { ped.Task.ClearAll(); ped.Task.GoTo(spot); }
+            }
+            RestoreLights();
+            Radio("ICE", "We're clear of the lot. Gohan and I are heading back to Cypress on our own; lose them and meet us there.", "M04_RADIO_04_ICE");
+        }
+
+        /// <summary>The meet at the hideout: the crew is one unit again.</summary>
+        private void ArriveHome()
+        {
+            _roles?.Release();
+            Ctx.Crew.CompanionAI.ReleaseAll();
+            Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
+            Ctx.Crew.AssignCompanionAI();
+            GameUtils.Subtitle("~g~Drive secured. Gohan's reading it at the hideout.", 5000);
         }
 
         private void StartFlight()
@@ -228,21 +336,25 @@ namespace Bloodlines.Missions.Campaign
             GameUtils.Subtitle("~g~Drive secured. Stored in the van.", 4000);
         }
 
+        /// <summary>The drive is Ron's: Ice and Gohan stand down from the lot and wait to be sent home.</summary>
         private void Regroup()
         {
             _roles.For(CrewSlot.Ice).Extract(_exit);
             _roles.For(CrewSlot.Gohan).Extract(_exit);
-            _roles.Release();
-            Ctx.Crew.CompanionAI.ReleaseAll();
-            Ctx.Crew.CompanionsHoldPosition = false;
-            Ctx.Crew.CompanionAI.RequireSharedVehicle = true;
-            Ctx.Crew.AssignCompanionAI();
+            Ctx.Crew.CompanionsHoldPosition = true;
         }
 
         protected override void OnUpdate()
         {
             base.OnUpdate();
             _roles?.Update();
+            MaintainCarHack();
+            // The blackout is the lot's: once the chase is well clear of it the lights come back.
+            if (_lightsOut && _flightStarted)
+            {
+                var player = Game.Player.Character;
+                if (player != null && player.Exists() && player.Position.DistanceTo(_lot) > 260f) RestoreLights();
+            }
         }
 
         protected override void OnPassed()
@@ -254,8 +366,25 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            RestoreLights();
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice != null && ice.Exists()) Function.Call(Hash.SET_PED_COMBAT_MOVEMENT, ice, 2);
             _roles?.Release();
             _bodyguards.Clear();
+        }
+
+        /// <summary>A breaker box at Gohan's spot: the thing he cuts, not a mark on the ground (Ron, September 12).</summary>
+        private void SpawnBreakerBox()
+        {
+            foreach (string name in new[] { "prop_elecbox_12", "prop_elecbox_01a" })
+            {
+                var model = new Model(name);
+                if (!GameUtils.RequestModel(model, 2000)) continue;
+                _breakerBox = Track(World.CreateProp(model, _breaker + new Vector3(0.6f, 0.3f, 0f), false, true));
+                model.MarkAsNoLongerNeeded();
+                if (_breakerBox != null && _breakerBox.Exists()) { _breakerBox.Heading = Ctx.Locations.Heading("M04.Breaker"); _breakerBox.IsPersistent = true; _breakerBox.IsPositionFrozen = true; return; }
+            }
+            Logger.Warn("M04: no breaker box model loaded; the interaction stands on its own.");
         }
 
         // ---------- world building ----------
@@ -307,9 +436,10 @@ namespace Bloodlines.Missions.Campaign
                 carModel.MarkAsNoLongerNeeded();
                 if (_millerCar != null && _millerCar.Exists()) _millerCar.IsPersistent = true;
             }
-            // A getaway driver, not a commuter.
+            // A getaway driver, not a commuter; he drives, he never shoots back (Ron, September 12).
             Function.Call(Hash.SET_DRIVER_ABILITY, _miller, 1f);
             Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, _miller, 1f);
+            Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, _miller, 2, false);
 
             var caseModel = new Model("prop_ld_case_01");
             if (GameUtils.RequestModel(caseModel))

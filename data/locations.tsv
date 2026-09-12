@@ -21,7 +21,7 @@ M03.DepotGate	1270.00	-1940.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fi
 M03.CraneControls	1286.00	-1956.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fields
 M03.HaulerSpawn	1254.00	-1928.00	40.00	180	land	estimate	Cypress Flats / Murrieta Fields
 M04.GarageEntry	233.0	-800.0	30.0	0	land	estimate	Pillbox Hill / Textile City
-M04.Breaker	220.0	-815.0	30.0	0	land	estimate	Pillbox Hill / Textile City
+M04.Breaker	254.10	-828.48	29.70	110.5	land	surveyed	Pillbox Hill, the lot breaker (Ron, September 12)
 M04.RampGuards	240.0	-805.0	30.0	0	land	estimate	Pillbox Hill / Textile City
 M04.ChaseCar	250.0	-790.0	30.0	250	land	estimate	Pillbox Hill / Textile City
 M04.TextileCrash	80.0	-1080.0	29.0	0	land	estimate	Pillbox Hill / Textile City
@@ -190,3 +190,5 @@ SM06.Bend	-1466	4433	18	0	land	estimate
 SM06.Delivery	2126	4780	41	0	land	estimate	
 M19.Worksite	1040.00	-3330.00	0.00	0	water	estimate	Terminal
 M19.BullionSurface	1050.00	-3330.00	0.00	0	water	estimate	Terminal
+M04.IceWatch	218.08	-747.07	47.08	267.1	land	surveyed	Pillbox Hill, Ice's overwatch above the lot (Ron, September 12)
+Base.CypressFlatsCar	866.96	-2104.50	29.92	353.8	land	surveyed	Cypress Flats, the crew's car at the base (Ron, September 12)

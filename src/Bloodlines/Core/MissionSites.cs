@@ -69,6 +69,19 @@ namespace Bloodlines.Core
         private static bool Walkable(Vector3 safe, Vector3 point) =>
             safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, point, 35f) && Math.Abs(safe.Z - point.Z) < 25f;
 
+        /// <summary>
+        /// Where the crew's car stands at a base: the surveyed car key when there is
+        /// one (Ron, September 12: Base.CypressFlatsCar, so the car is neither under
+        /// the lot nor on a roof), else the base key plus the offset.
+        /// </summary>
+        public static Vector3 CrewCarSpot(LocationBook book, string baseKey, Vector3 fallbackOffset, out float heading)
+        {
+            var car = book.Get(baseKey + "Car");
+            if (car != null) { heading = car.Heading; return car.Position; }
+            heading = book.Heading(baseKey);
+            return book.Position(baseKey) + fallbackOffset;
+        }
+
         /// <summary>Water a boat can float in: the surface must stand this far above whatever ground is under it.</summary>
         public const float MinWaterDepth = 1.2f;
 

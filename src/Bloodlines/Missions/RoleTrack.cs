@@ -60,7 +60,8 @@ namespace Bloodlines.Missions
             if (!_orderIssued) { Order(); _orderIssued = true; }
 
             if (State == RoleState.Approaching && Arrived) { State = RoleState.Observing; Order(); return; }
-            if (State == RoleState.Extracting && Arrived && Game.GameTime - _lastOrder > 500) { Ped.Task.StandStill(-1); _lastOrder = Game.GameTime + 60000; return; }
+            // At the pickup a brother fights what is shooting at him rather than standing in it (Ron, September 12).
+            if (State == RoleState.Extracting && Arrived && Game.GameTime - _lastOrder > 500) { Ped.Task.FightAgainstHatedTargets(80f); _lastOrder = Game.GameTime + 60000; return; }
 
             bool threatened = Threatened();
             if (State == RoleState.Approaching || State == RoleState.Observing || State == RoleState.Working)
@@ -101,7 +102,7 @@ namespace Bloodlines.Missions
                 case RoleState.Observing: task.ClearAll(); Ped.Heading = DriveUpStep.HeadingBetween(Ped.Position, _cover == Vector3.Zero ? _point : _cover); task.GuardCurrentPosition(); break;
                 case RoleState.Working: task.ClearAll(); task.StandStill(-1); break;
                 case RoleState.Threatened:
-                case RoleState.Covering: task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(60f); break;
+                case RoleState.Covering: task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
                 case RoleState.Extracting: task.ClearAll(); task.RunTo(_point, false, 20000); break;
             }
         }

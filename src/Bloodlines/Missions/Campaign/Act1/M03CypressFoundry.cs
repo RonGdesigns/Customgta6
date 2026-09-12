@@ -43,6 +43,9 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _ambush = new List<Ped>();
         private readonly List<Ped> _dogs = new List<Ped>();
         private readonly List<Ped> _reinforcements = new List<Ped>();
+        private sealed class Arrival { public Vehicle Car; public List<Ped> Crew = new List<Ped>(); public int Ordered; public bool Unloaded; }
+        private readonly List<Arrival> _arrivals = new List<Arrival>();
+        public IReadOnlyList<Vehicle> Arrivals => _arrivals.Select(a => a.Car).ToList();
         private readonly List<Ped> _depotDogs = new List<Ped>();
         private readonly Dictionary<int, int> _dogOrders = new Dictionary<int, int>();
         private readonly List<Prop> _crates = new List<Prop>();
@@ -56,7 +59,10 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Dogs on the block (Ron, September 11: at least three, and they must actually come).</summary>
         public const int JunctionDogs = 4;
         /// <summary>The street crew that comes out of the houses, and the gunmen and dogs that answer the loading.</summary>
-        public const int StreetCrewSize = 6, DepotGuardCount = 10, ReinforcementGunmen = 7, ReinforcementDogs = 3;
+        public const int StreetCrewSize = 6, DepotGuardCount = 10, ReinforcementGunmen = 4, ReinforcementDogs = 0;
+        /// <summary>The cars that pull up behind Ron when he reaches the lot, and the gunmen in each (Ron, September 12).</summary>
+        public const int ArrivalCars = 3, GunmenPerCar = 2;
+        private static readonly string[] ArrivalCarModels = { "emperor", "fugitive", "primo" };
 
         public override string Id => "M03";
         public override string Title => "Cypress Foundry";
@@ -92,8 +98,10 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, _base, baseHeading)) return false;
             ApplyBibleSetting();
 
-            SpawnCar(_base + new Vector3(6f, 0f, 0f), baseHeading);
-            SpawnVan(_base + new Vector3(-6f, 0f, 0f), baseHeading);
+            // The car at the base's surveyed car spot (Ron, September 12), the van beside it.
+            var carSpot = MissionSites.CrewCarSpot(Ctx.Locations, "Base.CypressFlats", new Vector3(6f, 0f, 0f), out float carHeading);
+            SpawnCar(carSpot, carHeading);
+            SpawnVan(carSpot + new Vector3((float)System.Math.Cos(carHeading * System.Math.PI / 180f) * 4.5f, (float)-System.Math.Sin(carHeading * System.Math.PI / 180f) * 4.5f, 0f), carHeading);
             // The truck first, on a road node (Ron, September 11: it spawned in a wall); the depot team stands relative to where it actually is.
             SpawnHauler();
             if (_hauler == null || !_hauler.Exists()) return false;
@@ -172,10 +180,10 @@ namespace Bloodlines.Missions.Campaign
 
             // Ron is there: the depot is everyone's fight, as whoever the player wants.
             yield return new MissionStage("Hold the depot",
-                    new KillTargetsObjective("Clear the depot: the gunmen and the dogs marked RED. Switch to any brother.", () => _reinforcements),
+                    new KillTargetsObjective("Clear the depot: the gunmen marked RED, and the cars pulling in behind you. Switch to any brother.", () => _reinforcements),
                     new ProtectObjective("", () => _hauler, "The hauler was destroyed."))
                 .AnyOf()
-                .OnEnter(context => GameUtils.Subtitle("~y~Ron is at the depot. Switch freely; the yard is everyone's fight.", 5000));
+                .OnEnter(context => { SpringArrivals(); GameUtils.Subtitle("~y~Ron is at the depot. Switch freely; the yard is everyone's fight.", 5000); });
 
             // Ron drives, Ice rides in the cab, Gohan rides in the back with the
             // crates (Ron, September 11): the Benson has two seats, so Gohan is put
@@ -327,41 +335,43 @@ namespace Bloodlines.Missions.Campaign
             if (gohan == null || !gohan.Exists() || _hauler == null || !_hauler.Exists()) return;
             OpenDoors();
             var rear = RearOfHauler();
+            // One trip, seen on Gohan, short (Ron, September 12: three trips and a
+            // camera on the truck ran long). The first two crates are already in the
+            // bed when the doors open; he carries the last one in himself.
+            for (int i = 0; i + 1 < _crates.Count; i++)
+                StowPropStep.Stow(_crates[i], _hauler, BedSlots[i % BedSlots.Length]);
+            var last = _crates.Count > 0 ? _crates[_crates.Count - 1] : null;
             var blocking = new SceneBlocking()
-                .Then(new ShotStep(2600, _hauler, new Vector3(-6f, 3.5f, 1.6f), _hauler, new Vector3(0f, -2.5f, 1f), 0.6f));
-            for (int i = 0; i < _crates.Count; i++)
-            {
-                var crate = _crates[i];
+                .Then(ShotStep.OverShoulder(1600, gohan, _hauler, 0.4f));
+            if (last != null)
                 blocking.Then(new WalkToStep(gohan, _pallet, 1.1f))
-                    .Then(new CarryPropStep(gohan, crate, new Vector3(0.25f, 0.1f, 0f), new Vector3(0f, 0f, 0f)))
+                    .Then(new CarryPropStep(gohan, last, new Vector3(0.25f, 0.1f, 0f), new Vector3(0f, 0f, 0f)))
                     .Then(new WalkToStep(gohan, rear, 1.1f))
-                    .Then(new StowPropStep(gohan, crate, _hauler, BedSlots[i % BedSlots.Length]));
-            }
-            blocking.Then(new ShotStep(2200, _hauler, new Vector3(-4.5f, -3.5f, 1.3f), _hauler, new Vector3(0f, -2.8f, 0.9f), 0.4f));
+                    .Then(new StowPropStep(gohan, last, _hauler, BedSlots[(_crates.Count - 1) % BedSlots.Length], 350));
             // Loaded, Gohan gets in the cab: that is what the depot answers.
             blocking.Then(new EnterVehicleStep(gohan, _hauler, VehicleSeat.RightFront));
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "loading", Title = "Loading",
-                Reason = "The depot's weapons go into the Benson by hand: three crates, seen going in, before Ron drives it home.",
+                Reason = "The depot's weapons go into the Benson by hand: the last crate carried in on camera, the doors closed, before Ron drives it home.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) { Logger.Warn("M03 loading scene did not play; the crates are placed directly."); blocking.Complete(); }
         }
 
         /// <summary>
-        /// The dogs are loose already: any brother inside forty meters is theirs, and a dog
-        /// that is not fighting is ordered again every few seconds (Ron, September 11: they
-        /// wandered instead of attacking). The same rule runs the depot's dogs.
+        /// The dogs are loose already: any brother inside fifty meters is theirs. The
+        /// order is the combat task on the nearest brother, renewed every six seconds
+        /// and never cleared first: clearing it every few seconds restarted the run
+        /// each time and the dogs never closed (Ron, September 11 and 12).
         /// </summary>
         private void LooseDogs()
         {
             foreach (var dog in AllDogs())
             {
                 if (dog == null || !dog.Exists() || dog.IsDead) continue;
-                if (dog.IsInCombat && _dogOrders.ContainsKey(dog.Handle) && Game.GameTime - _dogOrders[dog.Handle] < 8000) continue;
-                if (_dogOrders.TryGetValue(dog.Handle, out int last) && Game.GameTime - last < 4000) continue;
-                Ped nearest = null; float best = 40f;
+                if (_dogOrders.TryGetValue(dog.Handle, out int last) && Game.GameTime - last < 6000) continue;
+                Ped nearest = null; float best = 50f;
                 foreach (var hero in Protagonist.All)
                 {
                     var ped = Ctx.Crew.PedFor(hero.Slot);
@@ -371,8 +381,8 @@ namespace Bloodlines.Missions.Campaign
                 }
                 if (nearest == null) continue;
                 _dogOrders[dog.Handle] = Game.GameTime;
-                dog.Task.ClearAll();
                 dog.Task.FightAgainst(nearest);
+                Function.Call(Hash.SET_PED_KEEP_TASK, dog, true);
             }
         }
 
@@ -382,14 +392,33 @@ namespace Bloodlines.Missions.Campaign
             foreach (var dog in _depotDogs) yield return dog;
         }
 
-        /// <summary>A dog that fights: no fleeing, always attacks, and nothing in the ambient event system holds it back.</summary>
-        private static void MakeDogFight(Ped dog)
+        /// <summary>
+        /// A dog that fights: no fleeing, always attacks, advances, and nothing in the
+        /// ambient event system overrides the order (an animal left open to ambient
+        /// events dropped its combat task the moment one fired). Its group hates the
+        /// crew and the player both ways, so the hate the task relies on is real.
+        /// </summary>
+        private void MakeDogFight(Ped dog)
         {
             dog.IsPersistent = true;
-            dog.BlockPermanentEvents = false;
+            dog.BlockPermanentEvents = true;
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, dog, 46, true);
             Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, dog, 5, true);
             Function.Call(Hash.SET_PED_FLEE_ATTRIBUTES, dog, 0, false);
+            Function.Call(Hash.SET_PED_COMBAT_MOVEMENT, dog, 3);
+            Function.Call(Hash.SET_PED_COMBAT_RANGE, dog, 0);
+            HateTheCrew(dog.RelationshipGroup);
+        }
+
+        /// <summary>The group hates the crew and the player, and is hated back: the standing relationship the combat tasks and markers key on.</summary>
+        private void HateTheCrew(RelationshipGroup group)
+        {
+            var crew = Ctx.Crew.CrewGroup;
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, group, crew);
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, crew, group);
+            int player = Game.GenerateHash("PLAYER");
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, group, player);
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, player, group);
         }
 
         /// <summary>The block's crew and its dogs on the map while they are Ron's fight (Ron, September 11: they were hard to find).</summary>
@@ -399,7 +428,7 @@ namespace Bloodlines.Missions.Campaign
             foreach (var dog in _dogs) if (dog != null && dog.Exists() && !dog.IsDead) ObjectiveMarkers.Show(dog.Position, BlipColor.Red);
         }
 
-        /// <summary>The depot answers the loading: gunmen back through the gate and more dogs, on Ice and Gohan at the truck.</summary>
+        /// <summary>The depot answers the loading: gunmen back through the gate on Ice and Gohan at the truck. The cars come when Ron does.</summary>
         private void SpringReinforcements()
         {
             if (_reinforced) return;
@@ -446,8 +475,86 @@ namespace Bloodlines.Missions.Campaign
             if (gohan != null && gohan.Exists() && gohan.IsInVehicle()) ExitVehicleStep.ForceOut(gohan);
             _roles.For(CrewSlot.Gohan).TakeCover(_gohanCover);
             _roles.For(CrewSlot.Ice).TakeCover(_iceCover);
-            Logger.Info("M03 depot reinforcements: " + _reinforcements.Count + " (" + ReinforcementGunmen + " gunmen, " + ReinforcementDogs + " dogs).");
-            Radio("ICE", "Ron, the gate's open again. More of them, and they brought dogs. We're at the truck; get back here.", "M03_RADIO_02_ICE");
+            Logger.Info("M03 depot reinforcements: " + _reinforcements.Count + " at the gate (" + ReinforcementGunmen + " gunmen, " + ReinforcementDogs + " dogs).");
+            Radio("ICE", "Ron, the gate's open again. More of them. We're at the truck; get back here.", "M03_RADIO_02_ICE");
+        }
+
+        /// <summary>
+        /// Ron in the lot: three four-door cars pull up behind him, two gunmen each,
+        /// and Ice says more are on the way, once, on the lead car (Ron, September
+        /// 12: the second half of the wave arrives instead of appearing). The cars
+        /// are driven in; their crews get out at the lot and fight.
+        /// </summary>
+        private void SpringArrivals()
+        {
+            if (_arrivals.Count > 0) return;
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            var anchor = guess != null && guess.Exists() ? guess.Position : _depot;
+            var back = guess != null && guess.Exists() ? guess.ForwardVector * -1f : (_depot - _base);
+            back.Z = 0f; float run = (float)System.Math.Sqrt(back.X * back.X + back.Y * back.Y);
+            back = run < 0.5f ? new Vector3(0f, -1f, 0f) : back * (1f / run);
+            var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            Ped lead = null;
+            for (int i = 0; i < ArrivalCars; i++)
+            {
+                var carModel = new Model(ArrivalCarModels[i % ArrivalCarModels.Length]);
+                if (!GameUtils.RequestModel(carModel)) continue;
+                var wanted = anchor + back * (60f + i * 18f);
+                var road = World.GetNextPositionOnStreet(wanted);
+                if (road == Vector3.Zero) road = wanted;
+                var car = World.CreateVehicle(carModel, road, DriveUpStep.HeadingBetween(road, anchor));
+                carModel.MarkAsNoLongerNeeded();
+                if (car == null || !car.Exists()) continue;
+                car.IsPersistent = true; car.IsEngineRunning = true;
+                GameUtils.HoldUntilGrounded(car);
+                var arrival = new Arrival { Car = Track(car), Ordered = Game.GameTime };
+                for (int seat = 0; seat < GunmenPerCar; seat++)
+                {
+                    var model = new Model(StreetCrew[(i + seat) % StreetCrew.Length]);
+                    if (!GameUtils.RequestModel(model)) continue;
+                    var thug = World.CreatePed(model, road, 0f);
+                    model.MarkAsNoLongerNeeded();
+                    if (thug == null || !thug.Exists()) continue;
+                    thug.RelationshipGroup = cartel;
+                    thug.IsPersistent = true;
+                    thug.BlockPermanentEvents = true;
+                    thug.Accuracy = 35;
+                    thug.Armor = 20;
+                    thug.Weapons.Give(seat == 0 ? WeaponHash.MicroSMG : WeaponHash.AssaultRifle, 200, true, true);
+                    thug.SetIntoVehicle(car, seat == 0 ? VehicleSeat.Driver : VehicleSeat.RightFront);
+                    if (seat == 0)
+                    {
+                        Function.Call(Hash.SET_DRIVER_ABILITY, thug, 1f);
+                        Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, thug, 1f);
+                        thug.Task.DriveTo(car, anchor + back * (8f + i * 7f), 6f, 24f, DrivingStyle.Rushed);
+                        if (lead == null) lead = thug;
+                    }
+                    arrival.Crew.Add(thug);
+                    _reinforcements.Add(Track(thug));
+                }
+                _arrivals.Add(arrival);
+            }
+            Logger.Info("M03 arrivals: " + _arrivals.Count + " cars behind Ron, " + _arrivals.Sum(a => a.Crew.Count) + " gunmen.");
+            if (lead != null) Ctx.Cutscenes.PlayMoment(Id, "More on the way", "ICE", "Behind you, Ron: three cars. More on the way. Get in here.", lead);
+        }
+
+        /// <summary>A car that has reached the lot, or has had its fifteen seconds, empties into the fight.</summary>
+        private void MaintainArrivals()
+        {
+            foreach (var arrival in _arrivals)
+            {
+                if (arrival.Unloaded) continue;
+                bool there = arrival.Car == null || !arrival.Car.Exists() || arrival.Car.IsDead ||
+                    (arrival.Car.Speed < 1.5f && arrival.Car.Position.DistanceTo(_depot) < 60f) || Game.GameTime - arrival.Ordered > 15000;
+                if (!there) continue;
+                arrival.Unloaded = true;
+                foreach (var thug in arrival.Crew)
+                {
+                    if (thug == null || !thug.Exists() || thug.IsDead) continue;
+                    if (thug.IsInVehicle()) thug.Task.LeaveVehicle();
+                    thug.Task.FightAgainstHatedTargets(150f);
+                }
+            }
         }
 
         private void CallIceAboard()
@@ -528,6 +635,7 @@ namespace Bloodlines.Missions.Campaign
             base.OnUpdate();
             _roles?.Update();
             LooseDogs();
+            MaintainArrivals();
             if (Stage == 1) MarkJunctionHostiles();
             if (_workStartedAt == 0 && Stage == 1 && Ctx.Crew.ActiveSlot == CrewSlot.Guess)
             {
@@ -601,6 +709,7 @@ namespace Bloodlines.Missions.Campaign
             _dogs.Clear();
             _reinforcements.Clear();
             _depotDogs.Clear();
+            _arrivals.Clear();
             _crates.Clear();
         }
 
