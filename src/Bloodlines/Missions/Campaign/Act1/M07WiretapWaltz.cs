@@ -51,6 +51,8 @@ namespace Bloodlines.Missions.Campaign
         public Prop Laptop => _laptop;
         public bool HeliShown => _heliShown;
         public bool RoofFound => _roofFound;
+        /// <summary>The roof the world has at the key stands below the estimate's height: Ice is on it, and the key wants a survey.</summary>
+        public bool RoofLowerThanEstimate { get; private set; }
         public Vector3 Roof => _roof;
         public Vector3 BuildingBase => _base;
 
@@ -60,23 +62,41 @@ namespace Bloodlines.Missions.Campaign
             // The estimates carry the building; the roof's real height comes from the
             // world, and the pickup lane is the nearest street, not a wall (Ron,
             // September 10: Ice was not on the building; the sedan was against it).
-            _roof = RoofTop(Ctx.Locations.Position("M07.GarageRoof"));
-            _mast = RoofTop(Ctx.Locations.Position("M07.MastTop"));
-            _roofFound = _roof.Z > Ctx.Locations.Position("M07.GarageRoof").Z - 3f;
-            if (!_roofFound)
-            {
-                Logger.Warn("M07: no roof at or above the estimate for M07.GarageRoof (" + Ctx.Locations.Position("M07.GarageRoof") + "); Ice starts at street level. Survey the roof (F11) and retry.");
-                GameUtils.Notify("~y~M07.GarageRoof has no roof at its estimate. Survey it from the real roof (F11) so Ice starts up there.");
-            }
-            var lane = World.GetNextPositionOnStreet(Ctx.Locations.Position("M07.LandingZone"));
-            _landing = lane == Vector3.Zero ? Ctx.Locations.Position("M07.LandingZone") : lane;
+            var roofKey = Ctx.Locations.Position("M07.GarageRoof");
+            var mastKey = Ctx.Locations.Position("M07.MastTop");
             // Gohan at the building's base on the street, reading the feed: where Ice
             // used to stand (Ron, September 11). Ice starts on the roof itself.
-            _base = StreetBase(Ctx.Locations.Position("M07.GarageRoof"));
+            _base = StreetBase(roofKey);
+            // The roof is whatever the world has under the sky at the key, and it is
+            // a roof only when it stands clear of the street at the base. The old
+            // check certified the estimate against its own height, so a key with no
+            // roof put Ice in the air over whatever stood below it (Ron, September
+            // 11): no roof now refuses the start with the key to survey.
+            _roofFound = TryRoofTop(roofKey, _base.Z, out _roof);
+            if (!_roofFound)
+            {
+                Logger.Error("M07: no roof under the sky at M07.GarageRoof (" + roofKey + "); the street at the base is at " + _base.Z.ToString("0.0") + ". Survey the key from the real roof (F11) and retry.");
+                GameUtils.Subtitle("~r~M07.GarageRoof has no roof at its estimate. Survey it from the real roof (F11) and retry.", 8000);
+                return false;
+            }
+            RoofLowerThanEstimate = _roof.Z < roofKey.Z - 3f;
+            if (RoofLowerThanEstimate)
+            {
+                Logger.Warn("M07: the roof at M07.GarageRoof stands at " + _roof.Z.ToString("0.0") + ", below the estimate's " + roofKey.Z.ToString("0.0") + "; Ice starts on the real roof. Survey the roof (F11) to correct the key.");
+                GameUtils.Notify("~y~M07.GarageRoof is lower than its estimate; Ice is on the real roof. Survey it (F11) to correct the key.");
+            }
+            // The platform is on the same roof: the mast key's own surface when it
+            // has one, else the mast's spot carried onto the roof that was found.
+            if (!TryRoofTop(mastKey, _base.Z, out _mast)) _mast = new Vector3(mastKey.X, mastKey.Y, _roof.Z);
+            // Ice starts a few steps back from the platform, on the roof, not past its edge.
+            var iceStart = _roof + new Vector3(0f, -8f, 0f);
+            if (!TryRoofTop(iceStart, _base.Z, out var iceOnRoof) || iceOnRoof.Z < _roof.Z - 2f) iceOnRoof = _roof;
+            var lane = World.GetNextPositionOnStreet(Ctx.Locations.Position("M07.LandingZone"));
+            _landing = lane == Vector3.Zero ? Ctx.Locations.Position("M07.LandingZone") : lane;
 
             if (!Ctx.Crew.Deploy(CrewSlot.Ice, new Dictionary<CrewSlot, PedPlacement>
             {
-                [CrewSlot.Ice] = new PedPlacement(_roof + new Vector3(0f, -8f, 0f), Ctx.Locations.Heading("M07.GarageRoof")),
+                [CrewSlot.Ice] = new PedPlacement(iceOnRoof, Ctx.Locations.Heading("M07.GarageRoof")),
                 [CrewSlot.Gohan] = new PedPlacement(_base, Ctx.Locations.Heading("M07.GarageRoof")),
                 [CrewSlot.Guess] = new PedPlacement(_landing + new Vector3(2f, 0f, 0f), 0f)
             })) return false;
@@ -142,16 +162,25 @@ namespace Bloodlines.Missions.Campaign
                 });
         }
 
-        /// <summary>The highest surface under the sky at the estimate's X and Y, when it is at least roughly as high as the estimate: the roof, not the street below it.</summary>
-        private static Vector3 RoofTop(Vector3 estimate)
+        /// <summary>A surface is a roof when it stands this far over the street at the building's base.</summary>
+        public const float MinRoofRise = 4f;
+
+        /// <summary>
+        /// The highest surface under the sky at the point's X and Y, when it stands
+        /// <see cref="MinRoofRise"/> over the street: a roof, not the street below
+        /// it. False when nothing is loaded there or the only surface is the street;
+        /// the point itself is never handed back as if it had been found.
+        /// </summary>
+        private static bool TryRoofTop(Vector3 point, float street, out Vector3 top)
         {
+            top = point;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, point.X, point.Y, point.Z);
             var z = new OutputArgument();
-            if (Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, estimate.X, estimate.Y, estimate.Z + 120f, z, false, false))
-            {
-                float top = z.GetResult<float>();
-                if (top > estimate.Z - 3f) return new Vector3(estimate.X, estimate.Y, top + 0.1f);
-            }
-            return estimate;
+            if (!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + 120f, z, false, false)) return false;
+            float surface = z.GetResult<float>();
+            if (surface < street + MinRoofRise) return false;
+            top = new Vector3(point.X, point.Y, surface + 0.1f);
+            return true;
         }
 
         // ---------- beats ----------

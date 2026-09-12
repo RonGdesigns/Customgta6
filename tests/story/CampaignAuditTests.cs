@@ -76,6 +76,7 @@ public static partial class StoryTests
   foreach(var type in typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign"))
   {
    Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"abort-"+type.Name+".json"));var mission=(ComposedMission)Activator.CreateInstance(type);
+   if(mission.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
    Check(mission.Begin(c),mission.Id+" builds a fresh attempt for failure/retry audit");
    var required=Flow(mission).SelectMany(s=>s.Objectives).Where(o=>o.RequiredCharacter.HasValue).Select(o=>o.RequiredCharacter.Value).First();
    crew.PedFor(required).IsDead=true;mission.Tick();

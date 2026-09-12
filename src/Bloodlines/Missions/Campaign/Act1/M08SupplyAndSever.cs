@@ -133,11 +133,14 @@ namespace Bloodlines.Missions.Campaign
                 });
 
             // The technical is shown coming before it is a fight. Ice handles it;
-            // Ron finishes the loading. Either brother's job can be done first.
-            _crateTwo = new ForksUnderCrateObjective("Guess — drive the forks under the second crate and stop.", () => _padTwo, () => _forklift);
+            // Ron finishes the loading. Either brother's job can be done first. The
+            // owners are named one by one: a stage with none of its own inherits the
+            // last owner (Ron) for every job, and the fight demanded Ron too. The
+            // forks are Ron's; the technical is Ice's in name and anyone's kill.
+            _crateTwo = new ForksUnderCrateObjective("Guess — drive the forks under the second crate and stop.", () => _padTwo, () => _forklift) { RequiredCharacter = CrewSlot.Guess };
             yield return new MissionStage("Crate two, the technical",
-                    new DestroyVehicleObjective("Ice — put the Aegis technical down.", () => _technical),
                     _crateTwo,
+                    new DestroyVehicleObjective("Ice — put the Aegis technical down.", () => _technical).ByAnyone(),
                     new ReactionTrigger(() => !_technicalShown && !Ctx.Cutscenes.IsActive, ShowTechnical),
                     new ReactionTrigger(() => !_technicalDown && _technical != null && _technical.Exists() && _technical.IsDead, TechnicalDown),
                     new ReactionTrigger(() => _loaded == 1 && !Ctx.Cutscenes.IsActive && _crateTwo.Status == ObjectiveStatus.Complete, () => PlayLoading(1)),

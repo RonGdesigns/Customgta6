@@ -106,6 +106,7 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 93 | **M06 places** | Start, cut, burn, pickup | Panel and bench off the road; Ice's entrance at the surveyed point; Granger staged far off and safe until boarded; no trooper in a wall |
 | 94 | **M07 roof** | Start, climb, clamp, jump | Ice on the roof, Gohan at the base with the laptop; a notice if the roof estimate is wrong; the Buzzard fires |
 | 95 | **M08 forks** | Stop at each pad, sentries | Crate on the forks after a second stopped, no button; crates do not topple; sentries apart and alerted |
+| 96 | **M07 roof check, M08 jobs** | Start M07 with the roof key wrong; M08's second crate | M07 refuses with the key when there is no roof, uses a lower real roof with a notice, never Ice in the air; in M08 the technical counts for whoever kills it and the HUD never demands Ron for it |
 
 ## Before you launch: the static checks
 
