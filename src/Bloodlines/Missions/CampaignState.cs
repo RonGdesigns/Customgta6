@@ -102,6 +102,11 @@ namespace Bloodlines.Missions
 
         /// <summary>What the crew has done to their Granger. See <see cref="CrewVan"/>.</summary>
         public CrewVanRecord CrewVan { get; } = new CrewVanRecord();
+        /// <summary>Garages the crew has bought, by site id. See <see cref="Core.GarageService"/>.</summary>
+        public HashSet<string> Garages { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>The crew's owned vehicles and their builds.</summary>
+        public List<Core.OwnedVehicle> Vehicles { get; } = new List<Core.OwnedVehicle>();
+        public int NextVehicleId { get; set; } = 1;
         public Dictionary<string, bool> FleetUpgrades { get; } = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
             { "grangerTurbineInstalled", false },
@@ -184,6 +189,9 @@ namespace Bloodlines.Missions
                 Merge(state.Safehouses, Json.Object(root.TryGetValue("unlockedSafehouses", out var s) ? s : null));
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
                 state.CrewVan.FromJson(Json.Object(root.TryGetValue("crewVan", out var van) ? van : null));
+                foreach (var entry in Json.Array(root, "garages")) if (entry != null) state.Garages.Add(entry.ToString());
+                foreach (var entry in Json.Array(root, "vehicles")) { var car = Core.OwnedVehicle.FromJson(Json.Object(entry)); if (car != null) state.Vehicles.Add(car); }
+                state.NextVehicleId = Math.Max(1, Json.Int(root, "nextVehicleId", 1));
                 foreach (var pair in Json.Object(root.TryGetValue("evidence", out var ev) ? ev : null)) if (pair.Value != null) state.Evidence[pair.Key] = pair.Value.ToString();
                 foreach (var pair in Json.Object(root.TryGetValue("cargo", out var cg) ? cg : null)) if (pair.Value != null) state.Cargo[pair.Key] = pair.Value.ToString();
 
@@ -468,6 +476,9 @@ namespace Bloodlines.Missions
             Safehouses.Clear();
             foreach (var pair in defaults.Safehouses) Safehouses[pair.Key] = pair.Value;
             FleetUpgrades.Clear();
+            Garages.Clear();
+            Vehicles.Clear();
+            NextVehicleId = 1;
             foreach (var pair in defaults.FleetUpgrades) FleetUpgrades[pair.Key] = pair.Value;
             LastHero = Protagonist.StartingSlot;
             LastLocation = Vector3.Zero;
@@ -508,6 +519,9 @@ namespace Bloodlines.Missions
                 { "unlockedSafehouses", Safehouses.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "crewVan", CrewVan.ToJson() },
+                { "garages", Garages.OrderBy(g => g, StringComparer.Ordinal).Select(g => (object)g).ToList() },
+                { "vehicles", Vehicles.Select(v => (object)v.ToJson()).ToList() },
+                { "nextVehicleId", NextVehicleId },
                 { "evidence", Evidence.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "cargo", Cargo.ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },

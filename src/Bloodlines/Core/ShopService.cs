@@ -10,7 +10,7 @@ using GTA.Native;
 
 namespace Bloodlines.Core
 {
-    public enum ShopKind { Weapons, Customs, Guess, Clothing }
+    public enum ShopKind { Weapons, Customs, Guess, Clothing, Dealer }
     public sealed class ShopSite
     {
         public readonly string Name; public readonly ShopKind Kind; public readonly Vector3 Position;
@@ -58,6 +58,7 @@ namespace Bloodlines.Core
             new ShopSite("Ponsonbys - Burton",ShopKind.Clothing,-164.6f,-303.4f,39.7f),
             new ShopSite("Ponsonbys - Rockford Hills",ShopKind.Clothing,-709.7f,-153.4f,37.4f),
             new ShopSite("Ponsonbys - Morningwood",ShopKind.Clothing,-1447.8f,-242.5f,49.8f),
+            new ShopSite("Premium Deluxe Motorsport",ShopKind.Dealer,-33.9f,-1102.4f,26.4f),
             new ShopSite("Guess Customs - Strawberry workshop",ShopKind.Guess,-211.5f,-1324.0f,30.9f)
         };
         public static readonly WeaponProgression.DlcWeapon[] Stock = {
@@ -104,7 +105,7 @@ namespace Bloodlines.Core
                 {
                     var blip=World.CreateBlip(site.Position); if(blip==null)continue;
                     blip.Name=site.Name; blip.IsShortRange=true;
-                    blip.Sprite=(BlipSprite)(site.Kind==ShopKind.Weapons?110:site.Kind==ShopKind.Clothing?73:72);
+                    blip.Sprite=(BlipSprite)(site.Kind==ShopKind.Weapons?110:site.Kind==ShopKind.Clothing?73:site.Kind==ShopKind.Dealer?225:72);
                     blip.Color=site.Kind==ShopKind.Guess?BlipColor.Orange:BlipColor.Blue;
                     _blips.Add(blip);
                 }

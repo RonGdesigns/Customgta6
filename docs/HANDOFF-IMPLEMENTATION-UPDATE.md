@@ -326,6 +326,9 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 121. **M07.** Start M07: Ice on the roof, Gohan at the foot of the building at a laptop, Ron in the lane. A notice naming `M07.GarageRoof` means the key had no roof at its point: Ice is on the nearest roof, or at street level when there is none near; stand on the real roof and survey it (F11) to correct the key. If a notice says the roof is lower than the estimate, Ice is on the real roof. The Buzzard fires on the roof once the sniffer is clamped.
 122. **M08.** Drive the forklift to a crate pad and stop: after a second the crate is on the forks with no button, then the loading scene. The crates cannot be knocked over. The five sentries stand apart; shooting one wakes the rest.
 123. **M08's two jobs.** At the second crate the technical is Ice's job in name and anyone's kill: whoever puts it down, it counts, and the forks under the second crate are Ron's. Nothing demands a switch to Ron for the fight or to Ice after it.
+143. **Garages.** Walk to a yellow garage icon: buy it at the door. Drive any car to a green one: the menu offers to store it. Take it out from the menu. The starter home's street bay is in the home menu. After M27 the Eclipse garage is the crew's.
+144. **The dealer.** Premium Deluxe Motorsport at Pillbox: browse by category, buy into a garage with a bay.
+145. **KJ.** From the home menu or the dev menu root: pick a car; KJ drives it to you from up the road, gets out and walks off. Leave it 300 m behind for a minute and it is back in its garage.
 136. **One heat in one car.** Three in a car with stars: switch around; the stars are the same for all three. The log's "Switch heat" line shows the numbers.
 137. **Pay and weapons.** Finish any mission: a notice says what it paid and the crew total, and which weapon each brother unlocked.
 138. **No bars.** Mission passed is words alone; a scene's title is words alone.

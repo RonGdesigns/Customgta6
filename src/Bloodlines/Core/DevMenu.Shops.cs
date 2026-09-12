@@ -21,6 +21,7 @@ namespace Bloodlines.Core
         private static string PartName(object value) => Regex.Replace(value.ToString(),"([a-z])([A-Z])","$1 $2");
         private Page BuildShop(ShopSite site)
         {
+            if(site.Kind==ShopKind.Dealer)return BuildDealer(site);
             var page=new Page(site.Name);
             page.Add("Crew cash",()=>"$"+_state.CashOnHand);
             if(site.Kind==ShopKind.Weapons)

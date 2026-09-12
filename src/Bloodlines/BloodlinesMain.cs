@@ -38,6 +38,7 @@ namespace Bloodlines
         private readonly TacticalResponse _tactics = new TacticalResponse();
         private readonly MissionHandoff _handoff = new MissionHandoff();
         private readonly ShopService _shops;
+        private readonly GarageService _garages;
         private readonly CrewHomes _homes;
         private readonly CampaignDispatches _dispatches;
         private readonly WeaponProgression _weapons;
@@ -109,6 +110,9 @@ namespace Bloodlines
             _shops.Vans = _vans;
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
             _shops.OpenMenu = _menu.OpenShop; _menu.Shops = _shops;
+            _garages = new GarageService(_crew, _state, _locations, _vans);
+            _garages.Allowed = _shops.Allowed;
+            _garages.OpenMenu = _menu.OpenGarage; _menu.Garages = _garages;
             _homes.OpenMenu = _menu.OpenHomePage;
             _homes.OpenWardrobe = _menu.OpenWardrobe;
             _menu.StartPoint = _missionMarkers.StartPoint;
@@ -192,6 +196,7 @@ namespace Bloodlines
             Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));
             Step("shops", () => _shops.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
+            Step("garages", () => _garages.Update(!_menu.IsOpen && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
             Step("weapon ownership", () => _weapons.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
             Step("homes", () => _homes.Update(!_missions.IsRunning && !_prologue.IsActive && !_menu.IsOpen && !_survey.IsActive && !_characterWheel.IsOpen));
             ObjectiveMarkers.ActiveSlot = _crew.ActiveSlot;
@@ -557,6 +562,7 @@ namespace Bloodlines
             Step("leave apartment", _homes.StopApartment);
             Step("release DLC cars", _menu.ReleaseVehicles);
             Step("clear shops", _shops.Clear);
+            Step("clear garages", _garages.Clear);
             Step("restore world tuning", _worldTuning.Reset);
             Step("reset pursuit tuning", _tactics.Reset);
             Step("dismiss crew", _crew.Dismiss);
@@ -585,6 +591,7 @@ namespace Bloodlines
             Step("leave apartment", _homes.StopApartment);
             Step("release DLC cars", _menu.ReleaseVehicles);
             Step("clear shops", _shops.Clear);
+            Step("clear garages", _garages.Clear);
             Step("restore world tuning", _worldTuning.Reset);
             Step("reset pursuit tuning", _tactics.Reset);
             Step("reset visuals", _visuals.Reset);
