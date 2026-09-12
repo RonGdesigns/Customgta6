@@ -98,7 +98,7 @@ Prerequisite: M04. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M05.CliffPerch, M05.CoveAir, M05.DinghySpawn, M05.GrottoMouth, M05.Sandbar.
+Survey references: M05.CliffPerch, M05.CoveAir, M05.DinghySpawn, M05.GrottoMouth, M05.LightCrew, M05.Sandbar.
 
 ## M06 — CLEAN SWEEP
 
@@ -123,14 +123,14 @@ Prerequisite: M06. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **The mast** — ReachZoneObjective: Ice — get up to the antenna platform on the garage roof. |
+| 1 | Ice | **The mast** — ReachZoneObjective: Ice — parachute from the tower to the marked roof and reach the antenna platform. |
 | 2 | Ice | **Clamp the receiver** — MissionInteraction: Clamp the packet sniffer to the dish. |
-| 3 | Ice | **Off the roof** — ReachZoneObjective: Descend from the roof, then reach Guess's marked pickup. Use the parachute only if there is clearance. |
+| 3 | Ice | **Off the roof** — ReachZoneObjective: Grab the chute by the platform, jump, and reach Guess's marked pickup below. |
 | 4 | Ice | **Moving pickup** — EnterVehicleObjective: Get in behind Guess. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M07.GarageRoof, M07.LandingZone, M07.MastTop.
+Survey references: M07.GarageRoof, M07.IceStart, M07.LandingZone, M07.MastTop.
 
 ## M08 — SUPPLY & SEVER
 

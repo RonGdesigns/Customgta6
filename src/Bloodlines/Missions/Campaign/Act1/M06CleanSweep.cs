@@ -32,11 +32,15 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Ped> _swat = new List<Ped>();
         private readonly List<HeliInsertion> _insertions = new List<HeliInsertion>();
+        /// <summary>A SWAT Granger driven in from one end of the alley, its troopers out at the alley (Ron, September 12).</summary>
+        private sealed class Convoy { public Vehicle Car; public List<Ped> Crew = new List<Ped>(); public int Ordered; public bool Unloaded; }
+        private readonly List<Convoy> _convoys = new List<Convoy>();
+        public IReadOnlyList<Vehicle> Convoys => _convoys.Select(v => v.Car).ToList();
         private bool _airMomentPlayed, _pickupCalled;
         private int _fire = -1;
 
         private Vehicle _granger;
-        private Prop _feederPanel, _rackBench;
+        private Prop _rackBench;
         private readonly List<Prop> _rackCases = new List<Prop>();
         private RoleTracks _roles;
         private Vector3 _culvert;
@@ -50,7 +54,8 @@ namespace Bloodlines.Missions.Campaign
         public override string Title => "Clean Sweep";
 
         public Vehicle Granger => _granger;
-        public Prop FeederPanel => _feederPanel;
+        /// <summary>No case at the feeder anymore: the cut is the map's own power box (Ron, September 12).</summary>
+        public Prop FeederPanel => null;
         public Prop RackBench => _rackBench;
         public IReadOnlyList<Prop> RackCases => _rackCases;
         public RoleTracks Roles => _roles;
@@ -65,7 +70,8 @@ namespace Bloodlines.Missions.Campaign
             // Gohan's two work points off the street (Ron, September 11: he stood in
             // the middle of the road): the sidewalk nearest each estimate, with a real
             // thing at each to work on.
-            _feeder = OffStreet(Ctx.Locations.Position("M06.Feeder"));
+            // The feeder is the real power box Ron surveyed (September 12); an estimate still goes to the sidewalk.
+            _feeder = Ctx.Locations.Get("M06.Feeder")?.Status == LocationStatus.Surveyed ? Ctx.Locations.Position("M06.Feeder") : OffStreet(Ctx.Locations.Position("M06.Feeder"));
             _sallyPort = Ctx.Locations.Position("M06.SallyPort");
             _racks = OffStreet(Ctx.Locations.Position("M06.ServerRacks"));
             _alley = Ctx.Locations.Position("M06.AlleyHold");
@@ -76,7 +82,8 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Crew.Deploy(CrewSlot.Gohan, new Dictionary<CrewSlot, PedPlacement>
             {
                 [CrewSlot.Gohan] = new PedPlacement(_culvert, 0f),
-                [CrewSlot.Ice] = new PedPlacement(_alley, Ctx.Locations.Heading("M06.AlleyHold")),
+                // Ice starts with Gohan at the box, a few steps off him (Ron, September 12), and walks to the entrance from there.
+                [CrewSlot.Ice] = new PedPlacement(_feeder + new Vector3(3f, -2.5f, 0f), Ctx.Locations.Heading("M06.Feeder")),
                 [CrewSlot.Guess] = new PedPlacement(Ctx.Locations.Position("M06.GrangerSpawn"), Ctx.Locations.Heading("M06.GrangerSpawn"))
             })) return false;
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
@@ -95,7 +102,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Cut the power",
-                    new MissionInteraction("Gohan: cut the marked power feeder", () => _feeder, 6, 3f))
+                    new MissionInteraction("Gohan: cut the marked power feeder", () => _feeder, 6, 3f, animation: MissionInteraction.ReachInside))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => Say("M06_S1_01_GOHAN"));
 
@@ -218,16 +225,9 @@ namespace Bloodlines.Missions.Campaign
             return side != Vector3.Zero && GameUtils.IsWithinFlat(side, point, 25f) ? side : point;
         }
 
-        /// <summary>A feeder panel at the cut and the backup array on a bench at the racks: things Gohan works on, not marks in the street.</summary>
+        /// <summary>The backup array on a bench at the racks: a thing Gohan works on, not a mark in the street. The feeder is the map's own power box; no case is placed there (Ron, September 12).</summary>
         private void SpawnWorkProps()
         {
-            var panelModel = new Model("prop_ld_case_01");
-            if (GameUtils.RequestModel(panelModel))
-            {
-                _feederPanel = Track(World.CreateProp(panelModel, _feeder + new Vector3(0.7f, 0.4f, 0f), false, true));
-                panelModel.MarkAsNoLongerNeeded();
-                if (_feederPanel != null && _feederPanel.Exists()) { _feederPanel.IsPersistent = true; _feederPanel.IsPositionFrozen = true; }
-            }
             var benchModel = new Model("prop_table_03");
             var caseModel = new Model("prop_ld_case_01");
             if (!GameUtils.RequestModel(benchModel) || !GameUtils.RequestModel(caseModel)) return;
@@ -246,7 +246,7 @@ namespace Bloodlines.Missions.Campaign
                 }
             }
             caseModel.MarkAsNoLongerNeeded();
-            Logger.Info("M06 work points: feeder panel at " + _feeder + ", backup bench at " + _racks + ".");
+            Logger.Info("M06 work points: the power box at " + _feeder + ", backup bench at " + _racks + ".");
         }
 
         /// <summary>The racks are slag: a real fire where the work was, and the record's destruction on the books.</summary>
@@ -264,6 +264,7 @@ namespace Bloodlines.Missions.Campaign
             _roles?.Update();
             foreach (var insertion in _insertions) insertion.Update();
             _insertions.RemoveAll(insertion => insertion.Current == HeliInsertion.Phase.Done);
+            MaintainConvoys();
         }
 
         /// <summary>The aftermath: the Granger with the three aboard, away from the smoke.</summary>
@@ -286,8 +287,14 @@ namespace Bloodlines.Missions.Campaign
             var police = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             var spawned = new List<Ped>();
             var airborne = new List<Ped>();
-            int count = 3 + wave;
+            var byRoad = new List<Ped>();
+            // The first wave is already on the street. The later waves come by air
+            // and by road: two on the ropes of each Maverick, the rest in SWAT
+            // Grangers driven in from both ends of the alley (Ron, September 12:
+            // nobody appears at the first wave's spots again).
+            int count = wave >= 2 ? 4 + 2 * wave : 3 + wave;
             int byAir = wave >= 2 ? Math.Min(count, 2 * HeliInsertion.Capacity) : 0;
+            int roadCount = wave >= 2 ? count - byAir : 0;
 
             for (int i = 0; i < count; i++)
             {
@@ -303,12 +310,14 @@ namespace Bloodlines.Missions.Campaign
                 trooper.Armor = 50;
                 trooper.Weapons.Give(wave >= 2 ? WeaponHash.CarbineRifle : WeaponHash.SMG, 200, true, true);
                 if (i < byAir) airborne.Add(trooper);
+                else if (i < byAir + roadCount) byRoad.Add(trooper);
                 else trooper.Task.FightAgainstHatedTargets(90f);
 
                 spawned.Add(Track(trooper));
                 _swat.Add(trooper);
             }
             model.MarkAsNoLongerNeeded();
+            if (byRoad.Count > 0) LaunchConvoys(byRoad);
 
             for (int group = 0; group * HeliInsertion.Capacity < airborne.Count; group++)
             {
@@ -328,6 +337,69 @@ namespace Bloodlines.Missions.Campaign
                 }
             }
             return spawned;
+        }
+
+        /// <summary>Two SWAT Grangers, one from each end of the alley, the road troopers split between them; each drives to the alley and empties.</summary>
+        private void LaunchConvoys(List<Ped> troopers)
+        {
+            var axis = _pickup - _alley; axis.Z = 0f;
+            float run = (float)Math.Sqrt(axis.X * axis.X + axis.Y * axis.Y);
+            axis = run < 0.5f ? new Vector3(1f, 0f, 0f) : axis * (1f / run);
+            var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
+            for (int side = 0; side < 2; side++)
+            {
+                var load = troopers.Where((t, index) => index % 2 == side).ToList();
+                if (load.Count == 0) continue;
+                float sign = side == 0 ? 1f : -1f;
+                var wanted = _alley + axis * (sign * 85f);
+                var spawn = World.GetNextPositionOnStreet(wanted);
+                if (spawn == Vector3.Zero) spawn = wanted;
+                Vehicle car = null;
+                foreach (string name in new[] { "fbi2", "granger" })
+                {
+                    var model = new Model(name);
+                    if (!GameUtils.RequestModel(model)) continue;
+                    car = World.CreateVehicle(model, spawn, DriveUpStep.HeadingBetween(spawn, _alley));
+                    model.MarkAsNoLongerNeeded();
+                    if (car != null && car.Exists()) break;
+                }
+                if (car == null || !car.Exists()) { foreach (var t in load) t.Task.FightAgainstHatedTargets(90f); continue; }
+                car.IsPersistent = true; car.IsEngineRunning = true;
+                GameUtils.HoldUntilGrounded(car);
+                var convoy = new Convoy { Car = Track(car), Ordered = Game.GameTime };
+                for (int i = 0; i < load.Count && i < seats.Length; i++)
+                {
+                    load[i].SetIntoVehicle(car, seats[i]);
+                    convoy.Crew.Add(load[i]);
+                    if (i == 0)
+                    {
+                        Function.Call(Hash.SET_DRIVER_ABILITY, load[i], 1f);
+                        Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, load[i], 1f);
+                        load[i].Task.DriveTo(car, _alley + axis * (sign * 14f), 6f, 20f, DrivingStyle.Rushed);
+                    }
+                }
+                _convoys.Add(convoy);
+            }
+            Logger.Info("M06 SWAT convoys: " + _convoys.Count + " Grangers on the alley, " + troopers.Count + " troopers by road.");
+        }
+
+        /// <summary>A Granger at the alley, or fifteen seconds in, empties into the fight.</summary>
+        private void MaintainConvoys()
+        {
+            foreach (var convoy in _convoys)
+            {
+                if (convoy.Unloaded) continue;
+                bool there = convoy.Car == null || !convoy.Car.Exists() || convoy.Car.IsDead ||
+                    (convoy.Car.Speed < 1.5f && convoy.Car.Position.DistanceTo(_alley) < 30f) || Game.GameTime - convoy.Ordered > 15000;
+                if (!there) continue;
+                convoy.Unloaded = true;
+                foreach (var trooper in convoy.Crew)
+                {
+                    if (trooper == null || !trooper.Exists() || trooper.IsDead) continue;
+                    if (trooper.IsInVehicle()) trooper.Task.LeaveVehicle();
+                    trooper.Task.FightAgainstHatedTargets(90f);
+                }
+            }
         }
 
         private void SpawnGranger()
@@ -369,6 +441,7 @@ namespace Bloodlines.Missions.Campaign
             _swat.Clear();
             _rackCases.Clear();
             _insertions.Clear();
+            _convoys.Clear();
         }
     }
 }

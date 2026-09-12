@@ -19,7 +19,7 @@ public static partial class StoryTests
   Reset();var crew=Roster();var c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;var story=Game.Player.Character;
   story.Position=new Vector3(100,100,10);story.ForwardVector=new Vector3(0,1,0);World.Created.Clear();World.Vehicles.Clear();GTA.UI.Screen.Subtitle=null;
   Check(c.Cutscenes.Play("M04","intro","Severed Wire"),"M04's briefing plays with no crew deployed");
-  var car=World.Vehicles.FirstOrDefault(v=>v.Model.Name=="schafter3");
+  var car=World.Vehicles.FirstOrDefault(v=>v.Model.Name=="granger");
   Check(car!=null&&car.Position.DistanceTo(story.Position)>60f,"The crew's four-door spawns down the street, not beside the start");
   var gohan=World.Created.FirstOrDefault(p=>p.CurrentVehicle==car);var host=World.Created.FirstOrDefault(p=>p.CurrentVehicle==null);
   Check(gohan!=null&&car.GetPedOnSeat(VehicleSeat.Driver)==gohan&&host!=null&&host.Position.DistanceTo(story.Position)<3f&&!story.IsVisible,"Gohan drives in; Guess stands at the start point in place of the hidden story character");
@@ -31,7 +31,7 @@ public static partial class StoryTests
   c.Cutscenes.Stop();Check(story.IsVisible&&!car.Present&&!gohan.Present,"The scene ends with the story character visible and the temporary car and cast gone");
   // Skipping lands the car at the curb before the lines run.
   Reset();crew=Roster();c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;story=Game.Player.Character;story.Position=new Vector3(100,100,10);story.ForwardVector=new Vector3(0,1,0);World.Vehicles.Clear();
-  c.Cutscenes.Play("M04","intro","Severed Wire");car=World.Vehicles.First(v=>v.Model.Name=="schafter3");c.Cutscenes.Update();c.Cutscenes.Skip();
+  c.Cutscenes.Play("M04","intro","Severed Wire");car=World.Vehicles.First(v=>v.Model.Name=="granger");c.Cutscenes.Update();c.Cutscenes.Skip();
   Check(car.Position==story.Position&&c.Cutscenes.LastOutcome==SceneOutcome.Skipped,"A skipped arrival puts the car on the mark before the scene ends");
   // With the crew deployed nothing is staged and no car appears.
   Reset();crew=Roster();c=Context(crew);World.Vehicles.Clear();World.Created.Clear();c.Cutscenes.Play("M04","intro","Severed Wire");
@@ -40,11 +40,11 @@ public static partial class StoryTests
   // ---- 2. M04 is exercised end to end in StoryToPlayTests.RunM04 (both Miller outcomes).
 
   // ---- 3. M05: an estimated perch snaps to the real ground before the walkable check.
-  Reset();crew=Roster();c=Context(crew);var perch=c.Locations.Get("M05.CliffPerch");float authored=perch.Position.Z;World.GroundHeight=authored+40f;World.FailNavigationNear=perch.Position;
-  Check(MissionSites.Ground(c.Locations,"M05.CliffPerch")&&Math.Abs(c.Locations.Position("M05.CliffPerch").Z-(authored+40.6f))<0.2f,"An estimated perch is placed on the real ground even 40 m above the authored guess");
+  Reset();crew=Roster();c=Context(crew);var perch=c.Locations.Get("M04.GarageEntry");float authored=perch.Position.Z;World.GroundHeight=authored+40f;World.FailNavigationNear=perch.Position;
+  Check(MissionSites.Ground(c.Locations,"M04.GarageEntry")&&Math.Abs(c.Locations.Position("M04.GarageEntry").Z-(authored+40.6f))<0.2f,"An estimated perch is placed on the real ground even 40 m above the authored guess");
   World.GroundHeight=0f;World.FailNavigationNear=null;
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;
-  Check(!MissionSites.Ground(c.Locations,"M05.CliffPerch")&&GameUtils.Message.Contains("F11"),"No walkable ground still refuses the mission and tells the player to survey the key");World.FailNavigation=false;
+  Check(!MissionSites.Ground(c.Locations,"M04.GarageEntry")&&GameUtils.Message.Contains("F11"),"No walkable ground still refuses the mission and tells the player to survey the key");World.FailNavigation=false;
   // The coast road sits on the ocean's water plane: a water key is real water only when the ground is below the surface.
   Reset();crew=Roster();c=Context(crew);var spawn=c.Locations.Get("M05.DinghySpawn");var authoredSpawn=spawn.Position;GTA.Native.Function.Seabed=1f;
   Check(!MissionSites.Water(c.Locations,"M05.DinghySpawn")&&GameUtils.Message.Contains("deep enough")&&spawn.Position==authoredSpawn,"Water under a road is not a boat spawn: the key refuses and says the water is not deep enough");
@@ -69,24 +69,27 @@ public static partial class StoryTests
   Check(waveOne.Count==4&&World.Vehicles.Count(v=>v.Model.Name=="polmav")==0&&waveOne.All(t=>t.Task.HatedFights==1),"The first wave is already on the street and fighting");
   foreach(var t in waveOne)t.IsDead=true;m6.Tick();before=World.Created.Count;int vehiclesBefore=World.Vehicles.Count;Game.GameTime+=6100;m6.Tick();
   var helis=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="polmav").ToList();var waveTwo=World.Created.Skip(before).ToList();
-  Check(helis.Count==2&&waveTwo.Count==7,"The second wave is five troopers and two pilots in two Mavericks");
+  var grangers=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="fbi2").ToList();
+  Check(helis.Count==2&&grangers.Count==2&&waveTwo.Count==10,"The second wave is eight troopers and two pilots: two Mavericks and two SWAT Grangers");
   Check(helis.All(h=>h.GetPedOnSeat(VehicleSeat.Driver)!=null&&h.GetPedOnSeat(VehicleSeat.LeftRear)!=null&&h.GetPedOnSeat(VehicleSeat.RightRear)!=null&&h.GetPedOnSeat(VehicleSeat.RightFront)==null),"Two troopers ride the rappel seats of each aircraft");
   Check(helis.All(h=>h.Position.DistanceTo(alley)>200f&&h.Position.Z>alley.Z+50f&&h.GetPedOnSeat(VehicleSeat.Driver).Task.HeliTasks==1),"Each aircraft starts high on its own approach line with a flight task");
-  var ropes=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.SeatIndex!=VehicleSeat.Driver).ToList();var street=waveTwo.Where(t=>t.CurrentVehicle==null).ToList();
-  Check(ropes.Count==4&&street.Count==1&&street[0].Task.HatedFights==1&&ropes.All(t=>t.Task.HatedFights==0),"Four ride, one comes by the street; the riders hold their task until they are down");
+  var ropes=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="polmav"&&t.SeatIndex!=VehicleSeat.Driver).ToList();var road=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="fbi2").ToList();
+  Check(ropes.Count==4&&road.Count==4&&waveTwo.Count(t=>t.CurrentVehicle==null)==0&&grangers.All(g=>g.GetPedOnSeat(VehicleSeat.Driver)!=null&&g.GetPedOnSeat(VehicleSeat.Driver).Task.Drives>=1)&&ropes.All(t=>t.Task.HatedFights==0),"Four ride the ropes, four come by road in two driven Grangers, nobody appears on the street; the riders hold their task until they are down");
+  Check(grangers.Select(g=>g.Position).Distinct().Count()==2&&grangers.All(g=>g.Position.DistanceTo(alley)>60f),"The Grangers start at opposite ends of the alley, well out");
   c.Cutscenes.Update();
   Check(c.Cutscenes.IsActive&&GTA.UI.Screen.Subtitle!=null&&GTA.UI.Screen.Subtitle.Contains("ICE"),"The first aircraft's arrival is framed as a moment with Ice's call");
   c.Cutscenes.Stop();
   foreach(var h in helis){h.Position=alley+new Vector3(0,0,20f);h.HeightAboveGround=20f;}
   m6.Tick();Check(ropes.All(t=>t.Task.Rappels==1&&!t.IsInVehicle()),"On station the troopers go down the ropes");
   m6.Tick();Check(ropes.All(t=>t.Task.HatedFights==1)&&helis.All(h=>h.GetPedOnSeat(VehicleSeat.Driver).Task.HeliTasks==2),"Landed troopers fight and the aircraft leave");
-  foreach(var t in ropes.Concat(street))t.IsDead=true;m6.Tick();before=World.Created.Count;vehiclesBefore=World.Vehicles.Count;Game.GameTime+=6100;m6.Tick();
-  var waveThree=World.Created.Skip(before).ToList();var lateHelis=World.Vehicles.Skip(vehiclesBefore).ToList();
-  Check(waveThree.Count==8&&lateHelis.Count==2&&!c.Cutscenes.IsActive,"The third wave also flies in, without a second cutscene");
-  var lateRopes=waveThree.Where(t=>t.CurrentVehicle!=null&&t.SeatIndex!=VehicleSeat.Driver).ToList();
+  Game.GameTime+=16000;m6.Tick();Check(road.All(t=>!t.IsInVehicle()&&t.Task.HatedFights==1),"At the alley, or fifteen seconds in, the Grangers empty and their troopers fight");
+  foreach(var t in ropes.Concat(road))t.IsDead=true;m6.Tick();before=World.Created.Count;vehiclesBefore=World.Vehicles.Count;Game.GameTime+=6100;m6.Tick();
+  var waveThree=World.Created.Skip(before).ToList();var lateHelis=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="polmav").ToList();
+  Check(waveThree.Count==12&&lateHelis.Count==2&&World.Vehicles.Skip(vehiclesBefore).Count(v=>v.Model.Name=="fbi2")==2&&!c.Cutscenes.IsActive,"The third wave also flies and drives in, without a second cutscene");
+  var lateRopes=waveThree.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="polmav"&&t.SeatIndex!=VehicleSeat.Driver).ToList();
   Game.GameTime+=46000;m6.Tick();
   Check(lateRopes.All(t=>!t.IsInVehicle()&&t.Task.HatedFights==1&&t.Position.DistanceTo(alley)<15f),"An aircraft that never arrives still puts its troopers on the ground so the wave can end");
-  foreach(var t in waveThree.Where(t=>t.SeatIndex!=VehicleSeat.Driver))t.IsDead=true;for(int i=0;i<30&&m6.CurrentStage==2;i++){Game.GameTime+=1000;m6.Tick();}
+  foreach(var t in waveThree.Where(t=>t.Model.Name=="s_m_y_swat_01"))t.IsDead=true;for(int i=0;i<30&&m6.CurrentStage==2;i++){Game.GameTime+=1000;m6.Tick();}
   Check(m6.CurrentStage==3,"With every wave down the extraction opens");
 
   // ---- 5. Apartment: readiness is judged from inside the room.

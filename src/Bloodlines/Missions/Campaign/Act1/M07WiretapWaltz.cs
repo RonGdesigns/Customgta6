@@ -39,8 +39,10 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _mast;
         private Vector3 _landing;
         private Vector3 _base;
+        private Vector3 _iceStart, _chuteSpot;
         private Prop _laptop;
-        private bool _heliShown, _pickupCalled, _roofFound;
+        private bool _heliShown, _pickupCalled, _roofFound, _chuteGiven;
+        public Vector3 IceStart => _iceStart;
 
         public override string Id => "M07";
         public override string Title => "Wiretap Waltz";
@@ -106,11 +108,16 @@ namespace Bloodlines.Missions.Campaign
             if (!TryRoofTop(iceStart, _base.Z, out var iceOnRoof) || iceOnRoof.Z < _roof.Z - 2f) iceOnRoof = _roof;
             var lane = World.GetNextPositionOnStreet(Ctx.Locations.Position("M07.LandingZone"));
             _landing = lane == Vector3.Zero ? Ctx.Locations.Position("M07.LandingZone") : lane;
+            // Ice starts on the Maze Bank Tower roof and parachutes to the relay roof
+            // (Ron, September 12); with no jump-off key he starts on the roof itself.
+            var jumpOff = Ctx.Locations.Get("M07.IceStart");
+            _iceStart = jumpOff != null ? jumpOff.Position : iceOnRoof;
+            float iceHeading = jumpOff != null ? jumpOff.Heading : Ctx.Locations.Heading("M07.GarageRoof");
 
             if (!Ctx.Crew.Deploy(CrewSlot.Ice, new Dictionary<CrewSlot, PedPlacement>
             {
-                [CrewSlot.Ice] = new PedPlacement(iceOnRoof, Ctx.Locations.Heading("M07.GarageRoof")),
-                [CrewSlot.Gohan] = new PedPlacement(_base, Ctx.Locations.Heading("M07.GarageRoof")),
+                [CrewSlot.Ice] = new PedPlacement(_iceStart, iceHeading),
+                [CrewSlot.Gohan] = new PedPlacement(_landing + new Vector3(-2f, 0f, 0f), 0f),
                 [CrewSlot.Guess] = new PedPlacement(_landing + new Vector3(2f, 0f, 0f), 0f)
             })) return false;
 
@@ -121,11 +128,11 @@ namespace Bloodlines.Missions.Campaign
                 Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
 
             SpawnSedan();
-            SpawnLaptop();
             if (!RequireAssets(_sedan)) return false;
             Ctx.Crew.CompanionsHoldPosition = true;
+            // Ron and Gohan wait in the sedan they leave in (Ron, September 12): Gohan reads the feed from the passenger seat.
             Station(CrewSlot.Guess, _sedan, VehicleSeat.Driver);
-            Station(CrewSlot.Gohan, _base);
+            Station(CrewSlot.Gohan, _sedan, VehicleSeat.RightFront);
             PlayApproach();
             return true;
         }
@@ -142,9 +149,9 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("The mast",
-                    new ReachZoneObjective("Ice — get up to the antenna platform on the garage roof.", () => _mast, 5f))
+                    new ReachZoneObjective("Ice — parachute from the tower to the marked roof and reach the antenna platform.", () => _mast, 5f))
                 .OwnedBy(CrewSlot.Ice)
-                .OnEnter(context => GameUtils.Subtitle("~y~Ice: the dish is on the garage roof. Reach the antenna platform (yellow marker), then clamp the sniffer to it. Gohan reads the feed from the street; Ron waits in the pickup lane.", 7000))
+                .OnEnter(context => GameUtils.Subtitle("~y~Ice: the dish is on the roof below you. Jump, open the chute, land by the antenna platform (yellow marker) and clamp the sniffer to it. Gohan reads the feed from the sedan; Ron waits in the lane below the roof.", 8000))
                 .WithCues("M07_S1_01_GOHAN");
 
             yield return new MissionStage("Clamp the receiver",
@@ -159,12 +166,14 @@ namespace Bloodlines.Missions.Campaign
                 });
 
             // The helicopter is shown coming, once, before the roof is Ice's problem.
+            // A second chute lies by the platform (Ron, September 12): the way down is the jump to Ron's lane.
             yield return new MissionStage("Off the roof",
-                    new ReachZoneObjective("Descend from the roof, then reach Guess's marked pickup. Use the parachute only if there is clearance.", () => _landing, 25f,
+                    new ReachZoneObjective("Grab the chute by the platform, jump, and reach Guess's marked pickup below.", () => _landing, 25f,
                         flat: false),
                     new ReactionTrigger(() => !_heliShown && !Ctx.Cutscenes.IsActive, ShowHelicopter),
-                    new ReactionTrigger(() => _heliShown && !_pickupCalled && !Ctx.Cutscenes.IsActive, CallPickup))
-                .OnEnter(context => GameUtils.Subtitle("~r~Aegis helicopter approaching. Reach the pickup on the ground.", 4000));
+                    new ReactionTrigger(() => _heliShown && !_pickupCalled && !Ctx.Cutscenes.IsActive, CallPickup),
+                    new ReactionTrigger(() => !_chuteGiven && Game.Player.Character != null && Game.Player.Character.Position.DistanceTo(_chuteSpot) < 3f, GiveSecondChute))
+                .OnEnter(context => { DropSecondChute(); GameUtils.Subtitle("~r~Aegis helicopter approaching. The chute is by the platform; the pickup is below.", 5000); });
 
             yield return new MissionStage("Moving pickup",
                     new EnterVehicleObjective("Get in behind Guess.", () => _sedan))
@@ -268,6 +277,23 @@ namespace Bloodlines.Missions.Campaign
                 Say("M07_S1_02_ICE"); Say("M07_S1_03_GOHAN");
             }
             GameUtils.Subtitle("~g~Two military turbine engines, routed to Paleto. That's the target.", 5000);
+        }
+
+        /// <summary>A parachute by the platform for the jump down. The pickup is the game's; reaching its spot hands the chute over directly as well, so the jump never depends on the pickup streaming in.</summary>
+        private void DropSecondChute()
+        {
+            _chuteSpot = _mast + new Vector3(2.5f, 0f, 0f);
+            int pickup = 0;
+            try { pickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, 1735599485u, _chuteSpot.X, _chuteSpot.Y, _chuteSpot.Z + 0.4f, 0f, 0f, 0f, 512, 1, 0, true, 0); }
+            catch (System.Exception e) { Logger.Error("M07: the parachute pickup call failed; the chute is handed over at its spot instead.", e); }
+            if (pickup == 0) Logger.Warn("M07: the parachute pickup was not created; the chute is handed over at its spot instead.");
+            else Logger.Info("M07: a second chute lies at " + _chuteSpot + ".");
+        }
+
+        private void GiveSecondChute()
+        {
+            _chuteGiven = true;
+            Function.Call(Hash.GIVE_WEAPON_TO_PED, Game.Player.Character, Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
         }
 
         /// <summary>The helicopter, shown coming, once; then Ice's roof and Ron's radio.</summary>

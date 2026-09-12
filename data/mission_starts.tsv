@@ -3,8 +3,8 @@ M01	M01.RegroupPoint
 M02	M02.InterceptStart
 M03	Base.CypressFlats
 M04	Base.CypressFlats
-M05	M05.CliffPerch
-M06	M06.GrangerSpawn
+M05	M05.Start
+M06	M06.Feeder
 M07	Base.CypressFlats
 M08	M08.WarehouseGate
 M09	M09.HeliSpawn

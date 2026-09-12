@@ -342,13 +342,41 @@ namespace Bloodlines.Core
         /// </summary>
         private void StageArrival(List<Protagonist> riders, Ped player, Dictionary<CrewSlot, Ped> staged)
         {
+            // The player already sitting in a car at the start point has the crew
+            // with him: the riders take its free seats and nobody pulls up (Ron,
+            // September 12: Gohan drove up while he was already in the car with him).
+            var ride = player.CurrentVehicle;
+            if (ride != null && ride.Exists())
+            {
+                var rideSeats = new[] { VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
+                int seatIndex = 0;
+                foreach (var rider in riders)
+                {
+                    while (seatIndex < rideSeats.Length && !ride.IsSeatFree(rideSeats[seatIndex])) seatIndex++;
+                    if (seatIndex >= rideSeats.Length) break;
+                    var model = rider.Model;
+                    if (!GameUtils.RequestModel(model, 1000)) continue;
+                    var actor = World.CreatePed(model, ride.Position, ride.Heading);
+                    model.MarkAsNoLongerNeeded();
+                    if (actor == null || !actor.Exists()) continue;
+                    CrewAppearance.Apply(actor, rider.Slot);
+                    _temporary.Add(actor);
+                    actor.IsPersistent = true;
+                    actor.BlockPermanentEvents = true;
+                    actor.SetIntoVehicle(ride, rideSeats[seatIndex++]);
+                    staged[rider.Slot] = actor;
+                }
+                Logger.Info("Briefing arrival: the riders took the player's own car; no drive-up.");
+                return;
+            }
             var destination = World.GetNextPositionOnStreet(player.Position);
             if (destination == Vector3.Zero || destination.DistanceTo(player.Position) > 40f) return;
             var spawn = World.GetNextPositionOnStreet(destination - player.ForwardVector * 90f);
             float run = spawn == Vector3.Zero ? 0f : spawn.DistanceTo(destination);
             if (run < 40f || run > 220f) return;
             float heading = DriveUpStep.HeadingBetween(spawn, destination);
-            var car = SceneVehicle("schafter3", spawn, heading);
+            // The crew's own four-door, the one they leave in (Ron, September 12).
+            var car = SceneVehicle("granger", spawn, heading);
             if (car == null) return;
             var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
             Ped driver = null;
