@@ -244,6 +244,7 @@ namespace Bloodlines.Core
             page.Add("Crew messages / news", () => _dispatches.Inbox.Count() + " messages", () => _stack.Push(BuildInbox()));
             page.Add("Home workbench", () => _homes.WorkbenchName, () => { Close(); if (!_missions.IsRunning) _homes.UseWorkbench(); });
             page.Add("Route to my home", () => _crew.IsDeployed ? _crew.Active.DisplayName : "deploy crew first", () => { if (_crew.IsDeployed) { _homes.RouteHome(); Close(); } });
+            page.Add("Call KJ (car drop)", () => Garages != null && Garages.DeliveryActive ? "on his way" : "bring a car from a garage", () => _stack.Push(BuildKJPage()));
             page.Add("DLC weapons", () => "personal locker additions", () => _stack.Push(BuildDlcWeapons()));
             page.Add("Vehicles", () => "DLC and specialty vehicles", () => _stack.Push(BuildVehicles()));
             page.Add("World", () => "wanted " + Game.Player.WantedLevel,
@@ -476,6 +477,11 @@ namespace Bloodlines.Core
             {
                 page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(_homes.RoomSurveyKeys); });
                 page.Add("Map this room", () => "writes Bloodlines.Room.txt", () => { Close(); MapRoom(); });
+            }
+            if (Garages != null)
+            {
+                page.Add("Garage", () => Garages.Summary(Garages.HomeSite(_crew.ActiveSlot)), () => _stack.Push(BuildGaragePage(Garages.HomeSite(_crew.ActiveSlot))));
+                page.Add("Call KJ (car drop)", () => "bring a car from a garage", () => _stack.Push(BuildKJPage()));
             }
             page.Add("Wardrobe", () => "clothes / facial hair", () => _stack.Push(BuildWardrobe(_crew.ActiveSlot)));
             page.Add("Rest and save", () => "six hours", () => { Close(); _homes.Rest(); });

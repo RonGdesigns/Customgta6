@@ -99,6 +99,19 @@ Records are written on store, on purchase, on delivery return and on save; never
 3. **Interiors.** If the Online garage IPLs load in Story Mode (a live test), the 2-, 6- and 10-car interiors behind the doors with the cars parked in their bays; else the doors stay as they are and the Eclipse and Diamond garages use their buildings' own garage floors.
 4. **Berth and hangar.** Boats at the Cypress Flats berth and aircraft at the McKenzie hangar with the same records, once those safehouses' storage points are surveyed.
 
+## Built (September 12)
+
+Ron's answers: garages and cars are the crew's with an optional owner tag; any car driven into a garage is kept; KJ drives the car to whoever called; the showroom stays; prices are placeholders until the airfields are in.
+
+What is in the build:
+
+- `Core/OwnedVehicle.cs`: the record (model, hash, label, garage, owner tag, price, stolen, in the shop, colors, livery, mods, wheel type, tint, plate, reinforced tires), saved in `savegame.json` as `vehicles` beside `garages` and `nextVehicleId`.
+- `Core/Garages.cs`: the site table (three free street bays, the Eclipse and Diamond garages with their tiers, eight city garages to buy), the door marker and prompt, store, take out, sell, owner tag, the dealer sale, KJ's drop (he starts 80 m or more out on the road and drives in; ninety seconds late and the car is set beside the player; on arrival he gets out, says his line and walks off), the automatic return of a car left 300 m behind for a minute, and the shop for a wrecked car (a tenth of its price to bring back).
+- `Core/DevMenu.Garages.cs`: the garage page (buy, store the car you arrived in, each car: take it out, KJ, owner tag, sell), the dealer's floor at Premium Deluxe Motorsport by category, KJ's page from the home menu and the dev menu root.
+- The garage door keys are `Garage.*` in `locations.tsv`, estimates to survey with F11; the street bays are the starter home doors themselves and are reached through the home menu.
+
+Not in this build: the mechanic during missions (the door and KJ answer outside missions only), walkable garage interiors, boats and aircraft (the airfields Ron wants come with the price pass), pearlescent and wheel colors in the record.
+
 ## Questions for Ron
 
 1. **Shared or per brother?** The plan makes garages and cars the crew's, with an optional owner tag per car. Say if you want Online's per-character ownership instead.

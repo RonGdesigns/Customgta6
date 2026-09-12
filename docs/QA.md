@@ -111,6 +111,9 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 98 | **Ron's home** | Fresh save, prologue | The drive home ends at the Mission Row apartment door; the marker is there; the house interior is behind it; exit returns to Mission Row |
 | 97 | **The Port Heist seamless** | M19 through M22 in one run | No scene or wait at the three joins; the escort, the Granger and the beach arrival crewed under AI while you play; the heist restarts at M19 on fail, abort or quit; the harbor sites resolve on real water |
 | 96 | **M07 roof check, M08 jobs** | Start M07 with the roof key wrong; M08's second crate | M07 always starts: the nearest roof with a notice, or street level with the key named, never Ice in the air; in M08 the technical counts for whoever kills it and the HUD never demands Ron for it |
+| 116 | **Garages** | Buy, store, take out, sell, tag | Cash charged once; the car keeps its build; bays counted; the save keeps it |
+| 117 | **Dealer** | Premium Deluxe Motorsport | Catalog by category; delivered to a garage with a bay |
+| 118 | **KJ** | Home menu, dev root | KJ drives the car in, hands it over, walks off; auto-return when left behind |
 | 109 | **Shared heat** | Three in a car with stars | Same stars after every switch |
 | 110 | **Rewards** | Pass a mission | Cash notice with the total; weapon notice per brother |
 | 111 | **No bars** | Pass a mission; any scene | Words alone, no black bars |
