@@ -52,7 +52,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Ground(Ctx.Locations, "M05.CliffPerch")) return false;
+            if (!MissionSites.Ground(Ctx.Locations, "M05.CliffPerch", "M05.LightCrew")) return false;
             if (!MissionSites.Water(Ctx.Locations, "M05.CoveAir", "M05.GrottoMouth", "M05.Sandbar", "M05.DinghySpawn")) return false;
             _perch = Ctx.Locations.Position("M05.CliffPerch");
             _cove = Ctx.Locations.Position("M05.CoveAir");
@@ -231,31 +231,17 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>
-        /// The generator crew works the lamps at the cave mouth, on the shore below
-        /// the cliff: ground beside the grotto, found from the water toward the land,
-        /// or the perch's own hillside snapped to the ground when the shore refuses.
-        /// Never a point at the cliff's height over the road (Ron, September 11).
+        /// The generator crew works the lamps on the beach below the cliff: four
+        /// posts spread across Ron's surveyed beach key (September 12: the crew had
+        /// been standing inside the mountain), each snapped to walkable ground.
         /// </summary>
         private Vector3 LightCrewPost(int index)
         {
-            var toLand = _perch - _grotto; toLand.Z = 0f;
-            float run = (float)Math.Sqrt(toLand.X * toLand.X + toLand.Y * toLand.Y);
-            if (run < 1f) { toLand = new Vector3(0f, 1f, 0f); run = 1f; }
-            toLand = new Vector3(toLand.X / run, toLand.Y / run, 0f);
-            var across = new Vector3(-toLand.Y, toLand.X, 0f) * (index * 5f - 7.5f);
-            for (float d = 8f; d <= 40f; d += 8f)
-            {
-                var p = _grotto + toLand * d + across;
-                float ground = World.GetGroundHeight(new Vector3(p.X, p.Y, _grotto.Z + 80f));
-                if (ground <= _grotto.Z + 0.3f) continue;
-                var safe = World.GetSafeCoordForPed(new Vector3(p.X, p.Y, ground + 0.5f), false, 0);
-                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, _grotto, 60f)) return safe;
-            }
-            var fallback = _perch + new Vector3(12f + index * 4f, -20f, 0f);
-            float hill = World.GetGroundHeight(new Vector3(fallback.X, fallback.Y, _perch.Z + 60f));
-            if (hill > 0.5f) fallback = new Vector3(fallback.X, fallback.Y, hill + 0.5f);
-            var onHill = World.GetSafeCoordForPed(fallback, false, 0);
-            return onHill != Vector3.Zero ? onHill : fallback;
+            var beach = Ctx.Locations.Position("M05.LightCrew");
+            var wanted = beach + new Vector3(index * 3.5f - 5.25f, (index % 2) * 2.5f, 0f);
+            var safe = World.GetSafeCoordForPed(wanted, false, 0);
+            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, beach, 20f)) return safe;
+            return wanted;
         }
 
         private void SpawnLightCrew()
@@ -291,8 +277,10 @@ namespace Bloodlines.Missions.Campaign
             var boatModel = new Model("tropic");
             if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(boatModel)) return;
 
-            _mateoBoat = Track(World.CreateVehicle(boatModel, _grotto + new Vector3(0f, -14f, 0f), 45f));
-            _mateo = Track(World.CreatePed(model, _grotto + new Vector3(2f, -12f, 0f), 45f));
+            // His boat sits at the key itself: Ron's surveyed spot off the beach, where the two boats moor.
+            float boatHeading = Ctx.Locations.Heading("M05.GrottoMouth");
+            _mateoBoat = Track(World.CreateVehicle(boatModel, _grotto, boatHeading));
+            _mateo = Track(World.CreatePed(model, _grotto + new Vector3(2f, 0f, 0f), boatHeading));
             model.MarkAsNoLongerNeeded();
             boatModel.MarkAsNoLongerNeeded();
 
@@ -321,12 +309,11 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("dinghy");
             if (!GameUtils.RequestModel(model)) return;
 
-            _dinghy = Track(World.CreateVehicle(model, Ctx.Locations.Position("M05.DinghySpawn"), 45f));
+            _dinghy = Track(World.CreateVehicle(model, Ctx.Locations.Position("M05.DinghySpawn"), Ctx.Locations.Heading("M05.DinghySpawn")));
             model.MarkAsNoLongerNeeded();
             if (_dinghy == null || !_dinghy.Exists()) return;
 
             _dinghy.IsPersistent = true;
-            _dinghy.Heading = DriveUpStep.HeadingBetween(_dinghy.Position, _grotto);
             Logger.Info("M05 dinghy on the water at " + _dinghy.Position + ".");
 
             var blip = Track(_dinghy.AddBlip());

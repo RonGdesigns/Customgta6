@@ -44,7 +44,6 @@ namespace Bloodlines.Core
             _shown += dt;
             if (_shown >= 5500) { _title = null; return; }
             int alpha = (int)(220f * Math.Min(1f, Math.Min(_shown / 300f, (5500 - _shown) / 500f)));
-            Function.Call(Hash.DRAW_RECT, .5f, .45f, 1f, .22f, 0, 0, 0, alpha, false);
             new GTA.UI.TextElement("MISSION PASSED", new PointF(640f, 252f), 1.1f,
                 Color.FromArgb(alpha, 240, 192, 70)) { Alignment = GTA.UI.Alignment.Center, Font = GTA.UI.Font.Pricedown }.Draw();
             new GTA.UI.TextElement(_title, new PointF(640f, 345f), .43f,

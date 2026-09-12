@@ -102,6 +102,7 @@ namespace Bloodlines.Crew
         private readonly ModConfig _config;
         private readonly Dictionary<CrewSlot, CompanionState> _states = new Dictionary<CrewSlot, CompanionState>();
         private readonly Dictionary<CrewSlot, int> _stateSince = new Dictionary<CrewSlot, int>();
+        private readonly Dictionary<CrewSlot, int> _flippedSince = new Dictionary<CrewSlot, int>();
         private readonly HashSet<CrewSlot> _scripted = new HashSet<CrewSlot>();
 
         private readonly Dictionary<CrewSlot, Ped> _threats = new Dictionary<CrewSlot, Ped>();
@@ -177,6 +178,7 @@ namespace Bloodlines.Crew
                 Driver.Restart(slot);
                 Refresh(slot);
             }
+            UprightIfFlipped(slot, companion);
             var state = Decide(slot, companion, leader);
 
             // A slot with nothing recorded has never been applied. StateOf() reports
@@ -445,6 +447,27 @@ namespace Bloodlines.Crew
             companion.Task.WarpIntoVehicle(vehicle, request.Seat);
             _stateSince[slot] = Game.GameTime;
             Logger.Debug("Boarding fallback: normal entry failed after " + age + "ms.");
+        }
+
+        /// <summary>
+        /// A brother's car on its roof and stopped for three seconds is rolled back
+        /// onto its wheels (Ron, September 12: he switched to a brother lying
+        /// upside down in a car). The engine gives an AI driver no way to do it.
+        /// </summary>
+        private void UprightIfFlipped(CrewSlot slot, Ped companion)
+        {
+            var vehicle = companion.CurrentVehicle;
+            if (vehicle == null || !vehicle.Exists() || vehicle.GetPedOnSeat(VehicleSeat.Driver) != companion) { _flippedSince.Remove(slot); return; }
+            bool flipped = Function.Call<bool>(Hash.IS_ENTITY_UPSIDEDOWN, vehicle);
+            if (!flipped || vehicle.Speed > 1f) { _flippedSince.Remove(slot); return; }
+            if (!_flippedSince.TryGetValue(slot, out int since)) { _flippedSince[slot] = Game.GameTime; return; }
+            if (Game.GameTime - since < 3000) return;
+            _flippedSince.Remove(slot);
+            var position = vehicle.Position;
+            vehicle.Rotation = new Vector3(0f, 0f, vehicle.Heading);
+            vehicle.Position = new Vector3(position.X, position.Y, position.Z + 1.2f);
+            vehicle.PlaceOnGround();
+            Logger.Info(slot + "'s car was on its roof; rolled back onto its wheels.");
         }
 
         private static void Recover(Ped companion, Ped leader)

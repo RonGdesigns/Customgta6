@@ -56,7 +56,7 @@ Prerequisite: M02. Retry: full mission restart.
 | 4 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
 | 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
 | 6 | Guess | **The depot answers** — TravelObjective: Guess: get back to the depot. Ice and Gohan are pinned at the truck. |
-| 7 | Guess | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen and the dogs marked RED. Switch to any brother. |
+| 7 | Guess | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen marked RED, and the cars pulling in behind you. Switch to any brother. |
 | 8 | Guess | **Run it home** — EnterVehicleObjective: Guess: take the orange-marked Benson truck (driver seat). Ice rides with you; Gohan rides in the back.<br>ConditionObjective: Ice is boarding the cab and Gohan the back of the Benson. |
 | 9 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
 
@@ -76,11 +76,12 @@ Prerequisite: M03. Retry: full mission restart.
 | 4 | Gohan | **Miller runs** — SwitchWindowObjective: Miller is running. Take Guess to intercept; Ron is already on him |
 | 5 | Guess | **Run him down** — PursueTargetObjective: Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive. |
 | 6 | Guess | **Recover the drive** — MissionInteraction: Guess: collect Miller's drive |
-| 7 | Guess | **Lose them and regroup** — LoseWantedObjective: Lose the police.<br>EnterVehicleObjective: Pick up Ice and Gohan in the van. |
+| 7 | Guess | **Lose them** — LoseWantedObjective: Lose the police. Ice and Gohan are making their own way back to the hideout. |
+| 8 | Guess | **Back to the hideout** — TravelObjective: Guess: meet Ice and Gohan back at the Cypress Flats hideout. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: Base.CypressFlats, M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.RampGuards.
+Survey references: Base.CypressFlats, M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.IceWatch, M04.RampGuards.
 
 ## M05 — TIDAL LOCK
 
@@ -97,7 +98,7 @@ Prerequisite: M04. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M05.CliffPerch, M05.CoveAir, M05.DinghySpawn, M05.GrottoMouth, M05.Sandbar.
+Survey references: M05.CliffPerch, M05.CoveAir, M05.DinghySpawn, M05.GrottoMouth, M05.LightCrew, M05.Sandbar.
 
 ## M06 — CLEAN SWEEP
 
@@ -122,14 +123,14 @@ Prerequisite: M06. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **The mast** — ReachZoneObjective: Ice — get up to the antenna platform on the garage roof. |
+| 1 | Ice | **The mast** — ReachZoneObjective: Ice — parachute from the tower to the marked roof and reach the antenna platform. |
 | 2 | Ice | **Clamp the receiver** — MissionInteraction: Clamp the packet sniffer to the dish. |
-| 3 | Ice | **Off the roof** — ReachZoneObjective: Descend from the roof, then reach Guess's marked pickup. Use the parachute only if there is clearance. |
+| 3 | Ice | **Off the roof** — ReachZoneObjective: Grab the chute by the platform, jump, and reach Guess's marked pickup below. |
 | 4 | Ice | **Moving pickup** — EnterVehicleObjective: Get in behind Guess. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M07.GarageRoof, M07.LandingZone, M07.MastTop.
+Survey references: M07.GarageRoof, M07.IceStart, M07.LandingZone, M07.MastTop.
 
 ## M08 — SUPPLY & SEVER
 

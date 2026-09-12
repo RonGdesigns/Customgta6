@@ -111,7 +111,7 @@ public static partial class StoryTests
   var next=typeof(CutsceneDirector).GetMethod("NextLine",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
   for(int i=0;i<6;i++)next.Invoke(c.Cutscenes,null);
   Check(c.Cutscenes.IsActive,"Dialogue exhausted but the actor still walking keeps the scene open");
-  Game.Accept=true;c.Cutscenes.Update();
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;c.Cutscenes.Update();
   Check(!c.Cutscenes.IsActive&&ron.IsInVehicle(car)&&Game.Player.CanControlCharacter,"Skipping the scene seats the actor and returns control");
   Reset();crew=Roster();c=Context(crew);ron=Game.Player.Character;car=new Vehicle{Position=new Vector3(3,0,0)};
   blocking=new SceneBlocking().Then(new EnterVehicleStep(ron,car,VehicleSeat.Driver));
@@ -125,7 +125,7 @@ public static partial class StoryTests
   Check(prologue.Begin()&&prologue.IsActive&&prologue.Current==PrologueSequence.Phase.Arrival&&crew.IsSolo&&crew.ActiveSlot==CrewSlot.Guess,"Prologue deploys Ron alone at the airport and opens the arrival scene");
   Check(c.Cutscenes.IsActive&&prologue.Car!=null&&World.Vehicles.Contains(prologue.Car),"Ron's car exists for the scene");
   prologue.Update();Check(prologue.Current==PrologueSequence.Phase.Arrival,"The prologue waits while the arrival scene plays");
-  Game.Accept=true;c.Cutscenes.Update();
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;c.Cutscenes.Update();
   Check(!c.Cutscenes.IsActive&&Game.Player.Character.IsInVehicle(prologue.Car),"Skipping the arrival leaves Ron seated in his car");
   prologue.Update();Check(prologue.Current==PrologueSequence.Phase.Drive,"Control returns for the drive home");
   prologue.Update();Check(GameUtils.Message!=null&&GameUtils.Message.Contains("Drive"),"HUD, not dialogue, carries the drive instruction");
@@ -135,10 +135,10 @@ public static partial class StoryTests
   Check(prologue.Current==PrologueSequence.Phase.Homecoming&&c.Cutscenes.IsActive,"Stopping at the apartment starts the homecoming scene");
   for(int i=0;i<5;i++)next.Invoke(c.Cutscenes,null);
   Check(c.Cutscenes.IsActive&&handoffs==0,"The homecoming holds until Ron is out of the car and at the door");
-  Game.Accept=true;c.Cutscenes.Update();prologue.Update();
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;c.Cutscenes.Update();prologue.Update();
   Check(!Game.Player.Character.IsInVehicle()&&Game.Player.Character.Position==home,"Skipping the homecoming puts Ron at his door, out of the car");
   Check(prologue.Current==PrologueSequence.Phase.Interior&&c.Cutscenes.IsActive&&handoffs==0,"With no home system the message is read at the door: the call scene plays there");
-  Game.Accept=true;c.Cutscenes.Update();prologue.Update();
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;c.Cutscenes.Update();prologue.Update();
   Check(handoffs==1&&!prologue.IsActive&&save.PrologueComplete&&CampaignState.Load(Path.Combine(root,"prologue-run.json")).PrologueComplete,"The prologue commits its flag and hands off to M01 exactly once");
   Check(prologue.Car==null&&ride.Released,"The arrival car is handed back to the world, not deleted under the player");
   // Abort hold skips the whole thing but still counts.
@@ -156,11 +156,11 @@ public static partial class StoryTests
    new TechnicalOption("Feed","slower response",ctx=>applied=0),new TechnicalOption("Dispatch","fewer responders",ctx=>applied=1)});
   choice.RequiredCharacter=CrewSlot.Gohan;choice.Enter(c);Use(crew,CrewSlot.Ice);choice.Update(c);
   Check(choice.Label.StartsWith("Switch to Gohan")&&!choice.IsFinished,"The panel belongs to Gohan");
-  Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,5,0);Game.Accept=true;choice.Update(c);
+  Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,5,0);Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;choice.Update(c);
   Check(!choice.IsFinished&&choice.SelectedIndex==0,"Arriving at the panel swallows a stale confirm press");
   Game.Pressed.Add(GTA.Control.Detonate);choice.Update(c);
   Check(choice.SelectedIndex==1&&choice.Label.Contains("Dispatch")&&!choice.IsFinished,"D-pad Left / G cycles to the next option without committing");
-  Game.Accept=true;choice.Update(c);
+  Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;choice.Update(c);
   Check(choice.Status==ObjectiveStatus.Complete&&choice.Chosen.Title=="Dispatch"&&applied==1,"Commit applies exactly the chosen consequence");
   // M28 wires the choice into its response clock and squad size.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"m28-choice.json"));var m28=new M28OffTheGrid();
@@ -210,7 +210,7 @@ public static partial class StoryTests
    if(objective.RequiredCharacter.HasValue&&!objective.IsPassive)Use(crew,objective.RequiredCharacter.Value);
    string name=objective.GetType().Name;
    if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());
-   else if(name=="MissionInteraction") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());Game.Accept=true;}
+   else if(name=="MissionInteraction") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;}
    else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);}
    else if(name=="DeliverVehicleObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
    else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;

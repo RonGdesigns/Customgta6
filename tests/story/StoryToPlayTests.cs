@@ -117,13 +117,23 @@ public static partial class StoryTests
   Game.GameTime+=M04SeveredWire.SwitchWindowMs+200;m4.Tick();Check(m4.RequiredSwitch==CrewSlot.Guess,"When the window closes the switch is required through the hand-off");
   Use(crew,CrewSlot.Guess);m4.Tick();m4.Tick();Check(m4.CurrentStage==4,"Taking Guess opens the pursuit");
   var millerCar=World.Vehicles.First(v=>v.Model.Name=="fugitive");
-  if(killMiller)m4.Miller.IsDead=true;else millerCar.IsDriveable=false;
+  if(killMiller)m4.Miller.IsDead=true;
+  else
+  {
+   // Gohan in the van with Ron: he offers the hack, and twelve seconds inside range kill the car.
+   gohan.SetIntoVehicle(van,VehicleSeat.LeftRear);Game.Player.Character.SetIntoVehicle(van,VehicleSeat.Driver);van.Position=millerCar.Position;c.Dialogue.Clear();m4.Tick();
+   Check(c.Dialogue.HasPending&&m4.CarHackProgress==0f,"Gohan riding with Ron says he can kill Miller's car from his seat");
+   for(int i=0;i<M04SeveredWire.CarHackSeconds+2&&millerCar.IsDriveable;i++){Game.GameTime+=1000;m4.Tick();}
+   Check(!millerCar.IsDriveable&&m4.CarHackProgress>=1f,"Inside thirty-five meters long enough, the hack kills Miller's car");
+  }
   m4.Tick();Check(m4.CurrentStage==5,killMiller?"A dead Miller ends the chase":"A disabled car ends the chase");
   Interact(m4,c,CrewSlot.Guess,m4.Miller.Position,3);
   Check(m4.CurrentStage==6&&m4.Case==null&&c.State.EvidenceOf("millerDrive")==EvidenceState.CopyHeld,"Recovering the drive stores it and records the evidence");
   if(!killMiller)Check(m4.Miller.Task.Flees==1,"A living Miller runs; nothing asks for his death");
   Game.Player.WantedLevel=2;m4.Tick();Check(Game.Player.WantedLevel==2&&m4.CurrentStage==6,"The heat is not cleared at a marker: the crew has to lose it");
-  Game.Player.WantedLevel=0;Game.Player.Character.SetIntoVehicle(van,VehicleSeat.Driver);ice.SetIntoVehicle(van,VehicleSeat.RightFront);gohan.SetIntoVehicle(van,VehicleSeat.LeftRear);m4.Tick();m4.Tick();
-  Check(m4.Status==MissionStatus.Passed&&van.Present&&van.Released&&millerCar.Present,"With the police lost and the crew aboard the mission passes; the van and Miller's car remain");
+  Game.Player.WantedLevel=0;m4.Tick();
+  Check(m4.CurrentStage==7&&ice.Position.DistanceTo(basePoint)<30f&&gohan.Position.DistanceTo(basePoint)<30f&&!ice.IsInVehicle()&&!m4.LotDark,"With the police lost the meet is the hideout: Ice and Gohan make their own way back, nobody is pulled to Ron, and the lot's lights are back");
+  Game.Player.Character.SetIntoVehicle(van,VehicleSeat.Driver);van.Position=basePoint;Game.Player.Character.Position=basePoint;van.Speed=0f;m4.Tick();m4.Tick();
+  Check(m4.Status==MissionStatus.Passed&&van.Present&&van.Released&&millerCar.Present,"Arriving at the hideout in the van passes the mission; the van and Miller's car remain");
  }
 }

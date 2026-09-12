@@ -76,7 +76,31 @@ namespace Bloodlines.Core
             new Choice("Vestra", "vestra", "Planes"),
             new Choice("Nimbus", "nimbus", "Planes"),
             new Choice("Howard NX-25", "howard", "Planes"),
-            new Choice("Alpha-Z1", "alphaz1", "Planes")
+            new Choice("Alpha-Z1", "alphaz1", "Planes"),
+            // Ron, September 12: the jets, the jetpack, the Oppressors and the newer cars.
+            new Choice("Lazer", "lazer", "Jets"), new Choice("Hydra", "hydra", "Jets"),
+            new Choice("Besra", "besra", "Jets"), new Choice("Pyro", "pyro", "Jets"),
+            new Choice("Molotok", "molotok", "Jets"), new Choice("Nokota", "nokota", "Jets"),
+            new Choice("Starling", "starling", "Jets"), new Choice("B-11 Strikeforce", "strikeforce", "Jets"),
+            new Choice("Rogue", "rogue", "Jets"),
+            new Choice("Thruster jetpack", "thruster", "Special"), new Choice("Deluxo", "deluxo", "Special"),
+            new Choice("Stromberg", "stromberg", "Special"),
+            new Choice("Oppressor", "oppressor", "Motorcycles"), new Choice("Oppressor Mk II", "oppressor2", "Motorcycles"),
+            new Choice("Buzzard Attack Chopper", "buzzard", "Helicopters"), new Choice("Hunter", "hunter", "Helicopters"),
+            new Choice("Akula", "akula", "Helicopters"), new Choice("Valkyrie", "valkyrie", "Helicopters"),
+            new Choice("Savage", "savage", "Helicopters"), new Choice("Annihilator", "annihilator", "Helicopters"),
+            new Choice("Cargobob", "cargobob", "Helicopters"), new Choice("Sparrow", "seasparrow2", "Helicopters"),
+            new Choice("Deveste Eight", "deveste"), new Choice("Tigon", "tigon"),
+            new Choice("S80RR", "s80"), new Choice("Torero XO", "torero2"),
+            new Choice("Entity MT", "entity3"), new Choice("Virtue", "virtue"),
+            new Choice("10F", "tenf"), new Choice("Corsita", "corsita"),
+            new Choice("SM722", "sm722"), new Choice("Omnis e-GT", "omnisegt"),
+            new Choice("Zeno", "zeno"), new Choice("Coquette D10", "coquette4"),
+            new Choice("Vigero ZX", "vigero2"), new Choice("Coureur", "coureur"),
+            new Choice("Pipistrello", "pipistrello"), new Choice("Stinger TT", "stingertt"),
+            new Choice("Niobe", "niobe"), new Choice("Dominator GT", "dominator10"),
+            new Choice("Envisage", "envisage"), new Choice("Euros X32", "eurosx32"),
+            new Choice("Terminus", "terminus", "Off-road"), new Choice("Monstrociti", "monstrociti", "Off-road")
         };
         private readonly List<Vehicle> _spawned = new List<Vehicle>();
         public static bool Available(Choice choice)
@@ -143,7 +167,11 @@ namespace Bloodlines.Core
                 for (int i = 0; i < strips.Length; i++)
                     if (player.Position.DistanceTo(strips[i]) < 180f && !Occupied(strips[i], 18f))
                     { point = strips[i]; heading = i == 0 ? 105f : 115f; return true; }
-                GameUtils.Notify("~y~Request a plane beside the Sandy Shores or McKenzie runway."); return false;
+                // Away from a runway the plane is set on the road ahead when it is clear (Ron, September 12: force the spawn when the space is there).
+                var ahead = World.GetNextPositionOnStreet(player.Position + player.ForwardVector * 25f);
+                if (ahead != Vector3.Zero && ahead.DistanceTo(player.Position) < 60f && Math.Abs(ahead.Z - player.Position.Z) < 8f && !Occupied(ahead, 12f))
+                { point = ahead; heading = player.Heading; GameUtils.Notify("~y~No runway near: the plane is on the road ahead. Find a straight to take off."); return true; }
+                GameUtils.Notify("~y~Request a plane beside a runway or on a clear straight road."); return false;
             }
             if (model.IsHelicopter)
             {
@@ -161,7 +189,10 @@ namespace Bloodlines.Core
                     }
                     if (flat) { point = safe; return true; }
                 }
-                GameUtils.Notify("~y~Move to a large, flat open area to request a helicopter."); return false;
+                // No ring spot: the space right ahead of the player, when nothing stands in it (Ron, September 12).
+                var spot = player.Position + player.ForwardVector * 10f;
+                if (!Occupied(spot, 8f)) { point = spot; return true; }
+                GameUtils.Notify("~y~Move to a flat open area to request a helicopter."); return false;
             }
             point = World.GetNextPositionOnStreet(player.Position + player.ForwardVector * 12f);
             if (point == Vector3.Zero || point.DistanceTo(player.Position) > 60f || Math.Abs(point.Z - player.Position.Z) > 8f || Occupied(point, 4f))

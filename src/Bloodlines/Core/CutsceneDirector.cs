@@ -62,6 +62,11 @@ namespace Bloodlines.Core
         public static bool IsSceneRunning { get; private set; }
         public bool IsActive => _lines != null;
 
+        /// <summary>A skip press counts only after this long into the scene: the button that ended the drive, held into the door scene, skipped it 50 ms in (Ron, September 11).</summary>
+        public const int SkipGraceMs = 1000;
+        /// <summary>True once a skip press may end the running scene: past the grace, so a press carried in from gameplay is not a skip.</summary>
+        public bool SkipInputAllowed => IsActive && Game.GameTime - _startedAt >= SkipGraceMs;
+
         public CutsceneDirector(CrewRoster crew, DialogueDirector dialogue, LocationBook locations, string dataDirectory)
         {
             _crew = crew;
@@ -337,13 +342,41 @@ namespace Bloodlines.Core
         /// </summary>
         private void StageArrival(List<Protagonist> riders, Ped player, Dictionary<CrewSlot, Ped> staged)
         {
+            // The player already sitting in a car at the start point has the crew
+            // with him: the riders take its free seats and nobody pulls up (Ron,
+            // September 12: Gohan drove up while he was already in the car with him).
+            var ride = player.CurrentVehicle;
+            if (ride != null && ride.Exists())
+            {
+                var rideSeats = new[] { VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
+                int seatIndex = 0;
+                foreach (var rider in riders)
+                {
+                    while (seatIndex < rideSeats.Length && !ride.IsSeatFree(rideSeats[seatIndex])) seatIndex++;
+                    if (seatIndex >= rideSeats.Length) break;
+                    var model = rider.Model;
+                    if (!GameUtils.RequestModel(model, 1000)) continue;
+                    var actor = World.CreatePed(model, ride.Position, ride.Heading);
+                    model.MarkAsNoLongerNeeded();
+                    if (actor == null || !actor.Exists()) continue;
+                    CrewAppearance.Apply(actor, rider.Slot);
+                    _temporary.Add(actor);
+                    actor.IsPersistent = true;
+                    actor.BlockPermanentEvents = true;
+                    actor.SetIntoVehicle(ride, rideSeats[seatIndex++]);
+                    staged[rider.Slot] = actor;
+                }
+                Logger.Info("Briefing arrival: the riders took the player's own car; no drive-up.");
+                return;
+            }
             var destination = World.GetNextPositionOnStreet(player.Position);
             if (destination == Vector3.Zero || destination.DistanceTo(player.Position) > 40f) return;
             var spawn = World.GetNextPositionOnStreet(destination - player.ForwardVector * 90f);
             float run = spawn == Vector3.Zero ? 0f : spawn.DistanceTo(destination);
             if (run < 40f || run > 220f) return;
             float heading = DriveUpStep.HeadingBetween(spawn, destination);
-            var car = SceneVehicle("schafter3", spawn, heading);
+            // The crew's own four-door, the one they leave in (Ron, September 12).
+            var car = SceneVehicle("granger", spawn, heading);
             if (car == null) return;
             var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
             Ped driver = null;
@@ -470,9 +503,8 @@ namespace Bloodlines.Core
                 Game.DisableControlThisFrame(GTA.Control.CharacterWheel);
                 Game.DisableControlThisFrame(GTA.Control.Attack);
                 Function.Call(Hash.HIDE_HUD_AND_RADAR_THIS_FRAME);
-                new GTA.UI.ContainerElement(new PointF(640, 30), new SizeF(1280, 60), Color.Black).Draw();
                 new GTA.UI.TextElement(_title + (_radioScene ? " — phone / radio" : "") + "   |   Enter / controller A: skip", new PointF(35, 15), 0.32f, Color.White).Draw();
-                if (Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
+                if (SkipInputAllowed && Game.IsControlJustPressed(GTA.Control.FrontendAccept)) { Skip(); return; }
                 _dialogue.Update();
                 if (_blocking != null)
                 {

@@ -324,7 +324,7 @@ namespace Bloodlines
             if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             if (_cutscenes.IsActive)
             {
-                if (e.KeyCode == Keys.Enter) _cutscenes.Skip();
+                if (e.KeyCode == Keys.Enter && _cutscenes.SkipInputAllowed) _cutscenes.Skip();
                 else if (e.KeyCode == _config.AbortKey && _abortHeldSince == 0) _abortHeldSince = Game.GameTime;
                 return;
             }

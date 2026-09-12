@@ -111,6 +111,19 @@ with this build's keys. Everything here needs `[Dev] Enabled = True` in
 | 98 | **Ron's home** | Fresh save, prologue | The drive home ends at the Mission Row apartment door; the marker is there; the house interior is behind it; exit returns to Mission Row |
 | 97 | **The Port Heist seamless** | M19 through M22 in one run | No scene or wait at the three joins; the escort, the Granger and the beach arrival crewed under AI while you play; the heist restarts at M19 on fail, abort or quit; the harbor sites resolve on real water |
 | 96 | **M07 roof check, M08 jobs** | Start M07 with the roof key wrong; M08's second crate | M07 always starts: the nearest roof with a notice, or street level with the key named, never Ice in the air; in M08 the technical counts for whoever kills it and the HUD never demands Ron for it |
+| 109 | **Shared heat** | Three in a car with stars | Same stars after every switch |
+| 110 | **Rewards** | Pass a mission | Cash notice with the total; weapon notice per brother |
+| 111 | **No bars** | Pass a mission; any scene | Words alone, no black bars |
+| 112 | **Sunset** | 17:00 to 20:30 | Stock colors |
+| 113 | **Ability** | Ron driving | Snappier turn-in while it runs |
+| 114 | **Spawner** | Dev menu in a mission; near buildings; on a road | Car, helicopter, jet all placed; new models listed |
+| 115 | **Flipped brother** | Companion car on its roof | Rolls back after three seconds |
+| 106 | **M05 again** | Whole mission | Marker on the road; perch, beach crew, Mateo's boat and dinghy at Ron's keys; boats present |
+| 107 | **M06 again** | Whole mission | Power box cut with no case; Ice near Gohan; Grangers from both alley ends on waves two and three; crew shooting at the pickup |
+| 108 | **M07 again** | Whole mission | Ice jumps from Maze Bank to the roof; second chute by the platform; Ron and Gohan in the sedan |
+| 104 | **M03 again** | Whole mission | Car on the lot; dogs attack; one-trip loading; no dogs at the depot; three cars behind Ron with Ice's warning |
+| 105 | **M04 again** | Whole mission | Gohan at the breaker box; Ice above the lot shooting down; lights out at the cut; Gohan's car hack from the van; meet at the hideout, no teleport |
+| 103 | **Skip grace** | Prologue door and phone scenes | Neither scene is skipped by the press that stopped the car; a press after one second still skips |
 | 101 | **Harbor starts** | Start M18, M19, M20 | Each starts at Terminal Island; "open water assumed" in the log is fine; a refusal names a deck or shallows |
 | 102 | **M03 Gohan in the back** | Run it home | Ice in the cab, Gohan into the box at the rear doors, doors closed, both required before the run; Gohan set down at the foundry |
 

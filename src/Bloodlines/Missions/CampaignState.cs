@@ -286,7 +286,28 @@ namespace Bloodlines.Missions
             }
         }
 
+        /// <summary>
+        /// What a finished job pays when the bible names no sum (Ron, September 12:
+        /// nothing had paid): a main mission's scale by its number, a solo job a
+        /// flat fee. The Port Heist's inner parts pay through M22 alone.
+        /// </summary>
+        public static int DefaultPayout(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return 0;
+            if (PortHeistOperation.Contains(id) && !string.Equals(id, "M22", StringComparison.OrdinalIgnoreCase)) return 0;
+            if (id.StartsWith("SM", StringComparison.OrdinalIgnoreCase)) return 12000;
+            int number;
+            return id.Length > 1 && int.TryParse(id.Substring(1), out number) ? 4000 + 1500 * number : 0;
+        }
+
         private void AwardCompletion(string id)
+        {
+            int before = CashOnHand;
+            AwardNamed(id);
+            if (CashOnHand == before) CashOnHand += DefaultPayout(id);
+        }
+
+        private void AwardNamed(string id)
         {
             switch (id)
             {

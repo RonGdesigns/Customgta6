@@ -536,7 +536,7 @@ namespace Bloodlines.Core
                 var selected = choice;
                 page.Add(selected.Name, () => selected.Model, () =>
                 {
-                    if (_missions.IsRunning) { GameUtils.Notify("~y~Finish or leave the mission before requesting a vehicle."); return; }
+                    // A vehicle can be requested inside a mission as well (Ron, September 12).
                     if (_vehicles.Spawn(selected)) Close();
                 });
             }

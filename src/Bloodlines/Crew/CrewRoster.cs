@@ -374,14 +374,16 @@ namespace Bloodlines.Crew
         public void Update()
         {
             if (!IsDeployed) return;
-            if (!_companions.MissionActive)
+            if (!_companions.MissionActive) _companions.Life.Wanted.Capture(ActiveSlot, Game.Player.WantedLevel);
+            // One car, one heat (Ron, September 12): everyone riding with the active
+            // brother carries the game's current level, mission or not, and any
+            // pursuit of his own is dropped while he rides along.
             {
-                _companions.Life.Wanted.Capture(ActiveSlot, Game.Player.WantedLevel);
                 var active = PedFor(ActiveSlot); var shared = active?.CurrentVehicle;
                 if (shared != null && shared.Exists())
                     foreach (var pair in _peds)
-                        if (pair.Value != null && pair.Value.Exists() && pair.Value.IsInVehicle(shared))
-                            _companions.Life.Wanted.Set(pair.Key, _companions.Life.Wanted.Get(ActiveSlot));
+                        if (pair.Key != ActiveSlot && pair.Value != null && pair.Value.Exists() && pair.Value.IsInVehicle(shared))
+                            _companions.Life.RideAlong(pair.Key, Game.Player.WantedLevel);
             }
             // CHANGE_PLAYER_PED can reset the active actor's relationship group.
             foreach (var member in _peds.Values)

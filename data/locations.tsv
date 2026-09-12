@@ -21,24 +21,24 @@ M03.DepotGate	1270.00	-1940.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fi
 M03.CraneControls	1286.00	-1956.00	40.00	0	land	estimate	Cypress Flats / Murrieta Fields
 M03.HaulerSpawn	1254.00	-1928.00	40.00	180	land	estimate	Cypress Flats / Murrieta Fields
 M04.GarageEntry	233.0	-800.0	30.0	0	land	estimate	Pillbox Hill / Textile City
-M04.Breaker	220.0	-815.0	30.0	0	land	estimate	Pillbox Hill / Textile City
+M04.Breaker	254.10	-828.48	29.70	110.5	land	surveyed	Pillbox Hill, the lot breaker (Ron, September 12)
 M04.RampGuards	240.0	-805.0	30.0	0	land	estimate	Pillbox Hill / Textile City
 M04.ChaseCar	250.0	-790.0	30.0	250	land	estimate	Pillbox Hill / Textile City
 M04.TextileCrash	80.0	-1080.0	29.0	0	land	estimate	Pillbox Hill / Textile City
-M05.CliffPerch	2360.0	-840.0	42.0	135	land	estimate	Palomino Highlands Shoreline
+M05.CliffPerch	2458.90	-993.31	120.49	190.7	land	surveyed	Palomino Highlands, Ice's perch (Ron, September 12)
 M05.CoveAir	2450.0	-960.0	1.0	0	water	estimate	Palomino Highlands Shoreline
-M05.GrottoMouth	2480.0	-1000.0	1.0	0	water	estimate	Palomino Highlands Shoreline
+M05.GrottoMouth	2536.4	-1258.14	1.77	187.8	water	surveyed	Palomino Highlands, Mateo's boat off the beach (Ron, September 12)
 M05.Sandbar	2560.0	-1120.0	0.0	0	water	estimate	Palomino Highlands Shoreline
-M05.DinghySpawn	2420.0	-1040.0	0.0	0	water	estimate	Palomino Highlands Shoreline
+M05.DinghySpawn	2663.2	-1161.7	1.3	187	water	surveyed	Palomino Highlands, the dinghy on the water (Ron, September 12)
 M06.Culvert	-1180.0	-1350.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
-M06.Feeder	-1160.0	-1330.0	4.0	0	land	estimate	Vespucci Canals LSPD Depot
+M06.Feeder	-1208.19	-1328.63	4.85	24.2	land	surveyed	Vespucci Canals, the power box (Ron, September 12)
 M06.SallyPort	-1170.28	-1276.46	5.57	283.4	land	surveyed	Vespucci Canals LSPD Depot
 M06.ServerRacks	-1128.0	-1290.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
 M06.AlleyHold	-1150.0	-1275.0	5.0	0	land	estimate	Vespucci Canals LSPD Depot
 M06.GrangerSpawn	-1420.0	-1240.0	4.0	90	land	estimate	Vespucci Beach, staged away from the depot
-M07.GarageRoof	-720.0	-60.0	55.0	0	land	estimate	Rockford Hills / Pillbox
-M07.MastTop	-724.0	-64.0	56.5	0	land	estimate	Rockford Hills / Pillbox
-M07.LandingZone	-1030.0	-430.0	36.0	0	land	estimate	Rockford Hills / Pillbox
+M07.GarageRoof	-805.38	-617.22	96.2	57.2	land	surveyed	Rockford Hills, the relay roof (Ron, September 12)
+M07.MastTop	-801.5	-614.5	96.2	57.2	land	surveyed	Rockford Hills, the antenna platform on the relay roof
+M07.LandingZone	-831.94	-638.16	27.20	59.3	land	surveyed	Rockford Hills, Ron's pickup below the roof (Ron, September 12)
 M08.WarehouseGate	240.0	-2900.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
 M08.CameraRoom	252.0	-2916.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
 M08.CratePadOne	272.0	-2936.0	6.0	0	land	estimate	Port of Los Santos Elysian Island
@@ -190,3 +190,8 @@ SM06.Bend	-1466	4433	18	0	land	estimate
 SM06.Delivery	2126	4780	41	0	land	estimate	
 M19.Worksite	1040.00	-3330.00	0.00	0	water	estimate	Terminal
 M19.BullionSurface	1050.00	-3330.00	0.00	0	water	estimate	Terminal
+M04.IceWatch	218.08	-747.07	47.08	267.1	land	surveyed	Pillbox Hill, Ice's overwatch above the lot (Ron, September 12)
+Base.CypressFlatsCar	866.96	-2104.50	29.92	353.8	land	surveyed	Cypress Flats, the crew's car at the base (Ron, September 12)
+M05.LightCrew	2524.03	-1228.29	2.20	0.8	land	surveyed	Palomino Highlands, the beach where the generator crew works (Ron, September 12)
+M05.Start	2304.40	-693.91	64.10	191.6	land	surveyed	Palomino Highlands, the road above the cove: M05's marker (Ron, September 12)
+M07.IceStart	-75.47	-824.79	321.29	113.1	land	surveyed	Maze Bank Tower roof: Ice's jump-off (Ron, September 12)

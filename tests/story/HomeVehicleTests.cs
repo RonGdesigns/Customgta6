@@ -20,11 +20,11 @@ public static partial class StoryTests
   state.Completed.Add("M03");Check(locker.UnlockRewards()&&state.Weapons["Gohan"].Contains((uint)WeaponHash.StunGun),"Mission completion expands each hero's role-specific locker");
   Check(!locker.UnlockRewards(),"Revisiting an unlocked reward does not duplicate it");
   var homes=new CrewHomes(crew,state,c.Locations,locker);Check(homes.Position(CrewSlot.Ice).HasValue&&homes.Position(CrewSlot.Gohan).HasValue&&homes.Position(CrewSlot.Guess).HasValue,"All three story homes have unlocked access points");
-  Game.Player.Character.Position=homes.Position(crew.ActiveSlot).Value;Game.Player.WantedLevel=2;Game.Accept=true;homes.Update(true);
+  Game.Player.Character.Position=homes.Position(crew.ActiveSlot).Value;Game.Player.WantedLevel=2;Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;homes.Update(true);
   Check(!Function.Values.ContainsKey(Hash.ADD_TO_CLOCK_TIME),"Home rest cannot erase an active police pursuit");
-  Game.Player.WantedLevel=0;Game.Accept=true;Game.Player.Character.Health=150;homes.Update(true);
+  Game.Player.WantedLevel=0;Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;Game.Player.Character.Health=150;homes.Update(true);
   Check(Game.Player.Character.Health==CrewDurability.Health&&Game.Player.CanControlCharacter&&!GameUtils.Faded&&state.LastLocation==Game.Player.Character.Position,"Rest saves the actual home location, restores health and releases controls");
-  Game.GameTime+=10001;Game.Accept=true;Function.ThrowOnce=Hash.ADD_TO_CLOCK_TIME;bool failed=false;try{homes.Update(true);}catch{failed=true;}
+  Game.GameTime+=10001;Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;Function.ThrowOnce=Hash.ADD_TO_CLOCK_TIME;bool failed=false;try{homes.Update(true);}catch{failed=true;}
   Check(failed&&Game.Player.CanControlCharacter&&!GameUtils.Faded,"A home-rest native failure cannot strand the player in a fade");homes.Clear();
   var garage=new StoryVehicles();World.Vehicles.Clear();Game.Player.Character.Position=new Vector3(100,100,10);Game.Player.Character.ForwardVector=new Vector3(0,1,0);
   for(int i=0;i<4;i++)Check(garage.Spawn(StoryVehicles.Catalog[i]),"Available DLC car parks without replacing the player's vehicle "+i);

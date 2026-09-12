@@ -271,8 +271,10 @@ namespace Bloodlines.Missions
                 case MissionStatus.Passed:
                     // Finish the last gameplay line before the aftermath takes over.
                     if (_context.Dialogue.HasPending) return;
+                    int cashBefore = _state.CashOnHand;
                     if (_current is PortHeistOperation operation) operation.CommitResult(_catalog);
                     else _state.MarkComplete(_currentDefinition.Id, _catalog);
+                    AnnounceRewards(_current is PortHeistOperation ? "M22" : _currentDefinition.Id, cashBefore);
                     PendingContinuation = _current is PortHeistOperation || (_standalonePhase && PortHeistOperation.Contains(_currentDefinition.Id)) ? null : ContinuationOf(_currentDefinition);
                     if (PendingContinuation != null)
                     {
@@ -336,6 +338,20 @@ namespace Bloodlines.Missions
         }
 
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
+        /// <summary>What the job paid, said on screen (Ron, September 12: nothing said a weapon had unlocked or cash had come in).</summary>
+        private void AnnounceRewards(string id, int cashBefore)
+        {
+            int paid = _state.CashOnHand - cashBefore;
+            if (paid > 0) GameUtils.Notify("~g~+$" + paid.ToString("N0") + " crew cash~s~ (now $" + _state.CashOnHand.ToString("N0") + ")");
+            if (System.Array.IndexOf(Bloodlines.Crew.WeaponProgression.RewardMissions, id) < 0) return;
+            var rewards = Bloodlines.Crew.WeaponProgression.Rewards(id);
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var hero in Bloodlines.Crew.Protagonist.All)
+                if (Bloodlines.Crew.WeaponProgression.ReceivesReward(id, hero.Slot) && (int)hero.Slot < rewards.Length)
+                    parts.Add(hero.DisplayName + ": " + Bloodlines.Crew.WeaponProgression.NameOf(rewards[(int)hero.Slot]));
+            if (parts.Count > 0) GameUtils.Notify("~b~New weapons unlocked~s~: " + string.Join(" | ", parts) + ". Collect them at your locker.");
+        }
+
         public void CommitCheckpoint()
         {
             if (_current == null || _context.Cutscenes.IsActive) return;

@@ -17,7 +17,7 @@ namespace Bloodlines.Crew
             public Ped Officer;
             public int NextTick, StopUntil, NextCrime, EnteredAt, LastProgress, CoolSince;
             public Vector3 LastPosition;
-            public bool Started, Travelling, Entering, Theft, Activity;
+            public bool Started, Traveling, Entering, Theft, Activity;
         }
         private readonly Dictionary<CrewSlot, Day> _days = new Dictionary<CrewSlot, Day>();
         private readonly Random _random = new Random();
@@ -34,6 +34,12 @@ namespace Bloodlines.Crew
                 // is chosen only when this character becomes an NPC again.
                 day.Started = false; day.Entering = false; day.NextTick = 0;
             }
+        }
+        /// <summary>A brother riding with the player shares the player's heat exactly and has no pursuit of his own while he rides.</summary>
+        public void RideAlong(CrewSlot slot, int level)
+        {
+            Wanted.Set(slot, level);
+            if (_days.TryGetValue(slot, out var day)) ReleasePolice(day);
         }
         public void Suspend(CrewSlot slot)
         {
@@ -69,7 +75,7 @@ namespace Bloodlines.Crew
             {
                 ChooseTrip(slot, ped, day); return;
             }
-            if (!day.Travelling)
+            if (!day.Traveling)
             {
                 if (!day.Activity && !ped.IsInVehicle())
                 {
@@ -84,7 +90,7 @@ namespace Bloodlines.Crew
             if (vehicle != null && vehicle.Exists() && !(vehicle.Model.IsCar || vehicle.Model.IsBike)) return;
             if (GameUtils.IsWithinFlat(ped.Position, day.Destination, 18f))
             {
-                day.Travelling = false; day.Activity = false; day.StopUntil = Game.GameTime + _random.Next(30000, 75000);
+                day.Traveling = false; day.Activity = false; day.StopUntil = Game.GameTime + _random.Next(30000, 75000);
                 if (vehicle != null && vehicle.Exists()) ped.Task.LeaveVehicle();
                 else ped.Task.WanderAround(day.Destination, 12f);
                 day.NextTick = Game.GameTime + 5000;
@@ -112,7 +118,7 @@ namespace Bloodlines.Crew
             var road = World.GetNextPositionOnStreet(point);
             if (road == Vector3.Zero || road.DistanceTo(point) > 250f)
             { ped.Task.WanderAround(ped.Position, 120f); day.NextTick = Game.GameTime + 15000; return; }
-            day.Destination = road; day.Started = day.Travelling = true; day.LastPosition = ped.Position; day.LastProgress = Game.GameTime;
+            day.Destination = road; day.Started = day.Traveling = true; day.LastPosition = ped.Position; day.LastProgress = Game.GameTime;
             if (driving) { day.Ride = ped.CurrentVehicle; Drive(slot, ped, day); return; }
             // Passengers can carry on with their existing driver until it is safe to leave.
             if (ped.IsInVehicle())

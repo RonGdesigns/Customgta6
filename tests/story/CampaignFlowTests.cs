@@ -48,7 +48,7 @@ public static partial class StoryTests
      // SurfaceSubObjective is a real 3D/driver check. Move the simulated craft
      // to the target; do not force-pass it or weaken the production depth rule.
      else if(name=="SurfaceSubObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_target")(),Field<Func<Vehicle>>(objective,"_sub")());
-     else if(name=="TechnicalChoiceObjective") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());Game.Accept=true;}
+     else if(name=="TechnicalChoiceObjective") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;}
      else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v); if(Field<bool>(objective,"_requireCrew")) foreach(var hero in Protagonist.All.Where(h=>h.Slot!=crew.ActiveSlot)) crew.PedFor(hero.Slot)?.SetIntoVehicle(v,hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);}
      else if(name=="DeliverVehicleObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
      else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;
@@ -74,7 +74,7 @@ public static partial class StoryTests
      else if(name=="LoseWantedObjective")Game.Player.WantedLevel=0;
      else if(name=="RaceCheckpointObjective") {var sites=Field<IList<Vector3>>(objective,"_checkpoints");PositionActor(c,objective,sites[Field<int>(objective,"_index")],Field<Func<Vehicle>>(objective,"_vehicle")());}
     }
-    c.Dialogue.Clear();Game.Accept=true;Game.GameTime+=1000;m.Tick();
+    c.Dialogue.Clear();Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;Game.GameTime+=1000;m.Tick();
    }
    Check(m.Status==MissionStatus.Passed,m.Id+" reaches pass through real objective updates: "+m.FailReason+" / "+m.CurrentObjective);
   }

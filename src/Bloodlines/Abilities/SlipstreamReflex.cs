@@ -36,7 +36,9 @@ namespace Bloodlines.Abilities
         /// <summary>Downforce cap in m/s² (0.6 g), reached at <see cref="DownforceReferenceSpeed"/>.</summary>
         public const float DownforceCap = 5.9f;
         public const float DownforceReferenceSpeed = 50f;
-        public const float GripLift = 1.20f;
+        public const float GripLift = 1.50f;
+        /// <summary>The steering lock widens while the ability runs: the car turns in the way Franklin's does (Ron, September 12).</summary>
+        public const float SteeringLift = 1.30f;
         private const float BlendPerSecond = 2f; // half a second each way
 
         private Vehicle _vehicle;
@@ -163,7 +165,7 @@ namespace Bloodlines.Abilities
         private sealed class GripOverlay
         {
             private HandlingData _data;
-            private float _maxOriginal, _maxApplied, _lateralOriginal, _lateralApplied;
+            private float _maxOriginal, _maxApplied, _lateralOriginal, _lateralApplied, _steerOriginal, _steerApplied;
             public bool Active { get; private set; }
 
             public void Apply(Vehicle vehicle)
@@ -177,6 +179,9 @@ namespace Bloodlines.Abilities
                 _lateralOriginal = lateral; _lateralApplied = lateral * GripLift;
                 data.TractionCurveMax = _maxApplied;
                 data.TractionCurveLateral = _lateralApplied;
+                float steer = data.SteeringLock;
+                _steerOriginal = steer; _steerApplied = steer > 0f && !float.IsNaN(steer) ? steer * SteeringLift : steer;
+                if (_steerApplied != steer) data.SteeringLock = _steerApplied;
                 Active = true;
             }
 
@@ -187,6 +192,7 @@ namespace Bloodlines.Abilities
                 if (_data == null || !_data.IsValid) return;
                 if (Math.Abs(_data.TractionCurveMax - _maxApplied) < 0.0001f) _data.TractionCurveMax = _maxOriginal;
                 if (Math.Abs(_data.TractionCurveLateral - _lateralApplied) < 0.0001f) _data.TractionCurveLateral = _lateralOriginal;
+                if (_steerApplied != _steerOriginal && Math.Abs(_data.SteeringLock - _steerApplied) < 0.0001f) _data.SteeringLock = _steerOriginal;
                 _data = null;
             }
         }

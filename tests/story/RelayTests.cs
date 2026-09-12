@@ -16,7 +16,7 @@ public static partial class StoryTests
   // ---- M07: the relay seen, the sniffer clamped, the manifests read, the helicopter shown.
   Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7.json"));GTA.Native.Function.Seabed=55f;var m7=new M07WiretapWaltz();
   Check(m7.Begin(c)&&c.Cutscenes.IsActive&&m7.Sedan!=null&&crew.PedFor(CrewSlot.Guess).IsInVehicle(m7.Sedan),"M07 opens on the relay, the roof and the pickup lane with Ron already in the lane");
-  Check(!crew.PedFor(CrewSlot.Gohan).IsInVehicle()&&crew.PedFor(CrewSlot.Gohan).Position==m7.BuildingBase&&m7.Laptop!=null&&m7.BuildingBase.DistanceTo(c.Locations.Position("M07.GarageRoof"))<60f&&Game.Player.Character.Position.DistanceTo(m7.Roof)<10f,"Ice starts on the roof; Gohan reads the feed at the building's base on the street with a laptop; Ron is in the lane");
+  Check(crew.PedFor(CrewSlot.Gohan).IsInVehicle(m7.Sedan)&&m7.Laptop==null&&Game.Player.Character.Position.DistanceTo(c.Locations.Position("M07.IceStart"))<2f&&Math.Abs(m7.Roof.Z-96.3f)<0.25f&&m7.Roof.DistanceTo(c.Locations.Position("M07.GarageRoof"))<0.2f,"Ice starts on the roof; Gohan reads the feed at the building's base on the street with a laptop; Ron is in the lane");
   string m7pre=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
   Check(m7pre.Contains("VehicleMissionType.Attack")&&!m7pre.Contains("ChaseWithHelicopter")&&m7pre.Contains("Survey the roof (F11)"),"The helicopter attacks the roof instead of shadowing it, and a missing roof is reported with the survey key");
   c.Cutscenes.Skip();m7.Tick();Check(m7.CurrentStage==0&&!c.Cutscenes.IsActive,"Skipping the approach leaves Ice on the roof at stage one");
@@ -31,14 +31,16 @@ public static partial class StoryTests
   Game.Player.Character.SetIntoVehicle(m7.Sedan,VehicleSeat.LeftRear);m7.Tick();Check(m7.CurrentStage==4&&m7.Status==MissionStatus.Running,"Boarding behind Guess leaves the radio debrief to finish");c.Dialogue.Clear();m7.Tick();Check(m7.Status==MissionStatus.Passed&&m7.OutroBlocking()!=null,"Boarding behind Guess passes M07 with an aftermath shot on the sedan");
   string m7src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));
   Check(m7src.Contains("Phase = \"approach\"")&&m7src.Contains("Phase = \"clamp\"")&&m7src.Contains("PlayMoment(Id, \"Aegis helicopter\"")&&!m7src.Contains("_drone.Delete"),"M07 has the approach, the clamp and the helicopter moment; the dish is never destroyed");
-  Check(!m7.RoofLowerThanEstimate&&Math.Abs(m7.Roof.Z-55.1f)<0.01f,"The roof is the surface the world reported, not the estimate handed back");
+  Check(!m7.RoofLowerThanEstimate&&Math.Abs(m7.Roof.Z-96.3f)<0.25f,"A surveyed roof key is the roof at its own height");
+  Check(m7pre.Contains("CREATE_PICKUP_ROTATE")&&m7pre.Contains("GiveSecondChute"),"A second chute lies by the platform, handed over directly at its spot as well");
   // The roof is a surface the world has over the street, never the estimate certified against its own height.
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.SeabedKnown=false;var m7b=new M07WiretapWaltz();
-  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-15f)<0.2f&&Math.Abs(Game.Player.Character.Position.Z-15f)<0.2f,"No surface at or near the roof key: M07 still starts, Ice at street level, never in the air");
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=16f;m7b=new M07WiretapWaltz();
-  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-15f)<0.2f,"Only the street under and around the roof key: M07 starts at street level instead of certifying the estimate");
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));GTA.Native.Function.Seabed=30f;m7b=new M07WiretapWaltz();
-  Check(m7b.Begin(c)&&m7b.RoofFound&&m7b.RoofLowerThanEstimate&&Math.Abs(m7b.Roof.Z-30.1f)<0.01f&&Math.Abs(Game.Player.Character.Position.Z-30.1f)<0.01f,"A real roof lower than the estimate is used as found, Ice on it, and the key is reported for a survey");
+  // An estimated roof key (the surveyed one set back to an estimate for these cases): the street under it is at 56.2 in this world.
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));c.Locations.Get("M07.GarageRoof").Status=LocationStatus.Estimate;GTA.Native.Function.SeabedKnown=false;var m7b=new M07WiretapWaltz();
+  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-56.2f)<0.2f,"No surface at or near an estimated roof key: M07 still starts with the platform at street level, never in the air");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));c.Locations.Get("M07.GarageRoof").Status=LocationStatus.Estimate;GTA.Native.Function.Seabed=16f;m7b=new M07WiretapWaltz();
+  Check(m7b.Begin(c)&&!m7b.RoofFound&&Math.Abs(m7b.Roof.Z-56.2f)<0.2f,"Only the street under and around an estimated roof key: M07 starts at street level instead of certifying the estimate");
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"relay7b.json"));c.Locations.Get("M07.GarageRoof").Status=LocationStatus.Estimate;GTA.Native.Function.Seabed=70f;m7b=new M07WiretapWaltz();
+  Check(m7b.Begin(c)&&m7b.RoofFound&&m7b.RoofLowerThanEstimate&&Math.Abs(m7b.Roof.Z-70.1f)<0.01f,"A real roof lower than an estimate is used as found and the key is reported for a survey");
   GTA.Native.Function.Seabed=-40f;
 
   // ---- M08: the job seen, the loop window, the forklift, two crates counted, the technical shown, the stash recorded.
