@@ -13,12 +13,12 @@ namespace Bloodlines.Core
         private static Blip _route;
         public static CrewSlot? ActiveSlot { get; set; }
         private static int _used;
-        private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; }
+        private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; public bool Road; }
         private static readonly List<Destination> Pending = new List<Destination>();
         private static readonly List<Destination> Current = new List<Destination>();
         public static void Navigation(Vector3 position, CrewSlot? owner = null, Vehicle vehicle = null)
         {
-            if (_enabled) Pending.Add(new Destination { Position = position, Owner = owner, Vehicle = vehicle?.Handle ?? 0 });
+            if (_enabled) Pending.Add(new Destination { Position = position, Owner = owner, Vehicle = vehicle?.Handle ?? 0, Road = vehicle == null || !(vehicle.Model.IsBoat || vehicle.Model.IsSubmarine) });
         }
         public static Vector3? DestinationFor(CrewSlot slot, Vehicle vehicle)
         {
@@ -72,7 +72,7 @@ namespace Bloodlines.Core
                     _route = World.CreateBlip(routes[0].Position);
                     if (_route != null) { _route.Color = BlipColor.Yellow; _route.Name = "Next objective"; _route.IsShortRange = false; _route.ShowRoute = true; }
                 }
-                if (_route != null && _route.Exists()) _route.Position = routes[0].Position;
+                if (_route != null && _route.Exists()) { _route.Position = routes[0].Position; _route.ShowRoute = routes[0].Road; }
             }
             else { GameUtils.SafeDelete(_route); _route = null; }
             while (Blips.Count > _used)

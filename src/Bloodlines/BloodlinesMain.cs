@@ -29,6 +29,7 @@ namespace Bloodlines
         private readonly MissionManager _missions;
         private readonly CutsceneDirector _cutscenes;
         private readonly MissionMarkers _missionMarkers;
+        private readonly MissionPresentation _presentation;
         private readonly DeathController _death;
         private readonly FleetGarage _garage;
         private readonly CrewVan _vans;
@@ -98,6 +99,8 @@ namespace Bloodlines
             context.Cutscenes = _cutscenes = new CutsceneDirector(_crew, _dialogue, _locations, dataDirectory);
             context.Vans = _vans;
             _missions = new MissionManager(context, _state, _catalog);
+            _presentation = new MissionPresentation(_config);
+            _missions.Passed += _presentation.QueuePassed;
             _missionMarkers = new MissionMarkers(_catalog, _state, _missions, _locations, dataDirectory, _config.MissionStartKey.ToString());
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
@@ -153,6 +156,9 @@ namespace Bloodlines
             if (Game.Player.Character == null || Game.Player.Character.IsDead) Step("cancel apartment", _homes.StopApartment);
             Step("grounded spawns", GameUtils.SettleHeld);
             Step("death", _death.Update);
+            Step("mission presentation", () => _presentation.Update(
+                _missions.IsRunning && _missions.CurrentStage >= 0,
+                _death.IsHandling || _homes.Apartment.Busy || _cutscenes.IsActive || _prologue.IsActive || _menu.IsOpen || _characterWheel.IsOpen));
             if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             if (_homes.Apartment.Busy) { Step("apartment loading", _homes.UpdateTransition); return; }
             if (_cutscenes.IsActive)
@@ -560,6 +566,7 @@ namespace Bloodlines
 
         private void OnAborted(object sender, EventArgs e)
         {
+            Step("stop mission presentation", _presentation.Stop);
             Logger.Info("Script aborting - tearing down.");
             Step("save free-roam crew memory", () => { if (!_missions.IsRunning && !_death.IsHandling) { _memory.Capture(_crew); _state.Save(); } });
             Step("cancel prologue", _prologue.Cancel);

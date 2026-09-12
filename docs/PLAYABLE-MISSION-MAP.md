@@ -319,11 +319,11 @@ Prerequisite: M18. Story gate: SM01, SM02, SM03 must be complete first (QA may b
 | 1 | Gohan | **Dive** — EnterVehicleObjective: Take the Kraken down. |
 | 2 | Gohan | **Cut the bulkhead** — MissionInteraction: Burn the breach into hold 3. |
 | 3 | Gohan | **Clamp the floats** — MultiHoldObjective: Clamp the ballast floats to the container. |
-| 4 | Gohan | **Surface** — DeliverVehicleObjective: Gohan: surface in the Kraken at the yellow marker. |
+| 4 | Gohan | **Surface** — SurfaceSubObjective: Gohan: surface the Kraken at the support marker. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.PierWatch, M18.SaltHangar, M19.DiveStart, M19.HullBreach, M19.Surface.
+Survey references: M12.PierWatch, M18.SaltHangar, M19.BullionSurface, M19.ClampOne, M19.ClampTwo, M19.DiveStart, M19.HullBreach, M19.Surface, M19.Worksite.
 
 ## M20 — THE PORT HEIST: SKY HOOK
 
@@ -335,6 +335,7 @@ Prerequisite: M19. Retry: full mission restart.
 | 2 | Ice | **Suppress the deck** — KillTargetsObjective: Ice — clear the marked quayside gunners from the pier. |
 | 3 | Guess | **Lock the cable** — MissionInteraction: Guess — hold the hover over the container. |
 | 4 | Guess | **Climb out** — DeliverVehicleObjective: Guess: climb in the Cargobob to the elevated yellow marker. |
+| 5 | Guess | **The escort** — ConditionObjective: Guess: hold the lift over the basin while Gohan and Ice board the escort launch. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -351,6 +352,7 @@ Prerequisite: M20. Retry: full mission restart.
 | 3 | Gohan | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
 | 4 | Gohan | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
 | 5 | Gohan | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
+| 6 | Gohan | **The road north** — ConditionObjective: Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

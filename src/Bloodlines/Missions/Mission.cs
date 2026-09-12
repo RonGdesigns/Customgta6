@@ -55,6 +55,9 @@ namespace Bloodlines.Missions
 
         public string FailReason { get; private set; }
 
+        /// <summary>Owned operation sections never record independent restart snapshots.</summary>
+        public virtual bool AllowsCheckpointCapture => !OperationOwned;
+
         // Opt in only when the mission rebuilds entities, vehicles and objective state.
         public virtual bool SupportsCheckpointRestore => false;
 
@@ -117,7 +120,7 @@ namespace Bloodlines.Missions
         }
 
         /// <summary>
-        /// Moves to the next stage, commits a checkpoint, and queues the bible's
+        /// Moves to the next stage, records a checkpoint only when permitted, and queues the bible's
         /// dialogue for that stage. Stage numbering follows the cue ids (S1, S2, …),
         /// so stage 0 in code is the mission's S1 block.
         /// </summary>
@@ -126,7 +129,7 @@ namespace Bloodlines.Missions
             Stage++;
             StageStartedAt = Game.GameTime;
             Logger.Debug(Id + " -> stage " + Stage);
-            Ctx?.Checkpoints?.Commit(Id, Stage);
+            if (AllowsCheckpointCapture) Ctx?.Checkpoints?.Commit(Id, Stage);
         }
 
         protected void GoToStage(int stage)

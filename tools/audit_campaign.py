@@ -88,6 +88,7 @@ def render():
                 for ident in re.findall(r'\b(_\w+)\b',block):
                     if ident in declared and f'{declared[ident][0]}: {declared[ident][1]}' not in labels:
                         labels.append(f'{declared[ident][0]}: {declared[ident][1]}')
+                if 'new SurfaceSubObjective(' in block:labels.append('SurfaceSubObjective: Gohan: surface the Kraken at the support marker.')
                 if not labels:labels=['Follow the current objective; detailed rule is defined by this stage’s objective type.']
                 out += [f'| {n} | {owner} | **{name}** — '+ '<br>'.join(labels).replace('|','/')+' |']
             out += ['','Final gameplay dialogue drains before the pass/aftermath transition.','']

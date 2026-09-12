@@ -69,3 +69,19 @@ Use a backup/disposable campaign and matching DLL plus data. Keep the working in
 - M20's jammer presentation and broader mission balance are not replaced by this lifecycle patch. The existing M13/M15 escort preparation effects remain.
 - Cargo/evidence transactions outside this operation, weapon acquisition categories, M04's separate handover issues, multiplayer and M31+ remain separate assignments.
 - The combined operation is longer than any one former chapter. Evaluate pacing and recovery with a real uninterrupted playthrough before accepting it as the campaign standard.
+
+## Seamless joins: nothing stops the action (Ron, September 11)
+
+The heist is one mission with no checkpoints and no stops between its four parts. Inside the operation:
+
+- No approach scene opens M20, M21 or M22; those scenes play only when a part is started on its own from the dev menu.
+- The escort is crewed live (M20 "The escort"): Gohan leaves the Kraken and takes the launch's helm, Ice comes down to the other seat, both under AI while Ron holds the lift; the part ends on their real seats.
+- The road pickup is crewed live (M21 "The road north"): whoever is played walks to the Granger and takes a seat, the other boards under AI.
+- The road team's beach arrival is live (M22): the Granger comes down, Gohan and Ice get out and walk to the regroup point while Ron flies the bullion in.
+- No "Radio debrief" wait ends an inner part, and the operation does not hold the next part for a radio line: the line keeps playing over it.
+
+`Missions/LiveHandoff.cs` runs a scene's steps without the camera or the control lock; a step the player's own ped would do is left to the player, and a step that runs past its timeout is finished the way a skipped scene finishes it. The short inserts inside the action (the container rising, the cable taking the weight, the drop into the shallows) and the closing strike scene remain; say the word and they go too.
+
+## Superseding owner decision: one sitting, no midpoint recovery
+
+The phase-start bookmark/recovery sections above describe the historical first comparison. They no longer define the code in the harbor repair branch. Normal starts, retries and old mid-heist hints all start M19; checkpoint recording is disabled for the parent and its owned sections. No saved phase is read or written. Existing legitimate completion rewards remain, and full success commits only outstanding results. Explicit developer standalone starts remain QA only. Follow `HARBOR-PLAYTEST-REPAIR.md` for the updated test route; replace the earlier step 9's expectation of midpoint retry with a complete restart.

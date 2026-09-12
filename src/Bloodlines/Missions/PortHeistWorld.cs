@@ -64,7 +64,7 @@ namespace Bloodlines.Missions
         {
             var entity = Get<T>(key);
             if (entity == null || !entity.Exists() || entity.IsDead || (entity is Vehicle vehicle && !vehicle.IsDriveable))
-                throw new InvalidOperationException("Port Heist: the " + key + " was lost. Retry this phase.");
+                throw new InvalidOperationException("Port Heist: the " + key + " was lost. Restart the entire Port Heist.");
             return entity;
         }
 
@@ -77,7 +77,7 @@ namespace Bloodlines.Missions
             {
                 var ped = _context.Crew.PedFor(hero.Slot);
                 if (ped == null || !ped.Exists() || ped.IsDead)
-                { reason = hero.Handle + " is down or missing. Retry this phase."; return false; }
+                { reason = hero.Handle + " is down or missing. Restart the entire Port Heist."; return false; }
             }
             reason = null;
             return true;
@@ -104,7 +104,7 @@ namespace Bloodlines.Missions
             {
                 var entity = Get<Entity>(key);
                 if (entity == null || !entity.Exists() || entity.IsDead || entity is Vehicle v && !v.IsDriveable)
-                { reason = "The operation's " + key + " was lost. Retry this phase."; return false; }
+                { reason = "The operation's " + key + " was lost. Restart the entire Port Heist."; return false; }
             }
             bool cableRequired = phase is Campaign.M20SkyHook h && h.Hooked || phase is Campaign.M21OpenWater ||
                 phase is Campaign.M22ScorchedBay b && !b.Dropped;
@@ -120,7 +120,7 @@ namespace Bloodlines.Missions
             var lift = Get<Vehicle>("lift");
             var cargo = Get<Prop>("bullion");
             if (lift == null || !lift.Exists() || !lift.IsDriveable || cargo == null || !cargo.Exists())
-            { reason = "The loaded operation state is incomplete. Retry this phase."; return false; }
+            { reason = "The loaded operation state is incomplete. Restart the entire Port Heist."; return false; }
             var guess = _context.Crew.PedFor(CrewSlot.Guess);
             var ice = _context.Crew.PedFor(CrewSlot.Ice);
             var gohan = _context.Crew.PedFor(CrewSlot.Gohan);
@@ -135,7 +135,7 @@ namespace Bloodlines.Missions
                 if (!hook.Hooked || !hook.Transferred || !Attached(cargo, lift) ||
                     !Seated(guess, lift, VehicleSeat.Driver) || !Seated(gohan, hook.Launch, VehicleSeat.Driver) ||
                     !Seated(ice, hook.Launch, VehicleSeat.Passenger))
-                { reason = "The cable and escort seats are not ready. Retry Sky Hook."; return false; }
+                { reason = "The cable and escort seats are not ready. Restart the entire Port Heist."; return false; }
             }
             else if (phase is Campaign.M21OpenWater escort)
             {

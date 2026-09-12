@@ -32,7 +32,9 @@ namespace Bloodlines.Core
         public MissionLocation StartPoint(MissionDefinition mission)
         {
             if (mission == null) return null;
-            string id = mission.Id.Equals("M19", StringComparison.OrdinalIgnoreCase) ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;
+            // Explicit developer section starts retain their authored locations;
+            // the sole normal entry remains M19, never a saved mid-heist location.
+            string id = mission.Id;
             return _keys.TryGetValue(id, out var key) ? _locations.Get(key) : null;
         }
 
@@ -63,7 +65,7 @@ namespace Bloodlines.Core
                 bool operation = PortHeistOperation.Contains(mission.Id);
                 if (operation && (mission.Id != "M19" || _state.IsComplete("M22"))) continue;
                 if ((!operation && _state.IsComplete(mission.Id)) || !_state.PrerequisiteMet(mission)) continue;
-                string markerId = operation ? PortHeistOperation.ResolveEntry(_state, "M19") : mission.Id;
+                string markerId = mission.Id;
                 if (!_keys.TryGetValue(markerId, out var key)) continue;
                 var location = _locations.All;
                 MissionLocation point = null;
@@ -76,12 +78,12 @@ namespace Bloodlines.Core
                     blip = World.CreateBlip(point.Position);
                     if (blip == null) continue;
                     _blips[mission.Id] = blip;
-                    blip.Sprite = BlipSprite.Standard;
+                    blip.Sprite = MissionPresentation.StartSprite(mission.IsSolo, PortHeistOperation.Contains(mission.Id));
                     blip.Color = !solo ? BlipColor.Yellow : mission.Info.Owner == "ICE" ? BlipColor.Blue :
                         mission.Info.Owner == "GOHAN" ? BlipColor.Green : BlipColor.Orange;
                     blip.IsShortRange = false;
                     blip.ShowRoute = false;
-                    blip.Name = operation ? PortHeistOperation.OperationTitle + (markerId == "M19" ? "" : " — Resume " + PortHeistOperation.PhaseName(markerId)) :
+                    blip.Name = operation ? PortHeistOperation.OperationTitle :
                         mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
                 }
                 blip.Position = point.Position;

@@ -31,7 +31,7 @@ namespace Bloodlines.Missions.Campaign
         public static void RequireFallback(SceneBlocking blocking, string action)
         {
             blocking.Complete();
-            if (!blocking.Succeeded) throw new System.InvalidOperationException(action + " failed. Retry this phase.");
+            if (!blocking.Succeeded) throw new System.InvalidOperationException(action + " failed. Restart the mission.");
         }
 
         /// <summary>
@@ -57,8 +57,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where the container floats once M19 has clamped it: beside the surfacing mark, derived the same way in M19 and M20.</summary>
         public static Vector3 ContainerPoint(LocationBook book)
         {
-            var surface = book.Position("M19.Surface");
-            return new Vector3(surface.X + 14f, surface.Y, surface.Z);
+            return book.Position("M19.BullionSurface");
         }
     }
 
@@ -104,6 +103,8 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _breach;
         private Vector3 _surface;
         private Vector3 _containerPoint;
+        private Vector3 _submergedCargo;
+        private Vector3 _hullBearing;
         private string _stagedAt = "";
         private bool _floated;
 
@@ -124,17 +125,23 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            // Do not independently snap three water markers to unrelated points.
+            MissionSites.Ground(Ctx.Locations, "M12.PierWatch");
+            MissionSites.Ground(Ctx.Locations, "M18.SaltHangar");
             _dive = Ctx.Locations.Position("M19.DiveStart");
             _breach = Ctx.Locations.Position("M19.HullBreach");
             _surface = Ctx.Locations.Position("M19.Surface");
             _containerPoint = PortHeist.ContainerPoint(Ctx.Locations);
             // The authored breach and clamp points were three markers hanging in
             // open water, sometimes under the seabed. The site is now built from a
-            // hull: the work point is under its keel, the clamps under its bow and
-            // stern, and the whole thing moves out to deeper water if the seabed is
-            // too close. Gohan has something to push against and can reach every mark.
+            // hull/cargo group: reachable work centers lie beside the actual model
+            // bounds instead of inside collision. A bounded sampled-water preflight
+            // rejects unknown or shallow sites; live approach testing is still owed.
             if (!BuildSiteFromHull()) return false;
+            SpawnContainer();
+            if (!RequireAssets(_hull, _container)) return false;
+            RequireAsset(_hull, "The worksite hull disappeared. Restart the heist.");
+            RequireAsset(_container, "The bullion container disappeared. Restart the heist.");
 
             // The whole crew is on the operation: Gohan in the sub, Ice on the pier,
             // Ron at the lift. Nobody is deployed onto open water.
@@ -187,56 +194,64 @@ namespace Bloodlines.Missions.Campaign
 
         private bool BuildSiteFromHull()
         {
-            var authored = Ctx.Locations.Position("M19.HullBreach");
-            float surface = WaterSurface(authored, _surface.Z);
-            var site = new Vector3(authored.X, authored.Y, surface);
-            float dx = authored.X - _dive.X, dy = authored.Y - _dive.Y;
-            float run = (float)Math.Sqrt(dx * dx + dy * dy);
-            var bearing = run < 0.5f ? new Vector3(0f, -1f, 0f) : new Vector3(dx / run, dy / run, 0f);
-            float workDepth = KeelDepth + SubClearance;
-            for (int attempt = 0; attempt < 4; attempt++)
-            {
-                if (!TrySeabed(site, out float seabed) || seabed <= surface - workDepth - SeabedMargin) break;
-                Logger.Warn("M19 site at " + site + " has the seabed at " + seabed.ToString("0.0") + "; moving " + ShiftStep + " m out.");
-                site += bearing * ShiftStep;
-            }
-
+            // A tug is the stock visible hull stand-in; do not promise a walkable
+            // freighter interior or send the Kraken through solid hull collision.
             var model = new Model(HullModel);
-            if (!GameUtils.RequestModel(model)) return false;
-            float heading = Core.DriveUpStep.HeadingBetween(site, site + bearing);
-            _hull = Track(World.CreateVehicle(model, site, heading));
-            model.MarkAsNoLongerNeeded();
-            if (_hull == null || !_hull.Exists()) return false;
-            _hull.IsPersistent = true;
-            _hull.IsEngineRunning = false;
-            _hull.IsPositionFrozen = true;
-            _hull.IsInvincible = true;
-            var blip = Track(_hull.AddBlip());
-            blip.Sprite = BlipSprite.Boat;
-            blip.Color = BlipColor.Blue;
-            blip.Name = "Titan Star";
-
-            _breach = site + new Vector3(0f, 0f, -workDepth);
-            _clamps.Clear();
-            _clamps.Add(_breach + bearing * ClampSpan);
-            _clamps.Add(_breach - bearing * ClampSpan);
-            _containerPoint = new Vector3(_containerPoint.X, _containerPoint.Y, surface);
-            Logger.Info("M19 site: hull at " + site + ", breach " + _breach + ", clamps " + ClampSpan + " m fore and aft.");
-            return true;
+            var subModel = new Model("submersible2");
+            var cargoModel = new Model("prop_container_01a");
+            if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(subModel) || !GameUtils.RequestModel(cargoModel))
+                return false;
+            try
+            {
+                var bounds = model.Dimensions;
+                var subBounds = subModel.Dimensions;
+                var cargoBounds = cargoModel.Dimensions;
+                float hullHalfWidth = Math.Max(Math.Abs(bounds.Item1.X), Math.Abs(bounds.Item2.X));
+                float hullHalfLength = Math.Max(Math.Abs(bounds.Item1.Y), Math.Abs(bounds.Item2.Y));
+                float subHalfWidth = Math.Max(2f, Math.Max(Math.Abs(subBounds.Item1.X), Math.Abs(subBounds.Item2.X)));
+                float cargoHalfWidth = Math.Max(2f, Math.Max(Math.Abs(cargoBounds.Item1.X), Math.Abs(cargoBounds.Item2.X)));
+                float cargoHalfLength = Math.Max(5f, Math.Max(Math.Abs(cargoBounds.Item1.Y), Math.Abs(cargoBounds.Item2.Y)));
+                float workDepth = KeelDepth + SubClearance;
+                float cargoSide = hullHalfWidth + cargoHalfWidth + 3f;
+                float workSide = cargoSide + cargoHalfWidth + subHalfWidth + 2f;
+                float heading = Ctx.Locations.Heading("M19.Worksite");
+                float radians = heading * (float)Math.PI / 180f;
+                _hullBearing = new Vector3(-(float)Math.Sin(radians), (float)Math.Cos(radians), 0f);
+                var right = new Vector3(_hullBearing.Y, -_hullBearing.X, 0f);
+                var site = MarineSites.ResolveOrThrow(Ctx.Locations, "M19.Worksite",
+                    workDepth + SeabedMargin + 2f, workSide + subHalfWidth + 2f,
+                    Math.Max(hullHalfLength + 3f, cargoHalfLength + 10f));
+                _hull = Track(World.CreateVehicle(model, site, heading));
+                if (_hull == null || !_hull.Exists()) return false;
+                _hull.IsPersistent = true; _hull.IsEngineRunning = false;
+                _hull.IsPositionFrozen = true; _hull.IsInvincible = true;
+                var blip = Track(_hull.AddBlip());
+                if (blip != null) { blip.Sprite = BlipSprite.Boat; blip.Color = BlipColor.Blue; blip.Name = "Titan Star - worksite hull"; }
+                // Work alongside the hull, outside both ship and cargo collision.
+                _breach = site + right * workSide - new Vector3(0f, 0f, workDepth);
+                _submergedCargo = site + right * cargoSide - new Vector3(0f, 0f, workDepth + 1f);
+                _clamps.Clear();
+                _clamps.Add(_breach + _hullBearing * (cargoHalfLength - 1f));
+                _clamps.Add(_breach - _hullBearing * (cargoHalfLength - 1f));
+                _surface = site + right * workSide;
+                _dive = _surface + _hullBearing * (cargoHalfLength + 5f);
+                _containerPoint = site + right * cargoSide;
+                // All runtime consumers (the HUD and the helicopter) see this same
+                // resolved layout. Personal survey files are never overwritten.
+                SetPoint("M19.HullBreach", _breach);
+                SetPoint("M19.ClampOne", _clamps[0]); SetPoint("M19.ClampTwo", _clamps[1]);
+                SetPoint("M19.Surface", _surface);
+                SetPoint("M19.BullionSurface", _containerPoint); SetPoint("M19.DiveStart", _dive);
+                Logger.Info("M19 coherent site: hull=" + site + ", work=" + _breach + ", cargo=" + _submergedCargo + ", surface=" + _surface);
+                return true;
+            }
+            finally { model.MarkAsNoLongerNeeded(); subModel.MarkAsNoLongerNeeded(); cargoModel.MarkAsNoLongerNeeded(); }
         }
 
-        private static float WaterSurface(Vector3 point, float fallback)
+        private void SetPoint(string key, Vector3 point)
         {
-            var height = new OutputArgument();
-            return Function.Call<bool>(Hash.GET_WATER_HEIGHT, point.X, point.Y, 100f, height) ? height.GetResult<float>() : fallback;
-        }
-
-        private static bool TrySeabed(Vector3 point, out float seabed)
-        {
-            var z = new OutputArgument();
-            bool found = Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + 5f, z, true, false);
-            seabed = found ? z.GetResult<float>() : 0f;
-            return found;
+            var location = Ctx.Locations.Get(key);
+            if (location != null) location.Position = point;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
@@ -263,7 +278,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context => PlayFloat());
 
             yield return new MissionStage("Surface",
-                    new DeliverVehicleObjective("Gohan: surface in the Kraken at the yellow marker.", () => _kraken, () => _surface, 8f))
+                    new SurfaceSubObjective(() => _kraken, () => _surface))
                 .PlayedBy(CrewSlot.Gohan)
                 .OnExit(context =>
                     GameUtils.Subtitle("~g~Kraken surfaced at the support mark. The container is on the water; the lift is Ron's.", 6000))
@@ -296,9 +311,10 @@ namespace Bloodlines.Missions.Campaign
             if (site < 0 || site >= _clamps.Count) return;
             var model = new Model("prop_buoy_01");
             if (!GameUtils.RequestModel(model)) return;
-            var f = Track(World.CreateProp(model, _clamps[site], false, false));
+            var floatPoint = _submergedCargo + _hullBearing * (site == 0 ? -3f : 3f) + new Vector3(0f, 0f, 2f);
+            var f = Track(World.CreateProp(model, floatPoint, false, false));
             model.MarkAsNoLongerNeeded();
-            if (f == null || !f.Exists()) return;
+            if (f == null || !f.Exists()) throw new InvalidOperationException("A ballast float could not be created.");
             f.IsPersistent = true;
             f.IsPositionFrozen = true;
             _floats.Add(f);
@@ -312,7 +328,6 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void PlayFloat()
         {
-            SpawnContainer();
             if (_container == null || !_container.Exists() || _floats.Count != _clamps.Count)
                 throw new InvalidOperationException("The container and both fitted floats are required for the lift.");
             Ctx.PortHeist?.Bind("bullion", _container);
@@ -364,14 +379,16 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
 
             string staged = PortHeist.CargoAt(Ctx, "kraken");
-            var point = _dive + new Vector3(0f, -6f, -3f);
+            var point = _dive + new Vector3(0f, 0f, -3f);
             _stagedAt = "M19.DiveStart";
             if (!string.IsNullOrEmpty(staged) && Ctx.Locations.Get(staged) != null && Ctx.Locations.Get(staged).Kind == "water")
             {
-                point = Ctx.Locations.Position(staged);
+                point = MarineSites.ResolveOrThrow(Ctx.Locations, staged, 6f) + new Vector3(0f, 0f, -1.4f);
                 _stagedAt = staged;
             }
             var existing = PortHeist.Nearby(model, point, 30f);
+            if (existing != null && !MarineSites.IsWaterborne(existing))
+                throw new InvalidOperationException("The staged Kraken is not in usable water. Re-stage it before starting the heist.");
             _kraken = Track(existing ?? World.CreateVehicle(model, point, 180f));
             model.MarkAsNoLongerNeeded();
             if (_kraken == null || !_kraken.Exists()) return;
@@ -399,15 +416,16 @@ namespace Bloodlines.Missions.Campaign
             _lift.IsEngineRunning = false;
         }
 
-        /// <summary>The container, created at the breach depth the moment the floats are on; the scene brings it up.</summary>
+        /// <summary>The container is visible at depth before the work starts; the verified float action brings that same object up.</summary>
         private void SpawnContainer()
         {
             var model = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(model)) return;
-            _container = Track(World.CreateProp(model, _breach + new Vector3(0f, 0f, -2f), false, false));
+            _container = Track(World.CreateProp(model, _submergedCargo, false, false));
             model.MarkAsNoLongerNeeded();
             if (_container == null || !_container.Exists()) return;
             _container.IsPersistent = true;
+            _container.Heading = _hull == null ? 0f : _hull.Heading;
             _container.IsPositionFrozen = true;
             var blip = Track(_container.AddBlip());
             blip.Sprite = BlipSprite.Standard;

@@ -46,6 +46,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _regroup;
         private Vector3 _road;
         private bool _arrived, _dropped, _landed, _struck, _cargoRecorded;
+        private LiveHandoff _liveArrival;
         private bool _arrivalStarted;
         private int _roadStarted, _roadOrder;
         public bool RoadArrivalPending => !_arrivalStarted;
@@ -66,8 +67,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _drop = Ctx.Locations.Position("M22.AlamoDrop");
+            MissionSites.Ground(Ctx.Locations, "M22.Beach");
+            MissionSites.Ground(Ctx.Locations, "M22.RoadArrival");
+            _drop = MarineSites.ResolveOrThrow(Ctx.Locations, "M22.AlamoDrop", 5f, 5f, 8f, 40f);
             _beach = Ctx.Locations.Position("M22.Beach");
             _road = Ctx.Locations.Position("M22.RoadArrival");
             _regroup = _beach + new Vector3(-6f, 6f, 0f);
@@ -141,12 +143,55 @@ namespace Bloodlines.Missions.Campaign
                 if (_granger == null || !_granger.Exists() || !_granger.IsDriveable)
                 { Fail("The road team lost the Granger."); return; }
                 if (_granger.Position.DistanceTo(_road) < 55f)
-                { PlayApproach(); return; }
+                { StartLiveArrival(); return; }
                 if (Game.GameTime - _roadStarted > 600000)
-                { Fail("The road team could not reach the Alamo. Retry Scorched Bay."); return; }
+                { Fail("The road team could not reach the Alamo. Restart the entire Port Heist."); return; }
                 if (Game.GameTime - _roadOrder > 15000) OrderRoadTeam();
             }
+            if (_liveArrival != null && !_arrived)
+            {
+                _liveArrival.Update();
+                if (_liveArrival.IsFinished)
+                {
+                    if (RoadTeamAtRegroup()) { _arrived = true; Logger.Info("M22: the road team is on the beach; no cut at the join."); }
+                    else Fail("The road team did not reach the beach. Restart the entire Port Heist.");
+                    _liveArrival = null;
+                }
+            }
             base.OnUpdate();
+        }
+
+        private bool RoadTeamAtRegroup()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            return gohan != null && gohan.Exists() && !gohan.IsDead && !gohan.IsInVehicle() && gohan.Position.DistanceTo(_regroup) < 8f &&
+                ice != null && ice.Exists() && !ice.IsDead && !ice.IsInVehicle() && ice.Position.DistanceTo(_regroup) < 8f;
+        }
+
+        /// <summary>
+        /// The road team's arrival in the one continuous heist: the Granger comes down
+        /// to the beach, Gohan and Ice get out and walk to the regroup point, all under
+        /// AI while Ron flies the bullion in. No cut (Ron, September 11); the same
+        /// steps the scene showed, run live.
+        /// </summary>
+        private void StartLiveArrival()
+        {
+            _arrivalStarted = true;
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var live = new LiveHandoff("M22 road arrival");
+            if (_granger != null && _granger.Exists() && gohan != null && gohan.Exists())
+            {
+                var arrival = _beach + new Vector3(12f, 10f, 0f);
+                live.Then(new DriveUpStep(gohan, _granger, arrival, DriveUpStep.HeadingBetween(_road, arrival)));
+                live.Then(new ExitVehicleStep(gohan));
+                if (ice != null && ice.Exists()) live.Then(new ExitVehicleStep(ice));
+                live.Then(new WalkToStep(gohan, _regroup + new Vector3(-1.5f, 0f, 0f), 1.5f));
+                if (ice != null && ice.Exists()) live.Then(new WalkToStep(ice, _regroup + new Vector3(1.5f, 0f, 0f), 1.5f));
+            }
+            _liveArrival = live;
+            Radio("GOHAN", "Road team's off the ridge. We can see the lake; coming down to the beach now.", "M22_OPERATION_ARRIVAL");
         }
 
         private void HoldLift()
