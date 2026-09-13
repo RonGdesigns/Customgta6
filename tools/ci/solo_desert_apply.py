@@ -39,6 +39,10 @@ Path('build').mkdir(exist_ok=True)
 Path('build/repair-source.patch').write_bytes(patch)
 subprocess.run(['git','apply','--unidiff-zero','--whitespace=nowarn','--check','build/repair-source.patch'],check=True)
 subprocess.run(['git','apply','--unidiff-zero','--whitespace=nowarn','build/repair-source.patch'],check=True)
+# SHVDN 3.6.0 has no named None member on BoatMissionFlags; zero is no flags.
+f=Path('src/Bloodlines/Missions/Campaign/Act2/M25BountyHuntersCanyon.cs')
+s=f.read_text(encoding='utf-8'); assert s.count('BoatMissionFlags.None')==1
+f.write_text(s.replace('BoatMissionFlags.None','(BoatMissionFlags)0'),encoding='utf-8')
 for name in crlf:
     f=Path(name);f.write_bytes(f.read_bytes().replace(b'\r\n',b'\n').replace(b'\n',b'\r\n'))
 Path('build/repair-paths.json').write_text(json.dumps(paths+['docs/LOCATION-AUDIT.md']),encoding='utf-8')
