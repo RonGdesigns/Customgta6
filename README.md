@@ -2,11 +2,14 @@
 
 A single-player campaign overhaul for **Grand Theft Auto V (PC)**, built from the
 *Los Santos: Bloodlines* omnibus production bible: three protagonists, a dynamic
-3-way switch, per-character abilities, and a 70-main-mission and 9-solo campaign with 292 written
-lines of dialogue.
+3-way switch, per-character abilities, and a 70-main-mission and 9-solo campaign outline. The current runtime implements 49 jobs: M01–M43 and SM01–SM06.
 
 This repository is the **mission-script layer** — the C# mod that runs on top of a
 legally-owned copy of GTA V. It ships no Rockstar assets.
+
+## Campaign phone
+
+While the crew is deployed, open the custom phone with **D-pad Up / F6**. It includes completed-job messages, crew contacts, the live objective and destination shortcut, shared funds and campaign news. Navigate with the D-pad and A/B (arrows and Enter/Backspace on keyboard). See [the phone guide](docs/CAMPAIGN-PHONE.md) for behavior, configuration and the live test checklist. The second app page adds Garage/KJ delivery, crew orders, a mission journal, progression, persistent alerts and a preparation board shared with the Foundry planning table. See [the campaign hub guide](docs/CAMPAIGN-HUB.md). Optional voice calls remain future work.
 
 ---
 
@@ -39,7 +42,7 @@ Deliver a comprehensive, production-grade campaign overhaul and full literary om
 - [x] Extract and curate canonical character dossier portraits for Guess (Ron Ortiz), Ice (Darius Vance), and Gohan (Devin Mercer) (2026-09-10)
 - [x] Redo KJ character illustration as a light-skinned male tuner mechanic with stylish dreadlocks (`docs/Bloodlines_Dossier_KJ_Mechanic.jpg`) (2026-09-10)
 - [x] Compile unified Master Omnibus PDF (`docs/Bloodlines_Novel_Complete_Omnibus_Edition.pdf`) unifying all 70 chapters, solo missions, epilogue, front matter, table of contents, and all 12 embedded illustrations (2026-09-10)
-- [ ] In-game mission scripting for remaining Act II Blaine County missions (M31–M48)
+- [ ] In-game mission scripting for remaining Act II missions (M44–M48)
 - [ ] In-game mission scripting for Act III missions (M49–M70)
 
 ## Done Log
@@ -111,12 +114,14 @@ Deliver a comprehensive, production-grade campaign overhaul and full literary om
 | **SM03 "Midnight Drift"** | playable — Guess solo, three-lap circuit |
 | Dev menu (missions, stages, crew, world, dialogue, save) | working, `F8` with `[Dev] Enabled` |
 | M28–M30, SM04–SM06 | first-pass desert gameplay; live survey/physics checks pending |
-| M31–M70, SM07–SM09 | dialogue and detailed gameplay/scene plans; no mission scripts yet |
+| M31–M35 | implemented — perimeter defense, coastal ordnance theft, Ramos rescue/evacuation and technical capture; live acceptance pending |
+| M36–M40 | implemented — coastal recon, two crop dusters, quarry stock, cable cutter and two loaded boat trials; live acceptance pending |
+| M41–M43 | implemented — Bradley card recovery, a physical manned submarine airdrop, and verified final staging; live acceptance pending |
+| M44–M70, SM07–SM09 | dialogue and detailed gameplay/scene plans; no mission scripts yet |
 | Interstitials (safehouses, workbenches, Weazel News), MLO interiors, custom peds, voice | not started |
 
 The code builds clean with `--warnaserror` against ScriptHookVDotNet 3.6. It has
-**not been run in game** — that needs a Windows machine with GTA V, which is the one
-thing this repo cannot do for you.
+**not yet been live-tested for the new M41–M43 package**. Earlier chapters have user playtest reports; automated checks do not establish live acceptance. See [the new mission guide](docs/FINAL-PREPARATION-M41-M43.md).
 
 ## Quick start
 
@@ -238,3 +243,16 @@ Current release: see [campaign audit](docs/CAMPAIGN-AUDIT-UPDATE.md), [all playa
 
 ## Shops and expanded vehicle travel
 See [Market and travel](docs/MARKET-AND-TRAVEL-UPDATE.md) for story-gated weapon shopping, priced DLC extras, 13 clothing stores, compatible native vehicle upgrades and road/air/water speed tuning. See [Remaining features](docs/FEATURES-STILL-PLANNED.md) for the original plans still outstanding and recommended additions.
+
+## September 12 shared-systems repair
+
+See [the complete change and test register](docs/SHARED-SYSTEMS-REPAIR-2026-09-12.md).
+The current [progression guide](docs/PROGRESSION-GUIDE.md) is checked against runtime rewards.
+Vehicle crumpling uses GTA's deformation natives and handling settings; it is not a new soft-body physics engine. The extra side/roof dents respond to measured collisions, with a cooldown and a per-impact cap. Appearance and handling still need live testing on representative vehicle models.
+
+
+September 12 playthrough/garage follow-up: see docs/PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md (PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md from docs). Briefings preserve the actual arriving car until gameplay deployment; M03 rescue explicitly allows any brother. Garage/direct car sales share ten successful sales per GTA day, persisted with cash. Updated payout tables are generated from runtime rewards; replays remain unpaid. Walkable garage interiors and berth/hangar storage remain planned.
+
+## Convoy, Foundry HQ and placement tours (September 12)
+
+M09 now has visible helicopter tracking progress, an arrival handoff and bounded blocked-road recovery. The held Foundry has an enterable industrial interior with a weapon locker and home/planning services. Mission placement surveys keep the menu open and can visit each point in order. See [changes and retest](docs/M09-FOUNDRY-SURVEY-2026-09-12.md), [editor controls](docs/MISSION-PLACEMENT-EDITOR.md) and [coordinate resources](docs/COORDINATE-REFERENCE-WORKFLOW.md). Live geometry and AI behavior still require playtesting.

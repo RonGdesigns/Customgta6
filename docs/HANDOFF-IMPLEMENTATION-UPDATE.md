@@ -371,3 +371,6 @@ Built from `STORY-TO-PLAY-PLAN.md` with Ron's decisions and the marked defaults 
 - The M04 cover points and the buyer's car spot are offsets from the surveyed keys; if a brother stands in a wall, survey `M04.RampGuards` and `M04.Breaker` and the set moves with them.
 - The road-handling and Buzzard numbers: opening values only until the paired runs are logged.
 - M31–M70 and SM07–SM09 gameplay.
+
+
+September 12 playthrough/garage follow-up: see docs/PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md (PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md from docs). Briefings preserve the actual arriving car until gameplay deployment; M03 rescue explicitly allows any brother. Garage/direct car sales share ten successful sales per GTA day, persisted with cash. Updated payout tables are generated from runtime rewards; replays remain unpaid. Walkable garage interiors and berth/hangar storage remain planned.

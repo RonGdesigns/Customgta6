@@ -135,15 +135,17 @@ namespace Bloodlines.Crew
         /// </summary>
         public static readonly string[] RewardMissions = {
             "M02", "M03", "M04", "M05", "M06", "M07", "M08", "M09", "M10", "M11", "M12", "M13", "M14", "M15", "M16", "M17", "M18",
-            "M19", "M20", "M22", "M23", "M24", "M25", "M27", "M28", "M29", "M30", "SM01", "SM02", "SM03", "SM04", "SM05", "SM06" };
+            "M19", "M20", "M22", "M23", "M24", "M25", "M27", "M28", "M29", "M30", "M31", "M34", "SM01", "SM02", "SM03", "SM04", "SM05", "SM06" };
         public static bool ReceivesReward(string mission, CrewSlot slot) => !mission.StartsWith("SM") ||
             ((mission == "SM01" || mission == "SM04") && slot == CrewSlot.Ice) ||
             ((mission == "SM02" || mission == "SM05") && slot == CrewSlot.Gohan) ||
             ((mission == "SM03" || mission == "SM06") && slot == CrewSlot.Guess);
         private static WeaponHash Dlc(string key) => (WeaponHash)Game.GenerateHash(key);
-        /// <summary>A weapon's name for a notice: the enum's name with spaces, or "a DLC weapon" for a hash the enum does not name.</summary>
+        /// <summary>A weapon's catalog name, falling back to a readable SDK name.</summary>
         public static string NameOf(WeaponHash weapon)
         {
+            var dlc = DlcCatalog.FirstOrDefault(w => w.Hash == (uint)weapon);
+            if (dlc != null) return dlc.Name;
             string raw = weapon.ToString();
             if (raw.Length == 0 || char.IsDigit(raw[0]) || raw[0] == '-') return "a DLC weapon";
             var text = new System.Text.StringBuilder();
@@ -189,6 +191,8 @@ namespace Bloodlines.Crew
                 case "M28": return new[] { Dlc("WEAPON_SMG_MK2"), Dlc("WEAPON_MARKSMANRIFLE_MK2"), Dlc("WEAPON_PUMPSHOTGUN_MK2") };
                 case "M29": return new[] { WeaponHash.StickyBomb, WeaponHash.HeavyPistol, WeaponHash.APPistol };
                 case "M30": return new[] { WeaponHash.Gusenberg, WeaponHash.AssaultSMG, WeaponHash.SpecialCarbine };
+                case "M31": return new[] { WeaponHash.ProximityMine, WeaponHash.Grenade, WeaponHash.StickyBomb };
+                case "M34": return new[] { WeaponHash.AssaultShotgun, WeaponHash.CombatMG, Dlc("WEAPON_HEAVYRIFLE") };
                 // Solo jobs pay their owner only.
                 case "SM01": return new[] { Dlc("WEAPON_PUMPSHOTGUN_MK2"), WeaponHash.StunGun, WeaponHash.CombatPistol };
                 case "SM02": return new[] { WeaponHash.StunGun, WeaponHash.MarksmanRifle, WeaponHash.CombatPistol };
@@ -241,6 +245,7 @@ namespace Bloodlines.Crew
                 if (Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) &&
                     (restock || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)))
                     ped.Weapons.Give((WeaponHash)weapon, RestockCount(slot, weapon, restock), false, true);
+            foreach(uint weapon in Owned(slot)) Core.WeaponUpgrades.Apply(_state,slot,ped,weapon);
         }
         /// <summary>
         /// Ownership capture runs only in free roam. A weapon a mission hands out is a

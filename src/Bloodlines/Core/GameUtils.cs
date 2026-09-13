@@ -172,8 +172,10 @@ namespace Bloodlines.Core
             GTA.UI.Screen.ShowSubtitle(text, durationMs);
         }
 
+        public static Action<string> MenuNotice;
         public static void Notify(string text)
         {
+            if (MenuNotice != null) { MenuNotice(text); return; }
             GTA.UI.Notification.Show(text);
         }
 

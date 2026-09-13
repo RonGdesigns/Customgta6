@@ -29,6 +29,9 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _cargobob;
         private Vehicle _hauler;
         private Prop _pod;
+        private Prop _launchers;
+        private readonly Dictionary<CrewSlot, bool> _frozen = new Dictionary<CrewSlot, bool>();
+        private readonly HashSet<CrewSlot> _held = new HashSet<CrewSlot>();
         private Vector3 _channel;
         private Vector3 _hangar;
         private Vector3 _haulerMark;
@@ -47,8 +50,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            MissionSites.Ground(Ctx.Locations, "M18.SaltHangar");
-            MissionSites.Ground(Ctx.Locations, "M18.HaulerMark");
+            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _channel = MarineSites.ResolveOrThrow(Ctx.Locations, "M18.ChannelMark", 6f);
             _hangar = Ctx.Locations.Position("M18.SaltHangar");
             _haulerMark = Ctx.Locations.Position("M18.HaulerMark");
@@ -58,7 +60,8 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
 
             SpawnAssets();
-            if (!RequireAssets(_kraken, _cargobob, _hauler)) return false;
+            SpawnEquipment();
+            if (!RequireAssets(_kraken, _cargobob, _hauler, _pod, _launchers)) return false;
             Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
             Station(CrewSlot.Guess, _cargobob, VehicleSeat.Driver);
             Station(CrewSlot.Ice, _hauler, VehicleSeat.Driver);
@@ -79,25 +82,40 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Bird in the hangar",
                     new DeliverVehicleObjective("Guess — put the Cargobob in the salt hangar.",
-                        () => _cargobob, () => _hangar, 30f, land: true))
+                        () => _cargobob, () => _hangar, 10f, land: true))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => Ctx.State?.SetCargo("cargobob", "M18.SaltHangar"));
 
             // The pod from McKenzie goes on the lift here, so M20 has a thing to switch on.
-            yield return new MissionStage("Fit the pod",
-                    new MissionInteraction("Guess — fit the jammer pod to the Cargobob.", () => PodPoint(), 6, 4f))
+            yield return new MissionStage("Collect the jammer",
+                    new MissionInteraction("Guess: collect the jammer from the equipment box.", () => PodPoint(), 6, 1.8f, animation: MissionInteraction.ReachInside, face: () => _pod.Position))
+                .OwnedBy(CrewSlot.Guess)
+                .OnExit(context => { _pod.IsVisible = false; GameUtils.Subtitle("Jammer collected. Carry it to the rear of the landed Cargobob.", 5000); });
+
+            yield return new MissionStage("Fit the jammer to the lift",
+                    new MissionInteraction("Guess: fit the jammer at the rear of the Cargobob.", () => RearWork(_cargobob), 5, 2.5f, animation: MissionInteraction.ReachInside, face: () => _cargobob.Position))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => FitPod());
 
             yield return new MissionStage("Load the launchers",
                     new DeliverVehicleObjective("Ice — bring the hauler onto the line.",
-                        () => _hauler, () => _haulerMark, 20f))
+                        () => _hauler, () => _haulerMark, 5f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Load the parked hauler",
-                    new MissionInteraction("Load the anti-air launchers.", () => _haulerMark, 10, 6f))
+                    new MissionInteraction("Ice: collect the launchers from the marked equipment crate.", () => Ctx.Locations.Position("M18.LauncherWork"), 7, 1.8f, animation: MissionInteraction.ReachInside, face: () => _launchers.Position))
                 .OwnedBy(CrewSlot.Ice)
-                .OnExit(context => { Ctx.State?.SetCargo("hauler", "M18.HaulerMark"); PlayRollCall(); });
+                .OnExit(context => { _launchers.IsVisible = false; GameUtils.Subtitle("Launchers collected. Take them to the rear of the parked hauler.", 5000); });
+
+            yield return new MissionStage("Secure the launchers in the truck",
+                    new MissionInteraction("Ice: load and secure the launchers at the back of the hauler.", () => RearWork(_hauler), 5, 2.5f, animation: MissionInteraction.ReachInside, face: () => _hauler.Position))
+                .OwnedBy(CrewSlot.Ice)
+                .OnExit(context => {
+                    _launchers.IsVisible = true; _launchers.IsPositionFrozen = false;
+                    GTA.Native.Function.Call(GTA.Native.Hash.SET_ENTITY_COLLISION, _launchers, false, false);
+                    if (!StowPropStep.Stow(_launchers, _hauler, new Vector3(0f, -2f, 1f)))
+                    { Fail("The launcher crate could not be secured. Restart staging."); return; }
+                    Ctx.State?.SetCargo("hauler", "M18.HaulerMark"); PlayRollCall(); });
 
             yield return new MissionStage("Countdown",
                     new DialogueFinishedObjective("Keep your assigned vehicle in place. Listen to the final radio check."))
@@ -118,7 +136,7 @@ namespace Bloodlines.Missions.Campaign
             foreach (var id in new[] { "SM01", "SM02", "SM03" })
                 if (Ctx.State != null && !Ctx.State.IsComplete(id)) open.Add(id);
             if (open.Count == 0) return;
-            GameUtils.Notify("~y~Open before the heist: " + string.Join(", ", open) + ". M19 waits on them; stage now, finish them after.");
+            GameUtils.Notify("~y~Open before the heist: " + string.Join(", ", open) + ". Finish these solo jobs after staging, then start The Port Heist at its mission marker.");
             Logger.Info("M18: open solo jobs before the heist: " + string.Join(", ", open));
         }
 
@@ -139,22 +157,27 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M18 approach scene did not play; the flats stand on their own.");
         }
 
-        private Vector3 PodPoint() => _cargobob != null && _cargobob.Exists() ? _cargobob.Position + new Vector3(3f, 0f, 0f) : _hangar;
+        private static Vector3 RearWork(Vehicle vehicle)
+        {
+            if (vehicle == null || !vehicle.Exists()) return Game.Player.Character.Position;
+            float rear = vehicle.Model.Dimensions.Item1.Y - 1.2f;
+            var point = vehicle.Position + vehicle.ForwardVector * rear;
+            point.Z = World.GetGroundHeight(point + new Vector3(0f, 0f, 2f)) + .6f;
+            return point;
+        }
+
+        private Vector3 PodPoint() => Ctx.Locations.Position("M18.PodWork");
 
         /// <summary>The pod on the lift: a real part on the airframe, recorded where M20 finds it.</summary>
         private void FitPod()
         {
+            if (_pod == null || !_pod.Exists() || _cargobob == null || !_cargobob.Exists())
+            { Fail("The jammer pod or lift is missing. Restart staging."); return; }
+            _pod.IsVisible = true; _pod.IsPositionFrozen = false; GTA.Native.Function.Call(GTA.Native.Hash.SET_ENTITY_COLLISION, _pod, false, false);
+            StowPropStep.Stow(_pod, _cargobob, new Vector3(2.4f, -1f, .2f));
+            if (!GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_ATTACHED_TO_ENTITY, _pod, _cargobob))
+            { Fail("The jammer mount did not attach. Restart staging."); return; }
             _podFitted = true;
-            if (_cargobob != null && _cargobob.Exists())
-            {
-                var model = new Model("prop_box_ammo03a");
-                if (GameUtils.RequestModel(model))
-                {
-                    _pod = Track(World.CreateProp(model, _cargobob.Position + new Vector3(0f, 0f, 2f), false, false));
-                    model.MarkAsNoLongerNeeded();
-                    if (_pod != null && _pod.Exists()) { _pod.IsPersistent = true; StowPropStep.Stow(_pod, _cargobob, new Vector3(2.4f, -1.0f, 0.2f)); }
-                }
-            }
             Ctx.State?.SetCargo("radarPod", "M18.SaltHangar");
             GameUtils.Subtitle("~g~Jammer pod on the lift. Gohan switches it on from the channel when the load comes up.", 5000);
         }
@@ -164,6 +187,12 @@ namespace Bloodlines.Missions.Campaign
         {
             _rollCalled = true;
             var blocking = new SceneBlocking();
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (guess != null && guess.Exists() && !guess.IsInVehicle(_cargobob))
+                blocking.Then(new EnterVehicleStep(guess, _cargobob) { TimeoutMs = 4000 });
+            if (ice != null && ice.Exists() && !ice.IsInVehicle(_hauler))
+                blocking.Then(new EnterVehicleStep(ice, _hauler) { TimeoutMs = 4000 });
             if (_hauler != null && _hauler.Exists()) blocking.Then(new ShotStep(3400, _hauler, new Vector3(-4f, 2f, 1.4f), _hauler, new Vector3(0f, 0.8f, 0.9f), 0.5f));
             if (_cargobob != null && _cargobob.Exists()) blocking.Then(new ShotStep(3400, _cargobob, new Vector3(-6f, 3f, 2f), _cargobob, new Vector3(0f, 1.5f, 1.2f), 0.6f));
             if (_kraken != null && _kraken.Exists()) blocking.Then(new ShotStep(3400, _kraken, new Vector3(-6f, 3f, 2f), _kraken, new Vector3(0f, 0f, 0.5f), 0.8f));
@@ -190,12 +219,67 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- world building ----------
 
+        private void SpawnEquipment()
+        {
+            var model = new Model("prop_box_ammo03a");
+            if (!GameUtils.RequestModel(model)) return;
+            _pod = Track(World.CreateProp(model, Ctx.Locations.Position("M18.PodCrate"), false, true));
+            _launchers = Track(World.CreateProp(model, Ctx.Locations.Position("M18.LauncherCrate"), false, true));
+            model.MarkAsNoLongerNeeded();
+        }
+
+        protected override void OnUpdate()
+        {
+            if (Ctx.Cutscenes.IsActive) { base.OnUpdate(); return; }
+            // Take ownership before assignment maintenance can send a brother walking.
+            HoldAssignedVehicle(CrewSlot.Gohan, _kraken);
+            HoldAssignedVehicle(CrewSlot.Guess, _cargobob);
+            HoldAssignedVehicle(CrewSlot.Ice, _hauler);
+            base.OnUpdate();
+        }
+
+        private void HoldAssignedVehicle(CrewSlot slot, Vehicle vehicle)
+        {
+            if (slot == Ctx.Crew.ActiveSlot)
+            {
+                if (_frozen.TryGetValue(slot, out var previous) && vehicle != null && vehicle.Exists()) vehicle.IsPositionFrozen = previous;
+                _frozen.Remove(slot); _held.Remove(slot); return;
+            }
+            Ctx.Crew.CompanionAI.TakeControl(slot);
+            if (!_held.Add(slot)) return;
+            var actor = Ctx.Crew.PedFor(slot);
+            if (actor == null || !actor.Exists() || actor.IsDead) return;
+            actor.Task.ClearAll();
+            if (vehicle != null && vehicle.Exists() && (vehicle.Speed < 1f || slot == CrewSlot.Gohan))
+            {
+                if (vehicle.Model.IsCar && !vehicle.IsPositionFrozen) vehicle.PlaceOnGround();
+                if (!_frozen.ContainsKey(slot)) _frozen[slot] = vehicle.IsPositionFrozen;
+                vehicle.IsPositionFrozen = true;
+            }
+            if (vehicle == _cargobob && vehicle != null && vehicle.Exists() && actor.IsInVehicle(vehicle) && vehicle.HeightAboveGround > 3f)
+                actor.Task.StartHeliMission(vehicle, vehicle.Position, VehicleMissionType.GoTo, 10f, 5f, (int)vehicle.Position.Z, 5, vehicle.Heading, 5f, (HeliMissionFlags)0);
+            else if (vehicle != null && vehicle.Exists() && actor.IsInVehicle(vehicle))
+                GTA.Native.Function.Call(GTA.Native.Hash.TASK_VEHICLE_TEMP_ACTION, actor, vehicle, 1, -1);
+            else actor.Task.StandStill(-1);
+        }
+
+        protected override void OnCleanup()
+        {
+            foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);
+            foreach (var pair in _frozen)
+            {
+                var vehicle = pair.Key == CrewSlot.Gohan ? _kraken : pair.Key == CrewSlot.Guess ? _cargobob : _hauler;
+                if (vehicle != null && vehicle.Exists()) vehicle.IsPositionFrozen = pair.Value;
+            }
+            _frozen.Clear(); _held.Clear();
+        }
+
         private void SpawnAssets()
         {
             var krakenModel = new Model("submersible2");
             if (GameUtils.RequestModel(krakenModel))
             {
-                _kraken = Track(World.CreateVehicle(krakenModel, _channel + new Vector3(0f, 0f, -1.4f), 180f));
+                _kraken = Track(World.CreateVehicle(krakenModel, MarineSites.ResolveOrThrow(Ctx.Locations, "M18.KrakenSpawn", 6f, 3f, 5f), Ctx.Locations.Heading("M18.KrakenSpawn")));
                 krakenModel.MarkAsNoLongerNeeded();
                 if (_kraken != null && _kraken.Exists())
                 {
@@ -210,7 +294,7 @@ namespace Bloodlines.Missions.Campaign
             var heliModel = new Model("cargobob");
             if (GameUtils.RequestModel(heliModel))
             {
-                _cargobob = Track(World.CreateVehicle(heliModel, _hangar + new Vector3(40f, 30f, 0f), 90f));
+                _cargobob = Track(World.CreateVehicle(heliModel, Ctx.Locations.Position("M18.CargobobSpawn"), Ctx.Locations.Heading("M18.CargobobSpawn")));
                 heliModel.MarkAsNoLongerNeeded();
                 if (_cargobob != null && _cargobob.Exists())
                 {
@@ -225,11 +309,12 @@ namespace Bloodlines.Missions.Campaign
             var haulerModel = new Model("benson");
             if (GameUtils.RequestModel(haulerModel))
             {
-                _hauler = Track(World.CreateVehicle(haulerModel, _haulerMark + new Vector3(-35f, -10f, 0f), 90f));
+                _hauler = Track(World.CreateVehicle(haulerModel, Ctx.Locations.Position("M18.HaulerSpawn"), Ctx.Locations.Heading("M18.HaulerSpawn")));
                 haulerModel.MarkAsNoLongerNeeded();
                 if (_hauler != null && _hauler.Exists())
                 {
                     _hauler.IsPersistent = true;
+                    _hauler.PlaceOnGround();
                     var blip = Track(_hauler.AddBlip());
                     blip.Sprite = BlipSprite.ArmoredTruck;
                     blip.Color = BlipColor.Blue;
@@ -245,6 +330,7 @@ namespace Bloodlines.Missions.Campaign
             if (_cargobob != null && _cargobob.Exists()) Release(_cargobob);
             if (_hauler != null && _hauler.Exists()) Release(_hauler);
             if (_pod != null && _pod.Exists()) Release(_pod);
+            if (_launchers != null && _launchers.Exists()) Release(_launchers);
         }
     }
 }

@@ -48,10 +48,10 @@ namespace Bloodlines.Crew
         {
             _config = config;
             _companions = new CompanionController(config);
-            _companions.Driver.IsRendezvous = vehicle => !_companions.MissionActive && !_companions.IndependentFreeRoam && PedFor(ActiveSlot) != null && !PedFor(ActiveSlot).IsInVehicle(vehicle);
+            _companions.Driver.IsRendezvous = vehicle => !_companions.MissionActive && HasInvitedDriver(vehicle) && PedFor(ActiveSlot) != null && !PedFor(ActiveSlot).IsInVehicle(vehicle);
             _companions.Driver.FollowDestination = vehicle =>
             {
-                if (_companions.IndependentFreeRoam && !_companions.MissionActive) return null;
+                if (!HasInvitedDriver(vehicle) && !_companions.MissionActive) return null;
                 var leader = PedFor(ActiveSlot);
                 return leader != null && leader.Exists() && !leader.IsInVehicle(vehicle)
                     ? (Vector3?)(leader.Position - leader.ForwardVector * (leader.IsInVehicle() ? 18f : 8f)) : null;
@@ -62,6 +62,16 @@ namespace Bloodlines.Crew
                     if (member != null && member.Exists() && member.Handle == ped.Handle) return true;
                 return false;
             };
+        }
+
+        private bool HasInvitedDriver(Vehicle vehicle)
+        {
+            var driver = vehicle != null && vehicle.Exists() ? vehicle.GetPedOnSeat(VehicleSeat.Driver) : null;
+            if (driver == null || !driver.Exists()) return false;
+            foreach (var member in _peds)
+                if (member.Key != ActiveSlot && member.Value != null && member.Value.Exists() &&
+                    member.Value.Handle == driver.Handle) return _companions.IsHangingOut(member.Key);
+            return false;
         }
 
         /// <summary>The companion state machine — missions can take direct control through it.</summary>
@@ -573,7 +583,7 @@ namespace Bloodlines.Crew
             RefreshCompanionBlips();
             _companions.Update(protagonist.Slot, ped, player);
             GameUtils.Notify("~o~" + protagonist.DisplayName + "~s~ recovered. " +
-                (_companions.IndependentFreeRoam ? "Back to their own plans." : "Making their way back to you."));
+                (_companions.IsHangingOut(protagonist.Slot) ? "Making their way back to you." : "Back to their own plans."));
         }
 
         /// <summary>

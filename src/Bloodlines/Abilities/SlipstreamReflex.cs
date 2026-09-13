@@ -13,13 +13,13 @@ namespace Bloodlines.Abilities
     /// profile (<see cref="RoadHandling"/>) makes every car drivable at the faster
     /// world's speeds; this is the extra layer on top, on his car only.
     ///
-    /// Two overlays while he is the driver of a road vehicle:
+    /// Grip and bounded road forces while he is the driver of a road vehicle:
     ///  - a bounded press toward the road on that vehicle instance while it is on
     ///    its wheels: a constant quarter g of weight plus downforce that grows with
     ///    speed squared to a 0.6 g cap (the SDK has no per-vehicle gravity, so the
     ///    weight is applied as force through the same bounded channel);
     ///  - a temporary grip lift on the model's shared handling, restored on exit.
-    /// The press blends in over half a second and blends out over half a second
+    /// The press engages in about a tenth of a real second and blends out over half a second
     /// after the ability ends, so ending it mid-corner does not drop the car.
     /// Nothing assigns velocity, snaps heading or pins an airborne car; ramps and
     /// jumps behave as they would without the ability.
@@ -36,10 +36,13 @@ namespace Bloodlines.Abilities
         /// <summary>Downforce cap in m/s² (0.6 g), reached at <see cref="DownforceReferenceSpeed"/>.</summary>
         public const float DownforceCap = 5.9f;
         public const float DownforceReferenceSpeed = 50f;
-        public const float GripLift = 1.50f;
-        /// <summary>The steering lock widens while the ability runs: the car turns in the way Franklin's does (Ron, September 12).</summary>
-        public const float SteeringLift = 1.30f;
-        private const float BlendPerSecond = 2f; // half a second each way
+        public const float GripLift = 1.70f;
+        public const float SlipAngleScale = 0.85f;
+        public const float SideGrip = 5f;
+        /// <summary>Modest extra steering lock; grip and lateral damping do most of the work.</summary>
+        public const float SteeringLift = 1.12f;
+        private const float EngagePerSecond = 10f;
+        private const float ReleasePerSecond = 2f;
 
         private Vehicle _vehicle;
         private bool _tiresCouldBurst;
@@ -67,7 +70,7 @@ namespace Bloodlines.Abilities
         {
             var vehicle = player?.CurrentVehicle;
             if (_vehicle != null && (vehicle == null || vehicle.Handle != _vehicle.Handle)) RestoreVehicle();
-            if (!Supported(vehicle, player)) return;
+            if (!Supported(vehicle, player)) { RestoreVehicle(); return; }
             if (_vehicle == null) Acquire(vehicle);
             Step(vehicle, targetBlend: Grounded(vehicle) ? 1f : 0f);
 
@@ -128,11 +131,20 @@ namespace Bloodlines.Abilities
             int now = Game.GameTime;
             float seconds = Math.Max(0f, Math.Min(0.1f, (now - _lastTick) / 1000f));
             _lastTick = now;
-            float step = BlendPerSecond * seconds;
+            float step = (targetBlend > _blend ? EngagePerSecond / TimeScale : ReleasePerSecond) * seconds;
             _blend = targetBlend > _blend ? Math.Min(targetBlend, _blend + step) : Math.Max(targetBlend, _blend - step);
 
+            if (!Grounded(vehicle)) return;
             float accel = Press(ForwardSpeed(vehicle)) * _blend;
-            if (accel > 0.01f) vehicle.ApplyForce(new Vector3(0f, 0f, -accel), Vector3.Zero, ForceType.MaxForceRot2);
+            var forward = vehicle.ForwardVector;
+            float length = (float)Math.Sqrt(forward.X * forward.X + forward.Y * forward.Y);
+            var right = length > .01f ? new Vector3(forward.Y / length, -forward.X / length, 0f) : Vector3.Zero;
+            var velocity = vehicle.Velocity;
+            float sideSpeed = velocity.X * right.X + velocity.Y * right.Y;
+            // Reduce sideways drift with a bounded force, preserving forward speed,
+            // free steering and jumps. No velocity/heading snap or launch boost.
+            float side = _settling ? 0f : Math.Max(-8f, Math.Min(8f, -sideSpeed * SideGrip)) * _blend;
+            if (accel > 0.01f) vehicle.ApplyForce(right * side + new Vector3(0f, 0f, -accel), Vector3.Zero, ForceType.MaxForceRot2);
         }
 
         /// <summary>Total press in m/s² on the wheels at a forward speed: the weight term plus downforce.</summary>
@@ -165,7 +177,7 @@ namespace Bloodlines.Abilities
         private sealed class GripOverlay
         {
             private HandlingData _data;
-            private float _maxOriginal, _maxApplied, _lateralOriginal, _lateralApplied, _steerOriginal, _steerApplied;
+            private float _minOriginal, _minApplied, _maxOriginal, _maxApplied, _lateralOriginal, _lateralApplied, _steerOriginal, _steerApplied;
             public bool Active { get; private set; }
 
             public void Apply(Vehicle vehicle)
@@ -176,7 +188,9 @@ namespace Bloodlines.Abilities
                 if (max <= 0f || float.IsNaN(max) || lateral <= 0f || float.IsNaN(lateral)) return;
                 _data = data;
                 _maxOriginal = max; _maxApplied = max * GripLift;
-                _lateralOriginal = lateral; _lateralApplied = lateral * GripLift;
+                _lateralOriginal = lateral; _lateralApplied = lateral * SlipAngleScale;
+                _minOriginal = data.TractionCurveMin; _minApplied = _minOriginal * GripLift;
+                data.TractionCurveMin = _minApplied;
                 data.TractionCurveMax = _maxApplied;
                 data.TractionCurveLateral = _lateralApplied;
                 float steer = data.SteeringLock;
@@ -190,6 +204,7 @@ namespace Bloodlines.Abilities
                 if (!Active) return;
                 Active = false;
                 if (_data == null || !_data.IsValid) return;
+                if (Math.Abs(_data.TractionCurveMin - _minApplied) < 0.0001f) _data.TractionCurveMin = _minOriginal;
                 if (Math.Abs(_data.TractionCurveMax - _maxApplied) < 0.0001f) _data.TractionCurveMax = _maxOriginal;
                 if (Math.Abs(_data.TractionCurveLateral - _lateralApplied) < 0.0001f) _data.TractionCurveLateral = _lateralOriginal;
                 if (_steerApplied != _steerOriginal && Math.Abs(_data.SteeringLock - _steerApplied) < 0.0001f) _data.SteeringLock = _steerOriginal;

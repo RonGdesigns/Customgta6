@@ -37,6 +37,9 @@ public static partial class StoryTests
         Check(!MarineSites.TryResolve(Vector3.Zero, 12, 8, 10, 0, 9999, out found, out error, probe) && probe.Samples<=33, "Marine: unknown results fail after a finite bounded search");
         probe.At = p => new MarineColumn { Known = true, Surface = 0, Floor = -40 }; probe.ClearLine=false;
         Check(!MarineSites.TryResolve(Vector3.Zero, 12, 8, 10, 0, 0, out found, out error, probe), "Marine: horizontal obstructions reject otherwise deep water");
+        Check(error.Contains("Underwater obstruction")&&error.Contains(" to "),"Marine failure identifies the obstructed segment");
+        probe.ClearLine=true;probe.At=p=>new MarineColumn {Known=true,Surface=0,Floor=p.X>0?-2:-40};
+        Check(!MarineSites.TryResolve(Vector3.Zero,12,8,10,0,0,out found,out error,probe)&&error.Contains("floor=-2")&&error.Contains("required depth=12"),"Marine failure identifies the shallow footprint sample and required depth");
 
         Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"harbor-repair.json"));
         var m19=new M19UnderwaterBreach();Check(m19.Begin(c),"M19: visible geometry is built before the first objective");

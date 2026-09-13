@@ -33,6 +33,13 @@ namespace Bloodlines.Missions.Objectives
 
         /// <summary>When false, the stage ends as soon as any one objective completes.</summary>
         public bool RequireAll { get; private set; } = true;
+        public bool AllowsAnyBrother { get; private set; }
+        public MissionStage AnyBrother()
+        {
+            AllowsAnyBrother = true; LockedTo = null;
+            foreach (var objective in Objectives) objective.RequiredCharacter = null;
+            return this;
+        }
 
         public Action<MissionContext> Setup { get; private set; }
 

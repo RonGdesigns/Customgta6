@@ -90,12 +90,31 @@ namespace Bloodlines.Crew
         public bool RideAlong
         {
             get => _rideAlong;
-            set { if (_rideAlong == value) return; _rideAlong = value; Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _boarding.Clear(); }
+            set { if (_rideAlong == value && _travelChoices.Count == 0) return; _travelChoices.Clear(); _rideAlong = value; Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _boarding.Clear(); }
+        }
+        private readonly Dictionary<CrewSlot, bool> _travelChoices = new Dictionary<CrewSlot, bool>();
+        public bool RidesAlong(CrewSlot slot) => _travelChoices.TryGetValue(slot, out var ride) ? ride : _rideAlong;
+        public bool SetTravelChoice(CrewSlot slot, bool ride)
+        {
+            if (!SetHangout(slot, true)) return false;
+            _travelChoices[slot] = ride;
+            return true;
+        }
+        private readonly Dictionary<CrewSlot, bool> _hangouts = new Dictionary<CrewSlot, bool>();
+        public bool HasIndividualOrders => _hangouts.Count > 0 || _travelChoices.Count > 0;
+        public bool IsHangingOut(CrewSlot slot) => _hangouts.TryGetValue(slot, out var follow) ? follow : !_independent;
+        public bool SetHangout(CrewSlot slot, bool follow)
+        {
+            if (MissionActive || HoldPosition || RequireSharedVehicle || _scripted.Contains(slot)) return false;
+            _hangouts[slot] = follow;
+            _separatedByRecovery.Remove(slot);
+            Life.Suspend(slot); Driver.Forget(slot); Convoy.Forget(slot); Refresh(slot);
+            return true;
         }
         public bool IndependentFreeRoam
         {
             get => _independent;
-            set { _separatedByRecovery.Clear(); if (value == _independent) return; _independent = value; Life.Clear(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _threats.Clear(); _lastScan.Clear(); _boarding.Clear(); }
+            set { _separatedByRecovery.Clear(); if (value == _independent && _hangouts.Count == 0 && _travelChoices.Count == 0) return; _hangouts.Clear(); _travelChoices.Clear(); _independent = value; Life.Clear(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _threats.Clear(); _lastScan.Clear(); _boarding.Clear(); }
         }
         public CompanionConvoy Convoy { get; } = new CompanionConvoy();
         public CompanionDriver Driver { get; } = new CompanionDriver();
@@ -237,6 +256,17 @@ namespace Bloodlines.Crew
             // Separate approach actors must not board the leader's car or abandon
             // their assignment because another character starts a fight.
             if (HoldPosition) return CompanionState.Hold;
+            // An individually dismissed or separate-car companion leaves only after a safe stop.
+            // Normal independent companions still keep an existing shared ride.
+            if (!MissionActive && !RequireSharedVehicle && ((_hangouts.TryGetValue(slot, out var hanging) && !hanging) ||
+                (IsHangingOut(slot) && _travelChoices.TryGetValue(slot, out var rideAlong) && !rideAlong)) &&
+                leader != null && leader.Exists() && leader.IsInVehicle() && companion.IsInVehicle(leader.CurrentVehicle))
+            {
+                var ride = leader.CurrentVehicle;
+                if ((ride.Model.IsCar || ride.Model.IsBike || ride.Model.IsHelicopter) &&
+                    !ride.IsInAir && ride.HeightAboveGround < 3f && ride.Speed < 2f)
+                { Driver.Forget(slot); Convoy.Forget(slot); return CompanionState.Disembarking; }
+            }
             // A shared ride is a commitment, even while free-roam independence is on.
             if (leader != null && leader.Exists() && leader.IsInVehicle() && companion.IsInVehicle(leader.CurrentVehicle))
             {
@@ -244,7 +274,7 @@ namespace Bloodlines.Crew
                 { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
                 return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Vehicle;
             }
-            if (IndependentFreeRoam && !MissionActive)
+            if (!IsHangingOut(slot) && !MissionActive)
             {
                 var ride = companion.CurrentVehicle;
                 if (ride != null && !(ride.Model.IsCar || ride.Model.IsBike) && ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
@@ -259,10 +289,10 @@ namespace Bloodlines.Crew
             // or returning to an old convoy. Mission holds and required rides win.
             if (!companion.IsInVehicle() && !RequireSharedVehicle && FindThreat(slot, companion, leader) != null)
                 return CompanionState.Combat;
-            if (!MissionActive && !IndependentFreeRoam && !RequireSharedVehicle && !companion.IsInVehicle() &&
+            if (!MissionActive && IsHangingOut(slot) && !RequireSharedVehicle && !companion.IsInVehicle() &&
                 leader != null && leader.Exists() && leader.IsInVehicle() &&
-                (!RideAlong || !HasSeatFor(slot, leader.CurrentVehicle, companion))) return CompanionState.Convoy;
-            if (!MissionActive && !RequireSharedVehicle && !IndependentFreeRoam && leader != null && leader.Exists())
+                (!RidesAlong(slot) || !HasSeatFor(slot, leader.CurrentVehicle, companion))) return CompanionState.Convoy;
+            if (!MissionActive && !RequireSharedVehicle && IsHangingOut(slot) && leader != null && leader.Exists())
             {
                 if (StateOf(slot) == CompanionState.Disembarking && companion.IsInVehicle() && StateAge(slot) < 15000) return CompanionState.Disembarking;
                 var vehicle = companion.CurrentVehicle;
@@ -325,8 +355,14 @@ namespace Bloodlines.Crew
                     companion.Task.LeaveVehicle();
                     break;
                 case CompanionState.Hold:
-                    companion.Task.ClearAll();
-                    companion.Task.GuardCurrentPosition();
+                    // A vehicle station means stay in that seat. An on-foot guard
+                    // task implicitly orders a passenger to leave after a handover.
+                    if (!companion.IsInVehicle())
+                    {
+                        companion.Task.ClearAll();
+                        companion.Task.GuardCurrentPosition();
+                    }
+                    companion.AlwaysKeepTask = true;
                     break;
 
                 case CompanionState.Convoy:

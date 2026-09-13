@@ -11,7 +11,7 @@ namespace Bloodlines.Missions.Campaign
     /// <summary>
     /// M24 — "Liquid Gold". Alamo Sea shallows, 14:00, harsh sun.
     ///
-    /// The bullion has been sitting in four feet of water since M22. The crew needs
+    /// The bullion has been sitting in the inlet water since M22. The crew needs
     /// operating capital, so five tons of it comes back out on a crane truck while
     /// Blaine County sheriff's deputies decide this looks like a shakedown worth
     /// making.
@@ -62,16 +62,14 @@ namespace Bloodlines.Missions.Campaign
         protected override bool Setup()
         {
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _dredge = Ctx.Locations.Position("M24.CraneSpawn") + new Vector3(-12f, 0f, 0f);
+            _dredge = Ctx.Locations.Position("M24.RecoveryPad");
             _drop = Ctx.Locations.Position("M22.AlamoDrop");
             _ridge = Ctx.Locations.Position("M24.RidgeLine");
             _ridgeRoad = Ctx.Locations.Position("M24.RidgeRoad");
             _bunker = Ctx.Locations.Position("M23.BunkerDoor");
             _bay = Ctx.Locations.Position("M23.BayOne");
-            // Gohan works at the container's shore side, in the shallows, not on the truck.
-            var toShore = _dredge - _drop; toShore.Z = 0f;
-            float run = (float)System.Math.Sqrt(toShore.X * toShore.X + toShore.Y * toShore.Y);
-            _workPoint = run < 1f ? _drop : _drop + toShore * (8f / run);
+            // The cache needs deep water; Gohan works the cable from verified dry ground.
+            _workPoint = Ctx.Locations.Position("M24.GohanWork");
 
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, Ctx.Locations.Position("M24.CraneSpawn"),
                     Ctx.Locations.Heading("M24.CraneSpawn")))
@@ -85,7 +83,7 @@ namespace Bloodlines.Missions.Campaign
             if (!RequireAssets(_crane)) return false;
             RequireAsset(_crane, "The crane truck was destroyed. Nothing comes out of the Alamo without it.");
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Ice, _ridge + new Vector3(0f, -25f, 0f));
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M24.IceStart"));
             Station(CrewSlot.Gohan, _workPoint);
             PlayApproach();
             return true;
@@ -140,7 +138,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The shallows",
-                Reason = "The crane truck looked over by Ron, the container still in four feet of Alamo water, Ice on the ridge with the road below him, Gohan in the shallows at the container with the truck as his way out. Five tons, the first portion only: enough to keep the lights on, not a convoy.",
+                Reason = "The crane truck looked over by Ron, the container still in Alamo inlet water, Ice on the ridge with the road below him, Gohan at the dry shoreline cable controls with the truck as his way out. Five tons, the first portion only: enough to keep the lights on, not a convoy.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M24 approach scene did not play; the shore stands on its own.");

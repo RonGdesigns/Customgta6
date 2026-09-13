@@ -14,6 +14,15 @@ namespace Bloodlines.Core
         private readonly string _directory;
         private readonly Dictionary<CrewSlot, CustomSprite> _sprites = new Dictionary<CrewSlot, CustomSprite>();
         private float _previousScale;
+        private static CharacterWheel _openWheel;
+        public static bool AnyOpen => _openWheel != null && _openWheel.IsOpen;
+        /// <summary>A mission ending slow motion while the wheel is open also updates its restore value.</summary>
+        public static void RestoreTemporaryScale(float owned, float previous)
+        {
+            if (AnyOpen && Math.Abs(_openWheel._previousScale - owned) < .001f)
+                _openWheel._previousScale = previous;
+            else if (Math.Abs(Game.TimeScale - owned) < .001f) Game.TimeScale = previous;
+        }
         public bool IsOpen { get; private set; }
         public CrewSlot Selected { get; set; }
         public CharacterWheel(string directory) { _directory = directory; }
@@ -23,12 +32,14 @@ namespace Bloodlines.Core
             Selected = current;
             _previousScale = Game.TimeScale;
             IsOpen = true;
+            _openWheel = this;
             Game.TimeScale = Math.Min(_previousScale, .2f);
         }
         public void Close()
         {
             if (!IsOpen) return;
             IsOpen = false;
+            if (_openWheel == this) _openWheel = null;
             Game.TimeScale = _previousScale;
         }
         public void Draw(CrewRoster crew)

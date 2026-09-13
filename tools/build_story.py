@@ -93,6 +93,7 @@ def render():
                            'Private channel; no recognition or shared conversation' if mission=='M01' and phase=='intro' else
                            'Face-to-face reunion; anger interrupted by danger' if phase=='recognition' else
                            'Reflective; allow the response to land' if phase=='outro' else
+                           'Radio after player-driven forklift delivery; keep gameplay control' if mission=='M08' and phase=='loading' else
                            PHASE_DIRECTION.get(phase, 'Staged action') if phase not in ('intro',) else 'Briefing; intent before tactics')
                 rows.append(dict(cue_id=cue_id,mission=mission,phase=phase,speaker=speaker,direction=direction,line=line))
                 script += [f'**{speaker}** ({cue_id}) — {line}', '']
@@ -132,6 +133,7 @@ def main():
         if args.check:
             if not path.exists() or path.read_text(encoding='utf-8')!=text: raise SystemExit('Regenerate stale artifact: '+str(path))
         else: path.write_text(text,encoding='utf-8',newline='\n')
-    print(f'Story coverage: 79 missions, {count} unique cues, 161 scenes; '+('freshness verified' if args.check else 'generated'))
+    groups={(row['mission'],row['phase']) for row in csv.DictReader(io.StringIO(artifacts[ROOT/'data/scenes.tsv']),delimiter='\t')}
+    print(f'Story coverage: 79 missions, {count} unique cues, {len(groups)} scenes; '+('freshness verified' if args.check else 'generated'))
 
 if __name__=='__main__':main()

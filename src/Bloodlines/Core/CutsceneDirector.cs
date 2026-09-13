@@ -50,9 +50,6 @@ namespace Bloodlines.Core
         private SceneBlocking _blocking;
         private bool _skipping;
         private Ped _hiddenPlayer;
-        private int _staged;
-        private Vehicle _arrivalCar;
-        private Vector3 _arrivalFrom;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
         private List<DialogueCue> _lines;
@@ -172,9 +169,9 @@ namespace Bloodlines.Core
                     if (missing.Count > 0)
                     {
                         var host = missing.FirstOrDefault(p => p.Slot == CrewSlot.Guess) ?? missing[0];
-                        var riders = missing.Where(p => p != host).ToList();
-                        if (phase == "intro" && riders.Count > 0 && _blocking == null) StageArrival(riders, player, staged);
-                        var hostActor = StageHost(host, player, _arrivalCar != null ? (Vector3?)_arrivalFrom : null);
+                        // No invented arrival car or traffic-dependent drive-up. Remote
+                        // speakers use radio; the actual arriving car remains the set.
+                        var hostActor = player.IsInVehicle() ? player : StageHost(host, player, null);
                         if (hostActor != null) staged[host.Slot] = hostActor;
                     }
                 }
@@ -191,9 +188,9 @@ namespace Bloodlines.Core
                         // hide the story ped for the scene; a deployed crew that is merely
                         // far away is still a radio call.
                         if (_crew.IsDeployed) { _radioScene = true; continue; }
-                        if (!staged.TryGetValue(protagonist.Slot, out actor)) actor = StageHero(protagonist, player, _staged++);
+                        if (!staged.TryGetValue(protagonist.Slot, out actor)) { _radioScene = true; continue; }
                         if (actor == null) { _radioScene = true; continue; }
-                        if (_hiddenPlayer == null) { _hiddenPlayer = player; player.IsVisible = false; }
+                        if (actor != player && _hiddenPlayer == null) { _hiddenPlayer = player; player.IsVisible = false; }
                     }
                     if (actor == null && _dockIntro)
                     {
@@ -229,7 +226,7 @@ namespace Bloodlines.Core
                     Hold(actor);
                     Hold(actor.CurrentVehicle);
                 }
-                if (!_dockIntro && _arrivalCar == null)
+                if (!_dockIntro)
                 {
                     foreach (var a in _actors.Values)
                         foreach (var b in _actors.Values)
@@ -237,7 +234,7 @@ namespace Bloodlines.Core
                 }
                 if (_dockIntro)
                 {
-                    SceneVehicle("schafter3", _locations.Position("M01.PrototypeCar"), _locations.Heading("M01.PrototypeCar"));
+                    SceneVehicle("schafter3", _locations.Position("M01.PrototypeCar"), ((_locations.Heading("M01.PrototypeCar") + 90f) % 360f));
                     var bossModel = new Model("g_m_m_mexboss_01");
                     if (GameUtils.RequestModel(bossModel, 1000))
                     {
@@ -283,6 +280,11 @@ namespace Bloodlines.Core
                         }
                     }
                 }
+                // On-foot radio scenes use a real sustained call. Leave seated drivers
+                // and authored movement alone: they talk over hands-free radio.
+                if (_radioScene && _blocking == null && _crew.IsDeployed && !player.IsInVehicle())
+                    _blocking = new SceneBlocking().Then(new UsePhoneStep(player, 1800));
+                _blocking?.BindDialogue(() => _lines != null && _index >= _lines.Count && !_dialogue.HasPending);
                 // Hide the ordinary player during the temporary-cast briefing with
                 // framing, without altering its visibility or position.
                 _camera = World.CreateCamera(player.Position + new Vector3(0, -3, 2), Vector3.Zero, 48f);
@@ -324,93 +326,6 @@ namespace Bloodlines.Core
             var position = player.Position + right * 1.4f;
             float heading = facing.HasValue ? DriveUpStep.HeadingBetween(position, facing.Value) : player.Heading;
             var actor = World.CreatePed(model, position, heading);
-            model.MarkAsNoLongerNeeded();
-            if (actor == null || !actor.Exists()) return null;
-            CrewAppearance.Apply(actor, protagonist.Slot);
-            _temporary.Add(actor);
-            actor.IsPersistent = true;
-            actor.BlockPermanentEvents = true;
-            actor.Task.StandStill(-1);
-            return actor;
-        }
-
-        /// <summary>
-        /// The other speakers arrive in the crew's four-door: spawned on the street
-        /// behind the start point, driven to the nearest curb, dialogue held until
-        /// the car has pulled up. Nothing is staged if the start point has no street
-        /// within reach; the caller then stages them on foot.
-        /// </summary>
-        private void StageArrival(List<Protagonist> riders, Ped player, Dictionary<CrewSlot, Ped> staged)
-        {
-            // The player already sitting in a car at the start point has the crew
-            // with him: the riders take its free seats and nobody pulls up (Ron,
-            // September 12: Gohan drove up while he was already in the car with him).
-            var ride = player.CurrentVehicle;
-            if (ride != null && ride.Exists())
-            {
-                var rideSeats = new[] { VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
-                int seatIndex = 0;
-                foreach (var rider in riders)
-                {
-                    while (seatIndex < rideSeats.Length && !ride.IsSeatFree(rideSeats[seatIndex])) seatIndex++;
-                    if (seatIndex >= rideSeats.Length) break;
-                    var model = rider.Model;
-                    if (!GameUtils.RequestModel(model, 1000)) continue;
-                    var actor = World.CreatePed(model, ride.Position, ride.Heading);
-                    model.MarkAsNoLongerNeeded();
-                    if (actor == null || !actor.Exists()) continue;
-                    CrewAppearance.Apply(actor, rider.Slot);
-                    _temporary.Add(actor);
-                    actor.IsPersistent = true;
-                    actor.BlockPermanentEvents = true;
-                    actor.SetIntoVehicle(ride, rideSeats[seatIndex++]);
-                    staged[rider.Slot] = actor;
-                }
-                Logger.Info("Briefing arrival: the riders took the player's own car; no drive-up.");
-                return;
-            }
-            var destination = World.GetNextPositionOnStreet(player.Position);
-            if (destination == Vector3.Zero || destination.DistanceTo(player.Position) > 40f) return;
-            var spawn = World.GetNextPositionOnStreet(destination - player.ForwardVector * 90f);
-            float run = spawn == Vector3.Zero ? 0f : spawn.DistanceTo(destination);
-            if (run < 40f || run > 220f) return;
-            float heading = DriveUpStep.HeadingBetween(spawn, destination);
-            // The crew's own four-door, the one they leave in (Ron, September 12).
-            var car = SceneVehicle("granger", spawn, heading);
-            if (car == null) return;
-            var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
-            Ped driver = null;
-            for (int i = 0; i < riders.Count && i < seats.Length; i++)
-            {
-                var model = riders[i].Model;
-                if (!GameUtils.RequestModel(model, 1000)) continue;
-                var actor = World.CreatePed(model, spawn, heading);
-                model.MarkAsNoLongerNeeded();
-                if (actor == null || !actor.Exists()) continue;
-                CrewAppearance.Apply(actor, riders[i].Slot);
-                _temporary.Add(actor);
-                actor.IsPersistent = true;
-                actor.BlockPermanentEvents = true;
-                actor.SetIntoVehicle(car, seats[i]);
-                staged[riders[i].Slot] = actor;
-                if (i == 0) driver = actor;
-            }
-            if (driver == null) return;
-            _arrivalCar = car;
-            _arrivalFrom = spawn;
-            _blocking = new SceneBlocking { DialogueAfterStep = 1 }.Then(new DriveUpStep(driver, car, destination, heading));
-            Logger.Info("Briefing arrival staged: " + riders.Count + " rider(s) driving " + run.ToString("0") + " m to the start point.");
-        }
-
-        /// <summary>A hero as a temporary actor for a briefing, in a short arc facing the start point.</summary>
-        private Ped StageHero(Protagonist protagonist, Ped player, int index)
-        {
-            var model = protagonist.Model;
-            if (!GameUtils.RequestModel(model, 1000)) return null;
-            var forward = player.ForwardVector;
-            var right = new Vector3(forward.Y, -forward.X, 0f);
-            var position = player.Position + forward * 2.6f + right * (index * 1.7f - 0.85f);
-            var actor = World.CreatePed(model, position, player.Heading + 180f);
             model.MarkAsNoLongerNeeded();
             if (actor == null || !actor.Exists()) return null;
             CrewAppearance.Apply(actor, protagonist.Slot);
@@ -603,8 +518,6 @@ namespace Bloodlines.Core
             _temporary.Clear();
             _actors.Clear();
             _support.Clear();
-            _staged = 0;
-            _arrivalCar = null;
             var hidden = _hiddenPlayer;
             _hiddenPlayer = null;
             if (hidden != null) Release("player visibility", () => { if (hidden.Exists()) hidden.IsVisible = true; });

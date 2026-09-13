@@ -27,6 +27,9 @@ namespace Bloodlines.Core
 
         private readonly ModConfig _config;
         private readonly Dictionary<int, Entity> _reflecting = new Dictionary<int, Entity>();
+        private Ped _lodPed;
+        private Vehicle _lodVehicle, _shadowVehicle;
+        private float _entityLodScale;
         private string _activeModifier;
         private float _activeStrength;
         private int _lastClockCheck;
@@ -55,25 +58,19 @@ namespace Bloodlines.Core
             if (!_shadowsConfigured)
             {
                 Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, _config.ShadowDistanceScale);
-                Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, _config.HeadlightShadowsEnabled);
                 _shadowsConfigured = true;
             }
 
             if (_config.LODBoostEnabled)
             {
                 float scale = Math.Min(MaxLodScale, _config.LODScale);
-                if (!_lodConfigured)
-                {
-                    // Persistent settings: set once, put back in Reset.
-                    Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, scale);
-                    Function.Call(Hash.SET_PED_LOD_MULTIPLIER, scale);
-                    _lodConfigured = true;
-                }
+                _lodConfigured = true;
                 // The scene override is per frame; the host's tick already skips
                 // this step while the apartment or a recovery is streaming.
                 Function.Call(Hash.OVERRIDE_LODSCALE_THIS_FRAME, scale);
             }
 
+            UpdateEntityVisuals();
             if (_config.RemoveBlurEnabled)
             {
                 Function.Call(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE, 0f);
@@ -145,6 +142,42 @@ namespace Bloodlines.Core
             return string.IsNullOrWhiteSpace(_config.DawnModifier) ? "cinema_default" : _config.DawnModifier;
         }
 
+        // These natives are per entity, not global switches. Own at most the
+        // current player and vehicle; restore default values when they leave scope.
+        // GTA exposes no getter for these settings, so another graphics mod should
+        // own them instead when these options are disabled.
+        private void UpdateEntityVisuals()
+        {
+            var player = Game.Player.Character;
+            if (player != null && (!player.Exists() || player.IsDead)) player = null;
+            var car = player?.CurrentVehicle;
+            if (car != null && (!car.Exists() || car.IsDead)) car = null;
+            float scale = _config.LODBoostEnabled ? Math.Max(1f, Math.Min(MaxLodScale, _config.LODScale)) : 1f;
+            var nextPed = _config.LODBoostEnabled ? player : null;
+            var nextCar = _config.LODBoostEnabled ? car : null;
+            if (_lodPed != nextPed || _entityLodScale != scale)
+            {
+                if (_lodPed != null && _lodPed.Exists()) Function.Call(Hash.SET_PED_LOD_MULTIPLIER, _lodPed, 1f);
+                _lodPed = null;
+                if (nextPed != null) { Function.Call(Hash.SET_PED_LOD_MULTIPLIER, nextPed, scale); _lodPed = nextPed; }
+            }
+            if (_lodVehicle != nextCar || _entityLodScale != scale)
+            {
+                if (_lodVehicle != null && _lodVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, _lodVehicle, 1f);
+                _lodVehicle = null;
+                if (nextCar != null) { Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, nextCar, scale); _lodVehicle = nextCar; }
+            }
+            _entityLodScale = scale;
+            _lodConfigured = _config.LODBoostEnabled;
+            var nextShadow = _config.HeadlightShadowsEnabled ? car : null;
+            if (_shadowVehicle != nextShadow)
+            {
+                if (_shadowVehicle != null && _shadowVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, _shadowVehicle, 0);
+                _shadowVehicle = null;
+                if (nextShadow != null) { Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, nextShadow, 3); _shadowVehicle = nextShadow; }
+            }
+        }
+
         private void ClearGrade()
         {
             if (_activeModifier == null) return;
@@ -177,9 +210,10 @@ namespace Bloodlines.Core
         {
             Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
             Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, 1.0f);
-            Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, false);
-            Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, 1.0f);
-            Function.Call(Hash.SET_PED_LOD_MULTIPLIER, 1.0f);
+            if (_shadowVehicle != null && _shadowVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, _shadowVehicle, 0);
+            if (_lodVehicle != null && _lodVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, _lodVehicle, 1f);
+            if (_lodPed != null && _lodPed.Exists()) Function.Call(Hash.SET_PED_LOD_MULTIPLIER, _lodPed, 1f);
+            _shadowVehicle = _lodVehicle = null; _lodPed = null; _entityLodScale = 0f;
             Function.Call(Hash.RESET_DEEP_OCEAN_SCALER);
             foreach (var entity in _reflecting.Values)
                 if (entity != null && entity.Exists()) Function.Call(Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION, entity, false);

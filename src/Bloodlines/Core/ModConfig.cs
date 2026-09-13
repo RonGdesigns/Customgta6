@@ -21,6 +21,8 @@ namespace Bloodlines.Core
         public Keys SwitchGuessKey { get; private set; } = Keys.NumPad3;
         public Keys SwitchNextKey { get; private set; } = Keys.OemCloseBrackets;
         public Keys SwitchPrevKey { get; private set; } = Keys.OemOpenBrackets;
+        public bool CampaignPhoneEnabled { get; private set; } = true;
+        public Keys PhoneKey { get; private set; } = Keys.F6;
         public Keys AbilityKey { get; private set; } = Keys.Capital;
         public Keys MissionStartKey { get; private set; } = Keys.J;
         public Keys AbortKey { get; private set; } = Keys.Back;
@@ -76,12 +78,16 @@ namespace Bloodlines.Core
 
         public bool AbilitiesEnabled { get; private set; } = true;
         public bool DevToolsEnabled { get; private set; } = false;
+        public bool M05LocationTestMode { get; private set; } = false;
         public bool VerboseLogging { get; private set; } = false;
         public bool MissionScoreEnabled { get; private set; } = true;
         public string MissionScoreEvent { get; private set; } = "DHP1_START";
         public string MissionScoreStopEvent { get; private set; } = "DHP1_STOP";
 
         public bool VehicleDamageEnabled { get; private set; } = true;
+        public bool VisibleCrosshair { get; private set; } = true;
+        public bool PanelDamageEnabled { get; private set; } = true;
+        public float PanelDamageStrength { get; private set; } = 1f;
         public float DeformationMultiplier { get; private set; } = 2.0f;
         public float CollisionDamageMultiplier { get; private set; } = 0.90f;
         public float EngineDamageMultiplier { get; private set; } = 0.80f;
@@ -128,6 +134,8 @@ namespace Bloodlines.Core
             config.SwitchGuessKey = ReadKey(settings, "SwitchGuess", config.SwitchGuessKey);
             config.SwitchNextKey = ReadKey(settings, "SwitchNext", config.SwitchNextKey);
             config.SwitchPrevKey = ReadKey(settings, "SwitchPrev", config.SwitchPrevKey);
+            config.CampaignPhoneEnabled = settings.GetValue<bool>("Phone", "Enabled", true);
+            config.PhoneKey = ReadKey(settings, "Phone", config.PhoneKey);
             config.AbilityKey = ReadKey(settings, "Ability", config.AbilityKey);
             config.MissionStartKey = ReadKey(settings, "MissionStart", config.MissionStartKey);
             config.AbortKey = ReadKey(settings, "AbortMission", config.AbortKey);
@@ -157,12 +165,16 @@ namespace Bloodlines.Core
             config.AbilityRechargeRate = settings.GetValue<float>("Abilities", "RechargePerSecond", config.AbilityRechargeRate);
 
             config.DevToolsEnabled = settings.GetValue<bool>("Dev", "Enabled", config.DevToolsEnabled);
+            config.M05LocationTestMode = settings.GetValue<bool>("Dev", "M05LocationTestMode", config.M05LocationTestMode);
             config.VerboseLogging = settings.GetValue<bool>("Dev", "VerboseLogging", config.VerboseLogging);
             config.MissionScoreEnabled = settings.GetValue<bool>("Audio", "MissionScoreEnabled", config.MissionScoreEnabled);
             config.MissionScoreEvent = settings.GetValue<string>("Audio", "MissionScoreEvent", config.MissionScoreEvent);
             config.MissionScoreStopEvent = settings.GetValue<string>("Audio", "MissionScoreStopEvent", config.MissionScoreStopEvent);
 
             config.VehicleDamageEnabled = settings.GetValue<bool>("VehicleDamage", "Enabled", config.VehicleDamageEnabled);
+            config.VisibleCrosshair = settings.GetValue<bool>("HUD", "VisibleCrosshair", true);
+            config.PanelDamageEnabled = settings.GetValue<bool>("VehicleDamage", "PanelDamageEnabled", true);
+            config.PanelDamageStrength = Math.Max(.25f, Math.Min(2f, settings.GetValue<float>("VehicleDamage", "PanelDamageStrength", 1f)));
             config.DeformationMultiplier = settings.GetValue<float>("VehicleDamage", "DeformationMultiplier", config.DeformationMultiplier);
             config.DeformationMultiplier = Math.Max(0.5f, Math.Min(4.0f, config.DeformationMultiplier));
             config.CollisionDamageMultiplier = settings.GetValue<float>("VehicleDamage", "CollisionDamageMultiplier", config.CollisionDamageMultiplier);

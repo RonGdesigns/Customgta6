@@ -33,9 +33,9 @@ namespace Bloodlines.Core
     public static class ControllerInput
     {
         public static bool Pressed(Control control) =>
-            Function.Call<bool>(Hash.IS_DISABLED_CONTROL_PRESSED, 0, (int)control) || Game.IsControlPressed(control);
+            !CampaignPhone.Consumes(control) && (Function.Call<bool>(Hash.IS_DISABLED_CONTROL_PRESSED, 0, (int)control) || Game.IsControlPressed(control));
         public static bool JustPressed(Control control) =>
-            Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)control) || Game.IsControlJustPressed(control);
+            !CampaignPhone.Consumes(control) && (Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)control) || Game.IsControlJustPressed(control));
         public static float Axis(Control control) => Function.Call<float>(Hash.GET_DISABLED_CONTROL_NORMAL, 0, (int)control);
     }
 }

@@ -31,7 +31,7 @@ namespace Bloodlines.Missions.Objectives
             bool player = context.Crew.ActiveSlot == _worker;
             var target = _target();
             bool working = !ped.IsInVehicle() && ped.Position.DistanceTo(target) <= 3f;
-            GameUtils.DrawObjectiveMarker(target, Color.Cyan, 2f);
+            if (player) GameUtils.DrawObjectiveMarker(target, Color.Cyan, 2f);
             if (player) ObjectiveMarkers.Navigation(target, _worker);
             if (!player && (Game.GameTime >= _nextTask || player != _wasPlayer || working != _wasWorking))
             {

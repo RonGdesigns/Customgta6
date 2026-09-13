@@ -115,7 +115,7 @@ namespace Bloodlines.Core
         public static bool Attach(Ped actor, Prop prop, Vector3 offset, Vector3 rotation)
         {
             if (actor == null || !actor.Exists() || prop == null || !prop.Exists()) return false;
-            try { prop.AttachTo(actor.Bones[Bone.PHRightHand], offset, rotation); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, actor); }
+            try { prop.IsPositionFrozen = false; prop.AttachTo(actor.Bones[Bone.PHRightHand], offset, rotation); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, actor); }
             catch (Exception ex) { Logger.Error("Prop could not be attached to the hand", ex); return false; }
         }
 
@@ -147,7 +147,7 @@ namespace Bloodlines.Core
         public static bool Stow(Prop prop, Entity into, Vector3 offset)
         {
             if (prop == null || !prop.Exists() || into == null || !into.Exists()) return false;
-            try { prop.Detach(); prop.AttachTo(into, offset, Vector3.Zero); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, into); }
+            try { prop.IsPositionFrozen = false; prop.Detach(); prop.AttachTo(into, offset, Vector3.Zero); return Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, prop, into); }
             catch (Exception ex) { Logger.Error("Prop could not be stowed", ex); return false; }
         }
 

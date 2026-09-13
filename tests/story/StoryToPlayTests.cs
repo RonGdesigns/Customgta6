@@ -86,7 +86,7 @@ public static partial class StoryTests
   Check(manager.Start(def)&&c.Cutscenes.IsActive,"The briefing plays");c.Cutscenes.Skip();manager.Update();
   Check(MissionContextCard.IsShowing&&manager.CurrentStage==0,"Skipping the briefing shows the card as gameplay begins");
   MissionContextCard.Clear();manager.ForceFail("test");manager.Update();Check(manager.RetryAvailable,"Failed");manager.Start(def);
-  Check(MissionContextCard.IsShowing,"A retry shows the recap");MissionContextCard.Clear();manager.Abort();
+  Check(!MissionContextCard.IsShowing,"A retry recap does not expire underneath the briefing");c.Cutscenes.Skip();manager.Update();manager.Update();Check(MissionContextCard.IsShowing,"A retry shows its recap when gameplay resumes");MissionContextCard.Clear();manager.Abort();
 
   // ---- M04 end to end: the reference mission.
   RunM04(killMiller:false);

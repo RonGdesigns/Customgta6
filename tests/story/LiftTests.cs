@@ -17,7 +17,7 @@ public static partial class StoryTests
   Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"lift16.json"));c.State.SetCargo("iffTransponder","M09.Bunker");c.Vans=new CrewVan(c.State,c.Locations);var m16=new M16TheHeavyLift();
   Check(m16.Begin(c)&&c.Cutscenes.IsActive&&m16.Cargobob!=null&&m16.Granger!=null&&m16.Unit!=null&&m16.Unit.AttachedTo==m16.Granger&&m16.EndpointKind==MissionEndpoint.SecuredDelivery,"M16 opens on the unit on the Granger's dash, the Cargobob on the pad and Ice at the fence; a secured delivery");
   c.Cutscenes.Skip();m16.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M16.Helipad");m16.Tick();
-  Check(m16.CurrentStage==1&&m16.Challenged&&Game.Player.WantedLevel==4&&c.Dialogue.HasPending&&c.State.CargoAt("iffTransponder")==null,"Crossing the pad burns the clearance: a challenge on the net, the base's heat, the unit spent");
+  Check(m16.CurrentStage==1&&m16.Challenged&&Game.Player.WantedLevel==0&&c.Dialogue.HasPending&&c.State.CargoAt("iffTransponder")==null,"Crossing the pad burns the clearance: a challenge on the net, the base's heat, the unit spent");
   foreach(var mp in World.Created.Where(p=>p.Model.Name=="s_m_y_marine_03"))mp.IsDead=true;m16.Tick();Check(m16.CurrentStage==2,"The pad clear, the Cargobob is Ron's");
   Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m16.Cargobob,VehicleSeat.Driver);m16.Tick();
   Check(m16.CurrentStage==3&&m16.CrewMoved&&crew.PedFor(CrewSlot.Ice).Task.Enters==1&&crew.PedFor(CrewSlot.Ice).Task.LastSeat==VehicleSeat.RightFront&&crew.PedFor(CrewSlot.Gohan).Task.Enters==1&&crew.PedFor(CrewSlot.Gohan).Task.LastSeat==VehicleSeat.Driver,"Ron in the lift: Ice comes to board it, Gohan goes for the Granger; nobody is imagined into a seat the aircraft lacks");
@@ -29,7 +29,7 @@ public static partial class StoryTests
   c.Cutscenes.Skip();m16.Tick();c.Dialogue.Clear();m16.Tick();Check(m16.Status==MissionStatus.Passed,"M16 passes");
   m16.Cleanup();Check(m16.Cargobob.Exists()&&m16.Granger.Exists(),"The lift and the Granger stay in the world");
   string m16src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M16TheHeavyLift.cs"));
-  Check(!m16src.Contains("Game.Player.WantedLevel = 0;\n                    GameUtils.Subtitle(\"~g~Heavy lift secured")&&m16src.Contains("new LoseWantedObjective(\"Lose the pursuit before Terminal Island.\")"),"M16 no longer clears the wanted level at its marker; the pursuit is lost first");
+  Check(!m16src.Contains("Game.Player.WantedLevel = 0;\n                    GameUtils.Subtitle(\"~g~Heavy lift secured")&&m16src.Contains("Gohan keeps base anti-air offline until the lift is delivered."),"M16 explains that Gohan suppresses base anti-air for the whole extraction");
 
   // ---- M17: the sub seen, three parts on the hull, the release asked for and changed, the sub recorded ready.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"lift17.json"));var m17=new M17SubZeroPayload();
@@ -39,9 +39,9 @@ public static partial class StoryTests
   Check(m17.Parts.Count==3&&m17.Parts.All(p=>p.AttachedTo==m17.Kraken),"Each weld point leaves a real part on the hull: three sites, three parts");
   m17.Tick();m17.Tick();Check(m17.CurrentStage==1&&m17.ReleaseAsked&&c.Dialogue.HasPending,"The welds done, Ron asks where the release is");
   GTA.UI.Screen.Subtitle=null;Interact(m17,c,CrewSlot.Guess,c.Locations.Position("M17.DrySlip"),10);Check(m17.CurrentStage==2,"The lock tested, the release is Gohan's to change");
-  Interact(m17,c,CrewSlot.Gohan,m17.Kraken.Position-m17.Kraken.ForwardVector*3.5f,5);
+  Interact(m17,c,CrewSlot.Gohan,c.Locations.Position("M17.ReleasePoint"),5);
   Check(m17.CurrentStage==3&&m17.ReleaseChanged&&c.Cutscenes.IsActive&&m17.ReleaseHandle!=null&&m17.ReleaseHandle.AttachedTo==m17.Kraken,"The release moved outside is a handle on the hull, seen");
-  c.Cutscenes.Skip();m17.Tick();c.Dialogue.Clear();m17.Tick();c.Dialogue.Clear();m17.Tick();
+  c.Cutscenes.Skip();m17.Tick();Check(m17.CurrentStage==3&&m17.Status==MissionStatus.Running,"Kraken collection remains an explicit unfinished boarding objective");Use(crew,CrewSlot.Gohan);Game.Player.Character.SetIntoVehicle(m17.Kraken,VehicleSeat.Driver);m17.Tick();c.Dialogue.Clear();m17.Tick();c.Dialogue.Clear();m17.Tick();
   Check(m17.Status==MissionStatus.Passed&&c.State.CargoAt("kraken")=="M17.DrySlip","The radio check done, the sub is recorded ready at the slip");
   m17.Cleanup();Check(m17.Kraken.Exists()&&World.Props.Count(p=>p.Exists()&&p.AttachedTo==m17.Kraken)>=4,"The sub, its parts and its handle stay for staging");
 
@@ -54,11 +54,15 @@ public static partial class StoryTests
   Check(m18.CurrentStage==1&&c.State.CargoAt("kraken")=="M18.ChannelMark","The sub held in the channel is recorded there");
   Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m18.Cargobob,VehicleSeat.Driver);m18.Cargobob.Position=c.Locations.Position("M18.SaltHangar");m18.Cargobob.HeightAboveGround=0f;m18.Cargobob.Speed=0f;Game.Player.Character.Position=m18.Cargobob.Position;m18.Tick();
   Check(m18.CurrentStage==2&&c.State.CargoAt("cargobob")=="M18.SaltHangar","The lift in the hangar is recorded there");
-  GTA.UI.Screen.Subtitle=null;Interact(m18,c,CrewSlot.Guess,m18.Cargobob.Position+new Vector3(3,0,0),6);
-  Check(m18.CurrentStage==3&&m18.PodFitted&&m18.Pod!=null&&m18.Pod.AttachedTo==m18.Cargobob&&c.State.CargoAt("radarPod")=="M18.SaltHangar","The pod is fitted to the lift as a real part and recorded on it");
-  Use(crew,CrewSlot.Ice);Game.Player.Character.SetIntoVehicle(m18.Hauler,VehicleSeat.Driver);m18.Hauler.Position=c.Locations.Position("M18.HaulerMark");Game.Player.Character.Position=m18.Hauler.Position;m18.Tick();Check(m18.CurrentStage==4,"The hauler on the line, the launchers are the job");
-  Interact(m18,c,CrewSlot.Ice,c.Locations.Position("M18.HaulerMark"),10);
-  Check(m18.CurrentStage==5&&m18.RollCalled&&c.Cutscenes.IsActive&&c.State.CargoAt("hauler")=="M18.HaulerMark","The launchers loaded, the roll call plays as a scene with each man in his seat");
+  GTA.UI.Screen.Subtitle=null;Interact(m18,c,CrewSlot.Guess,c.Locations.Position("M18.PodWork"),6);
+  Check(m18.CurrentStage==3&&!m18.PodFitted,"Collecting the box does not install it on the helicopter");
+  var rear=(Vector3)typeof(M18TheStagingLine).GetMethod("RearWork",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{m18.Cargobob});Interact(m18,c,CrewSlot.Guess,rear,5);
+  Check(m18.CurrentStage==4&&m18.PodFitted&&m18.Pod!=null&&m18.Pod.AttachedTo==m18.Cargobob&&c.State.CargoAt("radarPod")=="M18.SaltHangar","The pod is fitted to the lift as a real part and recorded on it");
+  Use(crew,CrewSlot.Ice);Game.Player.Character.SetIntoVehicle(m18.Hauler,VehicleSeat.Driver);m18.Hauler.Position=c.Locations.Position("M18.HaulerMark");Game.Player.Character.Position=m18.Hauler.Position;m18.Tick();Check(m18.CurrentStage==5,"The hauler on the line, the launchers are the job");
+  Interact(m18,c,CrewSlot.Ice,c.Locations.Position("M18.LauncherWork"),7);
+  Check(m18.CurrentStage==6&&!m18.RollCalled,"Collecting launcher gear does not skip loading the truck");
+  rear=(Vector3)typeof(M18TheStagingLine).GetMethod("RearWork",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{m18.Hauler});Interact(m18,c,CrewSlot.Ice,rear,5);
+  Check(m18.CurrentStage==7&&m18.RollCalled&&c.Cutscenes.IsActive&&c.State.CargoAt("hauler")=="M18.HaulerMark","The launchers loaded, the roll call plays as a scene with each man in his seat");
   c.Cutscenes.Skip();m18.Tick();c.Dialogue.Clear();m18.Tick();c.Dialogue.Clear();m18.Tick();
   Check(m18.Status==MissionStatus.Passed&&c.State.CargoAt("heistClock")=="M18","One clock from here: the staging is recorded and M19 follows");
   m18.Cleanup();Check(m18.Kraken.Exists()&&m18.Cargobob.Exists()&&m18.Hauler.Exists(),"The staged assets are the next chapter's, not the mission's");

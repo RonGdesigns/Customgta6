@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -30,6 +31,9 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Vehicle> _convoy = new List<Vehicle>();
         private readonly List<Ped> _crews = new List<Ped>();
 
+        private bool _shotStarted, _shotActive, _boardingHeld;
+        private int _shotUntil;
+        private float _previousScale = 1f;
         private Vehicle _frogger;
         private Ped _escortDriver;
         private Vehicle _escortTruck;
@@ -39,6 +43,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _pickup;
         private Vector3 _bunker;
         private bool _withdrawn, _withdrawalShown, _unitRead;
+        private Vector3 _routeForward, _stopForward, _lastEscortPosition;
+        private bool _convoyAtAmbush;
+        private int _lastEscortMove, _lastConvoyRetry, _convoyRetries, _hoverPilot, _lastRouteLog;
 
         public override string Id => "M09";
         public override string Title => "Rolling Thunder";
@@ -49,6 +56,7 @@ namespace Bloodlines.Missions.Campaign
         public Prop Unit => _unit;
         public bool Withdrawn => _withdrawn;
         public bool WithdrawalShown => _withdrawalShown;
+        public bool ConvoyAtAmbush => _convoyAtAmbush;
 
         protected override bool Setup()
         {
@@ -57,6 +65,18 @@ namespace Bloodlines.Missions.Campaign
             _ambush = Ctx.Locations.Position("M09.AmbushPoint");
             _pickup = Ctx.Locations.Position("M09.Pickup");
             _bunker = Ctx.Locations.Position("M09.Bunker");
+            if (Ctx.Locations.Get("M09.ConvoyStart")?.Status != LocationStatus.Surveyed &&
+                GameUtils.NearestRoadNode(_convoyStart,40f,out var startRoad,out float unusedStartHeading)) _convoyStart=startRoad;
+            if (Ctx.Locations.Get("M09.AmbushPoint")?.Status != LocationStatus.Surveyed &&
+                GameUtils.NearestRoadNode(_ambush,40f,out var ambushRoad,out float unusedAmbushHeading)) _ambush=ambushRoad;
+            var route=_ambush-_convoyStart;route.Z=0;
+            float length=(float)Math.Sqrt(route.X*route.X+route.Y*route.Y);
+            _routeForward=length>1?route*(1f/length):new Vector3(-1,0,0);
+            // The destination tangent has its own heading; the long route chord
+            // otherwise places the front trucks off the road on a bend.
+            float stopAngle=Ctx.Locations.Heading("M09.AmbushPoint")*(float)Math.PI/180f;
+            _stopForward=new Vector3(-(float)Math.Sin(stopAngle),(float)Math.Cos(stopAngle),0);
+            _convoyAtAmbush=false;_hoverPilot=0;_convoyRetries=0;
 
             if (!Ctx.Crew.Deploy(CrewSlot.Guess, Ctx.Locations.Position("M09.HeliSpawn"),
                     Ctx.Locations.Heading("M09.HeliSpawn")))
@@ -70,8 +90,9 @@ namespace Bloodlines.Missions.Campaign
             SpawnFrogger();
             SpawnConvoy();
             if (!RequireAssets(_frogger, _escortTruck, _escortDriver)) return false;
-            Station(CrewSlot.Ice, _ambush + new Vector3(0f, -35f, 0f));
-            Station(CrewSlot.Gohan, _bunker + new Vector3(8f, 0f, 0f));
+            if (_convoy.Count!=3||_crews.Count!=3) { GameUtils.Notify("M09 could not create all three convoy crews. Restart the mission.");return false; }
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M09.IceStart"));
+            Station(CrewSlot.Gohan, Ctx.Locations.Position("M09.GohanStart"));
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.SniperRifle, 80, true, true);
             PlayApproach();
             return true;
@@ -80,25 +101,32 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Get airborne",
-                    new EnterVehicleObjective("Guess — take the Frogger up.", () => _frogger,
-                        VehicleSeat.Driver))
+                    new EnterVehicleObjective("Guess: get into the Frogger's pilot seat.", () => _frogger,
+                        VehicleSeat.Driver),
+                    new ConditionObjective("Guess: lift off at least 8m above the ground; then the convoy starts moving.",
+                        () => _frogger != null && _frogger.Exists() && Game.Player.Character.IsInVehicle(_frogger) && _frogger.HeightAboveGround>=8f))
                 .OwnedBy(CrewSlot.Guess)
                 .WithCues("M09_S1_01_ICE");
 
             // Shadowing, not chasing: too close and the convoy's anti-air sees them.
             yield return new MissionStage("Shadow the convoy",
-                    new ShadowTargetObjective("Hold the ridgeline behind the convoy.",
-                        () => _escortTruck, 220f, 25, "The convoy spotted the helicopter and scattered.",
-                        60f, acquireSeconds: 180))
+                    new ConvoyOverwatchObjective(() => _frogger, () => _escortTruck, () => _convoyAtAmbush))
+                .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartConvoy())
                 .WithCues("M09_S1_02_GUESS");
 
             // The unit is in the escort's cab: the truck has to stop, not burn.
             yield return new MissionStage("Take the driver",
-                    new KillTargetsObjective("Ice: wait at the ambush point and shoot the marked escort driver.",
+                    new KillTargetsObjective("Ice: shoot the marked rear escort DRIVER through the cab window. Keep his truck intact; Guess holds the Frogger overhead.",
                         () => new[] { _escortDriver }),
                     EscortIntact())
                 .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context =>
+                {
+                    context.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                    OrderConvoy();
+                    GameUtils.Notify("~y~Switch to Ice.~s~ Shoot the marked escort driver, not the truck. Guess will hold the helicopter.");
+                })
                 .OnExit(context => EscortStopped())
                 .AfterCues("M09_S2_03_ICE");
 
@@ -114,20 +142,21 @@ namespace Bloodlines.Missions.Campaign
 
             // Ron lands on the flat past the culvert, not on the cab roof; Ice walks to it.
             yield return new MissionStage("The pickup",
-                    new DeliverVehicleObjective("Guess: land the Frogger on the marked flat past the culvert.", () => _frogger, () => _pickup, 14f, land: true),
+                    new DeliverVehicleObjective("Guess: land the Frogger on the marked open flat north of the road.", () => _frogger, () => _pickup, 14f, land: true),
                     new ProtectObjective("", () => _frogger, "The Frogger is gone."),
                     new ReactionTrigger(() => !_unitRead && !Ctx.Cutscenes.IsActive, ReadUnit))
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Ice aboard",
-                    new EnterVehicleObjective("Ice — board the Frogger.", () => _frogger, VehicleSeat.Any),
+                    new EnterVehicleObjective("Ice: board the landed Frogger. Use the passenger door or E / D-pad Right nearby.", () => _frogger, VehicleSeat.RightFront) { ContextBoarding = true },
                     new ProtectObjective("", () => _frogger, "The Frogger is gone."))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Transponder extraction",
-                    new ReachZoneObjective("Get the transponder to the temporary drop point.",
-                        () => _bunker, 30f, flat: true), // The permanent bunker unlock belongs to M23.
+                    new DeliverVehicleObjective("Guess: fly Ice and the transponder to the marked drop point and land.", () => _frogger, () => _bunker, 30f, land: true),
+                    new ConditionObjective("Keep Ice aboard with the transponder.", () => Ctx.Crew.PedFor(CrewSlot.Ice).IsInVehicle(_frogger)),
                     new ProtectObjective("", () => _frogger, "The Frogger is gone."))
+                .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
                     // One gate, one code: the unit's use is limited and said so.
@@ -143,6 +172,80 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- beats ----------
 
+        protected override void OnUpdate()
+        {
+            if (CurrentStage==1||CurrentStage==2) MaintainConvoy();
+            if (Status!=MissionStatus.Running) return;
+            base.OnUpdate();
+            MaintainHelicopter();
+            UpdateShotWindow();
+        }
+        private void UpdateShotWindow()
+        {
+            if (CurrentStage != 2 || Status != MissionStatus.Running) { EndShotWindow(); return; }
+            if (!_shotStarted && Ctx.Crew.ActiveSlot == CrewSlot.Ice && !Ctx.Switching.IsSwitching && !CharacterWheel.AnyOpen &&
+                GameUtils.IsWithinFlat(_escortTruck.Position, _ambush, 130f))
+            {
+                _shotStarted = _shotActive = true; _previousScale = Game.TimeScale;
+                _shotUntil = Game.GameTime + 4500;
+                Game.TimeScale = Math.Min(_previousScale, .3f);
+                GameUtils.Subtitle("~y~Ice: slow-motion shot. Aim through the escort cab window; keep the truck intact.", 4500);
+            }
+            if (_shotActive && (Game.GameTime >= _shotUntil || Ctx.Crew.ActiveSlot != CrewSlot.Ice)) EndShotWindow();
+        }
+        private void EndShotWindow()
+        {
+            if (!_shotActive) return;
+            _shotActive = false; CharacterWheel.RestoreTemporaryScale(Math.Min(_previousScale, .3f), _previousScale);
+        }
+
+        private void MaintainHelicopter()
+        {
+            if (Status!=MissionStatus.Running||CurrentStage<2) return;
+            var guess=Ctx.Crew.PedFor(CrewSlot.Guess);
+            if (CurrentStage >= 4)
+            {
+                if (_frogger != null && _frogger.Exists()) _frogger.LockStatus = VehicleLockStatus.Unlocked;
+                if (CurrentStage == 5 && guess != null && guess.Exists() && guess.IsInVehicle(_frogger) &&
+                    Ctx.Crew.ActiveSlot != CrewSlot.Guess && !_boardingHeld)
+                {
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                    Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, guess, _frogger, 27, 1000);
+                    _boardingHeld = true;
+                }
+                // A landed pickup must never be replaced with the old overhead hover task.
+                return;
+            }
+            if (Ctx.Crew.ActiveSlot==CrewSlot.Guess)
+            { Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess);_hoverPilot=0;return; }
+            if (guess==null||!guess.Exists()||guess.IsDead||_frogger==null||!_frogger.Exists()||!guess.IsInVehicle(_frogger)||guess.SeatIndex!=VehicleSeat.Driver) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+            if (_hoverPilot==guess.Handle||(!_frogger.IsInAir&&_frogger.HeightAboveGround<5f)) return;
+            var hover=_frogger.Position;hover.Z=Math.Max(hover.Z,_ambush.Z+50f);
+            guess.Task.StartHeliMission(_frogger,hover,VehicleMissionType.GoTo,18f,12f,(int)hover.Z,40,-1f,60f,(HeliMissionFlags)(256|4096));
+            _hoverPilot=guess.Handle;
+            Logger.Info("M09: Guess holds the Frogger while "+Ctx.Crew.ActiveSlot+" is controlled.");
+        }
+        private void MaintainConvoy()
+        {
+            if (_escortTruck==null||!_escortTruck.Exists()||_escortTruck.IsDead||_escortDriver==null||!_escortDriver.Exists()||_escortDriver.IsDead) return;
+            int now=Game.GameTime;
+            if (GameUtils.IsWithinFlat(_escortTruck.Position,_ambush,80f))
+            {
+                if (!_convoyAtAmbush) Logger.Info("M09 convoy reached the ambush; awaiting valid air contact or Ice's shot.");
+                _convoyAtAmbush=true;return;
+            }
+            if (_escortTruck.Position.DistanceTo(_lastEscortPosition)>3f)
+            { _lastEscortPosition=_escortTruck.Position;_lastEscortMove=now;_convoyRetries=0; }
+            if (now-_lastRouteLog>=15000)
+            { _lastRouteLog=now;Logger.Info("M09 convoy: stage "+CurrentStage+", "+(int)_escortTruck.Position.DistanceTo(_ambush)+"m to ambush, speed "+_escortTruck.Speed+", route retries "+_convoyRetries); }
+            if (now-_lastEscortMove<12000||now-_lastConvoyRetry<12000) return;
+            if (_convoyRetries>=4)
+            { Fail("The convoy is blocked before the ambush. Clear traffic, or edit M09.ConvoyStart / M09.AmbushPoint and restart.");return; }
+            _convoyRetries++;_lastConvoyRetry=now;OrderConvoy();
+            Logger.Warn("M09 convoy stalled; reissued road tasks (attempt "+_convoyRetries+").");
+        }
+
         /// <summary>The convoy, the escort, Ice's rock, Ron's flat: the whole job in three shots before anyone moves.</summary>
         private void PlayApproach()
         {
@@ -156,7 +259,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The convoy",
-                Reason = "Three Insurgents on the road with the rear one marked; Ice on his rock above the culvert; the flat past it where Ron will land. The colonel is in the middle vehicle and is not the job.",
+                Reason = "Three Insurgents on the road with the rear one marked; Ice on the roadside lookout; the open flat north of the road where Guess will land. The colonel is in the middle vehicle and is not the job.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M09 approach scene did not play; the ridge stands on its own.");
@@ -165,6 +268,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The escort stops; the colonel's vehicles do not. They pull away, and that is the reason nobody chases him.</summary>
         private void EscortStopped()
         {
+            EndShotWindow();
             if (_escortTruck != null && _escortTruck.Exists())
             {
                 _escortTruck.IsDriveable = false;
@@ -217,6 +321,9 @@ namespace Bloodlines.Missions.Campaign
         private void ReadUnit()
         {
             _unitRead = true;
+            // Pocket the visual prop after the read. Keep logical custody with Ice,
+            // but leave both hands free for the passenger-door entry animation.
+            if (_unit != null && _unit.Exists()) { _unit.Detach(); _unit.IsVisible = false; _unit.IsPositionFrozen = true; }
             Radio("GOHAN", "Reading it from here: 7-Echo-Victor is a checkpoint code, one gate, one use. It does not make anyone invisible.", "M09_RADIO_02_GOHAN");
         }
 
@@ -276,12 +383,11 @@ namespace Bloodlines.Missions.Campaign
             for (int i = 0; i < 3; i++)
             {
                 var truck = Track(World.CreateVehicle(truckModel,
-                    _convoyStart + new Vector3(0f, i * 18f, 0f),
-                    Ctx.Locations.Heading("M09.ConvoyStart")));
+                    _convoyStart - _routeForward * (i * 18f),
+                    DriveUpStep.HeadingBetween(_convoyStart, _ambush)));
                 if (truck == null || !truck.Exists()) continue;
 
                 truck.IsPersistent = true;
-                _convoy.Add(truck);
 
                 var driver = Track(World.CreatePed(crewModel, truck.Position, 0f));
                 if (driver == null || !driver.Exists()) continue;
@@ -290,7 +396,8 @@ namespace Bloodlines.Missions.Campaign
                 driver.IsPersistent = true;
                 driver.BlockPermanentEvents = true;
                 driver.Weapons.Give(WeaponHash.CarbineRifle, 150, true, true);
-                driver.Task.WarpIntoVehicle(truck, VehicleSeat.Driver);
+                driver.SetIntoVehicle(truck, VehicleSeat.Driver);
+                _convoy.Add(truck);
                 _crews.Add(driver);
 
                 // The rear vehicle is the escort — the one Ice is told to take.
@@ -312,18 +419,31 @@ namespace Bloodlines.Missions.Campaign
 
         private void StartConvoy()
         {
+            _lastEscortPosition=_escortTruck.Position;
+            _lastEscortMove=_lastConvoyRetry=_lastRouteLog=Game.GameTime;
+            OrderConvoy();
+        }
+        private void OrderConvoy()
+        {
             for (int i = 0; i < _crews.Count && i < _convoy.Count; i++)
             {
                 var driver = _crews[i];
                 var truck = _convoy[i];
                 if (driver == null || !driver.Exists() || truck == null || !truck.Exists()) continue;
 
-                driver.Task.DriveTo(truck, _ambush, 15f, 22f, DrivingStyle.AvoidTrafficExtremely);
+                if (driver.IsDead || truck.IsDead) continue;
+                var destination=_ambush+_stopForward*(240f+(2-i)*18f);
+                if (GameUtils.IsWithinFlat(truck.Position,destination,15f)) continue;
+                Function.Call(Hash.SET_DRIVER_ABILITY,driver,1f);
+                Function.Call(Hash.SET_PED_KEEP_TASK,driver,true);
+                driver.Task.DriveTo(truck,destination,8f,CurrentStage == 2 ? 10f : 18f,DrivingStyle.AvoidTrafficExtremely);
             }
         }
 
         protected override void OnCleanup()
         {
+            EndShotWindow();
+            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess);
             _convoy.Clear();
             _crews.Clear();
         }

@@ -31,9 +31,9 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Call
 
-**GUESS** (M01_SCENE_CALL_01_GUESS) — Unknown number. A yard on Terminal Island, one car, half the money up front. No names.
+**GUESS** (M01_SCENE_CALL_01_GUESS) — Yeah, this is Guess. Terminal Island? One car, half up front. Send the gate code and a photograph. Who am I working for?
 
-**GUESS** (M01_SCENE_CALL_02_GUESS) — Somebody knew I was back before I did. I'm going anyway.
+**GUESS** (M01_SCENE_CALL_02_GUESS) — No names. All right. I'll get your car. The balance clears before I hand over the keys. You hear me?
 
 **GUESS** (M01_SCENE_CALL_03_GUESS) — Bag stays packed. Keys. Whatever this is, I'm not unpacking for it.
 
@@ -113,7 +113,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Intro
 
-**GUESS** (M03_SCENE_INTRO_01_GUESS) — Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
+**GUESS** (M03_SCENE_INTRO_01_GUESS) — This foundry can be home, but an empty yard won't stop Aegis. We take the depot's weapons and make it somewhere we can defend.
 
 **GOHAN** (M03_SCENE_INTRO_02_GOHAN) — Guess delays the rail response. Ice clears the depot; I load its weapons. Then Guess brings the Benson home. Shared base, shared information.
 
@@ -141,7 +141,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M04_SCENE_INTRO_01_GOHAN) — Miller has our forensics and an Aegis buyer. The van's drive gave us the meeting. We need his copy.
 
-**GUESS** (M04_SCENE_INTRO_02_GUESS) — Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
+**GUESS** (M04_SCENE_INTRO_02_GUESS) — We leave the foundry separately and meet at the Pillbox lot. Gohan takes the breaker, Ice covers the exchange, I stop Miller and take his drive. We move when Gohan cuts the lights.
 
 ### Outro
 
@@ -239,9 +239,9 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Loading
 
-**GUESS** (M08_SCENE_LOADING_01_GUESS) — On the forks. Easy... easy. Seated. That's one.
+**GUESS** (M08_SCENE_LOADING_01_GUESS) — First crate seated and secured. One more. Keep them off the forklift.
 
-**GUESS** (M08_SCENE_LOADING_02_GUESS) — Two. Chain them down and we're gone before the loop drops.
+**GUESS** (M08_SCENE_LOADING_02_GUESS) — Both crates secured. As soon as the yard is clear, take the flatbed before the loop drops.
 
 ## M09 — ROLLING THUNDER
 
@@ -379,7 +379,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Approach
 
-**GOHAN** (M15_SCENE_APPROACH_01_GOHAN) — Service access on the side, the trunk one level down. The tap opens the lock gates and nothing else.
+**GOHAN** (M15_SCENE_APPROACH_01_GOHAN) — Service office on the apron, cable cabinet on its north wall. Work at that cabinet after Ice puts the watchmen down. The tap opens the lock gates and nothing else.
 
 **ICE** (M15_SCENE_APPROACH_02_ICE) — Three watchmen on rounds, night shift. Stun gun, all three, before you're committed to the cable.
 
@@ -401,7 +401,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M16_SCENE_APPROACH_01_ICE) — The unit's on the dash: 7-Echo-Victor, one gate, once. The outer yard reads us as friendly. The inner pad won't.
 
-**GUESS** (M16_SCENE_APPROACH_02_GUESS) — The Cargobob on the pad is mine. You clear it, I spool it, we leave through Raton Canyon low and set down on the flats at Terminal.
+**GUESS** (M16_SCENE_APPROACH_02_GUESS) — We drive in from the freeway. Ice clears the hangar and boards while I come over. Countermeasures cover our departure briefly; then we stay low through Raton Canyon.
 
 ### Lift
 
@@ -425,15 +425,15 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Approach
 
-**GUESS** (M17_SCENE_APPROACH_01_GUESS) — Same sub that mapped the hull, hauled into the slip. Torches on the nose, grapples on the belly, and I want to see where the release is.
+**GUESS** (M17_SCENE_APPROACH_01_GUESS) — Same sub that mapped the hull, moored beside the quay. Prepare the three torch modules on the workbenches. I test the magnetic lock, then you fit its emergency release.
 
 **ICE** (M17_SCENE_APPROACH_02_ICE) — I've got the pickup gear. When it's done, we test it before anybody sleeps.
 
 ### Release
 
-**GOHAN** (M17_SCENE_RELEASE_01_GOHAN) — Outside the hull, rear quarter, a handle either of you can pull. I learned to work alone. That doesn't mean I want to die that way.
+**GOHAN** (M17_SCENE_RELEASE_01_GOHAN) — External control, rear quarter. Either of you can release the grapples if I cannot. I learned to work alone. That does not mean I want to die that way.
 
-**GUESS** (M17_SCENE_RELEASE_02_GUESS) — Pull it once so I can hear it. Good. Now it's a boat with a door.
+**GUESS** (M17_SCENE_RELEASE_02_GUESS) — Test that release once so I can hear it. Good. Now somebody outside can help.
 
 ## M18 — THE STAGING LINE
 
@@ -451,7 +451,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Approach
 
-**ICE** (M18_SCENE_APPROACH_01_ICE) — Map's on the hood. Gohan takes the sub down the channel to hold three. Ron lifts the container out from the flats. The launch runs the water route with me on it; the load goes inland.
+**ICE** (M18_SCENE_APPROACH_01_ICE) — Routes are on your screens. Gohan takes the sub to the channel mouth. Ron flies to the staging apron and fits the pod. I drive the hauler down and load the launchers.
 
 **GOHAN** (M18_SCENE_APPROACH_02_GOHAN) — Sub, lift, launch, pickup: one man each. The pod goes on the lift tonight so I can switch it on from the channel. Nobody is a fourth man.
 
@@ -545,7 +545,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GOHAN** (M23_SCENE_OUTRO_01_GOHAN) — The bunker holds. I can work here. We still need fuel and money to keep three people alive out here.
+**GOHAN** (M23_SCENE_OUTRO_01_GOHAN) — The yard has power and the gate works. The underground rooms stay sealed for now. We still need fuel and money to keep three people alive out here.
 
 **GUESS** (M23_SCENE_OUTRO_02_GUESS) — Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
 
@@ -553,7 +553,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M23_SCENE_APPROACH_01_ICE) — Nine of them in the yard, on the walkway and in the bays. They live here; they'll fight for it. I go up to the dome first.
 
-**GUESS** (M23_SCENE_APPROACH_02_GUESS) — Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, what's the generator house look like?
+**GUESS** (M23_SCENE_APPROACH_02_GUESS) — Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, check that trailer generator before we touch the gate.
 
 ## M24 — LIQUID GOLD
 
@@ -649,6 +649,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M28_SCENE_OUTRO_02_GOHAN) — Then we steal power we can store. I'm done making plans that depend on nobody noticing us forever.
 
+### Approach
+
+**GOHAN** (M28_SCENE_APPROACH_01_GOHAN) — The laptop on that service table controls the repeater. Shared feed buys time, dispatch cuts their numbers, cameras keeps Ice's cover out of their picture. Pick one first; the splice finishes the job.
+
+**GUESS** (M28_SCENE_APPROACH_02_GUESS) — I'm holding the Granger on the extraction road. Ice owns the approach. Tell me when the case is connected and both response teams are clear; I won't pull out early.
+
+### Splice
+
+**GOHAN** (M28_SCENE_SPLICE_01_GOHAN) — Case is connected. The north's coordinated picture is down. Their people are still out there; this only gives us a window.
+
+**ICE** (M28_SCENE_SPLICE_02_ICE) — I saw what your first cut changed. Now we get to Guess before somebody finds another way to call us in.
+
 ## M29 — DUST & DIESEL
 
 ### Intro
@@ -662,6 +674,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M29_SCENE_OUTRO_01_GOHAN) — Generator reserves secured. The satellite gear still needs parts before I can read the offshore traffic cleanly.
 
 **GUESS** (M29_SCENE_OUTRO_02_GUESS) — I can run the ridge with those parts. I'll tell you when it stops feeling like a delivery.
+
+### Approach
+
+**GUESS** (M29_SCENE_APPROACH_01_GUESS) — Orange tractor, coupled tanker. That's our load, not the whole depot. Ice, clear the guards and use the transfer laptop at the worktable. I stage by the truck.
+
+**GOHAN** (M29_SCENE_APPROACH_02_GOHAN) — I'll watch the approach. Wait for Ice's full-tank call. If the cab fills up, I take another car and follow; don't leave the trailer behind trying to fit us all in.
+
+### Reserves
+
+**GOHAN** (M29_SCENE_RESERVES_01_GOHAN) — Fuel into the yard reserves. The generator has something to run on now. That solves power, not what we can see from here.
+
+**ICE** (M29_SCENE_RESERVES_02_ICE) — Then get your receiver working. I'm tired of finding out who's coming when they're already at the fence.
 
 ## M30 — REDLINE RIDGE
 
@@ -677,6 +701,24 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M30_SCENE_OUTRO_02_ICE) — Agreed. While Gohan fits them, we reinforce the perimeter. We can't afford another Cypress.
 
+### Approach
+
+**GUESS** (M30_SCENE_APPROACH_01_GUESS) — Parts case is secured on the 6x6. We're taking the road to the bend, then the canyon exit, then the bunker unloading area. Nobody draws me a shortcut down a cliff.
+
+**GOHAN** (M30_SCENE_APPROACH_02_GOHAN) — The highway has checks. This route keeps the load off it. Ice and I stay in the truck and cover you; if a turn is wrong, slow down and take the space you need.
+
+### Unload
+
+**GUESS** (M30_SCENE_UNLOAD_01_GUESS) — Same case, off the truck and onto your table. That's my end done. Go check whether any of that rough ride shook it loose.
+
+**GOHAN** (M30_SCENE_UNLOAD_02_GOHAN) — I'll get out and fit it here. You two keep an eye on the yard while I bring the receiver up.
+
+### Reception
+
+**GOHAN** (M30_SCENE_RECEPTION_01_GOHAN) — Receiver's reading the offshore traffic now. That's movement we can watch, not their access codes and not a safe way inside.
+
+**ICE** (M30_SCENE_RECEPTION_02_ICE) — Good. We watch first and protect this place while we learn. No charging another gate because a screen lit up.
+
 ## M31 — THE IRON PERIMETER
 
 ### Intro
@@ -691,6 +733,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M31_SCENE_OUTRO_02_ICE) — Then we take the smallest team and the clearest route. No one earns trust by taking every risk himself.
 
+### Approach
+
+**ICE** (M31_SCENE_APPROACH_01_ICE) — Three approaches. I check them before Gohan arms anything. Guess, prove the withdrawal road with the car.
+
+**GOHAN** (M31_SCENE_APPROACH_02_GOHAN) — Physical barriers and limited charges. We still have to defend them ourselves. Stay out of the charge lanes once I arm them.
+
 ## M32 — BLACK SITE ZANCUDO
 
 ### Intro
@@ -701,9 +749,27 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GOHAN** (M32_SCENE_OUTRO_01_GOHAN) — Warheads secured. We still lack access codes. An Aegis engineer named Ramos is marked for execution on the flats.
+**GOHAN** (M32_SCENE_OUTRO_01_GOHAN) — Warheads secured. We still lack access codes. An Aegis engineer named Ramos is scheduled for execution on the flats.
 
 **GUESS** (M32_SCENE_OUTRO_02_GUESS) — Then we go for Ramos as a person first. If he can't give us anything, we still bring him back.
+
+### Approach
+
+**GOHAN** (M32_SCENE_APPROACH_01_GOHAN) — River-mouth landing first. I use the coast cabinet; Ice covers the service post. The cases are outside the temporary office, not underground.
+
+**GUESS** (M32_SCENE_APPROACH_02_GUESS) — Call when the yard is clear and I bring the car in. One case at a time, then all three of us leave by road.
+
+### Access
+
+**GOHAN** (M32_SCENE_ACCESS_01_GOHAN) — Service barrier answered. Ice, four guards around two sealed cases. Keep the cargo out of your firing line.
+
+**ICE** (M32_SCENE_ACCESS_02_ICE) — I see them. Stay at the cabinet until I call you through.
+
+### Delivery
+
+**GUESS** (M32_SCENE_DELIVERY_01_GUESS) — Both cases stayed with the car. They're on the table now, not left behind at the coast.
+
+**GOHAN** (M32_SCENE_DELIVERY_02_GOHAN) — Hardware is only one part. Ramos knows what the rig protects, and somebody wants him dead before he can say it.
 
 ## M33 — THE INFORMANT'S GRAVE
 
@@ -719,19 +785,43 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M33_SCENE_OUTRO_02_ICE) — You heard him. We guard the man before we spend what he knows.
 
+### Approach
+
+**ICE** (M33_SCENE_APPROACH_01_ICE) — Unarmed man at the firing line is Ramos. We close in, stop the four guards, and let Gohan cut him loose. Don't put a round through the person we're rescuing.
+
+**GUESS** (M33_SCENE_APPROACH_02_GUESS) — I'll bring the car when you call. Front seat for Ramos, back seats for you two. No one stays on that flat.
+
+### Handoff
+
+**GUESS** (M33_SCENE_HANDOFF_01_GUESS) — He's in the half-track. That seat is his until we reach help. The rest of the route gets armor, not another interrogation.
+
+**ICE** (M33_SCENE_HANDOFF_02_ICE) — I'll take the gun. Gohan can follow in our car and keep talking to him over the radio.
+
 ## M34 — MUD & IRON
 
 ### Intro
 
 **GUESS** (M34_SCENE_INTRO_01_GUESS) — Ramos needs a way through the storm. The half-track can take hits; he can't. Call targets without shouting over him.
 
-**ICE** (M34_SCENE_INTRO_02_ICE) — I'll cover your side. Gohan, stay with Ramos. He ought to hear one calm voice in this thing.
+**ICE** (M34_SCENE_INTRO_02_ICE) — I'll cover your side. Gohan, stay close in the escort car. Ramos ought to hear one calm voice over the radio.
 
 ### Outro
 
 **GOHAN** (M34_SCENE_OUTRO_01_GOHAN) — He's safe enough to talk when he's ready. His rig codes help, but an extraction still needs protection from aircraft.
 
 **GUESS** (M34_SCENE_OUTRO_02_GUESS) — Chianski convoy has a technical we can use. We get it because this rescue has to have a way home.
+
+### Departure
+
+**GUESS** (M34_SCENE_DEPARTURE_01_GUESS) — Three seats in this thing. Ramos in front, Ice on the gun, me at the wheel. Gohan, bring our car and call the road barriers when we're both clear.
+
+**GOHAN** (M34_SCENE_DEPARTURE_02_GOHAN) — I'm right behind you. Ramos, listen to my voice. We'll get you to the medical station before we ask you for anything.
+
+### Medical
+
+**GOHAN** (M34_SCENE_MEDICAL_01_GOHAN) — He's breathing steadily now. He gave us an access-code copy when he was ready. That is information, not a promise the rig is safe.
+
+**GUESS** (M34_SCENE_MEDICAL_02_GUESS) — Good. He can rest here. We protect our way out before anybody puts him near another gunfight.
 
 ## M35 — THE CHIANSKI AMBUSH
 
@@ -747,11 +837,23 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **ICE** (M35_SCENE_OUTRO_02_ICE) — Send us the footage too. This time the risk assessment belongs to everybody.
 
+### Approach
+
+**GOHAN** (M35_SCENE_APPROACH_01_GOHAN) — The laptop identifies a machine-gun technical behind the lead escort. No missiles. We need its gun and its wheels intact.
+
+**ICE** (M35_SCENE_APPROACH_02_ICE) — I plant the charges and get clear. Guess shuts the far exit. The convoy comes through only after everybody calls ready.
+
+### Delivery
+
+**GOHAN** (M35_SCENE_DELIVERY_01_GOHAN) — Same truck, same gun mount. Brakes and armor get checked before it supports an extraction. It won't solve an offshore attack on its own.
+
+**ICE** (M35_SCENE_DELIVERY_02_ICE) — Then you survey the water and send us what you find. No one plans the next risk alone.
+
 ## M36 — DEEP WELL RECON
 
 ### Intro
 
-**GOHAN** (M36_SCENE_INTRO_01_GOHAN) — Ramos's codes get us access, not a clear sea. I'm mapping the sonar and depth-charge tubes before we commit.
+**GOHAN** (M36_SCENE_INTRO_01_GOHAN) — Ramos's codes get us access, not a clear sea. I'm mapping the coastal sensor route before we commit.
 
 **GUESS** (M36_SCENE_INTRO_02_GUESS) — Call what worries you while you're looking at it. Don't save the bad news for the finished diagram.
 
@@ -760,6 +862,24 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M36_SCENE_OUTRO_01_GOHAN) — We need a screen over the surface approach and charges below it. Start with smoke aircraft at McKenzie.
 
 **ICE** (M36_SCENE_OUTRO_02_ICE) — You came back with reasons to wait. That's a successful recon. We build what the plan actually needs.
+
+### Approach
+
+**GOHAN** (M36_SCENE_APPROACH_01_GOHAN) — Three sensor housings on the coastal approach. I scan each in the sub; Ice stays on shore and Guess holds the pickup.
+
+**GUESS** (M36_SCENE_APPROACH_02_GUESS) — If that pickup gets exposed, I move. You return to my new pickup, not where I used to be.
+
+### Patrol
+
+**ICE** (M36_SCENE_PATROL_01_ICE) — A patrol is coming into the old pickup. Guess, take the boat around to the alternate pickup.
+
+**GOHAN** (M36_SCENE_PATROL_02_GOHAN) — I will stay under and follow once you are stopped.
+
+### Survey
+
+**GOHAN** (M36_SCENE_SURVEY_01_GOHAN) — Three readings, and both craft back together. I can give you the limits now.
+
+**ICE** (M36_SCENE_SURVEY_02_ICE) — Good. A measured reason to wait beats a brave guess.
 
 ## M37 — THE GRAPESEED HARVEST
 
@@ -775,6 +895,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M37_SCENE_OUTRO_02_GOHAN) — Davis Quartz has seismic stock. We take enough for the surveyed columns, not enough to impress each other.
 
+### Approach
+
+**GUESS** (M37_SCENE_APPROACH_01_GUESS) — I fly the first Duster to Sandy. Ice, clear the other strip and bring the second.
+
+**GOHAN** (M37_SCENE_APPROACH_02_GOHAN) — Separate spaces on the apron. I need room to fit and test both kits.
+
+### Payload
+
+**GOHAN** (M37_SCENE_PAYLOAD_01_GOHAN) — Both releases worked. That is a screen we can test, not an invisibility switch.
+
+**GUESS** (M37_SCENE_PAYLOAD_02_GUESS) — Then we plan around the wind instead of blaming it later.
+
 ## M38 — BLOOD IN THE QUARRY
 
 ### Intro
@@ -789,6 +921,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M38_SCENE_OUTRO_02_GOHAN) — Its undersea cable is next. One system at a time, with a reason for each one.
 
+### Approach
+
+**ICE** (M38_SCENE_APPROACH_01_ICE) — Four charge packages beside that cabinet. I clear the yard; Gohan releases the stock.
+
+**GUESS** (M38_SCENE_APPROACH_02_GUESS) — Call me into the loading lane. We carry every package into the same truck.
+
+### Delivery
+
+**GOHAN** (M38_SCENE_DELIVERY_01_GOHAN) — Four accounted for. Nobody disappears from the count when the camera changes.
+
+**ICE** (M38_SCENE_DELIVERY_02_ICE) — Same rule for us when we go offshore.
+
 ## M39 — THE PALETO CABLE
 
 ### Intro
@@ -801,13 +945,31 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M39_SCENE_OUTRO_01_GOHAN) — Mainland link severed. I can do the underwater work. I still need to know the boats can take us off that platform.
 
-**GUESS** (M39_SCENE_OUTRO_02_GUESS) — Bring your drawings to the sea cave. We'll put the armor where your exit actually reaches the water.
+**GUESS** (M39_SCENE_OUTRO_02_GUESS) — Bring your drawings to the open cove. We'll put the armor where your exit actually reaches the water.
+
+### Approach
+
+**GOHAN** (M39_SCENE_APPROACH_01_GOHAN) — The surveyed route leads to the junction. The sub carries the cutter; I stay inside it.
+
+**ICE** (M39_SCENE_APPROACH_02_ICE) — I hold the shore. Cutting their cable does not mean cutting your way home.
+
+### Clamp
+
+**GOHAN** (M39_SCENE_CLAMP_01_GOHAN) — Clamp attached to the junction. Now the cutter cycle, then a link check.
+
+**GUESS** (M39_SCENE_CLAMP_02_GUESS) — I will keep the pickup where we agreed.
+
+### Return
+
+**GOHAN** (M39_SCENE_RETURN_01_GOHAN) — Link cut, sub back, all three accounted for.
+
+**GUESS** (M39_SCENE_RETURN_02_GUESS) — Now we test the boats at the open cove before we depend on them.
 
 ## M40 — THE PHANTOM RIGGING
 
 ### Intro
 
-**GUESS** (M40_SCENE_INTRO_01_GUESS) — These boats are the last part we touch after the rig. Plates, glass, engines. Test them loaded, not empty.
+**GUESS** (M40_SCENE_INTRO_01_GUESS) — These boats are the last part we touch after the rig. Hull kits, equipment, engines. Test them loaded, not empty.
 
 **ICE** (M40_SCENE_INTRO_02_ICE) — Put my ammunition on the scale. If I ask for armor and speed, I have to admit what my gear costs.
 
@@ -816,6 +978,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GOHAN** (M40_SCENE_OUTRO_01_GOHAN) — Boats are ready. Bradley can still authorize mainland air strikes. We need his authority and his access card removed.
 
 **ICE** (M40_SCENE_OUTRO_02_ICE) — I'll go to the lodge. You'll get the route and the return time before I leave.
+
+### Approach
+
+**GUESS** (M40_SCENE_APPROACH_01_GUESS) — Kits on shore, boats in the water. We work where we can reach the hardware.
+
+**ICE** (M40_SCENE_APPROACH_02_ICE) — I check our carried guns on those targets. Gohan checks the route; then we each take a boat out.
+
+### Fleet
+
+**GOHAN** (M40_SCENE_FLEET_01_GOHAN) — Two loaded sea trials complete. Bradley is still able to call in air support.
+
+**ICE** (M40_SCENE_FLEET_02_ICE) — I will take the lodge job with a route and a return time. You will know both.
 
 ## M41 — THE GENERAL'S WIRE
 
@@ -831,11 +1005,17 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GOHAN** (M41_SCENE_OUTRO_02_GOHAN) — We deploy the sub next. Thanks for saying you're coming back instead of just going silent.
 
+### Approach
+
+**GOHAN** (M41_SCENE_APPROACH_01_GOHAN) — Marine officer by the lodge. The worker beside him is only there to open up. Let them separate.
+
+**ICE** (M41_SCENE_APPROACH_02_ICE) — I see them. Guess, keep that engine warm. I want a way back when this is done.
+
 ## M42 — SKYFALL DELIVERY
 
 ### Intro
 
-**GUESS** (M42_SCENE_INTRO_01_GUESS) — The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I open the cargo ramp.
+**GUESS** (M42_SCENE_INTRO_01_GUESS) — The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I release the cradle.
 
 **GOHAN** (M42_SCENE_INTRO_02_GOHAN) — I'm trusting you with the part I can't check from inside the hull. If I'm quiet, it's concentration, not permission.
 
@@ -844,6 +1024,12 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M42_SCENE_OUTRO_01_GUESS) — Sub deployed. That one had my nerves up. Nobody put that in the flight log.
 
 **ICE** (M42_SCENE_OUTRO_02_ICE) — Put it in. Then somebody reading the plan knows what it asks of a person. We regroup at staging.
+
+### Cradle
+
+**GOHAN** (M42_SCENE_CRADLE_01_GOHAN) — Hull sealed. Both canopy lines are clear. This cradle feels a lot less solid with the coast behind us.
+
+**GUESS** (M42_SCENE_CRADLE_02_GUESS) — Then keep talking. I need your voice more than a green light on a panel.
 
 ## M43 — STAGING PALETO
 
@@ -858,6 +1044,18 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 **GUESS** (M43_SCENE_OUTRO_01_GUESS) — Final check: the exit stays open even if the vault doesn't. We came north as three people. We leave with three.
 
 **ICE** (M43_SCENE_OUTRO_02_ICE) — Agreed. Gohan starts beneath the platform. The rest of us move on his call.
+
+### Approach
+
+**ICE** (M43_SCENE_APPROACH_01_ICE) — We stay in our own vehicles. Confirm your position before anybody starts planning the victory speech.
+
+**GUESS** (M43_SCENE_APPROACH_02_GUESS) — No speech. Just an empty seat for everyone coming home.
+
+### Ready
+
+**GOHAN** (M43_SCENE_READY_01_GOHAN) — Ramos, the card, the charges, the survey. None of this came free. We know what every piece cost.
+
+**ICE** (M43_SCENE_READY_02_ICE) — Then we use the exit we built. Nobody stays behind to make a point.
 
 ## M44 — PALETO DEEP-SEA: SUB-SURFACE
 
@@ -1289,7 +1487,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Approach
 
-**GOHAN** (SM02_SCENE_APPROACH_01_GOHAN) — Roof access on the service side, the server bay one floor down, the terminal at the back. Camera archive, nothing else. Check-in in twenty minutes.
+**GOHAN** (SM02_SCENE_APPROACH_01_GOHAN) — The service stairwell reaches the roof. Security keeps the relay terminal up there. Camera archive, nothing else. Check-in in twenty minutes.
 
 **ICE** (SM02_SCENE_APPROACH_02_ICE) — Twenty minutes. If we don't hear you we notice; we don't come. That's the deal.
 
@@ -1297,49 +1495,73 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Intro
 
-**KJ** (SM03_SCENE_INTRO_01_KJ) — Guess, I checked the prize. Transmission and clutch are real. Marabunta's promise to race clean? I wouldn't put money on that.
+**KJ** (SM03_SCENE_INTRO_01_KJ) — Bring your own car. I booked a northbound sprint: city streets, the freeway, then the Chiliad trail to the summit. Two rivals are waiting.
 
-**GUESS** (SM03_SCENE_INTRO_02_GUESS) — You got me a place on the grid, KJ. That's enough. Stay clear when it starts; I need my friend around after the finish.
+**GUESS** (SM03_SCENE_INTRO_02_GUESS) — My car, my setup. Keep the finish honest, KJ. I want the twenty-five grand and that transmission deal earned clean.
 
 ### Outro
 
-**KJ** (SM03_SCENE_OUTRO_01_KJ) — I saw the guns. Prize is secured, but don't come back here tonight. Winning doesn't make those people good losers.
+**KJ** (SM03_SCENE_OUTRO_01_KJ) — Clean win. You made that climb look easy. I'm sending the purse and reserving the transmission for the crew.
 
-**GUESS** (SM03_SCENE_OUTRO_02_GUESS) — Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call when the parts get back to the crew.
+**GUESS** (SM03_SCENE_OUTRO_02_GUESS) — That's why I call you. Keep the deal straight and I'll keep the car straight. Mostly.
 
 ### Approach
 
-**KJ** (SM03_SCENE_APPROACH_01_KJ) — Transmission and clutch, real, in the crate on your tail. Those Elegys are tuned and the men in them are not clean.
+**KJ** (SM03_SCENE_APPROACH_01_KJ) — Two rivals, one mountain finish. The course runs north on the freeway, then up the Chiliad trail.
 
-**GUESS** (SM03_SCENE_APPROACH_02_GUESS) — Then I'll be clean for both of us. Stay off the grid when it starts, KJ. I want you around after.
+**GUESS** (SM03_SCENE_APPROACH_02_GUESS) — I'll take the freeway north, then ease off for the climb. Stay on the radio, KJ.
 
 ## SM04 — DEAD DROP QUARRY
 
 ### Intro
 
-**ICE** (SM04_SCENE_INTRO_01_ICE) — The quarry snipers are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
+**ICE** (SM04_SCENE_INTRO_01_ICE) — The quarry marksmen are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
 
-**GOHAN** (SM04_SCENE_INTRO_02_GOHAN) — I can monitor your check-ins. Being quiet around them doesn't mean being silent with us.
+**GOHAN** (SM04_SCENE_INTRO_02_GOHAN) — Two radio sets, two frequencies. Bring both back intact. Quiet around them doesn't mean silent with us.
 
 ### Outro
 
-**ICE** (SM04_SCENE_OUTRO_01_ICE) — Both nests cleared. Their radios give us a warning channel. I sent the frequencies to both of you.
+**ICE** (SM04_SCENE_OUTRO_01_ICE) — Both radios recovered and copied. We can listen to those channels; that doesn't mean every patrol uses them.
 
-**GUESS** (SM04_SCENE_OUTRO_02_GUESS) — Good. No single point of failure, including the man carrying the rifle.
+**GUESS** (SM04_SCENE_OUTRO_02_GUESS) — And you checked in before I had to call. That's a good habit to bring home.
+
+### Approach
+
+**ICE** (SM04_SCENE_APPROACH_01_ICE) — One post on each service track. The radios are on the ground at the listening posts. I clear both shooters, collect both sets, then return to this approach.
+
+**GOHAN** (SM04_SCENE_APPROACH_02_GOHAN) — I'll copy the frequencies when you reach the exit. I'm on the radio, not over your shoulder.
+
+### Radios
+
+**ICE** (SM04_SCENE_RADIOS_01_ICE) — Two sets in the bag. Sending the channel list now.
+
+**GOHAN** (SM04_SCENE_RADIOS_02_GOHAN) — Both received. Keep the originals. We'll store the copies with the crew's radio archive.
 
 ## SM05 — BLACK BOX ESTUARY
 
 ### Intro
 
-**GOHAN** (SM05_SCENE_INTRO_01_GOHAN) — The swamp buoy can feed us military flight telemetry. I'll make the splice alone while its patrol passes.
+**GOHAN** (SM05_SCENE_INTRO_01_GOHAN) — The estuary monitoring buoy can feed us flight telemetry. One interceptor, one person in the water.
 
-**GUESS** (SM05_SCENE_INTRO_02_GUESS) — I'll keep a return window open. You don't have to use it to prove it was worth setting up.
+**GUESS** (SM05_SCENE_INTRO_02_GUESS) — Leave yourself a way back. Moor that dinghy before you swim out.
 
 ### Outro
 
-**GOHAN** (SM05_SCENE_OUTRO_01_GOHAN) — Telemetry received. It supplements our recon; it doesn't tell us every pilot's next thought. I'm heading back.
+**GOHAN** (SM05_SCENE_OUTRO_01_GOHAN) — Telemetry received. It supplements recon; it doesn't tell us every pilot's next thought.
 
-**ICE** (SM05_SCENE_OUTRO_02_ICE) — Job's done. Come eat before Ron starts calling your phone again.
+**ICE** (SM05_SCENE_OUTRO_02_ICE) — Then come eat. The boat got you there; let it bring you back too.
+
+### Approach
+
+**GOHAN** (SM05_SCENE_APPROACH_01_GOHAN) — That's the monitoring buoy. I'll stop the dinghy beside it, fit the interceptor at its service harness, then return to this landing.
+
+**GUESS** (SM05_SCENE_APPROACH_02_GUESS) — Your dinghy waits while you work. No swimming home to prove a point.
+
+### Interceptor
+
+**GOHAN** (SM05_SCENE_INTERCEPTOR_01_GOHAN) — Interceptor fastened. Testing the feed now.
+
+**ICE** (SM05_SCENE_INTERCEPTOR_02_ICE) — Signal is coming through. That's the work finished. Get back aboard.
 
 ## SM06 — CANYON RUNNER
 
@@ -1351,13 +1573,21 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Outro
 
-**GUESS** (SM06_SCENE_OUTRO_01_GUESS) — Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
+**GUESS** (SM06_SCENE_OUTRO_01_GUESS) — Fuel delivered to the receiving bay. I brought the tanker, not just the tractor.
 
-**GOHAN** (SM06_SCENE_OUTRO_02_GOHAN) — You actually slowed down.
+**GOHAN** (SM06_SCENE_OUTRO_02_GOHAN) — And you slowed down for the blind bends. That's the part I want repeated.
 
-**GUESS** (SM06_SCENE_OUTRO_03_GUESS) — Don't sound so surprised.
+### Approach
 
-**GOHAN** (SM06_SCENE_OUTRO_04_GOHAN) — I am.
+**GUESS** (SM06_SCENE_APPROACH_01_GUESS) — The aviation fuel is already in the tanker. I take the coupled rig through the canyon and stop both vehicles in McKenzie's unloading bay.
+
+**ICE** (SM06_SCENE_APPROACH_02_ICE) — Bikes have been lifting deliveries on that road. Keep the cargo moving. You don't need to chase them back.
+
+### Delivery
+
+**GUESS** (SM06_SCENE_DELIVERY_01_GUESS) — Rig parked. Fuel transfer complete at the receiving equipment.
+
+**GOHAN** (SM06_SCENE_DELIVERY_02_GOHAN) — McKenzie's reserves are logged. Another aircraft can leave when we need one. Come home, Guess.
 
 ## SM07 — BLOOD DEBT
 

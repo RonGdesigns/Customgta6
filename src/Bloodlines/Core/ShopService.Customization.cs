@@ -7,6 +7,40 @@ namespace Bloodlines.Core
 {
     public sealed partial class ShopService
     {
+        private bool _previewing;
+        private Vehicle _previewCar;
+        private OwnedVehicle _previewBuild;
+        private Func<bool> _previewBuy;
+        private ShopSite _previewSite;
+        public int PreviewPrice { get; private set; }
+        public float[] PreviewPerformance { get; private set; }
+        public bool HasVehiclePreview => _previewCar != null;
+        // Auto-save services must never capture a temporarily fitted preview.
+        public static int PreviewVehicleHandle { get; private set; }
+        public bool BeginVehiclePreview(ShopSite site, Func<bool> buy)
+        {
+            CancelVehiclePreview(); var car=Car(site); if(car==null||buy==null)return false;
+            PreviewPerformance=ShopPerformance.Vehicle(car);
+            _previewCar=car; _previewSite=site; _previewBuy=buy;
+            _previewBuild=new OwnedVehicle(); if(!GarageService.Capture(car,_previewBuild)){_previewCar=null;_previewBuild=null;_previewBuy=null;_previewSite=null;return false;}
+            // Capture includes stock slots too: cancel must REMOVE an unpaid part.
+            for(int i=0;i<50;i++)_previewBuild.Mods[i]=Function.Call<int>(Hash.GET_VEHICLE_MOD,car,i);
+            PreviewVehicleHandle=car.Handle;
+            bool ok=false;
+            try { _previewing=true; ok=buy(); return ok; }
+            finally { _previewing=false; if(!ok)CancelVehiclePreview(); }
+        }
+        public void CancelVehiclePreview()
+        {
+            try { if(_previewCar!=null&&_previewCar.Exists())GarageService.Apply(_previewCar,_previewBuild); }
+            finally { _previewCar=null;_previewBuild=null;_previewBuy=null;_previewSite=null;PreviewVehicleHandle=0;PreviewPerformance=null; }
+        }
+        public bool ConfirmVehiclePreview()
+        {
+            var buy=_previewBuy; bool usable=_previewCar!=null&&Car(_previewSite)==_previewCar;
+            CancelVehiclePreview();
+            return usable&&buy!=null&&buy();
+        }
         public int ModIndex(ShopSite site,VehicleModType type) => Car(site)?.Mods[type].Index ?? -1;
         public string ModName(ShopSite site,VehicleModType type,int index)
         {
@@ -17,8 +51,10 @@ namespace Bloodlines.Core
             return string.IsNullOrEmpty(name)||name=="NULL"?"Upgrade "+(index+1):name;
         }
         public bool TogglePart(ShopSite site,VehicleToggleModType type,bool enabled) => Purchase(site,Price(site,type==VehicleToggleModType.Turbo?6000:1200),()=> {
+            if ((int)type != 17 && type != VehicleToggleModType.Turbo && type != VehicleToggleModType.TireSmoke && type != VehicleToggleModType.XenonHeadlights) return false;
             var car=Car(site);if(car==null)return false;car.Mods.InstallModKit();
-            var mod=car.Mods[type];if(mod.IsInstalled==enabled)return false;mod.IsInstalled=enabled;return mod.IsInstalled==enabled;
+            var mod=car.Mods[type];if(mod.IsInstalled==enabled)return false;mod.IsInstalled=enabled;
+            bool ok=mod.IsInstalled==enabled;if(ok)Remember(car);return ok;
         });
         public bool Tint(ShopSite site,VehicleWindowTint tint) => Purchase(site,Price(site,500),()=> {
             var car=Car(site);if(car==null||tint==VehicleWindowTint.Invalid||car.Mods.WindowTint==tint)return false;
@@ -61,7 +97,7 @@ namespace Bloodlines.Core
             Color before=channel==0?car.Mods.CustomPrimaryColor:channel==1?car.Mods.CustomSecondaryColor:channel==2?car.Mods.NeonLightsColor:car.Mods.TireSmokeColor;
             bool active=channel==0?car.Mods.IsPrimaryColorCustom:channel==1?car.Mods.IsSecondaryColorCustom:true;
             if(active&&before.ToArgb()==color.ToArgb())return false;
-            if(channel==2&&!car.Mods.HasNeonLights)return false;
+            if(channel==2&&!car.Mods.HasNeonLights){GameUtils.Notify("This vehicle does not support neon underglow.");return false;}
             if(channel==3&&!car.Mods[VehicleToggleModType.TireSmoke].IsInstalled)return false;
             switch(channel){case 0:car.Mods.CustomPrimaryColor=color;break;case 1:car.Mods.CustomSecondaryColor=color;break;
                 case 2:car.Mods.NeonLightsColor=color;break;case 3:car.Mods.TireSmokeColor=color;break;}

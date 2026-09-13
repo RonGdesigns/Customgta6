@@ -31,11 +31,12 @@ public static partial class StoryTests
   Check(c.Dialogue.HasPending,"Halfway there Ice calls that the depot team is set");
   guess.Position=junction;car.Position=junction;car.Speed=8f;m3.Tick();Check(m3.CurrentStage==0,"Rolling through the junction is not arrival");
   car.Speed=0f;m3.Tick();m3.Tick();Check(m3.CurrentStage==1&&!m3.CurrentObjective.Contains("D-pad"),"Stopped in the zone the work is next, and it needs no button");
-  Game.GameTime+=3000;m3.Tick();Check(m3.CurrentStage==1&&!m3.AmbushSprung,"In the car on the mark the work does not start");
-  Check(m3.Dogs.All(d=>d.Task.Fights>=1&&d.Task.LastTarget==guess),"The dogs go for Ron the moment he is on the block, car or not");
-  guess.Task.LeaveVehicle();guess.Position=junction;m3.Tick();Game.GameTime+=1000;m3.Tick();Check(!m3.AmbushSprung,"The block waits a beat after the work starts");
+  Check(c.Cutscenes.IsActive&&m3.Dogs.All(d=>d.Task.Fights==0),"Arriving in the car starts the exit scene; the dogs remain neutral before the ambush");
+  c.Cutscenes.Skip();Check(!guess.IsInVehicle()&&guess.Position.DistanceTo(junction)<3f,"Skipping the arrival exits the actual car and reaches the work marker");
+  m3.Tick();Game.GameTime+=1000;m3.Tick();Check(!m3.AmbushSprung,"The block waits a beat after work begins");
   Game.GameTime+=M03CypressFoundry.AmbushDelayMs-1000;m3.Tick();
   Check(m3.AmbushSprung&&m3.Ambush.Count==M03CypressFoundry.StreetCrewSize&&m3.Ambush.Count==6&&m3.Ambush.All(t=>t.Task.HatedFights==1)&&c.Cutscenes.IsActive&&m3.CurrentStage==1,"Five seconds into the work the street crew comes out of the houses, with a moment on the first of them, and the hold is not done");
+  Check(m3.Dogs.All(d=>d.Task.Fights>=1&&d.Task.LastTarget==guess),"The ambush activates the dogs and orders them onto Guess");
   c.Cutscenes.Stop();Game.GameTime+=2000;m3.Tick();Check(m3.CurrentStage==1&&m3.CurrentObjective.Contains("street crew"),"The hold done, the block's crew is still Ron's fight before any switch");
   foreach(var thug in m3.Ambush)thug.IsDead=true;m3.Tick();Check(m3.CurrentStage==2,"With the street crew down the rail is locked and the depot is Ice's");
   var guards=World.Created.Where(g=>g.Model.Name.StartsWith("g_m_y_mex")||g.Model.Name=="g_m_m_armboss_01").ToList();
@@ -49,15 +50,16 @@ public static partial class StoryTests
   foreach(var guard in guards)guard.IsDead=true;m3.Tick();Check(m3.CurrentStage==4,"M03 loading unlocks only after the yard is clear");
   Interact(m3,c,CrewSlot.Gohan,hauler.Position-hauler.ForwardVector*4f,1);
   Check(c.Cutscenes.IsActive&&m3.CurrentStage==5&&GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SET_VEHICLE_DOOR_OPEN),"Gohan opening the Benson starts the loading, seen: the doors are open and the crates go in on camera");
-  c.Cutscenes.Skip();Check(m3.Crates.All(crate=>crate.AttachedTo==hauler)&&gohan.IsInVehicle(hauler),"Skipping the loading leaves all three crates in the bed and Gohan in the cab");
+  c.Cutscenes.Skip();Check(m3.Crates.All(crate=>crate.AttachedTo==hauler)&&!gohan.IsInVehicle(),"Skipping loading stows the three crates and leaves Gohan beside the truck ready for cover");
   m3.Tick();Check(GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SET_VEHICLE_DOOR_SHUT)&&c.Dialogue.HasPending&&m3.Reinforced&&m3.CurrentStage==5,"After the loading the doors close, Gohan calls Ron, and the depot answers");
   Check(m3.Reinforcements.Count==M03CypressFoundry.ReinforcementGunmen&&m3.Reinforcements.Count(r=>r.Model.Name=="a_c_rottweiler")==0&&!gohan.IsInVehicle()&&m3.Roles.For(CrewSlot.Gohan).State==RoleState.Covering&&m3.Roles.For(CrewSlot.Ice).State==RoleState.Covering,"Four gunmen at the gate and no dogs come through the gate; Gohan is out of the cab and both take cover");
-  Check(Flow(m3)[5].LockedTo==CrewSlot.Guess&&Flow(m3)[6].LockedTo==null,"Ron alone on the road back; the depot fight is anyone's");
-  Use(crew,CrewSlot.Guess);Game.Player.Character.Position=depot;c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==6&&m3.CurrentObjective.Contains("RED"),"Ron in close, the depot fight is on with the targets marked");
+  Check(Flow(m3)[5].Objectives[0].RequiredCharacter==CrewSlot.Guess&&Flow(m3)[6].AllowsAnyBrother&&Flow(m3)[6].Objectives.All(o=>!o.RequiredCharacter.HasValue),"Ron alone on the road back; the depot fight is anyone's");
+  Use(crew,CrewSlot.Guess);Game.Player.Character.Position=hauler.Position;c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==6&&m3.CurrentObjective.Contains("RED"),"Ron in close, the depot fight is on with the targets marked");
   Check(m3.Arrivals.Count==M03CypressFoundry.ArrivalCars&&m3.Reinforcements.Count==M03CypressFoundry.ReinforcementGunmen+M03CypressFoundry.ArrivalCars*M03CypressFoundry.GunmenPerCar&&m3.Arrivals.All(v=>v.GetPedOnSeat(VehicleSeat.Driver)!=null&&v.GetPedOnSeat(VehicleSeat.Driver).Task.Drives>=1)&&c.Cutscenes.IsActive,"Ron in the lot: three four-door cars pull up behind him with two gunmen each, driven in, and Ice's warning plays once");
   c.Cutscenes.Skip();Game.GameTime+=16000;m3.Tick();Check(m3.Reinforcements.Skip(M03CypressFoundry.ReinforcementGunmen).All(r=>r.Task.HatedFights>=1&&!r.IsInVehicle()),"At the lot the car crews get out and fight");
-  foreach(var r in m3.Reinforcements)r.IsDead=true;m3.Tick();Check(m3.CurrentStage==7,"The depot cleared, the truck is the job");
-  Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==7&&ice.Task.Enters>=1&&gohan.Task.Gotos>=1&&c.Dialogue.HasPending&&!c.Crew.CompanionsHoldPosition,"Ron in the cab: Ice is called to the cab and Gohan to the back of the truck");
+  foreach(var slot in new[]{CrewSlot.Ice,CrewSlot.Gohan}){Use(crew,slot);m3.Tick();Check(m3.RequiredSwitch==null&&m3.Status==MissionStatus.Running,"Rescue combat stays open when controlling "+slot);}
+  Use(crew,CrewSlot.Guess);foreach(var r in m3.Reinforcements)r.IsDead=true;m3.Tick();Check(m3.CurrentStage==7,"The depot cleared, the truck is the job");
+  gohan.Position=hauler.Position+new Vector3(15,0,0);Game.Player.Character.SetIntoVehicle(hauler,VehicleSeat.Driver);m3.Tick();Check(m3.CurrentStage==7&&ice.Task.Enters>=1&&gohan.Task.Gotos>=1&&c.Dialogue.HasPending&&!c.Crew.CompanionsHoldPosition,"Ron in the cab: Ice is called to the cab and Gohan to the back of the truck");
   ice.SetIntoVehicle(hauler,VehicleSeat.RightFront);c.Dialogue.Clear();m3.Tick();Check(m3.CurrentStage==7&&gohan.AttachedTo!=hauler,"Ice in the cab alone is not the crew: the truck waits for Gohan at the back");
   gohan.Position=hauler.Position-hauler.ForwardVector*4f;m3.Tick();Check(m3.CurrentStage==8&&gohan.AttachedTo==hauler&&!gohan.IsInVehicle()&&Game.Player.WantedLevel==2,"Gohan at the rear doors is loaded into the back of the Benson; the crew aboard, the police come");
   var destination=basePoint;Game.Player.Character.SetIntoVehicle(new Vehicle{Position=destination},VehicleSeat.Driver);m3.Tick();Check(m3.Status==MissionStatus.Running,"M03 cannot finish by arriving in another car");
@@ -78,9 +80,11 @@ public static partial class StoryTests
   var mateo=m5.Mateo;var dinghy=m5.Dinghy;Check(crew.PedFor(CrewSlot.Guess).IsInVehicle(dinghy)&&crew.PedFor(CrewSlot.Gohan).IsInVehicle(dinghy)&&mateo.IsInvincible,"M05 gives Guess and Gohan actual boat transport while Ice holds shore overwatch; Mateo cannot be killed");
   c.Cutscenes.Skip();
   foreach(var enemy in World.Created.Where(p=>p!=mateo))enemy.IsDead=true;m5.Tick();Check(m5.CurrentStage==1,"Shore clearance opens Guess's explicit flare interaction");
-  Interact(m5,c,CrewSlot.Guess,c.Locations.Position("M05.CoveAir"),1,true);Check(m5.CurrentStage==2&&GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS),"M05 launches an actual flare after the player interaction");
-  dinghy.Position=c.Locations.Position("M05.GrottoMouth");Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=dinghy.Position;m5.Tick();Check(m5.CurrentStage==3&&mateo.Task.BoatTasks==1,"Gohan's boat approach starts Mateo's boat escape");
-  var tropic=World.Vehicles.First(v=>v.Model.Name=="tropic");dinghy.Position=tropic.Position;Game.Player.Character.Position=dinghy.Position;m5.Tick();Game.GameTime+=5001;m5.Tick();
+  Interact(m5,c,CrewSlot.Guess,c.Locations.Position("M05.CoveAir"),4,true);Check(m5.CurrentStage==2&&GTA.Native.Function.Values.ContainsKey(GTA.Native.Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS),"M05 launches an actual flare after the player interaction");
+  dinghy.Position=c.Locations.Position("M05.GrottoMouth");Use(crew,CrewSlot.Guess);Game.Player.Character.Position=dinghy.Position;m5.Tick();Check(m5.CurrentStage==3&&mateo.Task.BoatTasks==1,"Guess's boat approach starts Mateo's boat escape");
+  var tropic=World.Vehicles.First(v=>v.Model.Name=="tropic");
+  for(int hack=0;hack<26;hack++){dinghy.Position=tropic.Position;Game.Player.Character.Position=dinghy.Position;Game.GameTime+=1000;m5.Tick();}
+  dinghy.Position=tropic.Position;Game.Player.Character.Position=dinghy.Position;m5.Tick();Game.GameTime+=5001;m5.Tick();
   Check(m5.CurrentStage==4&&mateo.IsAlive&&m5.IceDown&&m5.Roles.For(CrewSlot.Ice).State==RoleState.Extracting&&c.Dialogue.HasPending,"Sustained close pursuit stops Mateo alive; Ice starts down to the shore and says so");
   GTA.UI.Screen.Subtitle=null;Interact(m5,c,CrewSlot.Gohan,mateo.Position,2,true);
   Check(m5.CurrentStage==5&&c.Cutscenes.IsActive&&m5.Status==MissionStatus.Running,"Taking him aboard plays the account as a scene from the bible's own stage-two lines");
@@ -92,12 +96,12 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"clarity6.json"));var m6=new M06CleanSweep();Check(m6.Begin(c)&&c.Cutscenes.IsActive,"M06 validates and deploys its separate work stations and opens on the three positions");
   c.Cutscenes.Skip();var granger=m6.Granger;var alley6=c.Locations.Position("M06.AlleyHold");var port=c.Locations.Get("M06.SallyPort");
   Check(port.Status==LocationStatus.Surveyed&&Math.Abs(port.Position.X+1170.28f)<0.01f&&Math.Abs(port.Position.Y+1276.46f)<0.01f&&Math.Abs(c.Locations.Heading("M06.SallyPort")-283.4f)<0.01f,"Ice's alley entrance is the point Ron surveyed");
-  Check(m6.FeederPanel==null&&Math.Abs(c.Locations.Position("M06.Feeder").X+1208.19f)<0.01f&&crew.PedFor(CrewSlot.Ice).Position.DistanceTo(c.Locations.Position("M06.Feeder"))<6f&&m6.RackBench!=null&&m6.RackCases.Count==2&&m6.RackCases.All(cs=>cs.AttachedTo==m6.RackBench),"Gohan has a feeder panel to cut and a backup bench to burn: things, not marks in the road");
+  Check(m6.FeederPanel==null&&Math.Abs(c.Locations.Position("M06.Feeder").X+1208.19f)<0.01f&&crew.PedFor(CrewSlot.Ice).Position.DistanceTo(c.Locations.Position("M06.Culvert"))<6f&&m6.RackBench!=null&&m6.RackCases.Count==2&&m6.RackCases.All(cs=>cs.AttachedTo==m6.RackBench),"Gohan has a feeder panel to cut and a backup bench to burn: things, not marks in the road");
   Check(granger.Position.DistanceTo(alley6)>150f&&granger.IsInvincible&&crew.PedFor(CrewSlot.Guess).Position.DistanceTo(alley6)>150f,"Ron and the Granger stage far from the alley, and the truck cannot be lost before the crew boards it");
   string m6src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M06CleanSweep.cs"));Check(m6src.Contains("var post = StreetPost(_alley + offset);")&&m6src.Contains("World.GetSafeCoordForPed(wanted, false, 0)"),"Every SWAT trooper spawns on a walkable point the navmesh accepts, not a raw offset in a wall");
   Interact(m6,c,CrewSlot.Gohan,c.Locations.Position("M06.Feeder"),6);Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M06.SallyPort");m6.Tick();Check(m6.CurrentStage==2&&!m6.CurrentObjective.Contains("No ability"),"M06 power interaction and Ice's breach open the parallel burn and siege, with no ability wording");
   crew.PedFor(CrewSlot.Gohan).Position=c.Locations.Position("M06.ServerRacks");
-  for(int i=0;i<45&&m6.CurrentStage==2;i++){foreach(var enemy in World.Created)enemy.IsDead=true;Game.GameTime+=1000;m6.Tick();}
+  for(int i=0;i<45&&m6.CurrentStage==2;i++){foreach(var enemy in World.Created)enemy.IsDead=true;Game.GameTime+=1000;m6.Tick();if(c.Cutscenes.IsActive)c.Cutscenes.Skip();}
   Check(crew.PedFor(CrewSlot.Guess).Task.Drives>=1&&m6.CurrentStage==3,"Ron's AI moves the truck only when the pickup stage opens, after the siege");
   Check(m6.CurrentStage==3&&m6.PickupCalled&&crew.PedFor(CrewSlot.Guess).Task.Drives>=1,"M06 requires both the completed burn and all response waves; the rotors turned Ron's wait into a pickup and his own AI moved the truck");
   Check(m6.FireBurning&&c.State.EvidenceOf("vespucciBackup")==EvidenceState.Destroyed,"The burn leaves a real fire at the racks and the record's destruction on the books");
@@ -105,7 +109,12 @@ public static partial class StoryTests
   granger.Position=m6.Pickup;Game.Player.Character.Position=m6.Pickup;m6.Tick();Check(m6.CurrentStage==4&&!granger.IsInvincible,"At the alley mouth the boarding opens and the truck is the crew's to lose again");
   m6.Tick();Check(m6.CurrentStage==4,"Guess cannot leave without his teammates");
   crew.PedFor(CrewSlot.Ice).SetIntoVehicle(granger,VehicleSeat.RightFront);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(granger,VehicleSeat.LeftRear);m6.Tick();Game.Player.WantedLevel=2;m6.Tick();Check(m6.CurrentStage==5&&m6.Status==MissionStatus.Running,"With everyone aboard the escape is on the crew: the police are not cleared");
-  Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed&&!m6.FireBurning,"M06 completes with both teammates aboard and the police lost, and the fire is put out with the mission");
+  foreach(var slot in new[]{CrewSlot.Ice,CrewSlot.Gohan})
+  {
+   Game.GameTime+=2000;Check(c.Switching.TrySwitch(slot),"M06 allows a real passenger switch after pickup: "+slot);m6.Tick();
+   Check(m6.RequiredSwitch==null&&Game.Player.Character.IsInVehicle(granger)&&crew.PedFor(CrewSlot.Guess).IsInVehicle(granger),"M06 escape keeps the selected passenger and Guess in their existing car");
+  }
+  Game.Player.WantedLevel=0;m6.Tick();Check(m6.Status==MissionStatus.Passed&&!m6.FireBurning,"M06 can complete from Gohan's passenger seat with all three aboard and the police lost");
 
   Reset();crew=Roster();c=Context(crew);World.FailNavigation=true;Check(!new M04SeveredWire().Begin(c)&&World.Created.Count==0,"Unavailable walkable surfaces reject setup before spawning actors underground");World.FailNavigation=false;
   var interaction=new MissionInteraction("Terminal",()=>new Vector3(5,0,0),3);interaction.RequiredCharacter=CrewSlot.Gohan;interaction.Enter(c);Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;interaction.Update(c);Game.GameTime+=1500;Game.Player.Character.Position=Vector3.Zero;interaction.Update(c);Game.Player.Character.Position=new Vector3(5,0,0);Game.GameTime+=5000;interaction.Update(c);Check(!interaction.IsFinished&&interaction.Label.Contains("press"),"Leaving an interaction resets its timer and requires a new button press");

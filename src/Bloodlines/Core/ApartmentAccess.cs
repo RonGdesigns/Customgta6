@@ -21,7 +21,8 @@ namespace Bloodlines.Core
         private float? _heading2;
         private int _started, _interior;
         private string _ipl;
-        private string[] _entitySets = new string[0];
+        private string[] _entitySets = new string[0], _disabledSets = new string[0];
+        private readonly Dictionary<string, bool> _originalSets = new Dictionary<string, bool>();
         private bool _ownsIpl;
         public bool Busy { get; private set; }
         public bool Inside { get; private set; }
@@ -31,7 +32,7 @@ namespace Bloodlines.Core
 
         /// <param name="heading">The way to face once inside; null keeps the heading from the street.</param>
         /// <param name="entitySets">Interior entity sets to activate once the room is pinned: what furnishes a penthouse shell.</param>
-        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null, float? heading = null, string[] entitySets = null)
+        public bool Begin(Vector3 target, string ipl, bool enter, Vector3? interiorProbe = null, float? heading = null, string[] entitySets = null, string[] disabledSets = null)
         {
             var ped = Game.Player.Character;
             if (Busy || enter == Inside || ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) return false;
@@ -43,7 +44,7 @@ namespace Bloodlines.Core
             {
                 if (enter)
                 {
-                    ExitPosition = _origin; InteriorPosition = target; _ipl = ipl; _interior = 0; _entitySets = entitySets ?? new string[0];
+                    ExitPosition = _origin; InteriorPosition = target; _ipl = ipl; _interior = 0; _entitySets = entitySets ?? new string[0]; _disabledSets = disabledSets ?? new string[0]; _originalSets.Clear();
                     foreach (var hero in Protagonist.All)
                         if (_crew.CompanionAI.StateOf(hero.Slot) != CompanionState.Scripted)
                         { _held.Add(hero.Slot); _crew.CompanionAI.TakeControl(hero.Slot); }
@@ -82,13 +83,23 @@ namespace Bloodlines.Core
                 if (_entering)
                 {
                     if (!string.IsNullOrEmpty(_ipl) && !Function.Call<bool>(Hash.IS_IPL_ACTIVE, _ipl))
-                    { Waiting("IPL streaming"); return; }
+                    {
+                        Function.Call(Hash.REQUEST_IPL,_ipl);
+                        if(Game.GameTime-_started<1800) { Waiting("IPL streaming / room lookup"); return; }
+                    }
                     if (_interior == 0)
                     {
                         _interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _target.X, _target.Y, _target.Z);
                         if (_interior == 0 && _probe != _target)
                             _interior = Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, _probe.X, _probe.Y, _probe.Z);
-                        if (_interior == 0) { Waiting("interior lookup"); return; }
+                        if (_interior == 0)
+                        {
+                            // Some DLC rooms are only registered once the player enters
+                            // their streaming area. Keep the player protected and faded.
+                            if(!_moved && Game.GameTime-_started>1800)
+                            { _moved=true;_ped.Position=_target;if(_heading2.HasValue)_ped.Heading=_heading2.Value;Function.Call(Hash.CLEAR_ROOM_FOR_ENTITY,_ped); }
+                            Waiting("interior lookup"); return;
+                        }
                         // Story Mode ships the Online apartments switched off: a disabled
                         // or capped interior never reports ready, however long the player
                         // waits inside it (Ron's logs: 12 s at "interior readiness", twice).
@@ -99,7 +110,8 @@ namespace Bloodlines.Core
                         if (_wasDisabled) Function.Call(Hash.DISABLE_INTERIOR, _interior, false);
                         if (_wasCapped) Function.Call(Hash.CAP_INTERIOR, _interior, false);
                         Function.Call(Hash.PIN_INTERIOR_IN_MEMORY, _interior);
-                        foreach (var set in _entitySets) if (!string.IsNullOrEmpty(set)) Function.Call(Hash.ACTIVATE_INTERIOR_ENTITY_SET, _interior, set);
+                        foreach (var set in _disabledSets) SetInteriorVariant(set, false);
+                        foreach (var set in _entitySets) SetInteriorVariant(set, true);
                         if (_entitySets.Length > 0) Logger.Info("Apartment: " + _entitySets.Length + " entity set(s) requested for interior " + _interior + ".");
                         Function.Call(Hash.REFRESH_INTERIOR, _interior);
                     }
@@ -154,11 +166,19 @@ namespace Bloodlines.Core
             Attempt(() => Function.Call(Hash.CLEAR_FOCUS));
             Attempt(() => GameUtils.FadeIn(250));
         }
+        private void SetInteriorVariant(string name, bool active)
+        {
+            if (string.IsNullOrEmpty(name)) return;
+            if (!_originalSets.ContainsKey(name)) _originalSets[name] = Function.Call<bool>(Hash.IS_INTERIOR_ENTITY_SET_ACTIVE, _interior, name);
+            Function.Call(active ? Hash.ACTIVATE_INTERIOR_ENTITY_SET : Hash.DEACTIVATE_INTERIOR_ENTITY_SET, _interior, name);
+        }
         private void ReleaseInterior()
         {
             foreach (var slot in _held) Attempt(() => _crew.CompanionAI.ReleaseControl(slot));
             _held.Clear();
-            if (_interior != 0) foreach (var set in _entitySets) { var name = set; if (!string.IsNullOrEmpty(name)) Attempt(() => Function.Call(Hash.DEACTIVATE_INTERIOR_ENTITY_SET, _interior, name)); }
+            if (_interior != 0) foreach (var set in _originalSets) { var saved = set; Attempt(() => Function.Call(saved.Value ? Hash.ACTIVATE_INTERIOR_ENTITY_SET : Hash.DEACTIVATE_INTERIOR_ENTITY_SET, _interior, saved.Key)); }
+            if (_interior != 0 && _originalSets.Count > 0) Attempt(() => Function.Call(Hash.REFRESH_INTERIOR, _interior));
+            _originalSets.Clear(); _disabledSets = new string[0];
             if (_interior != 0) Attempt(() => Function.Call(Hash.UNPIN_INTERIOR, _interior));
             if (_interior != 0 && _wasCapped) Attempt(() => Function.Call(Hash.CAP_INTERIOR, _interior, true));
             if (_interior != 0 && _wasDisabled) Attempt(() => Function.Call(Hash.DISABLE_INTERIOR, _interior, true));

@@ -37,9 +37,9 @@ public static partial class StoryTests
   Check(homesSrc.Contains("UpdateRoomSpots(player, atEntry)")&&homesSrc.Contains("case \"Bed\": Rest(); break;")&&homesSrc.Contains("case \"Locker\": RestockLocker(); break;")&&homesSrc.Contains("default: ExitApartment(); break;")&&homesSrc.Contains("(OpenWardrobe ?? OpenMenu)?.Invoke()"),"Inside, each surveyed spot has its own prompt: the wardrobe opens, the bed rests, the locker restocks, the door leaves");
   Check(homesSrc.Contains("Apartment.Begin(location.Position, residence.Ipl, true, residence.Probe, location.Heading, residence.EntitySets)"),"Entering faces the way the entry's heading says");
   string prologueSrc=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","PrologueSequence.cs"));
-  Check(prologueSrc.Contains("ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter).RoomPrefix + \".Message\"")&&prologueSrc.Contains("spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f"),"The message is read at the surveyed spot of Ron's own room, else two meters into it");
+  Check(prologueSrc.Contains("ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter).RoomPrefix + \".Message\"")&&prologueSrc.Contains("spot.Position.DistanceTo(guess.Position) < 15f"),"The message is read at the surveyed spot of Ron's own room, otherwise at the safe entry instead of walking through unsurveyed furniture");
   var rows=File.ReadAllLines(Path.Combine(dataDir,"locations.tsv")).Where(l=>l.StartsWith("Apartment.Room.")).ToList();
-  Check(rows.Count==15&&rows.All(r=>r.Split('\t')[6]=="estimate"),"Five spots per starter room, three rooms, all estimates to be surveyed inside");
+  Check(rows.Count==20&&rows.All(r=>r.Split('\t')[6]=="estimate"),"Five spots per starter room plus the retired Guess room; fresh Mission Row keys preserve old surveys without reusing them");
 
   // ---- The room map reads the floor from collision.
   World.RaycastHandler=(s,t)=>{

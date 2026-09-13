@@ -12,6 +12,8 @@ namespace Bloodlines.Core
         private static bool _enabled;
         private static Blip _route;
         private static bool _routeRoad;
+        private static Vector3 _routedPosition;
+        private static int _routedAt;
         public static CrewSlot? ActiveSlot { get; set; }
         private static int _used;
         private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; public bool Road; }
@@ -30,6 +32,19 @@ namespace Bloodlines.Core
                 if (!d.Owner.HasValue && (d.Vehicle == 0 || (vehicle != null && d.Vehicle == vehicle.Handle))) return d.Position;
             return null;
         }
+        /// <summary>Re-show the current mission route, without leaving a stale personal waypoint.</summary>
+        public static string FocusPlayerDestination(CrewSlot slot)
+        {
+            var routes = Current.FindAll(d => d.Owner == slot);
+            if (routes.Count == 0) routes = Current.FindAll(d => !d.Owner.HasValue);
+            if (routes.Count != 1 || _route == null || !_route.Exists() ||
+                _route.Position.DistanceTo(routes[0].Position) > 1f)
+                return "No single destination. Follow the objective instructions.";
+            if (!routes[0].Road) return "Use the yellow objective marker on the water.";
+            _route.ShowRoute = false; _route.ShowRoute = true;
+            return "Current objective route shown in yellow.";
+        }
+
         public static void BeginFrame(bool enabled)
         {
             _enabled = enabled;
@@ -68,8 +83,14 @@ namespace Bloodlines.Core
             if (routes.Count == 0 && Current.Count == 1) routes.Add(Current[0]);
             if (routes.Count == 1)
             {
+                // GTA can retain the old path after a blip moves. Refresh boundedly
+                // for a moving target, immediately for a different stage/location.
+                float shift = _routedPosition.DistanceTo(routes[0].Position);
+                if (_route != null && (shift > 100f || (shift > 20f && Game.GameTime - _routedAt >= 1000)))
+                { GameUtils.SafeDelete(_route); _route = null; }
                 if (_route == null || !_route.Exists())
                 {
+                    _routedPosition = routes[0].Position; _routedAt = Game.GameTime;
                     _route = World.CreateBlip(routes[0].Position);
                     if (_route != null) { _route.Color = BlipColor.Yellow; _route.Name = "Next objective"; _route.IsShortRange = false; _routeRoad = routes[0].Road; _route.ShowRoute = _routeRoad; }
                 }

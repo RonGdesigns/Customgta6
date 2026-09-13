@@ -124,47 +124,47 @@ M29_S1_03_GUESS	M29	1	GUESS		Tanker parked at the bunker. Keep the generator run
 M30_S1_01_GUESS	M30	1	GUESS		Loose shale and a gunship behind me. Gohan, I need that sheltered route now.	Armed helicopter begins pursuit
 M30_S1_02_GOHAN	M30	1	GOHAN		Take the next bend into the canyon. The rock walls will give you cover.	Truck reaches ridge descent checkpoint
 M30_S1_03_GUESS	M30	1	GUESS		Parts are at the bunker, intact. Next delivery needs a bigger travel allowance.	Specified parts truck delivered and unloaded
-M31_S1_01_ICE	M31	1	ICE		Claymores live on access gulley. Let them walk into the kill zone.	Minefield set
-M31_S1_02_GOHAN	M31	1	GOHAN		CIWS tracking four incoming technicals. Engaging auto-fire!	Turret fire
-M31_S1_03_ICE	M31	1	ICE		Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open.	Perimeter held
-M32_S1_01_GOHAN	M32	1	GOHAN		Intake grates cut. Warhead storage is behind door four.	Sub-level dive
-M32_S1_02_ICE	M32	1	ICE		Warheads secured in pelican cases. Guess, bring boat to estuary!	Zancudo escape
-M32_S1_03_GUESS	M32	1	GUESS		Estuary pickup clean! We got military EMP warheads in our hands.	Base egress
-M33_S1_01_ICE	M33	1	ICE		Firing smoke canisters! Blind their firing line!	Smoke ambush
-M33_S1_02_GUESS	M33	1	GUESS		Ramos is in the trunk! Floor it before the gunships arrive!	Salt flat rally
-M33_S1_03_GOHAN	M33	1	GOHAN		Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait.	Code acquired
-M34_S1_01_GUESS	M34	1	GUESS	Wipers scraping red desert sand, twin turbochargers spooling	Visibility is twenty feet! The wind turbines are spinning like guillotines! Ice, snipers on tower four!	Sandstorm driving
-M34_S1_02_ICE	M34	1	ICE	Heavy twin .50-cal hammering rhythmically	Turbine catwalk suppressed! Keep this half-track moving down the service gully, Guess!	Turret barrage
-M34_S1_03_GOHAN	M34	1	GOHAN	Operating rear detonator console	Seismic charges primed on the canyon walls! Detonating trail in three... two... one!	Seismic prime
-M34_S1_04_GOHAN	M34	1	GOHAN		Rockslide triggered! The entire rear ridgeline just buried six pursuing Insurgents!	Rockslide triggered
-M34_S1_05_GUESS	M34	1	GUESS		Bunker tunnel mouth dead ahead! Half-track pulled inside! Defector is alive!	Safe arrival
-M35_S1_01_ICE	M35	1	ICE		Lead truck hit the mine! Box them in the canyon!	Mountain trap
-M35_S1_02_GUESS	M35	1	GUESS		Anti-aircraft technical captured! Driving it into the bunker!	Technical hijack
-M35_S1_03_GOHAN	M35	1	GOHAN		Munitions secured. Heavy firepower ready for the rig.	Munitions stored
-M36_S1_01_GOHAN	M36	1	GOHAN		Ballast columns are reinforced concrete. Seismic charges must go on column 2.	Rig mapping
-M36_S1_02_ICE	M36	1	ICE		Depth charge dropped north! Evade, Gohan!	Underwater evasion
-M36_S1_03_GOHAN	M36	1	GOHAN		Sonar map completed. All demolition points marked.	Recon complete
-M37_S1_01_GUESS	M37	1	GUESS		Drop tanks welded. One pass will blanket the entire rig in whiteout.	Plane retrofit
-M37_S1_02_ICE	M37	1	ICE		Hangar secured. Flying both birds back to Sandy Shores.	Biplane delivery
-M37_S1_03_GOHAN	M37	1	GOHAN		Smoke tanks are ready. They'll break visual contact, but radar and thermal crews can still find us.	Smoke ready
-M38_S1_01_ICE	M38	1	ICE		Commercial charges in pit 3. Keep haulers rolling as cover.	Quarry shootout
-M38_S1_02_GOHAN	M38	1	GOHAN		Charges loaded! Four hundred pounds of high-grade explosive!	Explosive secure
-M38_S1_03_GUESS	M38	1	GUESS		Hauler clear of the quarry! Demolition charges locked down.	Quarry escape
-M39_S1_01_GOHAN	M39	1	GOHAN		Thermite clamp ignited under thirty fathoms. Rig is cut off from mainland.	Cable severed
-M39_S1_02_GUESS	M39	1	GUESS		Radar confirms rig's external communications flatlined. It's time.	Surface beacon
-M39_S1_03_ICE	M39	1	ICE		Final countdown initiated. Moving all strike teams to the sea cave.	Sea cave muster
-M40_S1_01_GUESS	M40	1	GUESS		Reinforced steel prows locked. These boats can ram straight through pontoons.	Boat armoring
-M40_S1_02_ICE	M40	1	ICE		Mounted machine gun brackets fitted on both sterns.	Gun mounts fitted
-M40_S1_03_GOHAN	M40	1	GOHAN		Armor fitted and both boats water-tested. Keep the engines covered; this isn't a guarantee.	Fleet ready
-M41_S1_01_ICE	M41	1	ICE		General Bradley neutralized. Recovered his biometric security card.	Silenced hit
-M41_S1_02_GOHAN	M41	1	GOHAN		Card grants root access to rig vault. Get off the mountain.	Lodge escape
-M41_S1_03_GUESS	M41	1	GUESS		Snowmobile pickup waiting at the trail head. We are clear.	Snowmobile egress
-M42_S1_01_GUESS	M42	1	GUESS		Cargo ramp open! Sub is airborne! Parachutes deployed!	Aerial airdrop
-M42_S1_02_GOHAN	M42	1	GOHAN		Splashdown confirmed! Ballast tanks flooding-diving for the rig.	Ocean splashdown
-M42_S1_03_ICE	M42	1	ICE		Gohan is in the water. Moving into flight position with the chopper.	Chopper ready
-M43_S1_01_ICE	M43	1	ICE		Tonight we break their fortress and take our five hundred million.	Final muster
-M43_S1_02_GUESS	M43	1	GUESS		Annihilator ready. When that rig burns, I'll be over the derrick.	Chopper spool
-M43_S1_03_GOHAN	M43	1	GOHAN		Submersible holding at forty fathoms. Awaiting green light.	Sub ready
+M31_S1_01_ICE	M31	1	ICE	Radio from the current position; preserve actual transport and crew placement	Three charges armed beside the barriers. Keep our people clear of those lanes.	Matching implemented M31-M35 objective result
+M31_S1_02_GOHAN	M31	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Two probe vehicles coming in. No automatic guns here: we hold the approaches ourselves.	Matching implemented M31-M35 objective result
+M31_S1_03_ICE	M31	1	ICE	Radio from the current position; preserve actual transport and crew placement	Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open.	Perimeter held
+M32_S1_01_GOHAN	M32	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Coast access control is open. Ice, the cases are outside the service post. No underground route.	Matching implemented M31-M35 objective result
+M32_S1_02_ICE	M32	1	ICE	Radio from the current position; preserve actual transport and crew placement	Both EMP cases are in the car. Guess, take us out by road.	Matching implemented M31-M35 objective result
+M32_S1_03_GUESS	M32	1	GUESS	Radio from the current position; preserve actual transport and crew placement	Two cases on the bunker table. Hardware secured; we still need to know what it protects.	Matching implemented M31-M35 objective result
+M33_S1_01_ICE	M33	1	ICE	Radio from the current position; preserve actual transport and crew placement	Four guards on Ramos. Stop their firing line. Gohan frees him; Guess brings the car.	Matching implemented M31-M35 objective result
+M33_S1_02_GUESS	M33	1	GUESS	Radio from the current position; preserve actual transport and crew placement	Ramos is in the front seat and everybody is aboard. Armored transport is our next stop.	Matching implemented M31-M35 objective result
+M33_S1_03_GOHAN	M33	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait.	Code acquired
+M34_S1_01_GUESS	M34	1	GUESS	Radio from the current position; preserve actual transport and crew placement	Ramos has the front seat. Ice, cover us from the turret. Gohan, keep that escort car close through the wind farm.	Matching implemented M31-M35 objective result
+M34_S1_02_ICE	M34	1	ICE	Radio from the current position; preserve actual transport and crew placement	Rear is covered. Keep the half-track on the service road, Guess.	Matching implemented M31-M35 objective result
+M34_S1_03_GOHAN	M34	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Second response coming up the gully. I have the next road barrier ready. Get both cars past it first.	Matching implemented M31-M35 objective result
+M34_S1_04_GOHAN	M34	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Both road barriers are down behind us. They can go around, but we have bought some space.	Matching implemented M31-M35 objective result
+M34_S1_05_GUESS	M34	1	GUESS	Radio from the current position; preserve actual transport and crew placement	Ramos made it to the medical station. Get him settled. We ask for codes when he can answer.	Matching implemented M31-M35 objective result
+M35_S1_01_ICE	M35	1	ICE	Radio from the current position; preserve actual transport and crew placement	Lead escort is stopped in the trap. Take the occupants; leave the gun truck intact.	Matching implemented M31-M35 objective result
+M35_S1_02_GUESS	M35	1	GUESS	Radio from the current position; preserve actual transport and crew placement	I have the technical. Gohan, front passenger. Ice, rear gun. We take the same truck home.	Matching implemented M31-M35 objective result
+M35_S1_03_GOHAN	M35	1	GOHAN	Radio from the current position; preserve actual transport and crew placement	Gun mount checked. This is machine-gun cover, not a missile system. It gives our extraction a chance.	Matching implemented M31-M35 objective result
+M36_S1_01_GOHAN	M36	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Three approach sensors recorded. That gives us a coastal route, not permission to rush the rig.	Matching physical objective completion in M36
+M36_S1_02_ICE	M36	1	ICE	Radio from current position; nearby speakers use the same crew channel.	Surface patrol heading for the first pickup. Guess, move the boat. Gohan, stay under until the new pickup.	Matching physical objective completion in M36
+M36_S1_03_GOHAN	M36	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Survey is back with us. Now we can fit the smoke aircraft around a route we measured.	Matching physical objective completion in M36
+M37_S1_01_GUESS	M37	1	GUESS	Radio from current position; nearby speakers use the same crew channel.	First release works. Check the second one too; I am not signing off a pair from one cloud.	Matching physical objective completion in M37
+M37_S1_02_ICE	M37	1	ICE	Radio from current position; nearby speakers use the same crew channel.	Second strip is clear. I will fly the other bird to its own space on the apron at Sandy Shores.	Matching physical objective completion in M37
+M37_S1_03_GOHAN	M37	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Both releases tested. Smoke breaks the view; radar, wind and thermal crews are still problems.	Matching physical objective completion in M37
+M38_S1_01_ICE	M38	1	ICE	Radio from current position; nearby speakers use the same crew channel.	Four charge packages in this loading yard. Keep them intact and leave Guess a lane for the truck.	Matching physical objective completion in M38
+M38_S1_02_GOHAN	M38	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Four loaded and secured. Get us out without turning this truck into the blast.	Matching physical objective completion in M38
+M38_S1_03_GUESS	M38	1	GUESS	Radio from current position; nearby speakers use the same crew channel.	Clear of the quarry. We lose anyone still following before we take these home.	Matching physical objective completion in M38
+M39_S1_01_GOHAN	M39	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Cutter cycle verified. The mainland cable is down. Their radio still works, so watch our return shore.	Matching physical objective completion in M39
+M39_S1_02_GUESS	M39	1	GUESS	Radio from current position; nearby speakers use the same crew channel.	Shore is clear. Gohan, bring the sub back to our cove pickup. I have the surface boat waiting.	Matching physical objective completion in M39
+M39_S1_03_ICE	M39	1	ICE	Radio from current position; nearby speakers use the same crew channel.	We kept our return line open. Next we make sure those extraction boats can carry the plan.	Matching physical objective completion in M39
+M40_S1_01_GUESS	M40	1	GUESS	Radio from current position; nearby speakers use the same crew channel.	Both hull kits are fitted. Ice, check the carried weapons on those two practice barrels.	Matching physical objective completion in M40
+M40_S1_02_ICE	M40	1	ICE	Radio from current position; nearby speakers use the same crew channel.	Both targets hit. These are passenger guns, not a turret. Leave room to aim without crossing the crew.	Matching physical objective completion in M40
+M40_S1_03_GOHAN	M40	1	GOHAN	Radio from current position; nearby speakers use the same crew channel.	Both loaded boats tested and back. Armor buys a margin; it does not make either hull invincible.	Matching physical objective completion in M40
+M41_S1_01_ICE	M41	1	ICE		Bradley is down. I have his card. Coming to you now.	Ice physically recovers the card
+M41_S1_02_GOHAN	M41	1	GOHAN		Credential checks out. That gets us past the command access reader.	Card secured inside extraction vehicle
+M41_S1_03_GUESS	M41	1	GUESS		Everyone is in. We have the card and we are clear of the lodge.	Crew and card reach the trail exit
+M42_S1_01_GUESS	M42	1	GUESS		Cradle released. Both canopies are open. Talk to me, Gohan.	Two physical parachutes attached and actual sub detached
+M42_S1_02_GOHAN	M42	1	GOHAN		In the water. Hull holding. I have the controls from here.	Stable physical splashdown verified
+M42_S1_03_ICE	M42	1	ICE		I see you in the cove. We can put the rest in position.	Same floated sub reaches coastal delivery
+M43_S1_01_ICE	M43	1	ICE		The entrance, the support, the way home. All accounted for. We move when the whole plan is ready.	Staging laptop verifies ledger and actual assets
+M43_S1_02_GUESS	M43	1	GUESS		Annihilator down at the coast. Keeping it grounded until extraction.	Actual helicopter landed
+M43_S1_03_GOHAN	M43	1	GOHAN		Kraken and surface launch are holding off the coast. We still have room to turn back.	Both marine assets positioned
 M44_S1_01_GOHAN	M44	1	GOHAN		Charges clamped on pylon two! Torpedo tubes disabled! Clear for air assault!	Pylon charges
 M44_S1_02_ICE	M44	1	ICE		Copy that, Gohan. Guess and I are inbound on the chopper!	Inbound air
 M44_S1_03_GUESS	M44	1	GUESS		Sixty-knot typhoon winds over the helipad! Coming in hot!	Helipad approach
@@ -263,19 +263,19 @@ SM02_S1_01_GOHAN	SM02	1	GOHAN	Whispering through comm headset	Lifeinvader annex.
 SM02_S1_02_GOHAN	SM02	1	GOHAN		Two guards between me and the server room. Stun gun first; the thermal pulse finds them for me.	Gameplay stage 2 entry
 SM02_S2_03_GOHAN	SM02	2	GOHAN	Keystrokes clicking rapidly	Worm installed. Camera archive access is ours. Getting out before IT traces the connection.	Gameplay stage 3 completion
 SM02_S2_04_GOHAN	SM02	2	GOHAN		Slip down the fire escape before internal IT notices the packet spike. Clean and invisible.	Gameplay stage 4 entry
-SM03_S1_01_GUESS	SM03	1	GUESS	Twin-turbo revving at 7,000 RPM, two-step popping	Marabunta thinks their tuned Elegy has the top end. They don't know who is behind this wheel.	Gameplay stage 1 entry
-SM03_S1_02_GUESS	SM03	1	GUESS	Slipstream Reflex activated, slow-mo engine roar	Three laps. KJ, keep an eye on their line.	Gameplay stage 2 entry
-SM03_S2_03_ENEMY	SM03	2	RIVAL RACER		We lost the race! Shoot his tires before he leaves!	Gameplay stage 3 entry
-SM03_S2_04_GUESS	SM03	2	GUESS	Laughing wildly, ducking below dashboard	They pulled guns after losing. I can stop them or get the coupe back to the finish.	Gameplay stage 3 entry
-SM03_S2_05_GUESS	SM03	2	GUESS		Checkered flag! Title is in my pocket and the racing transmission is loaded on the truck.	Gameplay stage 3 completion
+SM03_S1_01_GUESS	SM03	1	GUESS	Twin-turbo revving at 7,000 RPM, two-step popping	My car, my setup. KJ, keep the finish honest.	Sprint radio / debrief; revised SM03 northbound race
+SM03_S1_02_GUESS	SM03	1	GUESS	Slipstream Reflex activated, slow-mo engine roar	One sprint. Freeway north, then the Chiliad trail to the mountain finish.	Sprint radio / debrief; revised SM03 northbound race
+SM03_S2_03_ENEMY	SM03	2	RIVAL RACER		He reached the summit first. That is his race.	Sprint radio / debrief; revised SM03 northbound race
+SM03_S2_04_GUESS	SM03	2	GUESS	Relieved laugh after the finish	Clean win. KJ, send the purse and line up the transmission.	Sprint radio / debrief; revised SM03 northbound race
+SM03_S2_05_GUESS	SM03	2	GUESS		Keeping my car. The transmission goes to the crew; the road was the work.	Sprint radio / debrief; revised SM03 northbound race
 SM04_S1_01_ICE	SM04	1	ICE	Wind howling through scope, breathing slow	Two Aegis marksmen watching the quarry road. I'll take the overlook and identify both positions.	Mission begins
-SM04_S1_02_ICE	SM04	1	ICE	Suppressed crack	One down. The other still has a sightline on the road. Can't leave him there.	First marksman eliminated
+SM04_S1_02_ICE	SM04	1	ICE	Suppressed crack	Both posts clear. Going down for the two radio sets. Keep listening for me.	Both quarry marksmen eliminated
 SM04_S2_03_ICE	SM04	2	ICE		Both down. Radios recovered. Gohan can listen for patrol calls; we'll still have to watch the road.	Both marksmen eliminated and both radios collected
 SM05_S1_01_GOHAN	SM05	1	GOHAN	Reeds rustling, water rippling	Swamp's dark enough to hide a boat. Going in quiet. I'll call when I find the buoy.	Gohan reaches the boat
 SM05_S1_02_GOHAN	SM05	1	GOHAN	Diving underwater, rebreather hiss	Buoy located. Fitting the interceptor at the service harness. Keep this channel open.	Gohan begins installing the interceptor
 SM05_S2_03_GOHAN	SM05	2	GOHAN		Signal locked. We can read the flight traffic this buoy relays. Coming back to the pickup.	Interceptor installed
 SM06_S1_01_GUESS	SM06	1	GUESS	V8 diesel roaring, chassis shuddering	Aviation fuel, full load. Easy on the throttle. This thing only has to arrive in one piece.	Guess boards the tanker
-SM06_S1_02_GUESS	SM06	1	GUESS		Cartel bikes behind me! Gohan, keep the airfield gate clear.	Armed bike pursuit starts
+SM06_S1_02_GUESS	SM06	1	GUESS		Cartel bikes behind me. Staying with the fuel. Let McKenzie know I am bringing company.	At least one armed pursuit bike actually spawned
 SM06_S2_03_GUESS	SM06	2	GUESS	Flooring pedal, swerving into lead bike	Through the canyon. Still got the load. I'm taking the next bend slow, whether they like it or not.	Tanker clears the canyon checkpoint
 SM06_S2_04_GUESS	SM06	2	GUESS		Tanker at McKenzie, intact. Set this fuel aside for the rig operation.	Specified tanker delivered and unloaded
 SM07_S1_01_ICE	SM07	1	ICE	Cold, venomous tone	Fifteen years ago Sterling got my whole squad ambushed in Kandahar for a five-hundred-thousand-dollar kickback. Tonight I settle the ledger.	Elevator ascent

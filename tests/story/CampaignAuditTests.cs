@@ -36,9 +36,9 @@ public static partial class StoryTests
   var path=Path.Combine(root,"rewards-audit.json");var state=CampaignState.Load(path);var cat=new MissionCatalog();
   Check(state.LastHero==CrewSlot.Guess,"Fresh campaign defaults to Guess");
   state.MarkComplete("M24",cat);state.MarkComplete("M24",cat);
-  Check(state.CashOnHand==200000&&state.AlamoGoldDredgedTons==5,"Replaying a completed heist cannot duplicate cash or gold");
+  Check(state.CashOnHand==250000&&state.AlamoGoldDredgedTons==5,"Replaying a completed heist cannot duplicate cash or gold");
   var loaded=CampaignState.Load(path);loaded.MarkComplete("M24",cat);
-  Check(loaded.CashOnHand==200000&&loaded.Completed.Contains("M24"),"Payout and completion survive reload together and remain idempotent");
+  Check(loaded.CashOnHand==250000&&loaded.Completed.Contains("M24"),"Payout and completion survive reload together and remain idempotent");
   loaded.MarkComplete("M03",cat);Check(loaded.IsUnlocked("cypressFoundry"),"Foundry access unlocks on committed mission completion");
   var locked=new MissionDefinition{Info=new MissionInfo{Id="M29",Prerequisite="M28"},Factory=()=>new AuditMission()};cat.All.Add(locked);
   Check(loaded.NextPlayable(cat)==null,"No next-job fallback bypasses an unmet prerequisite");
@@ -77,6 +77,12 @@ public static partial class StoryTests
   {
    Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"abort-"+type.Name+".json"));var mission=(ComposedMission)Activator.CreateInstance(type);
    if(mission.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
+   if(mission.Id=="SM03")
+   {
+    var owned=new OwnedVehicle{Id=1,ModelName="sultanrs",ModelHash=(uint)Game.GenerateHash("sultanrs"),Garage="bay-guess",Label="Retry race car"};c.State.Vehicles.Add(owned);
+    c.Garages=new GarageService(crew,c.State,c.Locations,null);c.Garages.Allowed=()=>true;
+    var car=c.Garages.Retrieve(owned);Game.Player.Character.Position=car.Position;Game.Player.Character.SetIntoVehicle(car,VehicleSeat.Driver);
+   }
    Check(mission.Begin(c),mission.Id+" builds a fresh attempt for failure/retry audit");
    var required=Flow(mission).SelectMany(s=>s.Objectives).Where(o=>o.RequiredCharacter.HasValue).Select(o=>o.RequiredCharacter.Value).First();
    crew.PedFor(required).IsDead=true;mission.Tick();

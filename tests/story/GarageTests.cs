@@ -26,11 +26,11 @@ public static partial class StoryTests
   Check(garages.ArrivalVehicle()==car,"The car under the player is the one the door offers to store");
   Check(garages.Store(lot,car)&&state.Vehicles.Count==1&&state.Vehicles[0].Garage==lot.Id&&state.Vehicles[0].Stolen&&state.Vehicles[0].PrimaryColor==12&&state.Vehicles[0].Livery==2&&state.Vehicles[0].Label=="Sultanrs"&&!car.Present&&!Game.Player.Character.IsInVehicle(),"A car driven into an owned garage is kept, off the street or not, with its build; the car itself is gone from the world and the player is out of it");
   var kept=state.Vehicles[0];
-  var second=new Vehicle{Model=new Model("primo")};var third=new Vehicle{Model=new Model("emperor")};
+  var second=new Vehicle{Model=new Model("primo"),Position=door};var third=new Vehicle{Model=new Model("emperor"),Position=door};
   Check(garages.Store(lot,second)&&!garages.Store(lot,third)&&state.Vehicles.Count==2&&garages.Used(lot)==2&&!garages.HasFreeSlot(lot),"A two-bay garage takes two; the third is refused");
   // Out front, and back on its own when left behind.
   var outCar=garages.Retrieve(kept);
-  Check(outCar!=null&&outCar.Exists()&&(int)outCar.Mods.PrimaryColor==12&&outCar.Mods.Livery==2&&garages.IsOut(kept)&&outCar.Position.DistanceTo(door)<12f,"Taking a car out spawns it at the door with its build");
+  Check(outCar!=null&&outCar.Exists()&&(int)outCar.Mods.PrimaryColor==12&&outCar.Mods.Livery==2&&garages.IsOut(kept)&&outCar.Position.DistanceTo(c.Locations.Position(lot.Key+".VehicleSpawn"))<1f,"Taking a car out uses the separate vehicle bay with its build");
   Check(garages.Retrieve(kept)==outCar,"A car already out is not spawned twice");
   Game.Player.Character.Position=door+new Vector3(500,0,0);garages.Update(true);Game.GameTime+=GarageService.ReturnAfterMs+1;garages.Update(true);
   Check(!outCar.Present&&!garages.IsOut(kept)&&kept.Garage==lot.Id,"A car left more than 300 m behind for a minute goes back to its garage");
@@ -39,6 +39,9 @@ public static partial class StoryTests
   Check(garages.CallKJ(kept)&&garages.DeliveryActive&&garages.KJ!=null&&garages.DeliveryVehicle!=null,"KJ answers: a car and its driver on the road");
   var drop=garages.DeliveryVehicle;var kj=garages.KJ;
   Check(kj.IsInVehicle(drop)&&kj.Task.Drives>=1&&drop.Position.DistanceTo(Game.Player.Character.Position)>=80f&&kj.Model.Name==GarageService.KJModel&&(int)drop.Mods.PrimaryColor==12,"KJ starts well out of sight, driving the car in with its build on it");
+  Check(kj.Task.LastDriveSpeed>=35f&&drop.Position.DistanceTo(Game.Player.Character.Position)<140f,"KJ uses the faster delivery pace from a shorter off-camera approach");
+  int drives=kj.Task.Drives;Game.GameTime+=3100;drop.Speed=0;garages.Update(true);
+  Check(kj.Task.Drives>drives&&garages.DeliveryActive,"A stalled delivery is retasked after three seconds without ending the request");
   Check(!garages.CallKJ(kept)&&garages.DeliveryActive,"Calling for the same car again is not a second car");
   Game.Player.Character.Position=door+new Vector3(25,0,0);drop.Position=Game.Player.Character.Position+new Vector3(6,0,0);drop.Speed=0f;garages.Update(true);
   Check(!kj.IsInVehicle()&&!garages.DeliveryActive&&garages.IsOut(kept)&&GameUtils.Message.Contains("KJ"),"At the player KJ gets out, says his piece, and the car is the crew's to drive");

@@ -105,6 +105,11 @@ public static partial class RegressionTests {
  static void HoldTests(){
   Reset();var ai=AI();ai.HoldPosition=true;var leader=new Ped{CurrentVehicle=new Vehicle()};var c=new Ped{Position=new Vector3(100,0,0)};
   ai.Update(CrewSlot.Gohan,c,leader);Check(ai.StateOf(CrewSlot.Gohan)==CompanionState.Hold&&c.Task.Enters==0&&c.Task.Warps==0,"Split approach Hold prevents both boarding and distant vehicle warp");
+  var heldRide=new Vehicle();var passenger=new Ped();passenger.SetIntoVehicle(heldRide,VehicleSeat.LeftRear);
+  ai.Update(CrewSlot.Ice,passenger,leader);
+  Check(passenger.Task.Guards==0&&passenger.Task.Clears==0&&passenger.IsInVehicle(heldRide),"Holding a seated companion never applies an on-foot guard or clear task");
+  ai.Refresh(CrewSlot.Ice);ai.Update(CrewSlot.Ice,passenger,leader);
+  Check(passenger.Task.Guards==0&&passenger.Task.Clears==0&&passenger.IsInVehicle(heldRide),"A fresh AI decision after switching still preserves the held passenger seat");
   ai.HoldPosition=false;ai.Update(CrewSlot.Gohan,c,leader);Check(ai.StateOf(CrewSlot.Gohan)==CompanionState.Vehicle,"Releasing Hold restores vehicle behavior for the getaway");
  }
  static void ObjectiveTests(){
@@ -146,5 +151,5 @@ public static partial class RegressionTests {
   Reset();crew=new CrewRoster{ActivePed=Game.Player.Character};death=new DeathController(new ModConfig(),crew,new MissionManager(),new AbilityController(),new SwitchController(),new DialogueDirector());Function.ThrowOnce=Hash.SET_FADE_OUT_AFTER_ARREST;death.Update();
   Check(crew.Dismissals==1&&!(bool)Function.Values[Hash.PAUSE_DEATH_ARREST_RESTART],"Partial native failure still releases restart suppression");
  }
- public static int Main(string[] args){try{MilitaryAftermathChecks();TeamCombatChecks();ActiveRecoveryChecks();MilitaryLifecycleChecks();ReunionAndChaseTests();ConvoyAndIndependentTests();CompanionTests();FriendlyFireTests();DriverTests();HandoverTests();HoldTests();ObjectiveTests();SurveyTests(args[0]);DeathTests();Console.WriteLine(checks+" checks passed (stand-ins; live GTA validation still required).");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
+ public static int Main(string[] args){try{IndividualHangoutChecks();PlacementEditorChecks(args[0]);MilitaryAftermathChecks();TeamCombatChecks();ActiveRecoveryChecks();MilitaryLifecycleChecks();ReunionAndChaseTests();ConvoyAndIndependentTests();CompanionTests();FriendlyFireTests();DriverTests();HandoverTests();HoldTests();ObjectiveTests();SurveyTests(args[0]);DeathTests();Console.WriteLine(checks+" checks passed (stand-ins; live GTA validation still required).");return 0;}catch(Exception ex){Console.Error.WriteLine(ex);return 1;}}
 }

@@ -26,7 +26,7 @@ namespace Bloodlines.Core
             // stop Guess's AI chase, aircraft, or another character's assignment.
             var car = ped.CurrentVehicle;
             if (car != null && car.Exists() && car.Model.IsCar && car.GetPedOnSeat(VehicleSeat.Driver) == ped)
-                Function.Call(Hash.SET_CONTROL_VALUE_NEXT_FRAME, 0, (int)Control.VehicleHandbrake, 1f);
+                Function.Call(Hash.SET_CONTROL_VALUE_NEXT_FRAME, 0, (int)Control.VehicleBrake, car.Speed > 4f ? 0.3f : 1f);
         }
     }
 }

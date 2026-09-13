@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-36 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+49 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -56,13 +56,13 @@ Prerequisite: M02. Retry: full mission restart.
 | 4 | Ice | **Clear the yard** — KillTargetsObjective: Ice: eliminate the guards marked RED in the container yard. Gohan waits until it is clear. |
 | 5 | Gohan | **Load the Benson** — MissionInteraction: Gohan: open the Benson and load the crates |
 | 6 | Guess | **The depot answers** — TravelObjective: Guess: get back to the depot. Ice and Gohan are pinned at the truck. |
-| 7 | Guess | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen marked RED, and the cars pulling in behind you. Switch to any brother. |
+| 7 | any brother | **Hold the depot** — KillTargetsObjective: Clear the depot: the gunmen marked RED, and the cars pulling in behind you. Switch to any brother. |
 | 8 | Guess | **Run it home** — EnterVehicleObjective: Guess: take the orange-marked Benson truck (driver seat). Ice rides with you; Gohan rides in the back.<br>ConditionObjective: Ice is boarding the cab and Gohan the back of the Benson. |
 | 9 | Guess | **Cypress Flats** — LoseWantedObjective: Lose the police before the foundry. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: Base.CypressFlats, M03.CraneControls, M03.DepotGate, M03.HaulerSpawn, M03.RailJunction.
+Survey references: Base.CypressFlats, M03.ArrivalSpawn, M03.ArrivalStop, M03.CraneControls, M03.Crate, M03.DepotGate, M03.HaulerSpawn, M03.RailJunction.
 
 ## M04 — SEVERED WIRE
 
@@ -70,7 +70,7 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Drive to the lot** — TravelObjective: Guess: drive the crew to the Pillbox Hill lot. |
+| 1 | Guess | **Drive to the lot** — TravelObjective: Guess: meet the crew at the Pillbox Hill lot. Ice and Gohan have their own approaches. |
 | 2 | Guess | **In position** — WaitForRolesObjective: Hold at the exit. Ice and Gohan are in position. |
 | 3 | Gohan | **Kill the lights** — MissionInteraction: Gohan: cut the marked surface-lot breaker |
 | 4 | Gohan | **Miller runs** — SwitchWindowObjective: Miller is running. Take Guess to intercept; Ron is already on him |
@@ -90,15 +90,15 @@ Prerequisite: M04. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Ice | **Cliff overwatch** — KillTargetsObjective: Ice — take the generator crew off the cave mouth. |
-| 2 | Guess | **Light the cove** — MissionInteraction: Guess: launch the signal flare from the dinghy |
-| 3 | Gohan | **Breach the grotto** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 4 | Gohan | **Run him to the sandbar** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 5 | Gohan | **Take him aboard** — MissionInteraction: Gohan: bring the dinghy alongside and take Mateo aboard |
-| 6 | Gohan | **Mateo's account** — DialogueFinishedObjective: Hold the dinghy. Mateo is aboard. |
+| 2 | Guess | **Light the cove** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Guess | **Breach the grotto** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 4 | Guess | **Disable Mateo's boat** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 5 | Gohan | **Take him aboard** — MissionInteraction: Gohan: take Mateo aboard the stopped dinghy. Press E / D-pad Right |
+| 6 | any brother | **Mateo's account** — DialogueFinishedObjective: Hold the dinghy. Mateo is aboard. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M05.CliffPerch, M05.CoveAir, M05.DinghySpawn, M05.GrottoMouth, M05.LightCrew, M05.Sandbar.
+Survey references: M05.Chase1, M05.Chase2, M05.Chase3, M05.Chase4, M05.Chase5, M05.Chase6, M05.Chase7, M05.CliffPerch, M05.DinghySpawn, M05.GrottoMouth, M05.LightCrew, M05.Sandbar.
 
 ## M06 — CLEAN SWEEP
 
@@ -110,12 +110,12 @@ Prerequisite: M05. Retry: full mission restart.
 | 2 | Ice | **Sally port** — ReachZoneObjective: Ice: walk into the yellow depot entrance marker. |
 | 3 | Ice | **Burn the racks** — AssignedWorkObjective: Gohan is preparing the thermite. Ice: hold the alley while he works.<br>SurviveWavesObjective: Ice: defeat the RED-marked SWAT waves while Gohan finishes the burn. Stay on Ice. |
 | 4 | Guess | **The pickup** — ReachZoneObjective: Guess: bring the Granger to the alley mouth for Ice and Gohan. |
-| 5 | Guess | **Everyone aboard** — EnterVehicleObjective: Guess: hold at the alley mouth until Ice and Gohan are in the Granger. |
-| 6 | Guess | **Out of Vespucci** — LoseWantedObjective: Lose the police. |
+| 5 | any brother | **Everyone aboard** — ConditionObjective: Hold at the alley mouth until all three are in the Granger. Once aboard, any brother can continue. |
+| 6 | any brother | **Out of Vespucci** — LoseWantedObjective: Lose the police.<br>ConditionObjective: Keep all three aboard the Granger for the escape. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M06.AlleyHold, M06.Culvert, M06.Feeder, M06.GrangerSpawn, M06.SallyPort, M06.ServerRacks.
+Survey references: M06.AlleyHold, M06.ConvoySpawn, M06.ConvoyStop, M06.Culvert, M06.Feeder, M06.GrangerSpawn, M06.SallyPort, M06.ServerRacks.
 
 ## M07 — WIRETAP WALTZ
 
@@ -124,9 +124,9 @@ Prerequisite: M06. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Ice | **The mast** — ReachZoneObjective: Ice — parachute from the tower to the marked roof and reach the antenna platform. |
-| 2 | Ice | **Clamp the receiver** — MissionInteraction: Clamp the packet sniffer to the dish. |
+| 2 | Ice | **Clamp the receiver** — MissionInteraction: Ice: fit the sniffer to the satellite dish. Press E / D-pad Right. |
 | 3 | Ice | **Off the roof** — ReachZoneObjective: Grab the chute by the platform, jump, and reach Guess's marked pickup below. |
-| 4 | Ice | **Moving pickup** — EnterVehicleObjective: Get in behind Guess. |
+| 4 | Ice | **Moving pickup** — EnterVehicleObjective: Ice: board a rear seat behind Guess. F / Y, or E / D-pad Right beside the car. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -138,11 +138,11 @@ Prerequisite: M07. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Loop the cameras** — MissionInteraction: Gohan — loop the CCTV feed. |
+| 1 | Gohan | **Loop the cameras** — MissionInteraction: Gohan: use the security cabinet outside the port security cabin to loop CCTV. Press E / D-pad Right. |
 | 2 | Ice | **Drop the sentries** — KillTargetsObjective: Ice — drop the sentries at the marked warehouse posts. |
 | 3 | Guess | **Take the forklift** — EnterVehicleObjective: Guess — take the forklift. |
-| 4 | Guess | **Crate one** — ForksUnderCrateObjective: Guess — drive the forks under the first turbine crate and stop. |
-| 5 | Guess | **Crate two, the technical** — DestroyVehicleObjective: Ice — put the Aegis technical down.<br>ForksUnderCrateObjective: Guess — drive the forks under the second crate and stop. |
+| 4 | Guess | **Crate one** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 5 | Guess | **Crate two, the technical** — DestroyVehicleObjective: Ice — put the Aegis technical down.<br>ConditionObjective: Secure both turbine crates on the flatbed. |
 | 6 | Guess | **Take the hauler** — EnterVehicleObjective: Guess — take the flatbed. Ice rides with you; Gohan brings the Granger. |
 | 7 | Guess | **Lose the police** — LoseWantedObjective: Lose the police before the stash. |
 | 8 | Guess | **The stash** — DeliverVehicleObjective: Guess: bring the loaded flatbed to the connector stash. |
@@ -157,17 +157,17 @@ Prerequisite: M08. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Get airborne** — EnterVehicleObjective: Guess — take the Frogger up. |
-| 2 | Guess | **Shadow the convoy** — ShadowTargetObjective: Hold the ridgeline behind the convoy. |
-| 3 | Ice | **Take the driver** — KillTargetsObjective: Ice: wait at the ambush point and shoot the marked escort driver. |
+| 1 | Guess | **Get airborne** — EnterVehicleObjective: Guess: get into the Frogger's pilot seat.<br>ConditionObjective: Guess: lift off at least 8m above the ground; then the convoy starts moving. |
+| 2 | Guess | **Shadow the convoy** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Ice | **Take the driver** — KillTargetsObjective: Ice: shoot the marked rear escort DRIVER through the cab window. Keep his truck intact; Guess holds the Frogger overhead. |
 | 4 | Ice | **Rip the transponder** — MissionInteraction: Ice: get out, approach the stopped escort cab, and take its IFF transponder. |
-| 5 | Guess | **The pickup** — DeliverVehicleObjective: Guess: land the Frogger on the marked flat past the culvert. |
-| 6 | Ice | **Ice aboard** — EnterVehicleObjective: Ice — board the Frogger. |
-| 7 | Ice | **Transponder extraction** — ReachZoneObjective: Get the transponder to the temporary drop point. |
+| 5 | Guess | **The pickup** — DeliverVehicleObjective: Guess: land the Frogger on the marked open flat north of the road. |
+| 6 | Ice | **Ice aboard** — EnterVehicleObjective: Ice: board the landed Frogger. Use the passenger door or E / D-pad Right nearby. |
+| 7 | Guess | **Transponder extraction** — DeliverVehicleObjective: Guess: fly Ice and the transponder to the marked drop point and land.<br>ConditionObjective: Keep Ice aboard with the transponder. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M09.AmbushPoint, M09.Bunker, M09.ConvoyStart, M09.HeliSpawn, M09.Pickup.
+Survey references: M09.AmbushPoint, M09.Bunker, M09.ConvoyStart, M09.GohanStart, M09.HeliSpawn, M09.IceStart, M09.Pickup.
 
 ## M10 — OPEN THROTTLE
 
@@ -194,12 +194,12 @@ Prerequisite: M10. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Mount the turbine** — MissionInteraction: Guess — fabricate the motor mounts. |
 | 2 | Ice | **On the dyno** — EnterVehicleObjective: Ice — get in and hold it on the dyno. |
-| 3 | Ice | **Manifold pressure** — DynoObjective: Ice: use partial RT or tap W to hold 22-28 PSI. Stay in the driver seat. |
+| 3 | Ice | **Manifold pressure** — DynoObjective: Ice: RT / W raises pressure; LT / S lowers it. Release both to HOLD 20-30 PSI. Stay in the driver seat. |
 | 4 | Ice | **Berth 44** — DialogueFinishedObjective: Gohan has the manifest. Hear him out. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M11.ChopShop, M11.DynoPad.
+Survey references: M11.ChopShop, M11.DynoPad, M11.FlatbedSpawn, M11.GohanStart, M11.GuessStart, M11.IceStart, M11.Workbench.
 
 ## M12 — BLACK TIDE RECON
 
@@ -211,10 +211,11 @@ Prerequisite: M11. Retry: full mission restart.
 | 2 | Gohan | **Under the sonar** — DeliverVehicleObjective: Gohan: descend in the sub to the underwater yellow marker. |
 | 3 | Gohan | **Map the hull** — MissionInteraction: Acoustic-scan hold 3's bulkhead. |
 | 4 | Gohan | **Back to the jetty** — DeliverVehicleObjective: Gohan: surface in the sub beside the jetty. |
+| 5 | any brother | **Clear the hunting launches** — KillTargetsObjective: Ice / Gohan: stop the armed crews on both pursuit boats. Switch freely now the sub is back at the jetty. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M12.FreighterHull, M12.PierWatch, M12.SonarBuoy, M12.SouthJetty.
+Survey references: M12.FreighterHull, M12.GuessStart, M12.KrakenReturn, M12.KrakenSpawn, M12.PatrolRoute, M12.PatrolSpawn, M12.PierWatch, M12.SonarBuoy, M12.SouthJetty.
 
 ## M13 — SMUGGLER'S CUT
 
@@ -223,13 +224,14 @@ Prerequisite: M12. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Ice | **Into the basin** — EnterVehicleObjective: Ice — take the water scooter into the basin. |
-| 2 | Ice | **Limpets** — MultiHoldObjective: Plant limpet charges on all three barges. |
-| 3 | Ice | **Clear the water** — ReachZoneObjective: Get to the western slipway. |
-| 4 | Ice | **Blow the basin** — MissionInteraction: Ice: board the Granger, then trigger the planted charges |
+| 2 | Ice | **Limpets** — MultiHoldObjective: Ice: approach the marked side of each fuel boat and press E / D-pad Right to plant a charge. |
+| 3 | Ice | **Clear the water** — ReachZoneObjective: Ice: return to the southern quay, climb out onto the dock, and reach Guess at the car marker. |
+| 4 | Ice | **Board Guess's car** — EnterVehicleObjective: Ice: get into an empty passenger seat in Guess's Granger (F / Y or E / D-pad Right). |
+| 5 | Ice | **Blow the basin** — MissionInteraction: Ice: board the Granger, then trigger the planted charges |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M13.BargeOne, M13.BargeThree, M13.BargeTwo, M13.CanalSlipway, M13.KayakLaunch.
+Survey references: M13.AlarmSpawn, M13.AlarmSpawn2, M13.BargeOne, M13.BargeThree, M13.BargeTwo, M13.CanalSlipway, M13.KayakLaunch, M13.Watchman.
 
 ## M14 — AIRSPACE BLACKOUT
 
@@ -239,12 +241,12 @@ Prerequisite: M13. Retry: full mission restart.
 |---|---|---|
 | 1 | Ice | **Overwatch** — KillTargetsObjective: Ice — clear the apron from the ridge. |
 | 2 | Guess | **The hangar** — ReachZoneObjective: Guess — get to the hangar door. |
-| 3 | Guess | **Hotwire** — EnterVehicleObjective: Guess: take the marked jammer aircraft. |
+| 3 | Guess | **Hotwire** — EnterVehicleObjective: Guess: take the marked jammer aircraft. Fight or board under fire. |
 | 4 | Guess | **Under the radar** — AltitudeCeilingObjective: Hug the terrain — stay under 50 meters above the terrain.<br>DeliverVehicleObjective: Guess: land the jammer aircraft at McKenzie and stop. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M14.HangarDoor, M14.McKenzieHangar, M14.OverwatchRidge, M14.PlaneSpawn.
+Survey references: M14.ApronGuard, M14.GohanStart, M14.GrangerSpawn, M14.GuessStart, M14.HangarDoor, M14.HangarGuard, M14.McKenzieHangar, M14.OverwatchRidge, M14.PlaneSpawn.
 
 ## M15 — CRAWLSPACE
 
@@ -252,14 +254,15 @@ Prerequisite: M14. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Maintenance level** — ReachZoneObjective: Gohan: reach the marked maintenance access outside the administration building. |
-| 2 | Ice | **Clear the rounds** — SubdueTargetsObjective: Ice — put the watchmen down without killing them. |
-| 3 | Gohan | **Splice the trunk** — MissionInteraction: Gohan — splice the optical bypass. |
-| 4 | Gohan | **Out clean** — ReachZoneObjective: Leave the way you came in; Ron is at the exit. |
+| 1 | Gohan | **Leave the arrival car** — ConditionObjective: Gohan: get out of Guess's car. Ice exits with you; Guess waits here for extraction. |
+| 2 | Gohan | **Maintenance level** — ReachZoneObjective: Gohan: reach the marked maintenance access outside the administration building. |
+| 3 | Ice | **Clear the rounds** — SubdueTargetsObjective: Ice — put the watchmen down without killing them. |
+| 4 | Gohan | **Splice the trunk** — MissionInteraction: Gohan — splice the optical bypass. |
+| 5 | any brother | **Out clean** — ReachZoneObjective: Gohan: return to Guess at the original arrival car. Ice: cover the withdrawal.<br>EnterVehicleObjective: Board Guess's car. Use F / Y or the interact button at an empty passenger door.<br>ConditionObjective: Get Ice and Gohan aboard. Switch freely to help either brother return to Guess. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M15.AdminEntry, M15.Exit, M15.FiberSplice, M15.MaintenanceVault.
+Survey references: M15.AdminEntry, M15.Cabinet, M15.Exit, M15.FiberSplice, M15.GrangerSpawn, M15.MaintenanceVault, M15.ServiceOffice, M15.Watchman, M15.Watchman1, M15.Watchman2, M15.Watchman3.
 
 ## M16 — THE HEAVY LIFT
 
@@ -267,17 +270,17 @@ Prerequisite: M15. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Walk in** — ReachZoneObjective: Ice — cross the outer depot on the transponder. |
+| 1 | Ice | **Walk in** — ReachZoneObjective: Ice: drive from the freeway approach to the hangar, then clear its guards. |
 | 2 | Ice | **Take the helipad** — KillTargetsObjective: Clear the military police off the pad. |
 | 3 | Guess | **Spool the twins** — EnterVehicleObjective: Guess — take the Cargobob. |
 | 4 | Guess | **Ice aboard** — ConditionObjective: Hold the pad while Ice boards. |
 | 5 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 meters above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
-| 6 | Guess | **Lose the Lazers** — LoseWantedObjective: Lose the pursuit before Terminal Island. |
+| 6 | Guess | **Clear the canyon** — ReachZoneObjective: Guess: clear the canyon exit. Gohan keeps base anti-air offline until the lift is delivered. |
 | 7 | Guess | **Terminal Island** — DeliverVehicleObjective: Put the Cargobob down at Terminal Island. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.Helipad, M16.TerminalDrop.
+Survey references: M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.GrangerSpawn, M16.Helipad, M16.Marine, M16.TankEntry, M16.TerminalDrop.
 
 ## M17 — SUB-ZERO PAYLOAD
 
@@ -287,12 +290,13 @@ Prerequisite: M16. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Calibrate the torches** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Guess | **Grapple test** — MissionInteraction: Guess — test the fifty-ton magnetic lock. |
-| 3 | Gohan | **The release** — MissionInteraction: Gohan — move the release to the outside of the hull. |
-| 4 | Gohan | **Ready** — DialogueFinishedObjective: Finish the radio check before staging the heist. |
+| 3 | Gohan | **The release** — MissionInteraction: Gohan: configure the external grapple release at the marked workbench. |
+| 4 | Gohan | **Collect the Kraken** — EnterVehicleObjective: Gohan: collect the prepared Kraken from the water beside the dock. |
+| 5 | Gohan | **Ready** — DialogueFinishedObjective: Finish the radio check before staging the heist. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M17.DrySlip, M17.WeldOne, M17.WeldThree, M17.WeldTwo.
+Survey references: M17.DrySlip, M17.GearSpawn, M17.GohanStart, M17.GuessStart, M17.IceStart, M17.KrakenSpawn, M17.ReleasePoint, M17.WeldOne, M17.WeldThree, M17.WeldTwo, M17.Workbench.
 
 ## M18 — THE STAGING LINE
 
@@ -302,14 +306,16 @@ Prerequisite: M17. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Sub into the channel** — EnterVehicleObjective: Gohan — take the Kraken out.<br>DeliverVehicleObjective: Hold her in the channel. |
 | 2 | Guess | **Bird in the hangar** — DeliverVehicleObjective: Guess — put the Cargobob in the salt hangar. |
-| 3 | Guess | **Fit the pod** — MissionInteraction: Guess — fit the jammer pod to the Cargobob. |
-| 4 | Ice | **Load the launchers** — DeliverVehicleObjective: Ice — bring the hauler onto the line. |
-| 5 | Ice | **Load the parked hauler** — MissionInteraction: Load the anti-air launchers. |
-| 6 | Ice | **Countdown** — DialogueFinishedObjective: Keep your assigned vehicle in place. Listen to the final radio check. |
+| 3 | Guess | **Collect the jammer** — MissionInteraction: Guess: collect the jammer from the equipment box. |
+| 4 | Guess | **Fit the jammer to the lift** — MissionInteraction: Guess: fit the jammer at the rear of the Cargobob. |
+| 5 | Ice | **Load the launchers** — DeliverVehicleObjective: Ice — bring the hauler onto the line. |
+| 6 | Ice | **Load the parked hauler** — MissionInteraction: Ice: collect the launchers from the marked equipment crate. |
+| 7 | Ice | **Secure the launchers in the truck** — MissionInteraction: Ice: load and secure the launchers at the back of the hauler. |
+| 8 | Ice | **Countdown** — DialogueFinishedObjective: Keep your assigned vehicle in place. Listen to the final radio check. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M18.ChannelMark, M18.HaulerMark, M18.SaltHangar.
+Survey references: M18.CargobobSpawn, M18.ChannelMark, M18.HaulerMark, M18.HaulerSpawn, M18.KrakenSpawn, M18.LauncherCrate, M18.LauncherWork, M18.PodCrate, M18.PodWork, M18.SaltHangar.
 
 ## M19 — THE PORT HEIST: UNDERWATER BREACH
 
@@ -381,11 +387,11 @@ Prerequisite: M22. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Breach the dome** — ReachZoneObjective: Ice — get up to the radar dome walkway. |
+| 1 | Ice | **Breach the dome** — ReachZoneObjective: Ice: approach the marked radar yard gate. Guess covers the west side; Gohan watches the generator. |
 | 2 | Ice | **Clear the radar yard** — KillTargetsObjective: Clear the cartel squatters out. |
-| 3 | Guess | **Secure the bays** — MultiHoldObjective: Guess — check the three storage bays. |
-| 4 | Gohan | **Power up** — MissionInteraction: Gohan — bring the marked generator online. |
-| 5 | Gohan | **Walk the yard** — ReachZoneObjective: Walk the yard to the bunker door. |
+| 3 | Guess | **Secure the bays** — MultiHoldObjective: Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay. |
+| 4 | Gohan | **Power up** — MissionInteraction: Gohan: use the control side of the visible generator to power the yard gate. |
+| 5 | Gohan | **Walk the yard** — ReachZoneObjective: Walk to the opened radar yard gate. Underground rooms are still sealed. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -404,7 +410,7 @@ Prerequisite: M23. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M22.AlamoDrop, M23.BayOne, M23.BunkerDoor, M24.CraneSpawn, M24.RidgeLine, M24.RidgeRoad.
+Survey references: M22.AlamoDrop, M23.BayOne, M23.BunkerDoor, M24.CraneSpawn, M24.GohanWork, M24.IceStart, M24.RecoveryPad, M24.RidgeLine, M24.RidgeRoad.
 
 ## M25 — BOUNTY HUNTERS' CANYON
 
@@ -420,7 +426,7 @@ Prerequisite: M24. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M25.BridgeDeck, M25.DeckApproach, M25.RimPost, M25.Riverbed, M25.TankerSpot.
+Survey references: M25.BridgeDeck, M25.DeckApproach, M25.HunterApproach, M25.RimPost, M25.Riverbed, M25.TankerSpot.
 
 ## M26 — THE ALAMO SCRAMBLE
 
@@ -463,7 +469,7 @@ Prerequisite: M27. Retry: full mission restart.
 | 1 | Gohan | **Identify the relay** — ReachZoneObjective: Gohan: reach the yellow relay-yard entrance. Ice covers the opposite approach. |
 | 2 | Ice | **Clear the transformer yard** — KillTargetsObjective: Ice: clear the four red-marked relay guards before Gohan enters. |
 | 3 | Gohan | **Read the cabinet** — TechnicalChoiceObjective: Gohan: choose which relay system to cut first |
-| 4 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the surge unit at the relay service cabinet |
+| 4 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the case to the laptop on the relay worktable |
 | 5 | Ice | **Cover the splice** — AssignedWorkObjective: Gohan continues the splice. Ice: defeat the responding squads.<br>SurviveWavesObjective: Ice: clear both response squads marked red. |
 | 6 | Guess | **Extraction** — EnterVehicleObjective: Guess: take the Granger driver seat. Wait for both brothers to board. |
 | 7 | Guess | **Back to shelter** — DeliverVehicleObjective: Guess: bring the crew's Granger back to the radar bunker. |
@@ -480,14 +486,15 @@ Prerequisite: M28. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Survey the transfer depot** — ReachZoneObjective: Guess: reach the yellow rail-depot entrance. The fuel will leave by road. |
 | 2 | Ice | **Secure the loading valve** — KillTargetsObjective: Ice: clear the five red guards. Keep the tanker intact. |
-| 3 | Ice | **Transfer the fuel** — MissionInteraction: Ice: open the marked transfer valve and fill the tanker |
-| 4 | Guess | **Take the tractor** — EnterVehicleObjective: Guess: take the orange-marked Phantom tractor attached to the fuel tanker. |
+| 3 | Ice | **Transfer the fuel** — MissionInteraction: Ice: use the laptop on the marked transfer table to fill the coupled tanker |
+| 4 | Guess | **Take the tractor** — EnterVehicleObjective: Guess: take the orange-marked Phantom tractor attached to the fuel tanker. The brothers will ride or follow in another car. |
 | 5 | Guess | **Fuel for the bunker** — DeliverVehicleObjective: Guess: deliver the Phantom AND its tanker to the bunker. Reconnect if you detach it. |
-| 6 | Guess | **Unload the reserves** — MissionInteraction: Guess: stop beside the bunker fuel connection and unload |
+| 6 | Guess | **Unload the reserves** — MissionInteraction: Guess: keep the rig stopped at the bunker and start unloading the fuel reserves |
+| 7 | Guess | **Reserves received** — ConditionObjective: The fuel is being secured in the bunker yard. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M29.Approach, M29.Cover, M29.Delivery, M29.Truck, M29.Valve.
+Survey references: M23.BayTwo, M29.Approach, M29.Cover, M29.Delivery, M29.Truck, M29.Valve.
 
 ## M30 — REDLINE RIDGE
 
@@ -499,11 +506,247 @@ Prerequisite: M29. Retry: full mission restart.
 | 2 | Guess | **Down the ridge** — DeliverVehicleObjective: Guess: drive the loaded 6x6 to the yellow canyon bend. Use the road, not the cliff face. |
 | 3 | Guess | **Sheltered approach** — DeliverVehicleObjective: Guess: follow the yellow road marker out of the canyon. Passengers cover the gunship. |
 | 4 | Guess | **Deliver the parts** — DeliverVehicleObjective: Guess: park the same 6x6 at the bunker unloading marker. |
-| 5 | Guess | **Unload** — MissionInteraction: Guess: unload the satellite parts |
+| 5 | Guess | **Unload** — MissionInteraction: Guess: stop the 6x6 in the unloading area; transfer its roof case to the bunker workbench |
+| 6 | Gohan | **Fit the receiver** — MissionInteraction: Gohan: get out and use the laptop beside the delivered parts on the marked bunker workbench |
+| 7 | Gohan | **First reception** — ConditionObjective: Listen to the receiver check. The parts must be fitted before the job is complete. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M29.Delivery, M30.Bend, M30.Exit, M30.Start.
+Survey references: M23.BayOne, M29.Delivery, M30.Bend, M30.Exit, M30.Start.
+
+## M31 — THE IRON PERIMETER
+
+Prerequisite: M30. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Read the approaches** — MultiHoldObjective: Ice: inspect each yellow approach marker beside the three barriers; press E / D-pad Right |
+| 2 | Gohan | **Arm the perimeter** — MultiHoldObjective: Gohan: arm each marked barrier charge; press E / D-pad Right |
+| 3 | Guess | **Prove the withdrawal road** — TravelObjective: Guess: drive the crew car to the yellow withdrawal marker and stop. Leave the road clear. |
+| 4 | Guess | **Hold the perimeter** — KillTargetsObjective: Defend the generator. Stop the marked probe convoy; planted charges fire only when enemies enter their lane and the crew is clear. |
+| 5 | Gohan | **Check the damage** — MissionInteraction: Gohan: inspect the surviving generator controls |
+| 6 | Gohan | **Keep the base concealed** — LoseWantedObjective: Lose any police pursuit before returning to the perimeter. |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M31.Barrier, M31.Barrier1, M31.Barrier2, M31.Charge, M31.Convoy1, M31.Convoy2, M31.CrewCar, M31.Generator, M31.GeneratorWork, M31.GohanStart, M31.IceStart, M31.Retreat, M31.Work.
+
+## M32 — BLACK SITE ZANCUDO
+
+Prerequisite: M31. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Reach the coastal landing** — TravelObjective: Gohan: pilot the dinghy to the yellow coastal landing and stop near shore |
+| 2 | Gohan | **Open exterior access** — MissionInteraction: Gohan: leave the dinghy, walk up the bank and use the marked exterior electrical cabinet |
+| 3 | Ice | **Secure the ordnance yard** — KillTargetsObjective: Ice: stop the four marked yard guards. Keep both yellow EMP cases intact. |
+| 4 | Guess | **Bring the case carrier** — TravelObjective: Guess: drive the crew car to the yellow pickup beside the cleared ordnance post and stop |
+| 5 | Gohan | **First case** — MissionInteraction: Gohan: pick up the first marked EMP case |
+| 6 | Gohan | **Stow first case** — MissionInteraction: Gohan: carry the case to the rear of Guess's car and stow it |
+| 7 | Gohan | **Second case** — MissionInteraction: Gohan: return for the second marked EMP case |
+| 8 | Gohan | **Stow second case** — MissionInteraction: Gohan: stow the second case beside the first in Guess's car |
+| 9 | Guess | **Extract the team** — EnterVehicleObjective: Guess: take the extraction car's driver seat<br>ConditionObjective: Stop the car and wait for Ice and Gohan to board their rear seats |
+| 10 | Guess | **Leave the base** — TravelObjective: Drive the case-loaded crew car to the yellow road escape marker |
+| 11 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the police before bringing military cargo to the bunker. |
+| 12 | Guess | **Deliver both cases** — TravelObjective: Return the same car with both cases to the bunker unloading marker and stop |
+| 13 | Gohan | **Secure the warheads** — MissionInteraction: Gohan: get out and secure both cases at the marked bunker work area |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M32.Boat, M32.CaseOne, M32.CaseTwo, M32.CrewCar, M32.Delivery, M32.Exit, M32.Gate, M32.Guard, M32.LandingWater, M32.Office, M32.Panel, M32.PanelWork, M32.Pickup, M32.Response, M32.Workbench.
+
+## M33 — THE INFORMANT'S GRAVE
+
+Prerequisite: M32. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Identify the prisoner** — ReachZoneObjective: Ice: reach the yellow observation point; Ramos is the unarmed prisoner. Do not shoot him. |
+| 2 | Ice | **Stop the execution** — KillTargetsObjective: Stop the four red execution guards before the rescue clock expires. Protect Ramos. |
+| 3 | Gohan | **Free Ramos** — MissionInteraction: Gohan: reach Ramos and cut his restraints |
+| 4 | Guess | **Bring the extraction car** — TravelObjective: Guess: drive to the yellow pickup marker beside Ramos and stop |
+| 5 | Guess | **All four aboard** — ConditionObjective: Keep the car stopped: Ramos takes the front passenger seat, Ice and Gohan take the back |
+| 6 | Guess | **Reach armored transport** — TravelObjective: Drive Ramos and both brothers to the yellow armored-transfer marker<br>ConditionObjective: Ramos must remain in the extraction car |
+| 7 | Guess | **Move Ramos into cover** — ConditionObjective: Stop beside the half-track and wait for Ramos to board its front passenger seat |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M33.CrewCar, M33.Guard, M33.Halftrack, M33.Observe, M33.Pickup, M33.Ramos, M33.Response, M33.Transfer, M34.Start.
+
+## M34 — MUD & IRON
+
+Prerequisite: M33. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Leave the transfer site** — ConvoyRouteObjective: Drive the half-track carrying Ramos into the wind-farm route. Ice covers the rear; Gohan follows in the crew car. |
+| 2 | as assigned | **First road barrier** — ConvoyRouteObjective: Continue past the first yellow road marker; Gohan drops the barrier only after both crew vehicles are clear<br>ConditionObjective: Wait for Gohan's escort car to clear the first barrier |
+| 3 | as assigned | **Second response** — ConvoyRouteObjective: Follow the second yellow road marker through the gully. Keep Ramos in the half-track. |
+| 4 | as assigned | **Close the rear route** — ConvoyRouteObjective: Clear the second barrier with both vehicles and follow the shelter road<br>ConditionObjective: Both crew vehicles must clear the second road barrier |
+| 5 | as assigned | **Lose the police** — LoseWantedObjective: Lose any police pursuit before arriving at the medical shelter. |
+| 6 | as assigned | **Medical shelter** — ConvoyRouteObjective: Stop the half-track at the yellow medical shelter marker with Ramos aboard |
+| 7 | Gohan | **Patient first** — ConditionObjective: Wait for Ramos to leave the stopped half-track<br>MissionInteraction: Gohan: get out and prepare the marked medical kit for Ramos |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M34.BarrierPark, M34.BarrierRoad, M34.CrewCar, M34.Exit, M34.Halftrack, M34.MedicalKit, M34.MedicalWork, M34.Ramos, M34.Response1, M34.Response2, M34.Route1, M34.Route2, M34.Route3, M34.Shelter.
+
+## M35 — THE CHIANSKI AMBUSH
+
+Prerequisite: M34. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Prepare the trap** — MultiHoldObjective: Ice: plant both marked roadside charges; press E / D-pad Right |
+| 2 | Guess | **Close the far exit** — TravelObjective: Guess: park the crew car across the yellow far-exit marker and stop |
+| 3 | Gohan | **Identify the target** — MissionInteraction: Gohan: use the laptop on the marked field table to identify the convoy's gun truck |
+| 4 | Gohan | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
+| 5 | Gohan | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
+| 6 | Guess | **Take the driver seat** — EnterVehicleObjective: Guess: take the captured technical's driver seat |
+| 7 | Guess | **Bring both brothers** — ConditionObjective: Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat |
+| 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the police before taking the captured technical to the bunker. |
+| 9 | Guess | **Deliver the gun truck** — TravelObjective: Deliver the same technical with both brothers to the bunker vehicle bay and stop |
+| 10 | Gohan | **Inspect the capture** — MissionInteraction: Gohan: get out and inspect the gun mount at the rear of the parked technical |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M35.BlockExit, M35.Charge, M35.ChargeWork, M35.CrewCar, M35.Delivery, M35.DeviceWork, M35.IceCover, M35.LeadSpawn, M35.Table, M35.TechnicalHold, M35.TechnicalSpawn, M35.Trap.
+
+## M36 — DEEP WELL RECON
+
+Prerequisite: M35. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Survey band ** — DeliverVehicleObjective: Gohan: descend to underwater survey marker <br>MissionInteraction: Gohan: hold beside the visible seabed sensor and record survey  |
+| 2 | Guess | **Move the surface pickup** — TravelObjective: Guess: move the dinghy to the alternate yellow pickup, away from the patrol, and stop |
+| 3 | Gohan | **Bring the survey home** — DeliverVehicleObjective: Gohan: surface in the sub beside Guess's relocated dinghy<br>ConditionObjective: The pickup boat must remain at the alternate marker |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M36.AlternatePickup, M36.IceStart, M36.Patrol, M36.PatrolGoal, M36.Scan, M36.Survey.
+
+## M37 — THE GRAPESEED HARVEST
+
+Prerequisite: M36. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **First aircraft** — EnterVehicleObjective: Guess: board the first orange crop duster in its pilot seat |
+| 2 | Guess | **First landing** — DeliverVehicleObjective: Guess: land the first crop duster at Sandy Shores and stop in its yellow apron marker |
+| 3 | Ice | **Secure the second strip** — KillTargetsObjective: Ice: clear the three red guards around the second aircraft |
+| 4 | Ice | **Second aircraft** — EnterVehicleObjective: Ice: take the second crop duster's pilot seat |
+| 5 | Ice | **Second landing** — DeliverVehicleObjective: Ice: land the second crop duster at its separate Sandy Shores apron marker and stop |
+| 6 | Gohan | **Fit smoke kit ** — MissionInteraction: Gohan: fit the smoke canisters beside parked aircraft  |
+| 7 | Gohan | **Check both releases** — MissionInteraction: Gohan: test the smoke release at the first parked aircraft |
+| 8 | Gohan | **Check second release** — MissionInteraction: Gohan: test the second aircraft's smoke release |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M37.Duster, M37.Guard, M37.Land1, M37.Land2.
+
+## M38 — BLOOD IN THE QUARRY
+
+Prerequisite: M37. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Bring moving cover** — TravelObjective: Guess: drive the Benson into the yellow loading lane under fire. Ice covers the approach; keep the truck moving until you reach the marker |
+| 2 | Guess | **Clear the loading yard** — KillTargetsObjective: Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact |
+| 3 | Gohan | **Release blasting stock** — MissionInteraction: Gohan: unlock the marked stock-control cabinet beside the crates |
+| 4 | Gohan | **Collect package ** — MissionInteraction: Gohan: pick up marked charge package  |
+| 5 | Gohan | **Load package ** — MissionInteraction: Gohan: carry the package to the back of the stopped Benson |
+| 6 | Guess | **All cargo aboard** — EnterVehicleObjective: Guess: take the Benson driver seat<br>ConditionObjective: Stop and wait for Ice in front and Gohan in the rear cargo seat |
+| 7 | Guess | **Escape the quarry** — TravelObjective: Drive the loaded Benson out through the yellow quarry escape marker |
+| 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the police before returning with explosives |
+| 9 | Guess | **Deliver seismic stock** — TravelObjective: Stop the same loaded Benson at the bunker delivery marker |
+| 10 | Gohan | **Verify the load** — MissionInteraction: Gohan: inspect all four packages at the back of the stopped truck |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M38.Cabinet, M38.CabinetWork, M38.Crate, M38.Delivery, M38.Exit, M38.GohanStart, M38.Guard, M38.Hauler, M38.IceStart, M38.Load, M38.Response.
+
+## M39 — THE PALETO CABLE
+
+Prerequisite: M38. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Follow cable route ** — DeliverVehicleObjective: Gohan: follow the underwater yellow route marker  |
+| 2 | Gohan | **Clamp the junction** — MissionInteraction: Gohan: stop the sub beside the marked cable junction and fit its cutter clamp |
+| 3 | Gohan | **Run and verify cutter** — MissionInteraction: Gohan: hold the sub beside the junction while the cutter runs and verify the link is down |
+| 4 | Ice | **Protect the return shore** — KillTargetsObjective: Ice: stop the four marked shoreline response guards so Gohan can return |
+| 5 | Gohan | **Return with the crew** — DeliverVehicleObjective: Gohan: surface the sub at the yellow cove return marker; Guess's boat is waiting nearby |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M39.CutterWork, M39.Guard, M39.Junction, M39.Return, M39.Route.
+
+## M40 — THE PHANTOM RIGGING
+
+Prerequisite: M39. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Prepare hull kit ** — MissionInteraction: Guess: prepare and fit the sealed reinforcement kit for boat  |
+| 2 | Ice | **Test boarding weapons** — ConditionObjective: Ice: use your firearm to hit both yellow floating practice barrels; these are passenger weapons, not mounted boat guns |
+| 3 | Gohan | **Verify navigation** — MissionInteraction: Gohan: use the laptop on the shore table to verify both sea-trial routes |
+| 4 | Gohan | **Trial boat ** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 5 | Gohan | **Run sea trial ** — DeliverVehicleObjective: Drive the assigned Tropic through its offshore yellow test marker |
+| 6 | Gohan | **Return boat ** — TravelObjective: Return the same boat to its yellow cove marker and stop |
+| 7 | Gohan | **Sign off the fleet** — ConditionObjective: Both tested boats and reinforcement kits must be back at the cove |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M40.Boat, M40.Kit, M40.Nav, M40.NavWork, M40.Return, M40.Return1, M40.Target, M40.Trial.
+
+## M41 — THE GENERAL'S WIRE
+
+Prerequisite: M40. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Identify Bradley** — MissionInteraction: Ice: observe from the yellow lookout and identify the marine officer; spare the lodge worker |
+| 2 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: watch Bradley walk clear of the lodge worker; do not fire until he reaches the meeting point |
+| 3 | Ice | **Stop Bradley** — ConditionObjective: Ice: eliminate Bradley before he escapes; the red officer carries the access card |
+| 4 | Ice | **Recover the card** — MissionInteraction: Ice: recover the access card beside Bradley's body |
+| 5 | Ice | **Bring the card to extraction** — MissionInteraction: Ice: bring the card to the yellow rear-of-car marker for Gohan to verify |
+| 6 | any brother | **Board the extraction car** — ConditionObjective: Guess: hold the crew car still while Ice takes a rear seat; Gohan stays in the front passenger seat |
+| 7 | Guess | **Extract the card** — TravelObjective: Guess: drive the whole crew and Bradley's card to the yellow trail exit and stop<br>ConditionObjective: All three brothers must remain aboard the extraction car |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M41.Bradley, M41.EscapeCar, M41.EscapeEnd, M41.Exit, M41.Guard, M41.Meeting, M41.Observe, M41.Pickup, M41.Worker.
+
+## M42 — SKYFALL DELIVERY
+
+Prerequisite: M41. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Fly the drop corridor** — ConditionObjective: Guess: fly over the offshore yellow ring, 150-350m above the sea, under 85m/s; press E / D-pad Right to release the sub |
+| 2 | Guess | **Watch the cargo descent** — ConditionObjective: Guess: circle within 1.2km of the descending sub; keep flying until Gohan confirms a stable splashdown |
+| 3 | Gohan | **Pilot the delivered sub** — DeliverVehicleObjective: Gohan: take the floating Kraken to the yellow coastal rendezvous; Guess holds the Titan offshore |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M42.Delivery, M42.Drop, M42.GohanStart, M42.Hold, M42.Titan.
+
+## M43 — STAGING PALETO
+
+Prerequisite: M42. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Position the sub** — TravelObjective: Gohan: move the Kraken to its yellow offshore holding marker and stop |
+| 2 | Ice | **Position the launch** — TravelObjective: Ice: move the Tropic to the yellow surface holding marker and stop |
+| 3 | Guess | **Land the extraction helicopter** — DeliverVehicleObjective: Guess: fly the Annihilator to the yellow Paleto coastal staging lot and land at its center |
+| 4 | Guess | **Check the preparation ledger** — ConditionObjective: Guess: all three vehicles must stay in their holding positions; complete any missing preparation missions shown below |
+| 5 | Guess | **Commit the staging plan** — MissionInteraction: Guess: walk to the laptop beside the Paleto landing area and confirm the offshore plan |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M43.Board, M43.BoardWork, M43.Boat, M43.BoatReady, M43.Helicopter, M43.Land, M43.ShoreCar, M43.Sub, M43.SubReady.
 
 ## SM01 — LEAD & KEVLAR
 
@@ -519,7 +762,7 @@ Prerequisite: M03. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM01.CrateLoad, SM01.SergeiOffice, SM01.WarehouseGate.
+Survey references: SM01.CrateLoad, SM01.Guard, SM01.SergeiOffice, SM01.WarehouseGate.
 
 ## SM02 — ZERO-DAY INJECTION
 
@@ -527,14 +770,14 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Rooftop** — ReachZoneObjective: Get onto the annex roof. |
+| 1 | Gohan | **Rooftop** — MissionInteraction: Gohan: use the marked service entrance to take the maintenance stairs to the roof. |
 | 2 | Gohan | **Server bay** — SubdueTargetsObjective: Gohan: use the stun gun on both marked guards. Keep them alive. |
 | 3 | Gohan | **Root terminal** — MissionInteraction: Inject the worm at the root terminal. |
-| 4 | Gohan | **Fire escape** — ReachZoneObjective: Down the fire escape before IT traces the connection. |
+| 4 | Gohan | **Fire escape** — MissionInteraction: Gohan: return to the roof access and take the maintenance stairs down before IT traces you. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM02.Exit, SM02.RoofAccess, SM02.ServerBay, SM02.Terminal.
+Survey references: SM02.Exit, SM02.Guard, SM02.RoofAccess, SM02.ServerBay, SM02.StairEntry, SM02.Terminal.
 
 ## SM03 — MIDNIGHT DRIFT
 
@@ -542,14 +785,12 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Starting line** — EnterVehicleObjective: Get in the drift coupe. |
-| 2 | Guess | **Three laps** — RaceCheckpointObjective: Win the circuit — three laps. |
-| 3 | Guess | **They pulled guns** — KillTargetsObjective: Stop the marked shooters OR drive the coupe to the yellow finish marker.<br>DeliverVehicleObjective: Escape in the drift coupe to the marked finish, or stop the shooters. |
-| 4 | Guess | **The chop bay** — DeliverVehicleObjective: Guess: drive the coupe and the prize to the Burro Heights chop bay. |
+| 1 | Guess | **Ready on the grid** — MissionInteraction: Guess: ready up in your own car to start the northbound sprint |
+| 2 | Guess | **Freeway to Chiliad** — RaceCheckpointObjective: Guess: beat both rivals to the summit. Follow the street, freeway and mountain trail gates. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M11.ChopShop, SM03.Checkpoint1, SM03.Checkpoint2, SM03.Checkpoint3, SM03.Checkpoint4, SM03.StartLine.
+Survey references: SM03.RivalGrid, SM03.Sprint, SM03.StartLine, SM03.Summit.
 
 ## SM04 — DEAD DROP QUARRY
 
@@ -557,12 +798,11 @@ Prerequisite: M28. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Identify the nests** — ReachZoneObjective: Ice: reach the yellow quarry overlook. Both marksmen will be marked red. |
-| 2 | Ice | **First marksman** — KillTargetsObjective: Ice: eliminate the first red-marked marksman from cover. |
-| 3 | Ice | **Second marksman** — KillTargetsObjective: Ice: eliminate the remaining marksman before collecting the radios. |
-| 4 | Ice | **First radio** — MissionInteraction: Ice: collect the patrol radio at the first marked nest |
-| 5 | Ice | **Second radio** — MissionInteraction: Ice: collect the other marksman's radio |
-| 6 | Ice | **Leave the quarry** — ReachZoneObjective: Ice: take both radios back to the yellow approach marker. |
+| 1 | Ice | **Identify the nests** — ReachZoneObjective: Ice: reach the yellow quarry overlook. Locate both marksmen before moving down to their radios. |
+| 2 | Ice | **Clear both listening posts** — KillTargetsObjective: Ice: eliminate BOTH red-marked marksmen. Use the ridge as cover. |
+| 3 | Ice | **Recover radio ** — MissionInteraction: Ice: recover radio  |
+| 4 | Ice | **Return with both radios** — ReachZoneObjective: Ice: take BOTH radios back to the yellow quarry approach. Gohan will copy their frequencies over the radio. |
+| 5 | Ice | **Frequencies copied** — ConditionObjective: Listen while Gohan confirms both recovered radio channels. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -574,11 +814,12 @@ Prerequisite: M28. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Into the estuary** — EnterVehicleObjective: Gohan: board the marked dinghy. Follow the yellow route to the monitoring buoy. |
-| 2 | Gohan | **Find the service harness** — DeliverVehicleObjective: Gohan: stop the dinghy within 12m of the yellow buoy marker. |
-| 3 | Gohan | **Fit the interceptor** — MissionInteraction: Gohan: exit the dinghy and swim beside the buoy service harness |
-| 4 | Gohan | **Back aboard** — EnterVehicleObjective: Gohan: climb back into the orange-marked dinghy. |
-| 5 | Gohan | **Shore pickup** — DeliverVehicleObjective: Gohan: return the dinghy to the yellow water pickup beside shore. |
+| 1 | Gohan | **Into the estuary** — EnterVehicleObjective: Gohan: board the marked dinghy and drive to the monitoring buoy. |
+| 2 | Gohan | **Moor beside the buoy** — DeliverVehicleObjective: Gohan: stop within 8m of the yellow buoy. Your dinghy will wait while you fit the interceptor. |
+| 3 | Gohan | **Fit the interceptor** — MissionInteraction: Gohan: exit and swim beside the buoy; fit the interceptor to its marked service point |
+| 4 | Gohan | **Verify telemetry** — ConditionObjective: Verify the fitted interceptor and wait for telemetry confirmation. |
+| 5 | Gohan | **Back aboard** — EnterVehicleObjective: Gohan: swim back and climb into the orange dinghy. The mooring releases when you are aboard. |
+| 6 | Gohan | **Shore pickup** — DeliverVehicleObjective: Gohan: return the dinghy to the yellow water pickup beside shore. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -590,10 +831,11 @@ Prerequisite: M28. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Take the fuel rig** — EnterVehicleObjective: Guess: take the marked Phantom tractor. Keep its aviation-fuel tanker attached. |
-| 2 | Guess | **Canyon run** — DeliverVehicleObjective: Guess: take the fuel rig through the yellow canyon-road checkpoint. Slow for corners. |
-| 3 | Guess | **Airfield reserves** — DeliverVehicleObjective: Guess: deliver the tractor and attached tanker to McKenzie's yellow fuel marker. |
-| 4 | Guess | **Unload safely** — MissionInteraction: Guess: unload the tanker at the airfield connection |
+| 1 | Guess | **Take the fuel rig** — EnterVehicleObjective: Guess: take the orange Phantom tractor. Keep its aviation-fuel tanker attached. |
+| 2 | Guess | **Canyon run** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Guess | **Airfield reserves** — DeliverVehicleObjective: Guess: deliver the tractor AND attached tanker to McKenzie's yellow fuel bay. |
+| 4 | Guess | **Unload safely** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 5 | Guess | **Delivery received** — ConditionObjective: Confirm the fuel delivery at the receiving equipment. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -601,4 +843,4 @@ Survey references: SM06.Approach, SM06.Bend, SM06.Delivery, SM06.Truck.
 
 ## Boundaries of this audit
 
-The harness exercises objective progression, role ownership, fail/retry cleanup, scene release and persistence with GTA stand-ins. It does not establish road driveability, roof access, helicopter aim, swimming/streaming, trailer physics or camera framing. New desert positions remain estimates; safe-ground/water checks reject unavailable sites instead of deploying in the sky. Use the survey when you return. M31–M70 and SM07–SM09 are detailed in CAMPAIGN-REMAINDER.md and remain unimplemented gameplay.
+The harness exercises objective progression, role ownership, fail/retry cleanup, scene release and persistence with GTA stand-ins. It does not establish road driveability, roof access, helicopter aim, swimming/streaming, trailer physics or camera framing. New desert positions remain estimates; safe-ground/water checks reject unavailable sites instead of deploying in the sky. Use the survey when you return. M44–M70 and SM07–SM09 are detailed in CAMPAIGN-REMAINDER.md and remain unimplemented gameplay.

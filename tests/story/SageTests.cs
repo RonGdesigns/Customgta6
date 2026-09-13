@@ -31,8 +31,8 @@ public static partial class StoryTests
   // ---- M24: the truck and the container seen, the hoist as a lift, the deputies by road, Gohan aboard before it rolls, the crates into bay one, the ledger once.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage24.json"));var m24=new M24LiquidGold();
   Check(m24.Begin(c)&&c.Cutscenes.IsActive&&m24.Container!=null&&m24.Container.IsPositionFrozen&&m24.Container.Position==c.Locations.Position("M22.AlamoDrop"),"M24 opens on the truck and the container still in the Alamo water");
-  var gohanWork=crew.PedFor(CrewSlot.Gohan).Position;Check(gohanWork.DistanceTo(c.Locations.Position("M22.AlamoDrop"))<9f&&!crew.PedFor(CrewSlot.Gohan).IsInVehicle(),"Gohan starts in the shallows at the container, not on the truck");
-  c.Cutscenes.Skip();m24.Tick();Use(crew,CrewSlot.Guess);var dredge=c.Locations.Position("M24.CraneSpawn")+new Vector3(-12,0,0);Game.Player.Character.SetIntoVehicle(m24.Crane,VehicleSeat.Driver);m24.Crane.Position=dredge;Game.Player.Character.Position=dredge;m24.Tick();
+  var gohanWork=crew.PedFor(CrewSlot.Gohan).Position;Check(gohanWork==c.Locations.Position("M24.GohanWork")&&!crew.PedFor(CrewSlot.Gohan).IsInVehicle(),"Gohan starts at the dry cable controls instead of in the deep cargo water");
+  c.Cutscenes.Skip();m24.Tick();Use(crew,CrewSlot.Guess);var dredge=c.Locations.Position("M24.RecoveryPad");Game.Player.Character.SetIntoVehicle(m24.Crane,VehicleSeat.Driver);m24.Crane.Position=dredge;Game.Player.Character.Position=dredge;m24.Tick();
   Check(m24.CurrentStage==1,"The truck parked, the dredge and the ridge run together");
   var flow24=Flow(m24);int guard=0;
   while(m24.CurrentStage==1&&guard++<80)

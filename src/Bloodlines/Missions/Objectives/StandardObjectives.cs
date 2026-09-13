@@ -173,7 +173,7 @@ namespace Bloodlines.Missions.Objectives
             if (targets.Any(p => p.IsDead)) { Fail("Keep the watchmen alive. Use the stun gun."); return; }
             foreach (var ped in targets)
             {
-                if (ped.IsBeingStunned || ped.IsCuffed) _subdued.Add(ped.Handle);
+                if (ped.IsBeingStunned || ped.IsCuffed || GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, ped, (uint)WeaponHash.StunGun, 0)) _subdued.Add(ped.Handle);
                 if (!_subdued.Contains(ped.Handle)) ObjectiveMarkers.Show(ped.Position, BlipColor.Yellow);
             }
             int left = targets.Count(p => !_subdued.Contains(p.Handle));
@@ -244,6 +244,8 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<Vehicle> _vehicle;
         private readonly VehicleSeat _seat;
         private readonly bool _requireCrew;
+        public bool ContextBoarding { get; set; } = true;
+        private int _nextBoard;
 
         public EnterVehicleObjective(string label, Func<Vehicle> vehicle, VehicleSeat seat = VehicleSeat.Any, bool requireCrew = false)
             : base(label)
@@ -268,6 +270,7 @@ namespace Bloodlines.Missions.Objectives
             if (!IsOwnerActive(context)) return;
 
             var player = Game.Player.Character;
+            if (ContextBoarding) MissionBoarding.Update(vehicle, _seat, ref _nextBoard);
             if (player == null || !player.IsInVehicle(vehicle)) return;
             if (_seat != VehicleSeat.Any && vehicle.GetPedOnSeat(_seat) != player) return;
 
@@ -580,13 +583,13 @@ namespace Bloodlines.Missions.Objectives
             var target = _checkpoints[_index];
             ObjectiveMarkers.Navigation(target, RequiredCharacter, _vehicle?.Invoke());
             GameUtils.DrawObjectiveMarker(target, Color.FromArgb(120, 232, 168, 56), _radius * 0.5f);
-            GameUtils.Subtitle("~s~Lap " + _lap + "/" + _laps + "   checkpoint " + (_index + 1) + "/" + _checkpoints.Count, 500);
+            GameUtils.Subtitle((_laps == 1 ? "~s~Sprint" : "~s~Lap " + _lap + "/" + _laps) + "   checkpoint " + (_index + 1) + "/" + _checkpoints.Count, 500);
 
             ObjectiveMarkers.Navigation(target, RequiredCharacter);
             var player = Game.Player.Character;
             if (!IsOwnerActive(context) || player == null || !player.Exists() || !player.IsInVehicle() ||
                 (_vehicle != null && !player.IsInVehicle(_vehicle())) ||
-                !GameUtils.IsWithinFlat(player.Position, target, _radius)) return;
+                (!GameUtils.IsWithinFlat(player.Position, target, _radius) || Math.Abs(player.Position.Z-target.Z)>6f)) return;
 
             _index++;
             if (_index < _checkpoints.Count) return;

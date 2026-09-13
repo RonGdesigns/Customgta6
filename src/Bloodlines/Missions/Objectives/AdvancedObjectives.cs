@@ -166,14 +166,14 @@ namespace Bloodlines.Missions.Objectives
             if (height <= _ceiling)
             {
                 _highSince = 0;
-                GameUtils.Subtitle("~s~" + (int)height + " m above terrain", 400);
+                GameUtils.Subtitle("~s~" + (int)height + " / " + (int)_ceiling + " m above terrain (not sea level)", 400);
                 return;
             }
 
             if (_highSince == 0) _highSince = Game.GameTime;
 
             int held = (Game.GameTime - _highSince) / 1000;
-            GameUtils.Subtitle("~r~SAM LOCK~s~ — get below " + (int)_ceiling + "  (" +
+            GameUtils.Subtitle("~r~SAM LOCK~s~ — " + (int)height + " m; get below " + (int)_ceiling + " m above terrain  (" +
                                Math.Max(0, _graceSeconds - held) + ")", 400);
 
             if (held >= _graceSeconds) Fail(_failMessage);
@@ -308,6 +308,18 @@ namespace Bloodlines.Missions.Objectives
         public int Remaining => _sites.Count - _done.Count;
         /// <summary>Called with the site index when a site's hold completes: a part fitted, a charge set.</summary>
         public Action<int> SiteDone { get; set; }
+        public string Animation { get; set; }
+        private Ped _worker;
+        private void StopWork()
+        {
+            if (_worker != null && _worker.Exists() && !string.IsNullOrEmpty(Animation))
+            {
+                var parts = Animation.Split('|');
+                if (parts.Length == 2) GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, parts[0], parts[1], 2f);
+            }
+            _worker = null;
+        }
+        public override void Exit(MissionContext context) { StopWork(); base.Exit(context); }
 
         public override void Update(MissionContext context)
         {
@@ -336,7 +348,7 @@ namespace Bloodlines.Missions.Objectives
             if (!underwater) ObjectiveMarkers.Navigation(_sites[nearest], _vehicle == null ? RequiredCharacter : null, required);
             if (underwater) UnderwaterGuidance.Draw(required, _sites[nearest], _radius);
             Label = _action + " — " + Remaining + " sites left; press E / D-pad Right at a marker.";
-            if (!IsOwnerActive(context) || (_vehicle == null ? player.IsInVehicle() : !player.IsInVehicle(_vehicle()))) { _activeSite = -1; return; }
+            if (!IsOwnerActive(context) || (_vehicle == null ? player.IsInVehicle() : !player.IsInVehicle(_vehicle()))) { _activeSite = -1; StopWork(); return; }
             int near = -1;
             for (int i = 0; i < _sites.Count; i++)
             {
@@ -346,7 +358,7 @@ namespace Bloodlines.Missions.Objectives
 
             if (near < 0)
             {
-                _activeSite = -1;
+                _activeSite = -1; StopWork();
                 GameUtils.Subtitle("~s~" + Remaining + " left", 400);
                 return;
             }
@@ -356,6 +368,17 @@ namespace Bloodlines.Missions.Objectives
                 if (!Game.IsControlJustPressed(GTA.Control.Context)) return;
                 _activeSite = near;
                 _startedAt = Game.GameTime;
+                StopWork();
+                if (_vehicle == null && !string.IsNullOrEmpty(Animation))
+                {
+                    var parts = Animation.Split('|');
+                    if (parts.Length == 2)
+                    {
+                        player.Heading = DriveUpStep.HeadingBetween(player.Position, _sites[near] + new Vector3(-1f, 0f, 0f));
+                        player.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
+                        _worker = player;
+                    }
+                }
                 return;
             }
 
@@ -363,7 +386,7 @@ namespace Bloodlines.Missions.Objectives
             if (elapsed >= _secondsEach)
             {
                 _done.Add(near);
-                _activeSite = -1;
+                _activeSite = -1; StopWork();
                 GameUtils.Subtitle("~g~Set. " + Remaining + " left.", 2000);
                 SiteDone?.Invoke(near);
                 return;

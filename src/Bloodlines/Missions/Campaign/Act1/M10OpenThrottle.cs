@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Bloodlines.Core;
@@ -41,6 +42,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _window;
         private Vector3 _shop;
         private bool _gunshipShown, _delivered;
+        private int _nextPursuit;
 
         public override string Id => "M10";
         public override string Title => "Open Throttle";
@@ -216,12 +218,23 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("flatbed");
             if (!GameUtils.RequestModel(model)) return false;
-
-            _flatbed = Track(World.CreateVehicle(model, _stash, Ctx.Locations.Heading("M08.Connector")));
+            // M08 deliberately leaves its cargo truck here. Reuse that exact kind
+            // of loaded, unoccupied flatbed instead of spawning inside its chassis.
+            var cargo = World.GetNearbyProps(_stash, 20f).Where(p => p != null && p.Exists() && p.Model.Hash == new Model("prop_mil_crate_01").Hash).ToArray();
+            var parked = World.GetNearbyVehicles(_stash, 12f).FirstOrDefault(v => v != null && v.Exists() && !v.IsDead &&
+                v.Model.Hash == model.Hash && v.IsPersistent && Enumerable.Range(-1, v.PassengerCapacity + 1).All(seat => v.GetPedOnSeat((VehicleSeat)seat) == null) &&
+                cargo.Count(p => Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, p, v)) == 2);
+            _flatbed = Track(parked ?? World.CreateVehicle(model, _stash, Ctx.Locations.Heading("M08.Connector")));
             model.MarkAsNoLongerNeeded();
             if (_flatbed == null || !_flatbed.Exists()) return false;
 
+            if (parked != null)
+                foreach (var crate in cargo.Where(p => Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, p, parked))) _crates.Add(Track(crate));
+            _flatbed.LockStatus = VehicleLockStatus.Unlocked;
+
             _flatbed.IsPersistent = true;
+            _flatbed.Rotation = new Vector3(0f, 0f, _flatbed.Heading);
+            GameUtils.HoldUntilGrounded(_flatbed);
             _flatbed.IsEngineRunning = false;
             // Preserve the flatbed's engine force; top-speed tuning is shared.
             _flatbed.CanTiresBurst = false;
@@ -236,6 +249,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The same shipment: two crates on the bed, in M08's slots.</summary>
         private void SpawnCrates()
         {
+            if (_crates.Count == 2) return;
             var model = new Model("prop_mil_crate_01");
             if (!GameUtils.RequestModel(model) || _flatbed == null || !_flatbed.Exists()) return;
             for (int i = 0; i < BedSlots.Length; i++)
@@ -243,7 +257,9 @@ namespace Bloodlines.Missions.Campaign
                 var crate = Track(World.CreateProp(model, _flatbed.Position + new Vector3(0f, 0f, 2f), false, false));
                 if (crate == null || !crate.Exists()) continue;
                 crate.IsPersistent = true;
-                StowPropStep.Stow(crate, _flatbed, BedSlots[i]);
+                // Do not let two newly spawned boxes collide with and roll the truck.
+                var stow = new SafeCargoStowStep(crate, _flatbed, BedSlots[i]); stow.Finish();
+                if (stow.Failed) { Logger.Warn("M10: crate stow failed."); continue; }
                 _crates.Add(crate);
             }
             model.MarkAsNoLongerNeeded();
@@ -253,7 +269,7 @@ namespace Bloodlines.Missions.Campaign
         {
             var bikeModel = new Model("sanchez");
             var riderModel = new Model("g_m_y_mexgoon_03");
-            if (!GameUtils.RequestModel(bikeModel) || !GameUtils.RequestModel(riderModel)) return;
+            if (!GameUtils.RequestModel(bikeModel) || !GameUtils.RequestModel(riderModel)) { Fail("The cartel pursuit could not load. Restart the mission."); return; }
 
             var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
             var player = Game.Player.Character;
@@ -263,12 +279,15 @@ namespace Bloodlines.Missions.Campaign
                 var behind = player.Position - player.ForwardVector * (40f + i * 12f)
                              + new Vector3(i * 4f - 4f, 0f, 0f);
 
-                var bike = Track(World.CreateVehicle(bikeModel, behind, player.Heading));
+                if (!GameUtils.NearestRoadNode(behind, 65f, out var road, out float roadHeading) || Math.Abs(road.Z - _flatbed.Position.Z) > 10f)
+                { Logger.Warn("M10: no same-level road for pursuit bike " + i); continue; }
+                var bike = Track(World.CreateVehicle(bikeModel, road, roadHeading));
                 if (bike == null || !bike.Exists()) continue;
-                bike.IsPersistent = true;
+                bike.IsPersistent = true; bike.IsEngineRunning = true;
+                GameUtils.HoldUntilGrounded(bike);
                 _bikes.Add(bike);
 
-                var rider = Track(World.CreatePed(riderModel, behind, player.Heading));
+                var rider = Track(World.CreatePed(riderModel, road + new Vector3(2f, 0f, 0f), roadHeading));
                 if (rider == null || !rider.Exists()) continue;
 
                 rider.RelationshipGroup = cartel;
@@ -276,13 +295,18 @@ namespace Bloodlines.Missions.Campaign
                 rider.BlockPermanentEvents = true;
                 rider.Accuracy = 20;
                 rider.Weapons.Give(WeaponHash.MicroSMG, 200, true, true);
-                rider.Task.WarpIntoVehicle(bike, VehicleSeat.Driver);
+                rider.SetIntoVehicle(bike, VehicleSeat.Driver);
+                if (!rider.IsInVehicle(bike)) { Logger.Warn("M10: pursuit rider could not seat."); continue; }
+                rider.AlwaysKeepTask = true;
+                Function.Call(Hash.SET_DRIVER_ABILITY, rider, 1f);
+                Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, rider, .8f);
                 rider.Task.VehicleChase(player);
                 Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, rider, 52, true);
 
                 _bikers.Add(rider);
             }
 
+            if (_bikers.Count == 0) Fail("The cartel pursuit could not spawn on the road. Restart the mission.");
             bikeModel.MarkAsNoLongerNeeded();
             riderModel.MarkAsNoLongerNeeded();
         }
@@ -291,29 +315,59 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("buzzard");
             var pilotModel = new Model("s_m_y_blackops_01");
-            if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(pilotModel)) return;
+            if (!GameUtils.RequestModel(model) || !GameUtils.RequestModel(pilotModel)) { Fail("The gunship could not load. Restart the mission."); return; }
 
             var player = Game.Player.Character;
             // Behind and high: seen coming, not already overhead.
-            _buzzard = Track(World.CreateVehicle(model, player.Position - player.ForwardVector * 160f
-                                                       + new Vector3(0f, 0f, 45f), player.Heading));
-            if (_buzzard == null || !_buzzard.Exists()) return;
+            var approach = player.Position - player.ForwardVector * 160f + new Vector3(0f, 0f, 60f);
+            float terrain = World.GetGroundHeight(approach + new Vector3(0f, 0f, 150f));
+            if (!float.IsNaN(terrain) && !float.IsInfinity(terrain)) approach.Z = Math.Max(approach.Z, terrain + 55f);
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, approach.X, approach.Y, approach.Z);
+            _buzzard = Track(World.CreateVehicle(model, approach, player.Heading));
+            if (_buzzard == null || !_buzzard.Exists()) { Fail("The gunship could not spawn. Restart the mission."); return; }
             _buzzard.IsPersistent = true;
+            _buzzard.IsEngineRunning = true;
+            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, _buzzard);
 
             _pilot = Track(World.CreatePed(pilotModel, _buzzard.Position, 0f));
             model.MarkAsNoLongerNeeded();
             pilotModel.MarkAsNoLongerNeeded();
-            if (_pilot == null || !_pilot.Exists()) return;
+            if (_pilot == null || !_pilot.Exists()) { Fail("The gunship pilot could not spawn. Restart the mission."); return; }
 
             _pilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             _pilot.IsPersistent = true;
-            _pilot.Task.WarpIntoVehicle(_buzzard, VehicleSeat.Driver);
-            _pilot.Task.ChaseWithHelicopter(player, new Vector3(0f, 0f, 30f));
+            _pilot.BlockPermanentEvents = true; _pilot.AlwaysKeepTask = true;
+            _pilot.SetIntoVehicle(_buzzard, VehicleSeat.Driver);
+            if (!_pilot.IsInVehicle(_buzzard)) { Fail("The gunship pilot could not board. Restart the mission."); return; }
+            OrderGunship();
 
             var blip = Track(_buzzard.AddBlip());
             blip.Sprite = BlipSprite.Helicopter;
             blip.Color = BlipColor.Red;
             blip.Name = "Aegis Buzzard";
+        }
+
+        private void OrderGunship()
+        {
+            var player = Game.Player.Character;
+            if (_pilot == null || !_pilot.Exists() || _pilot.IsDead || _buzzard == null || !_buzzard.Exists() || _buzzard.IsDead || !_pilot.IsInVehicle(_buzzard)) return;
+            _pilot.Task.StartHeliMission(_buzzard, player, VehicleMissionType.Attack, 35f, 35f,
+                (int)Math.Max(_buzzard.Position.Z, player.Position.Z + 40f), 25, -1f, 70f, (HeliMissionFlags)0);
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            if (Status != MissionStatus.Running || Game.GameTime < _nextPursuit) return;
+            _nextPursuit = Game.GameTime + 3000;
+            var target = Ctx.Crew.PedFor(CrewSlot.Guess);
+            foreach (var rider in _bikers)
+            {
+                if (rider == null || !rider.Exists() || rider.IsDead || target == null || !target.Exists()) continue;
+                if (rider.IsInVehicle()) rider.Task.VehicleChase(target);
+                else rider.Task.FightAgainst(target);
+            }
+            OrderGunship();
         }
 
         protected override void OnCleanup()

@@ -1,5 +1,17 @@
 # Bloodlines — Change Register
 
+## September 13: campaign hub apps and Foundry board
+
+Built Garage/KJ delivery and tracking, guarded crew commands, completed-job journal/current-role context, progression records, persistent notifications/receipts, eight new authored follow-ups, and the Foundry planning-table board with a portable phone view. Paid deliveries require a current quote and confirmation; preview/cancel/failed purchases create no receipt. Existing mission and placement data are unchanged. Build, 2,532 story/runtime checks (45 new hub checks), 189 regression checks, lint, parser and location checks pass. Native playtest and installation remain pending while the user tests. See `CAMPAIGN-HUB.md`.
+
+## September 13: phone visual refinement
+
+Refined the pending campaign phone with larger native typography, a rounded handset, three character-colored ribbon wallpapers, 23 original baked textures, line icons and high-contrast reading panels. Input, mission, story and economy behavior are unchanged. Layout previews share the production render commands. Build and runtime checks pass; installation remains pending while the user tests GTA.
+
+## September 13: campaign phone
+
+Added the native campaign phone overlay with controller/keyboard navigation, character colors, completed-job message history and news, crew contact details, live mission instructions and route lookup, and shared campaign funds. Input ownership releases on scenes, recovery, mandatory switches and shutdown; movement and driving continue. The 49 playable missions and all 501 placement rows are unchanged. Build, 2,487 runtime/story checks, 189 regression checks, parser checks and mission/location validation pass; native in-game behavior awaits the user's playtest. See `CAMPAIGN-PHONE.md`.
+
 **Status:** Living reconciliation table, maintained by the implementation agent.  
 **Companion to:** `AGENT-HANDOFF-PROPOSED-CHANGES.md`, `CAMPAIGN-IMPLEMENTATION-AUDIT.md`  
 **Branch:** `claude/handoff-implementation-pass` (September 9, 2026)
@@ -245,3 +257,38 @@ See `HARBOR-PLAYTEST-REPAIR.md` for the current bounded water/LOS/HUD/music/map 
 ## Harbor integration through PR #32
 
 Main `f8a37b9837b11f6661df081fd59616b7c06e6bb3` is incorporated into the repair branch without rewriting M03-M08. Conflicting test definitions are combined, not replaced; the DLL is rebuilt. Both sets of checks remain enabled. See HARBOR-INTEGRATION.md and its preservation/binary manifests. PR #28 remains draft; live GTA acceptance is pending.
+
+
+September 12 playthrough/garage follow-up: see docs/PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md (PLAYTHROUGH-GARAGE-UPDATE-2026-09-12.md from docs). Briefings preserve the actual arriving car until gameplay deployment; M03 rescue explicitly allows any brother. Garage/direct car sales share ten successful sales per GTA day, persisted with cash. Updated payout tables are generated from runtime rewards; replays remain unpaid. Walkable garage interiors and berth/hangar storage remain planned.
+
+## September 13 — M31–M35 approved together
+
+User authorization: “Build M31–M35 together.” This overrides the earlier plan holding M31 onward for approval, only for these five missions.
+
+| Decision | Implemented result | Verification limit |
+|---|---|---|
+| Expand the playable campaign | Five registered missions, start markers, context cards, authored objectives and consequence scenes | 41 scripted jobs; live acceptance pending |
+| Honest physical staging | M31 real generator/barriers/charges; M32 coastal service office, cabinet and two carried cases | No functioning CIWS or underground bunker is claimed |
+| Rescue before intelligence | M33 rescues Ramos; M34 medical care precedes access codes | Separate chapters rebuild at the same transfer site |
+| Actual vehicle seats | Half-track: Guess, Ramos, Ice; Gohan in a separate escort car | Driver continues when the player selects the escort or turret; live traffic still needs testing |
+| Road obstacles and capture | Two visible M34 barriers; M35 destroys/stops the lead escort while preserving the technical | No physical rockslide or missile launcher is claimed |
+| Rewards | $535,000 across first completions, two weapon milestones, support-vehicle brake/armor/tire profiles | Replay pays nothing; retained vehicles require normal garage storage for persistence |
+| Placement | 94 new keys checked against local Enhanced collision/water; existing survey rows retained | Navigation and remote streaming need a live survey; no Rockstar assets redistributed |
+
+## September 13 — next-step M36–M40 package
+
+User request: “LETS DO the next steps,” following the installed M31–M35 package. The next five chapters were announced and implemented together.
+
+| Area | Implemented behavior | Acceptance limit |
+|---|---|---|
+| M36 | Three physical seabed sensors, explicit depth guidance, a surface patrol, alternate boat pickup and delivered survey | Coastal approach adaptation; offshore rig geometry is not yet built |
+| M37 | Two crop dusters land separately; four canisters attach; both visible smoke releases must work | Smoke shortens the view, not radar detection; live particle/wing clearance pending |
+| M38 | Benson moves into the firefight, then four packages are individually carried, attached and delivered under response | No invisible loading count; live AI road path still needs testing |
+| M39 | A real seabed junction receives a cutter; completion verifies attachment, then releases a shore response; sub returns | Crew stays in the sub for work; no unsupported oxygen/deep-swim mechanic |
+| M40 | Two Tropics receive finite reinforcement, Ice tests carried guns on real targets, Gohan checks navigation, both boats run loaded trials | No claimed sea-cave interior, mounted guns or invincibility |
+| Progression | $610,000 first completions, recorded acquisitions and free-roam Duster smoke after M37 | Replays unpaid; persistent aircraft/boat ownership still awaits hangars/berths |
+| Installation | Prior fixes retained; 77 new placement keys; all earlier source rows and user surveys preserved | Automated checks and offline collision are not live acceptance |
+
+## September 13 — M41–M43 final preparation
+
+The user requested the next steps after M36–M40. Added the Bradley credential operation, manned submarine airdrop and final three-vehicle staging. The older 10,000ft cargo-hold proposal is adapted to an airborne 150–350m external cradle: no safe internal fit has been validated for the Kraken, and the external drop remains observable. Gohan stays in the actual sub, two canopy attachments are required before release, collision/water contact and a settling interval determine handover, and a stalled/unsafe drop fails without granting cargo. No rig or cave geometry is invented. New placements receive read-only CodeWalker checks; manual prior locations stay unchanged. Automated fixtures do not constitute live flight/physics acceptance.

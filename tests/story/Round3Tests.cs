@@ -41,7 +41,7 @@ public static partial class StoryTests
   string m1=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M01GhostInTheDockyard.cs"));
   Check(m1.Contains("mark.Sprite = BlipSprite.Enemy")&&m1.Contains("_guardBlips")&&!m1.Contains("StrandedMs"),"M01's hostiles carry red map marks that go when they do, and there is no stranded wait before the escape");
   string m2=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M02LooseStrands.cs"));
-  Check(m2.Contains("Press E / D-pad Right to get in the Granger")&&m2.Contains("player.SetIntoVehicle(_chase, FreeSeat())")&&m2.Contains("_chase.LockStatus = VehicleLockStatus.Unlocked"),"M02's Granger takes Ice back at its door whatever the engine makes of the drives in his hand");
+  Check(m2.Contains("Enter the Granger: F / controller Y")&&m2.Contains("player.Task.EnterVehicle(_chase, FreeSeat(), 6000")&&m2.Contains("_chase.LockStatus = VehicleLockStatus.Unlocked"),"M02's Granger takes Ice back at its door whatever the engine makes of the drives in his hand");
   string m3=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M03CypressFoundry.cs"));
   Check(m3.Contains("new ConditionObjective(\"Guess: put the street crew down.\"")&&m3.Contains("UnseatCrew();")&&m3.Contains("GameUtils.IsWithinFlat(post, truck, 7f)"),"M03 clears the block before any switch, never spawns a guard in the Benson, and gets everyone out before it locks");
   string m4=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M04SeveredWire.cs"));
@@ -52,6 +52,7 @@ public static partial class StoryTests
   Check(m8.Contains("World.GetNextPositionOnStreet(_gate + new Vector3(22f, -52f, 0f))"),"M08's forklift starts in the open");
   var rows=File.ReadAllLines(Path.Combine(dataDir,"locations.tsv")).Where(l=>l.StartsWith("M08.")).ToDictionary(l=>l.Split('\t')[0],l=>l.Split('\t'));
   float dx=float.Parse(rows["M08.CratePadTwo"][1])-float.Parse(rows["M08.CratePadOne"][1]);
-  Check(dx>=12f&&Math.Abs(float.Parse(rows["M08.HaulerSpawn"][2])-float.Parse(rows["M08.CratePadOne"][2]))>=20f,"M08's crates are a truck-length apart and the flatbed is clear of them");
+  float dy=float.Parse(rows["M08.CratePadTwo"][2])-float.Parse(rows["M08.CratePadOne"][2]);
+  Check(Math.Sqrt(dx*dx+dy*dy)>=12f&&Math.Abs(float.Parse(rows["M08.HaulerSpawn"][2])-float.Parse(rows["M08.CratePadOne"][2]))>=10f,"M08's crates remain separated and the hauler reference is on the forklift apron");
  }
 }

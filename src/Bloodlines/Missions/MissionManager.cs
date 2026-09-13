@@ -28,6 +28,7 @@ namespace Bloodlines.Missions
 
         public MissionCatalog Catalog => _catalog;
         public event System.Action<string> Passed;
+        public System.Action BeforeGameplay { get; set; }
 
         /// <summary>Stage of the running mission, or -1. Used by the dev menu.</summary>
         public int CurrentStage => _current?.CurrentStage ?? -1;
@@ -82,6 +83,7 @@ namespace Bloodlines.Missions
             if (IsRunning || _current != null) { reason = "A mission is already running. Hold Backspace to abort."; return false; }
             if (!bypassGates && !_state.PrerequisiteMet(definition)) { reason = definition.Id + " needs " + definition.Info.Prerequisite + " finished first."; return false; }
             if (!definition.IsPlayable) { reason = definition.Id + " — " + definition.Title + " is on the campaign spine but has no script yet."; return false; }
+            if (definition.Id == "SM03") { reason = Campaign.SM03MidnightDrift.EntryRequirement(_context); if (reason != null) return false; }
             if (!bypassGates && !_state.GateSatisfied(definition, _catalog)) { reason = _state.DescribeGate(definition, _catalog); return false; }
             return true;
         }
@@ -124,11 +126,15 @@ namespace Bloodlines.Missions
             if (bypassGates && !_state.GateSatisfied(definition, _catalog)) Logger.Warn("QA bypassed a story gate: " + _state.DescribeGate(definition, _catalog));
             if (bypassGates && !_state.PrerequisiteMet(definition)) Logger.Warn("QA started " + definition.Id + " with " + definition.Info.Prerequisite + " unfinished.");
 
+            _seenSceneSequence = _context.Cutscenes.FinishedSequence;
+            _rewards = new CompletionRewards(_state);
+            _context.RaceVehicle = definition.Id == "SM03" ? Campaign.SM03MidnightDrift.PersonalCar(_context) : null;
+            _state.BeginAttempt(definition.Id);
             bool retrying = RetryAvailable && _currentDefinition == definition;
             _standalonePhase = bypassGates;
             RetryAvailable = false;
             LastFailureReason = "";
-            if (retrying) MissionContextCard.Show(definition.Id, recap: true, ms: 6000);
+            _retryRecap = retrying;
             _context.Abilities.Stop();
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
@@ -155,9 +161,10 @@ namespace Bloodlines.Missions
         private bool BeginGameplay(MissionDefinition definition)
         {
             Mission mission;
-            try { mission = definition.Factory(); }
+            try { BeforeGameplay?.Invoke(); mission = definition.Factory(); }
             catch (System.Exception ex)
             {
+                _state.DiscardAttempt();
                 Logger.Error(definition.Id + " mission factory failed", ex);
                 _context.Switching.SetUnlocked();
                 _context.Checkpoints.Clear();
@@ -166,11 +173,12 @@ namespace Bloodlines.Missions
                 GameUtils.Notify("~r~Mission could not load. Retry from the mission menu.");
                 return false;
             }
-            if (mission == null) { _context.Crew.Arsenal?.EndLoan(_context.Crew); GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
+            if (mission == null) { _state.DiscardAttempt(); _context.Crew.Arsenal?.EndLoan(_context.Crew); GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
             if (!_standalonePhase && PortHeistOperation.IsPhase(mission))
                 mission = new PortHeistOperation(definition.Id, _state);
             if (!mission.Begin(_context))
             {
+                _state.DiscardAttempt();
                 _context.Crew.Arsenal?.EndLoan(_context.Crew);
                 RetryAvailable = true;
                 GameUtils.Notify("~r~" + definition.Id + " failed to start. Check Bloodlines.log.");
@@ -215,18 +223,20 @@ namespace Bloodlines.Missions
             Finish();
         }
 
-        private bool _sceneWasActive;
+        private int _seenSceneSequence;
+        private CompletionRewards _rewards;
+        private bool _retryRecap;
 
         public void Update()
         {
             MissionContextCard.Draw();
-            if (_context.Cutscenes.IsActive) { _sceneWasActive = true; return; }
-            if (_sceneWasActive)
+            if (_context.Cutscenes.IsActive) return;
+            if (_context.Cutscenes.FinishedSequence != _seenSceneSequence)
             {
                 // The scene restored the control state it found. Mission ticks resume
                 // now; if that state was "off" (a ped change the same tick the scene
                 // began), gameplay would otherwise resume with the player unable to move.
-                _sceneWasActive = false;
+                _seenSceneSequence = _context.Cutscenes.FinishedSequence;
                 if (_current != null && _current.Status == MissionStatus.Running && _context.Cutscenes.LastRequired &&
                     _context.Cutscenes.LastOutcome != SceneOutcome.Completed && _context.Cutscenes.LastOutcome != SceneOutcome.Skipped)
                     _current.Fail("A required scene action was interrupted. Retry the mission.");
@@ -250,6 +260,8 @@ namespace Bloodlines.Missions
                 BeginGameplay(pending);
                 return;
             }
+            if (_current != null && _retryRecap)
+            { MissionContextCard.Show(_currentDefinition.Id, recap: true, ms: 7000); _retryRecap = false; }
             if (_current == null)
             {
                 if (PendingContinuation == null) return;
@@ -274,7 +286,7 @@ namespace Bloodlines.Missions
                     int cashBefore = _state.CashOnHand;
                     if (_current is PortHeistOperation operation) operation.CommitResult(_catalog);
                     else _state.MarkComplete(_currentDefinition.Id, _catalog);
-                    AnnounceRewards(_current is PortHeistOperation ? "M22" : _currentDefinition.Id, cashBefore);
+                    if (_rewards != null) foreach (string reward in _rewards.Describe(_state, cashBefore)) GameUtils.Notify(reward);
                     PendingContinuation = _current is PortHeistOperation || (_standalonePhase && PortHeistOperation.Contains(_currentDefinition.Id)) ? null : ContinuationOf(_currentDefinition);
                     if (PendingContinuation != null)
                     {
@@ -318,6 +330,7 @@ namespace Bloodlines.Missions
 
         private void Finish()
         {
+            _state.DiscardAttempt();
             _current = null;
             _context.Checkpoints.Clear();
             _context.Abilities.Stop();
@@ -338,20 +351,6 @@ namespace Bloodlines.Missions
         }
 
         /// <summary>QA harness: commit a checkpoint at the current stage.</summary>
-        /// <summary>What the job paid, said on screen (Ron, September 12: nothing said a weapon had unlocked or cash had come in).</summary>
-        private void AnnounceRewards(string id, int cashBefore)
-        {
-            int paid = _state.CashOnHand - cashBefore;
-            if (paid > 0) GameUtils.Notify("~g~+$" + paid.ToString("N0") + " crew cash~s~ (now $" + _state.CashOnHand.ToString("N0") + ")");
-            if (System.Array.IndexOf(Bloodlines.Crew.WeaponProgression.RewardMissions, id) < 0) return;
-            var rewards = Bloodlines.Crew.WeaponProgression.Rewards(id);
-            var parts = new System.Collections.Generic.List<string>();
-            foreach (var hero in Bloodlines.Crew.Protagonist.All)
-                if (Bloodlines.Crew.WeaponProgression.ReceivesReward(id, hero.Slot) && (int)hero.Slot < rewards.Length)
-                    parts.Add(hero.DisplayName + ": " + Bloodlines.Crew.WeaponProgression.NameOf(rewards[(int)hero.Slot]));
-            if (parts.Count > 0) GameUtils.Notify("~b~New weapons unlocked~s~: " + string.Join(" | ", parts) + ". Collect them at your locker.");
-        }
-
         public void CommitCheckpoint()
         {
             if (_current == null || _context.Cutscenes.IsActive) return;
@@ -411,12 +410,23 @@ namespace Bloodlines.Missions
         }
 
         /// <summary>Called on mod teardown so an aborted session leaves no mission peds behind.</summary>
+        public void ResetCampaignContext()
+        {
+            Shutdown();
+            _context.Handoffs.Clear();
+            _context.Checkpoints.Clear();
+            _context.Switching.SetUnlocked();
+            _currentDefinition = null; RetryAvailable = false; LastFailureReason = "";
+            MissionContextCard.Clear();
+        }
+
         public void Shutdown()
         {
             PendingContinuation = null;
             _context.Cutscenes.Stop();
             _pending = null;
-            if (_current != null) { _current.Abort(); _current = null; }
+            try { if (_current != null) { _current.Abort(); _current = null; } }
+            finally { _state.DiscardAttempt(); }
             _context.Crew.Arsenal?.EndLoan(_context.Crew);
         }
     }

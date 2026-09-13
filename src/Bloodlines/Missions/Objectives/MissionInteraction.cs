@@ -6,6 +6,36 @@ using GTA.Math;
 
 namespace Bloodlines.Missions.Objectives
 {
+    /// <summary>Board a mission ride without attempting to drag its protected crew driver out.</summary>
+    public static class MissionBoarding
+    {
+        public static VehicleSeat FreeSeat(Vehicle car, VehicleSeat desired)
+        {
+            if(desired!=VehicleSeat.Any)return car.IsSeatFree(desired)?desired:VehicleSeat.None;
+            // A crew driver keeps his seat. Front passenger is index zero, not one.
+            for(int i=0;i<car.PassengerCapacity;i++)if(car.IsSeatFree((VehicleSeat)i))return (VehicleSeat)i;
+            return car.IsSeatFree(VehicleSeat.Driver)?VehicleSeat.Driver:VehicleSeat.None;
+        }
+        public static void Update(Vehicle vehicle, VehicleSeat desired, ref int nextBoard)
+        {
+            var player=Game.Player.Character;
+            if(vehicle==null||!vehicle.Exists()||vehicle.IsDead||player==null||!player.Exists()||player.IsInVehicle()||vehicle.Speed>3f)return;
+            // Aircraft and subs have larger hulls than a sedan; measure the nearby
+            // hatch area rather than demanding that the player stand in its origin.
+            float range=vehicle.Model.IsHelicopter?12f:7f;
+            if(player.Position.DistanceTo(vehicle.Position)>range)return;
+            vehicle.LockStatus=VehicleLockStatus.Unlocked;
+            bool pressed=Game.IsControlJustPressed(GTA.Control.Enter)||Game.IsControlJustPressed(GTA.Control.Context);
+            if(!pressed||Game.GameTime<nextBoard)return;
+            var seat=FreeSeat(vehicle,desired);if(seat==VehicleSeat.None)return;
+            Game.DisableControlThisFrame(GTA.Control.Enter);
+            player.Task.ClearAll();
+            player.Task.EnterVehicle(vehicle,seat,8000,2f,EnterVehicleFlags.None);
+            nextBoard=Game.GameTime+2000;
+            Logger.Info("Mission boarding: normal door entry to seat "+seat+"; existing crew seats retained.");
+        }
+    }
+
     public sealed class DialogueFinishedObjective : Objective
     {
         public DialogueFinishedObjective(string label = "Listen to Mateo. Stay with the boats."):base(label){}
@@ -20,20 +50,25 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<Vehicle> _vehicle;
         private readonly float _radius;
         private readonly int _duration;
-        private int _started = -1;
+        private int _started = -1, _nextBoard;
         private readonly bool _stopVehicle;
         private readonly string _animation;
+        private readonly Func<Vector3> _face;
         private bool _animating;
         private Ped _worker;
         /// <summary>Bent over, both hands inside something at waist height: a car window, a bin, a crate.</summary>
         public const string ReachInside = "amb@prop_human_bum_bin@idle_a|idle_a";
-        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null) : base(action)
-        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; }
+        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null, Func<Vector3> face = null) : base(action)
+        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; _face = face; }
         private void StopAnimation(Ped ped)
         {
             if (!_animating) return;
             _animating = false;
-            if (_worker != null && _worker.Exists()) _worker.Task.ClearAll();
+            if (_worker != null && _worker.Exists() && !string.IsNullOrEmpty(_animation))
+            {
+                var parts = _animation.Split('|');
+                if (parts.Length == 2) GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, parts[0], parts[1], 2f);
+            }
             _worker = null;
         }
         private void StartAnimation(Ped ped, Vector3 point)
@@ -41,7 +76,7 @@ namespace Bloodlines.Missions.Objectives
             if (string.IsNullOrEmpty(_animation) || ped == null || !ped.Exists()) return;
             var parts = _animation.Split('|');
             if (parts.Length != 2) return;
-            ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, point);
+            ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, _face?.Invoke() ?? point);
             ped.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
             _animating = true; _worker = ped;
         }
@@ -58,9 +93,10 @@ namespace Bloodlines.Missions.Objectives
             if (underwater) UnderwaterGuidance.Draw(requiredVehicle, point, _radius);
             else { ObjectiveMarkers.Navigation(point, _vehicle == null ? RequiredCharacter : null, requiredVehicle); GameUtils.DrawObjectiveMarker(point, Color.Yellow, Math.Max(1f, _radius * .4f)); }
             if (!IsOwnerActive(c)) { _started = -1; StopAnimation(ped); Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
+            if (requiredVehicle != null) MissionBoarding.Update(requiredVehicle, VehicleSeat.Any, ref _nextBoard);
             bool seated = _vehicle != null && ped != null && ped.IsInVehicle(_vehicle());
             bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && requiredVehicle.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
-            if (!near) { _started = -1; StopAnimation(ped); Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : " — take the marked vehicle to the yellow marker."); return; }
+            if (!near) { _started = -1; StopAnimation(ped); Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : (seated ? " — take the marked vehicle to the yellow marker." : " — board the marked vehicle first (F / Y or E / D-pad Right).")); return; }
             if (_stopVehicle && requiredVehicle != null && requiredVehicle.Speed > 1f) { _started = -1; Label = _action + " — stop the vehicle to begin unloading."; return; }
             if (_started < 0)
             {
@@ -100,7 +136,10 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<Ped> _target;
         private readonly Func<Vehicle> _boat, _pursuer;
         private int _started, _close = -1;
-        public CaptureBoatObjective(Func<Ped> target, Func<Vehicle> boat, Func<Vehicle> pursuer) : base("Gohan: stay aboard the dinghy. Close within 25m of Mateo for 5 seconds; take him alive.")
+        public Func<bool> CaptureReady { get; set; }
+        public Func<string> DrivingHint { get; set; }
+        public int DeadlineMs { get; set; } = 180000;
+        public CaptureBoatObjective(Func<Ped> target, Func<Vehicle> boat, Func<Vehicle> pursuer) : base("Stay aboard the dinghy. Close within 25m of Mateo for 5 seconds; take him alive.")
         { _target = target; _boat = boat; _pursuer = pursuer; }
         public override void Enter(MissionContext c) { base.Enter(c); _started = Game.GameTime; _close = -1; }
         public override void Update(MissionContext c)
@@ -108,8 +147,10 @@ namespace Bloodlines.Missions.Objectives
             var target = _target(); var boat = _boat(); var chase = _pursuer();
             if (target == null || !target.Exists() || target.IsDead || boat == null || !boat.Exists() || !boat.IsDriveable) { Fail("Mateo must survive to explain the setup. Restart the mission."); return; }
             if (chase == null || !chase.Exists() || !chase.IsDriveable) { Fail("The crew's dinghy is lost."); return; }
-            if (Game.GameTime - _started > 180000) { Fail("Mateo escaped into open water."); return; }
+            if (Game.GameTime - _started > DeadlineMs) { Fail("Mateo escaped into open water."); return; }
             ObjectiveMarkers.Navigation(boat.Position, null, chase); GameUtils.DrawObjectiveMarker(boat.Position, Color.Yellow, 3f);
+            if(CaptureReady!=null&&!CaptureReady()) { _close=-1;Label=("Follow Mateo through the offshore run. Stay aboard. " + DrivingHint?.Invoke()).Trim();return; }
+            Label="Stay aboard and close within 25m of Mateo for 5 seconds to stop him alive.";
             if (!IsOwnerActive(c) || !Game.Player.Character.IsInVehicle(chase) || chase.Position.DistanceTo(boat.Position) > 25f) { _close = -1; return; }
             if (_close < 0) _close = Game.GameTime;
             if (Game.GameTime - _close >= 5000) Complete();

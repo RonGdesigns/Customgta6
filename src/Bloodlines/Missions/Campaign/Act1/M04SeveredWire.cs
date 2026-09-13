@@ -109,7 +109,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Drive to the lot",
-                    new TravelObjective("Guess: drive the crew to the Pillbox Hill lot.", () => _exit, 12f, () => _van)
+                    new TravelObjective("Guess: meet the crew at the Pillbox Hill lot. Ice and Gohan have their own approaches.", () => _exit, 12f, () => _van)
                         .Cue(0.6f, () => Radio("GOHAN", "I'm on the breaker already, east side of the lot, outside the fence. Nobody has looked at me twice.", "M04_RADIO_01_GOHAN"))
                         .Cue(0.3f, () => Radio("ICE", "I've got the ramp side and the meeting. Ron, nose the van at the exit and keep it running.", "M04_RADIO_02_ICE")))
                 .OwnedBy(CrewSlot.Guess)

@@ -46,7 +46,9 @@ public static partial class StoryTests
   Check(c.Cutscenes.IsActive&&prologue.Current==PrologueSequence.Phase.Interior&&handoffs==0,"Inside, the message arrives: the call scene plays in the room");
   c.Cutscenes.Update();Check(string.IsNullOrEmpty(GTA.UI.Screen.Subtitle),"No line plays before Ron has crossed the room and stopped");
   c.Cutscenes.Skip();prologue.Update();
-  Check(handoffs==1&&save.PrologueComplete&&!prologue.IsActive&&access.Inside,"Skipping lands the job as read; the prologue hands off from inside the room and leaves the host to cut to the dock");
+  Check(handoffs==0&&!save.PrologueComplete&&access.Inside,"Skipping the call still leaves the apartment exit to play");
+  Game.Player.Character.Position=access.InteriorPosition;prologue.Update();prologue.Update();Game.GameTime+=300;access.Update();access.Update();prologue.Update();
+  Check(handoffs==1&&save.PrologueComplete&&!access.Inside&&Game.Player.Character.Position==home,"The skipped call exits to the same street door as the watched call before handing off");
   access.Cancel();
   // The room never loads: control comes back at the door and the message is read there.
   Reset();crew=Roster();c=Context(crew);save=CampaignState.Load(Path.Combine(root,"prologue-noroom.json"));access=new ApartmentAccess(crew);handoffs=0;

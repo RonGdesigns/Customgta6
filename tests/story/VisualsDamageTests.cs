@@ -41,8 +41,8 @@ public static partial class StoryTests
   Reset();var visuals=new VisualAtmosphere(config);World.CurrentTimeOfDay=TimeSpan.FromHours(13);
   visuals.Update(false,false);visuals.Update(false,false);visuals.Update(false,false);
   Check(visuals.ActiveModifier=="cinema_default"&&Math.Abs(visuals.ActiveStrength-.35f)<1e-4&&Calls(Hash.SET_TIMECYCLE_MODIFIER)==1&&Calls(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH)==1,"At noon the daytime grade is set once at the configured strength");
-  Check(Calls(Hash.SET_VEHICLE_LOD_MULTIPLIER)==1&&Calls(Hash.SET_PED_LOD_MULTIPLIER)==1&&(float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[0]==1.75f&&Calls(Hash.OVERRIDE_LODSCALE_THIS_FRAME)==3,"Persistent level-of-detail multipliers are set once; the scene override is per frame");
-  Check(Calls(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE)==1&&Calls(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS)==1&&Calls(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE)==3,"Shadows are configured once; blur is stripped every frame");
+  Check(Calls(Hash.SET_VEHICLE_LOD_MULTIPLIER)==0&&Calls(Hash.SET_PED_LOD_MULTIPLIER)==1&&LastCall(Hash.SET_PED_LOD_MULTIPLIER)[0]==Game.Player.Character&&(float)LastCall(Hash.SET_PED_LOD_MULTIPLIER)[1]==1.75f&&Calls(Hash.OVERRIDE_LODSCALE_THIS_FRAME)==3,"Persistent level-of-detail multipliers are set once; the scene override is per frame");
+  Check(Calls(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE)==1&&Calls(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS)==0&&Calls(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE)==3,"Shadows are configured once; blur is stripped every frame");
   var reflect=Function.Calls.Where(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION).ToList();
   Check(reflect.Count==1&&reflect[0].Item2[0]==Game.Player.Character&&(bool)reflect[0].Item2[1],"Water reflection distance is set on the player entity, with the flag, once");
   Check(visuals.OceanApplied&&Calls(Hash.SET_DEEP_OCEAN_SCALER)==1&&(float)LastCall(Hash.SET_DEEP_OCEAN_SCALER)[0]==1.25f,"The ocean swell is applied once in free roam");
@@ -60,9 +60,9 @@ public static partial class StoryTests
   Check(named.ActiveModifier=="my_daytime","An ini modifier override wins over the preset");
   var sunny=new VisualAtmosphere(new ModConfig{VisualPreset="SunnyCoast"});sunny.Update(false,false);Check(sunny.ActiveModifier=="New_Chinatown_sky","Presets pick the daytime modifier");
   var capped=new VisualAtmosphere(new ModConfig{LODScale=2.5f});Function.Calls.Clear();capped.Update(false,false);
-  Check((float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[0]==2f&&(float)LastCall(Hash.OVERRIDE_LODSCALE_THIS_FRAME)[0]==2f,"Level of detail is capped at 2.0");
+  Check((float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[1]==2f&&(float)LastCall(Hash.OVERRIDE_LODSCALE_THIS_FRAME)[0]==2f,"Level of detail is capped at 2.0");
   Function.Calls.Clear();visuals.Reset();
-  Check(Calls(Hash.CLEAR_TIMECYCLE_MODIFIER)==1&&(float)LastCall(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE)[0]==1f&&(bool)LastCall(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS)[0]==false&&(float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[0]==1f&&(float)LastCall(Hash.SET_PED_LOD_MULTIPLIER)[0]==1f&&Calls(Hash.RESET_DEEP_OCEAN_SCALER)==1&&Function.Calls.Count(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION&&!(bool)c.Item2[1])==2,"Reset puts back the grade, shadows, headlights, level of detail, ocean and both reflection flags");
+  Check(Calls(Hash.CLEAR_TIMECYCLE_MODIFIER)==1&&(float)LastCall(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE)[0]==1f&&(int)LastCall(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS)[1]==0&&(float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[1]==1f&&(float)LastCall(Hash.SET_PED_LOD_MULTIPLIER)[1]==1f&&Calls(Hash.RESET_DEEP_OCEAN_SCALER)==1&&Function.Calls.Count(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION&&!(bool)c.Item2[1])==2,"Reset puts back the grade, shadows, headlights, level of detail, ocean and both reflection flags");
   var offVisuals=new VisualAtmosphere(new ModConfig{VisualsEnabled=false});Function.Calls.Clear();offVisuals.Update(false,false);
   Check(Function.Calls.Count==0,"Visuals off touches nothing");
 

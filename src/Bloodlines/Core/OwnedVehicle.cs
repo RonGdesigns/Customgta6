@@ -29,6 +29,7 @@ namespace Bloodlines.Core
         public int PrimaryColor = -1, SecondaryColor = -1, Livery = -1, WheelType = -1, WindowTint = -1;
         public bool TiresReinforced;
         public string Plate = "";
+        public readonly Dictionary<string, int> Finish = new Dictionary<string, int>();
         public readonly Dictionary<int, int> Mods = new Dictionary<int, int>();
 
         public Dictionary<string, object> ToJson() => new Dictionary<string, object>
@@ -37,6 +38,7 @@ namespace Bloodlines.Core
             { "owner", Owner }, { "price", Price }, { "stolen", Stolen }, { "inShop", InShop },
             { "primary", PrimaryColor }, { "secondary", SecondaryColor }, { "livery", Livery },
             { "wheelType", WheelType }, { "tint", WindowTint }, { "reinforcedTires", TiresReinforced }, { "plate", Plate },
+            { "finish", Finish.ToDictionary(p => p.Key, p => (object)p.Value) },
             { "mods", Mods.ToDictionary(p => p.Key.ToString(), p => (object)p.Value) }
         };
 
@@ -57,6 +59,8 @@ namespace Bloodlines.Core
             car.ModelHash = unchecked((uint)hash);
             foreach (var pair in Json.Object(map.TryGetValue("mods", out var mods) ? mods : null))
                 if (int.TryParse(pair.Key, out int type) && pair.Value != null && int.TryParse(pair.Value.ToString(), out int index)) car.Mods[type] = index;
+            foreach (var pair in Json.Object(map.TryGetValue("finish", out var finish) ? finish : null))
+                if (pair.Value != null && int.TryParse(pair.Value.ToString(), out int value)) car.Finish[pair.Key] = value;
             return car;
         }
 

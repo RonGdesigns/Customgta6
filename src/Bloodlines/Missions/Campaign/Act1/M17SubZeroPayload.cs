@@ -27,6 +27,7 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M17SubZeroPayload : ComposedMission
     {
         private readonly List<Vector3> _weldPoints = new List<Vector3>();
+        private readonly List<Prop> _modules = new List<Prop>();
         private readonly List<Prop> _parts = new List<Prop>();
 
         private Vehicle _kraken;
@@ -50,7 +51,7 @@ namespace Bloodlines.Missions.Campaign
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             _slip = Ctx.Locations.Position("M17.DrySlip");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, _slip, Ctx.Locations.Heading("M17.DrySlip")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Gohan, Ctx.Locations.Position("M17.GohanStart"), Ctx.Locations.Heading("M17.DrySlip")))
             {
                 return false;
             }
@@ -60,34 +61,26 @@ namespace Bloodlines.Missions.Campaign
             SpawnKraken();
             SpawnGear();
             if (!RequireAssets(_kraken)) return false;
-            var dimensions = _kraken.Model.Dimensions;
-            float side = System.Math.Max(2f, System.Math.Max(System.Math.Abs(dimensions.Item1.X), System.Math.Abs(dimensions.Item2.X))) + 1f;
-            var right = new Vector3(_kraken.ForwardVector.Y, -_kraken.ForwardVector.X, 0f);
-            string[] keys = { "M17.WeldOne", "M17.WeldTwo", "M17.WeldThree" };
-            for (int i = 0; i < keys.Length; i++)
-            {
-                var point = _kraken.Position + right * side + _kraken.ForwardVector * ((i - 1) * 2f);
-                point.Z = _slip.Z;
-                _weldPoints.Add(point);
-                var location = Ctx.Locations.Get(keys[i]);
-                if (location != null) location.Position = point;
-            }
-            Station(CrewSlot.Guess, _slip + new Vector3(-8f, 0f, 0f));
-            Station(CrewSlot.Ice, _slip + new Vector3(12f, -10f, 0f));
+            foreach (var key in new[] { "M17.WeldOne", "M17.WeldTwo", "M17.WeldThree" })
+                _weldPoints.Add(Ctx.Locations.Position(key));
+            if (!SpawnWorkstations()) return false;
+            Station(CrewSlot.Guess, Ctx.Locations.Position("M17.GuessStart"));
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M17.IceStart"));
+            GameUtils.Notify("Kraken moored in the water. Prepare its modules on the dock. The release is an emergency grapple control, not a launch crane.");
             PlayApproach();
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            var welds = new MultiHoldObjective("Weld the plasma-arc torches to the hull.",
-                _weldPoints, 8, 3f, "Welding") { SiteDone = FitPart };
+            var welds = new MultiHoldObjective("Gohan: prepare the three torch modules at the dock workbenches.",
+                _weldPoints, 8, 3f, "Welding") { SiteDone = FitPart, Animation = MissionInteraction.ReachInside };
             yield return new MissionStage("Calibrate the torches", welds)
                 .OwnedBy(CrewSlot.Gohan)
                 .AfterCues("M17_S1_01_GOHAN");
 
             yield return new MissionStage("Grapple test",
-                    new MissionInteraction("Guess — test the fifty-ton magnetic lock.", () => _slip, 10, 4f),
+                    new MissionInteraction("Guess — test the fifty-ton magnetic lock.", () => _slip, 10, 1.7f, animation: MissionInteraction.ReachInside, face: () => _slip + new Vector3(-1.5f, 0f, 0f)),
                     new ReactionTrigger(() => !_releaseAsked && !Ctx.Cutscenes.IsActive, AskForRelease))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => GameUtils.Subtitle("~g~Four minutes through eight inches of naval bulkhead.", 5000))
@@ -96,9 +89,14 @@ namespace Bloodlines.Missions.Campaign
             // Ron's question becomes an object: a release on the outside, where either
             // brother can reach it. Gohan changes it; the change is seen.
             yield return new MissionStage("The release",
-                    new MissionInteraction("Gohan — move the release to the outside of the hull.", () => ReleasePoint(), 5, 3f))
+                    new MissionInteraction("Gohan: configure the external grapple release at the marked workbench.", () => ReleasePoint(), 5, 1.7f, animation: MissionInteraction.ReachInside, face: () => ReleasePoint() + new Vector3(-1.5f, 0f, 0f)))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => PlayRelease());
+
+            yield return new MissionStage("Collect the Kraken",
+                    new EnterVehicleObjective("Gohan: collect the prepared Kraken from the water beside the dock.", () => _kraken, VehicleSeat.Driver))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnEnter(context => { _kraken.IsPositionFrozen = false; GameUtils.Subtitle("Follow the green sub marker. Board the Kraken with F / Y or E / D-pad Right beside the hatch.", 6000); });
 
             yield return new MissionStage("Ready",
                     new DialogueFinishedObjective("Finish the radio check before staging the heist."))
@@ -124,7 +122,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The slip",
-                Reason = "The sub from the Berth 44 survey, hauled into a hidden slip; Ron looks it over, Gohan has the torches and grapples to fit, Ice checks the pickup gear. Nobody is coming; this is work.",
+                Reason = "The survey Kraken is moored beside the quay workshop. Gohan prepares three torch modules at the benches, Guess tests the magnetic lock, and Gohan adds its external emergency release. The sub is already afloat; the release is not a launch mechanism.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M17 approach scene did not play; the slip stands on its own.");
@@ -134,13 +132,13 @@ namespace Bloodlines.Missions.Campaign
         private void FitPart(int site)
         {
             if (_kraken == null || !_kraken.Exists() || site < 0 || site >= _weldPoints.Count) return;
-            var model = new Model("prop_tool_blowtorch");
-            if (!GameUtils.RequestModel(model)) return;
-            var part = Track(World.CreateProp(model, _weldPoints[site] + new Vector3(0f, 0f, 1f), false, false));
-            model.MarkAsNoLongerNeeded();
-            if (part == null || !part.Exists()) return;
-            part.IsPersistent = true;
-            StowPropStep.Stow(part, _kraken, new Vector3(-1.2f + site * 1.2f, -1.6f, 0.9f));
+            var part = _modules[site];
+            if (part == null || !part.Exists()) { Fail("A torch module is missing. Restart the workshop."); return; }
+            part.IsPositionFrozen = false;
+            GTA.Native.Function.Call(GTA.Native.Hash.SET_ENTITY_COLLISION, part, false, false);
+            StowPropStep.Stow(part, _kraken, new Vector3(-1.2f + site * 1.2f, -1.6f, .9f));
+            if (!GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_ATTACHED_TO_ENTITY, part, _kraken))
+            { Fail("A torch mount did not attach. Restart the workshop."); return; }
             _parts.Add(part);
             GameUtils.Subtitle("~g~Part " + _parts.Count + " of 3 on the hull.", 3000);
         }
@@ -155,23 +153,25 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The external release, changed: a handle on the hull, tested, from the bible's own lines.</summary>
         private void PlayRelease()
         {
-            _releaseChanged = true;
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             SpawnRelease();
+            if (_release == null || !_release.Exists() || !GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_ATTACHED_TO_ENTITY, _release, _kraken))
+            { Fail("The external release control did not attach. Restart the workshop."); return; }
+            _releaseChanged = true;
             var blocking = new SceneBlocking();
             if (gohan != null && gohan.Exists())
             {
-                blocking.Then(new InspectStep(gohan, ReleasePoint(), 2800, "WORLD_HUMAN_WELDING"));
+                blocking.Then(new InspectStep(gohan, ReleasePoint() + new Vector3(-1f, 0f, 1f), 1800));
                 blocking.Then(ShotStep.OverShoulder(3400, gohan, _release != null && _release.Exists() ? (Entity)_release : gohan, 0.2f));
             }
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "release", Title = "The release",
-                Reason = "Gohan moves the release to the outside of the hull: a handle either brother can pull. He learned to work alone; the handle says he does not mean to die that way.",
+                Reason = "Gohan moves the release to the outside of the hull: a release control either brother can operate. He learned to work alone; the handle says he does not mean to die that way.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) { Logger.Warn("M17 release scene did not play; the handle is fitted directly."); blocking.Complete(); }
-            GameUtils.Subtitle("~g~External release fitted and tested: a handle on the hull, either of them can reach it.", 5000);
+            GameUtils.Subtitle("~g~External release fitted and tested: a control on the hull, either of them can reach it.", 5000);
         }
 
         /// <summary>The aftermath: the sub in the slip with its parts and its handle.</summary>
@@ -183,15 +183,38 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- world building ----------
 
-        private Vector3 ReleasePoint() => _kraken != null && _kraken.Exists() ? _kraken.Position - _kraken.ForwardVector * 3.5f : _slip;
+        private Vector3 ReleasePoint() => Ctx.Locations.Position("M17.ReleasePoint");
+
+        private bool SpawnWorkstations()
+        {
+            var benchModel = new Model("prop_tool_bench02");
+            var itemModel = new Model("prop_tool_blowtorch");
+            if (!GameUtils.RequestModel(benchModel) || !GameUtils.RequestModel(itemModel)) return false;
+            int index = 0;
+            foreach (var point in new[] { _weldPoints[0], _weldPoints[1], _weldPoints[2], ReleasePoint() })
+            {
+                var bench = Track(World.CreateProp(benchModel, MissionPlacement.Position(Ctx.Locations, "M17.Workbench" + (++index), point + new Vector3(-1.5f, 0f, 0f)), false, true));
+                if (!RequireAssets(bench)) return false;
+                bench.Heading = MissionPlacement.Heading(Ctx.Locations, "M17.Workbench" + index, 0f); bench.IsPositionFrozen = true;
+                var workModel = index == 4 ? new Model("prop_cs_remote_01") : itemModel;
+                if (!GameUtils.RequestModel(workModel)) return false;
+                var item = Track(World.CreateProp(workModel, PropPlacement.OnTop(bench, benchModel, workModel), false, false));
+                workModel.MarkAsNoLongerNeeded();
+                if (!RequireAssets(item)) return false;
+                item.IsPositionFrozen = true;
+                _modules.Add(item);
+            }
+            benchModel.MarkAsNoLongerNeeded(); itemModel.MarkAsNoLongerNeeded();
+            return true;
+        }
 
         private void SpawnKraken()
         {
             var model = new Model("submersible2");
             if (!GameUtils.RequestModel(model)) return;
 
-            _kraken = Track(World.CreateVehicle(model, _slip + new Vector3(0f, 8f, 0f),
-                Ctx.Locations.Heading("M17.DrySlip")));
+            _kraken = Track(World.CreateVehicle(model, MarineSites.ResolveOrThrow(Ctx.Locations, "M17.KrakenSpawn", 5f, 3f, 5f),
+                Ctx.Locations.Heading("M17.KrakenSpawn")));
             model.MarkAsNoLongerNeeded();
             if (_kraken == null || !_kraken.Exists()) return;
 
@@ -209,7 +232,7 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("prop_box_wood02a");
             if (!GameUtils.RequestModel(model)) return;
-            _gear = Track(World.CreateProp(model, _slip + new Vector3(13f, -9f, 0f), true, false));
+            _gear = Track(World.CreateProp(model, Ctx.Locations.Position("M17.GearSpawn"), true, false));
             model.MarkAsNoLongerNeeded();
         }
 
@@ -217,12 +240,10 @@ namespace Bloodlines.Missions.Campaign
         private void SpawnRelease()
         {
             if (_kraken == null || !_kraken.Exists()) return;
-            var model = new Model("prop_lever_01a");
-            if (!GameUtils.RequestModel(model)) return;
-            _release = Track(World.CreateProp(model, ReleasePoint() + new Vector3(0f, 0f, 1f), false, false));
-            model.MarkAsNoLongerNeeded();
-            if (_release == null || !_release.Exists()) { _release = null; return; }
+            _release = _modules.Count >= 4 ? _modules[3] : null;
+            if (_release == null || !_release.Exists()) return;
             _release.IsPersistent = true;
+            GTA.Native.Function.Call(GTA.Native.Hash.SET_ENTITY_COLLISION, _release, false, false);
             StowPropStep.Stow(_release, _kraken, new Vector3(0f, -3.2f, 0.7f));
         }
 
@@ -237,7 +258,7 @@ namespace Bloodlines.Missions.Campaign
         {
             Ctx.Crew.CompanionsHoldPosition = false;
             if (_kraken != null && _kraken.Exists()) _kraken.IsPositionFrozen = false;
-            _parts.Clear();
+            _parts.Clear(); _modules.Clear();
         }
     }
 }

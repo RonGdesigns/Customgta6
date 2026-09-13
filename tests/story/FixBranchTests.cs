@@ -47,7 +47,7 @@ public static partial class StoryTests
   ObjectiveMarkers.Clear();
 
   // ---- R03. Eligibility is answered before anything is stood down.
-  int canStart=host.IndexOf("_missions.CanStart(next",StringComparison.Ordinal),standDown=host.IndexOf("if (_crew.IsDeployed) StandDown();",host.IndexOf("private void StartMission",StringComparison.Ordinal),StringComparison.Ordinal);
+  int canStart=host.IndexOf("_missions.CanStart(next",StringComparison.Ordinal),standDown=host.IndexOf("StandDown();",host.IndexOf("private void StartMission",StringComparison.Ordinal),StringComparison.Ordinal);
   Check(canStart>0&&standDown>canStart,"StartMission checks eligibility before it stands the crew down");
   Reset();crew=Roster();c=Context(crew);var cat=new MissionCatalog();
   cat.All.Add(Def("M18","main"));foreach(var id in new[]{"SM01","SM02","SM03"})cat.All.Add(Def(id,"solo","M03"));cat.All.Add(Def("M19","main","M18"));
@@ -77,7 +77,7 @@ public static partial class StoryTests
   watched.Update();Game.GameTime+=200;watched.Update();
   Check(watched.Steps[0].Failed&&watched.Canceled&&watched.IsFinished&&!watched.Succeeded&&other.Position==Vector3.Zero,"A watched step that times out and cannot reach its end state cancels the rest instead of advancing");
   var next=typeof(CutsceneDirector).GetMethod("NextLine",BindingFlags.NonPublic|BindingFlags.Instance);
-  Reset();crew=Roster();c=Context(crew);c.Cutscenes.Play("M02","outro","Aftermath");for(int i=0;i<12&&c.Cutscenes.IsActive;i++)next.Invoke(c.Cutscenes,null);
+  Reset();crew=Roster();c=Context(crew);c.Cutscenes.Play("M02","outro","Aftermath");for(int i=0;i<120&&c.Cutscenes.IsActive;i++){Game.GameTime+=1000;c.Cutscenes.Update();}
   Check(!c.Cutscenes.IsActive&&c.Cutscenes.LastOutcome==SceneOutcome.Completed,"A scene that plays out reports Completed");
   c.Cutscenes.Play("M02","outro","Aftermath");c.Cutscenes.Skip();Check(c.Cutscenes.LastOutcome==SceneOutcome.Skipped,"A deliberate skip reports Skipped");
   c.Cutscenes.Play("M02","outro","Aftermath");c.Cutscenes.Stop();Check(c.Cutscenes.LastOutcome==SceneOutcome.Canceled,"Stop reports Canceled");
