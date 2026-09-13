@@ -27,7 +27,7 @@ No local GTA installation or CodeWalker archive-query endpoint was available her
 
 Existing personal override files are never edited. Existing named keys retain their overrides; a point inside the excluded grid or on the wrong elevation is rejected with its key rather than silently relocated. The newly distinct positions appear in the existing location-book/survey catalog. The legacy `M26.DusterPad` cargo label remains readable for old saves, but the actual jet and Duster spawns now use explicit runway keys.
 
-Only ten existing location rows are changed (the SM01 layout and SM02 entrance); twenty dedicated rows are added. All other baseline rows remain unchanged. SM01's exterior approach line and its loaded line, plus M25's final cue/trigger, are updated at their authored sources and regenerated. No unrelated character dialogue, reward pricing, police rules, apartments, prologue, M19-M22 one-sitting policy, or later missions are replaced.
+Only ten existing location rows are changed (the SM01 layout and SM02 entrance); nineteen dedicated rows are added, bringing the location book from 805 to 824 rows. All other baseline rows remain unchanged. SM01's exterior approach line and its loaded line, plus M25's final cue/trigger, are updated at their authored sources and regenerated. No unrelated character dialogue, reward pricing, police rules, apartments, prologue, M19-M22 one-sitting policy, or later missions are replaced.
 
 ## Live acceptance route on a copied save
 
