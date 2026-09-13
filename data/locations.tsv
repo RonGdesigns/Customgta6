@@ -812,7 +812,7 @@ SM01.Case2Access	1040.410	-3049.640	5.900	180.3	land	estimate	Terminal Island; e
 SM02.Approach	-1110.000	-275.000	37.620	320	land	estimate	Lifeinvader sidewalk run-up; separate from service door; bounded same-floor placement
 M25.NorthTunnel	-527.000	4515.000	89.034	172	land	estimate	Raton north rail/tunnel approach; existing inspected deck anchor; runtime same-level only
 M25.SouthTunnel	-504.000	4340.000	89.042	352	land	estimate	Raton south rail/tunnel approach derived from tanker deck; live route acceptance pending
-M25.BoatEscape	-245.000	4440.000	30.000	90	water	estimate	Raton river-mouth departure into Alamo; require actual 100 meter separation after boarding
+M25.BoatEscape	-245.000	4440.000	30.000	90	water	estimate	Cassidy Creek / Raton river-mouth departure; require actual 100 meter separation after boarding
 M26.RunwayStart	2030.000	4760.000	40.140	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
 M26.SparePlane	2060.000	4770.000	40.448	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
 M26.CrewStart	2035.000	4747.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
