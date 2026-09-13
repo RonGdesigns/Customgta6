@@ -1,0 +1,4 @@
+run_id,profile,mission_or_route,game_build,bloodlines_dll_sha256,forest_archive_sha256,gpu,cpu,resolution,refresh_hz,weather,game_hour,upscaling,frame_generation,ray_tracing,texture_quality,lod_settings,average_fps,one_percent_low_fps,peak_frame_time_ms,vram_used_mb,cold_or_warm,collision_or_streaming_issue,notes
+A01,current_baseline,,,,,RTX 5080,,,,,,,,,,,,,,,,,
+B01,baseline_plus_forests,,,,,RTX 5080,,,,,,,,,,,,,,,,,
+C01,forests_plus_reviewed_visuals,,,,,RTX 5080,,,,,,,,,,,,,,,,,

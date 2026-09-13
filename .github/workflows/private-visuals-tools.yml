@@ -1,0 +1,23 @@
+name: private-visuals-tools
+on:
+  push:
+    branches: [codex/private-visuals-foundation]
+    paths: ['tools/visuals/**', '.github/workflows/private-visuals-tools.yml']
+  pull_request:
+    paths: ['tools/visuals/**', '.github/workflows/private-visuals-tools.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test the local inventory with synthetic fixtures only
+        run: python -m unittest discover -s tools/visuals -p 'test_*.py' -v
