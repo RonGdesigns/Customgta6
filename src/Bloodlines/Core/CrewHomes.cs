@@ -24,7 +24,7 @@ namespace Bloodlines.Core
         public ApartmentTier Tier => ApartmentTiers.Current(_state);
         public bool LuxuryUnlocked => Tier != ApartmentTier.Starter;
         /// <summary>The active brother's residence at the current tier.</summary>
-        public Residence Current => _foundryVisit ? FoundryResidence : ApartmentTiers.For(_crew.ActiveSlot, Tier);
+        public Residence Current => _bunkerVisit ? BunkerSite.Residence : _foundryVisit ? FoundryResidence : ApartmentTiers.For(_crew.ActiveSlot, Tier);
         public string ResidenceName => Current.Name;
         public string Progression => ApartmentTiers.Progression(Tier);
         public Vector3 SavePosition => Apartment.Inside || Apartment.Busy ? Apartment.ExitPosition : Game.Player.Character.Position;
@@ -41,7 +41,7 @@ namespace Bloodlines.Core
             Apartment.Begin(location.Position, residence.Ipl, true, residence.Probe, location.Heading, residence.EntitySets);
         }
         /// <summary>The room survey for the active brother's residence, in walking order: the entry first, then the spots.</summary>
-        public string[] RoomSurveyKeys => _foundryVisit ? new[] { Current.InteriorKey, Current.RoomPrefix + ".Door", Current.RoomPrefix + ".Planning", Current.RoomPrefix + ".Wardrobe", Current.RoomPrefix + ".Bed", Current.RoomPrefix + ".Locker" } : ApartmentTiers.RoomSurveyKeys(Current);
+        public string[] RoomSurveyKeys => _bunkerVisit ? new[] { BunkerSite.InteriorKey, BunkerSite.DoorKey, BunkerSite.InspectKey } : _foundryVisit ? new[] { Current.InteriorKey, Current.RoomPrefix + ".Door", Current.RoomPrefix + ".Planning", Current.RoomPrefix + ".Wardrobe", Current.RoomPrefix + ".Bed", Current.RoomPrefix + ".Locker" } : ApartmentTiers.RoomSurveyKeys(Current);
         private static readonly string[] RoomSpots = { "Wardrobe", "Bed", "Locker", "Door" };
         /// <summary>
         /// A spot in the current room once Ron has surveyed it on foot; null while it
@@ -78,8 +78,8 @@ namespace Bloodlines.Core
         private static string RoomPrompt(string name) =>
             name == "Planning" ? "review the preparation board" : name == "Wardrobe" ? "wardrobe" : name == "Bed" ? "rest and save" : name == "Locker" ? "personal weapon locker" : "leave the apartment";
         public void ExitApartment() { if (Apartment.Inside && !Apartment.Busy) Apartment.Begin(Apartment.ExitPosition, null, false); }
-        public void StopApartment() { Apartment.Cancel(); _foundryVisit = false; }
-        public void UpdateTransition() { Apartment.Update(); if (!Apartment.Inside && !Apartment.Busy) _foundryVisit = false; }
+        public void StopApartment() { Apartment.Cancel(); _foundryVisit = false; _bunkerVisit = false; }
+        public void UpdateTransition() { Apartment.Update(); if (!Apartment.Inside && !Apartment.Busy) { _foundryVisit = false; _bunkerVisit = false; } }
         public Action OpenMenu { get; set; }
         public Action RouteNextLead { get; set; }
         public Action<Vehicle> ApplyFleetUpgrade { get; set; }
@@ -137,7 +137,7 @@ namespace Bloodlines.Core
                 bool atEntry = GameUtils.IsWithin(player.Position, Apartment.InteriorPosition, 3f);
                 if (atEntry)
                 {
-                    GameUtils.Subtitle(_foundryVisit ? "E / D-pad Right: Foundry HQ - planning, wardrobe, rest, weapon locker, exit." : "E / D-pad Right: apartment - wardrobe, rest, locker, exit.", 500);
+                    GameUtils.Subtitle(_bunkerVisit ? "E / D-pad Right: Senora bunker - planning, wardrobe, rest and exit." : _foundryVisit ? "E / D-pad Right: Foundry HQ - planning, wardrobe, rest, weapon locker, exit." : "E / D-pad Right: apartment - wardrobe, rest, locker, exit.", 500);
                     if (Game.IsControlJustPressed(GTA.Control.Context)) OpenMenu?.Invoke();
                 }
                 UpdateRoomSpots(player, atEntry);
@@ -145,6 +145,8 @@ namespace Bloodlines.Core
             }
             if (Apartment.Busy) return;
             UpdateFoundry(player);
+            if (Apartment.Busy) return;
+            UpdateBunker(player);
             if (Apartment.Busy) return;
             foreach (var hero in Protagonist.All)
             {
@@ -188,6 +190,6 @@ namespace Bloodlines.Core
             finally { Game.Player.CanControlCharacter = control; GameUtils.FadeIn(350); }
             GameUtils.Notify("~g~Rested and saved at " + ResidenceName + ".");
         }
-        public void Clear() { ClearFoundryBlip(); foreach (var blip in _blips.Values) GameUtils.SafeDelete(blip); _blips.Clear(); }
+        public void Clear() { ClearFoundryBlip(); ClearBunkerBlip(); foreach (var blip in _blips.Values) GameUtils.SafeDelete(blip); _blips.Clear(); }
     }
 }

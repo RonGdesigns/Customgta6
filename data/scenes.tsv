@@ -164,12 +164,12 @@ M22_SCENE_OUTRO_01_GUESS	M22	outro	GUESS	Reflective; allow the response to land	
 M22_SCENE_OUTRO_02_ICE	M22	outro	ICE	Reflective; allow the response to land	I said I could defend it. I was wrong. We get shelter in Senora, then we count people before equipment.
 M22_SCENE_APPROACH_01_GUESS	M22	approach	GUESS	On the approach; the place and the job seen before anyone moves	Four feet of water at the drop. I'm holding over the lake till I see you two on the beach.
 M22_SCENE_APPROACH_02_GOHAN	M22	approach	GOHAN	On the approach; the place and the job seen before anyone moves	Granger's coming down the road now, Ice beside me. Land it after the drop; then nobody moves for a minute.
-M23_SCENE_INTRO_01_ICE	M23	intro	ICE	Briefing; intent before tactics	The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
+M23_SCENE_INTRO_01_ICE	M23	intro	ICE	Briefing; intent before tactics	This old Senora bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
 M23_SCENE_INTRO_02_GUESS	M23	intro	GUESS	Briefing; intent before tactics	A door that locks is a start. A way out is better. I'll check the second one while you take the first.
-M23_SCENE_OUTRO_01_GOHAN	M23	outro	GOHAN	Reflective; allow the response to land	The yard has power and the gate works. The underground rooms stay sealed for now. We still need fuel and money to keep three people alive out here.
+M23_SCENE_OUTRO_01_GOHAN	M23	outro	GOHAN	Reflective; allow the response to land	The lights work and the interior is dry. We have shelter, but we still need fuel, tools and money to keep three people alive out here.
 M23_SCENE_OUTRO_02_GUESS	M23	outro	GUESS	Reflective; allow the response to land	Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
-M23_SCENE_APPROACH_01_ICE	M23	approach	ICE	On the approach; the place and the job seen before anyone moves	Nine of them in the yard, on the walkway and in the bays. They live here; they'll fight for it. I go up to the dome first.
-M23_SCENE_APPROACH_02_GUESS	M23	approach	GUESS	On the approach; the place and the job seen before anyone moves	Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, check that trailer generator before we touch the gate.
+M23_SCENE_APPROACH_01_ICE	M23	approach	ICE	On the approach; the place and the job seen before anyone moves	Nine around the entrance and the service yard. They live here; they will fight for it. I take the approach. Keep the vehicle clear.
+M23_SCENE_APPROACH_02_GUESS	M23	approach	GUESS	On the approach; the place and the job seen before anyone moves	There is a dirt road out to the north. I will check the yard for our rigs. Gohan, find the generator controls; we need to know what still works.
 M24_SCENE_INTRO_01_GOHAN	M24	intro	GOHAN	Briefing; intent before tactics	Five tons first. The rest stays hidden. We need operating money, not a convoy that advertises the entire haul.
 M24_SCENE_INTRO_02_ICE	M24	intro	ICE	Briefing; intent before tactics	If deputies arrive, call them out. Keep that cable steady; I've got the ridge.
 M24_SCENE_OUTRO_01_GUESS	M24	outro	GUESS	Reflective; allow the response to land	Enough recovered to keep the lights on. The rest can wait. I'm keeping track of what surviving actually costs.

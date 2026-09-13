@@ -22,6 +22,17 @@ public static partial class StoryTests
     }
     static void HarborRepairChecks()
     {
+        Reset();
+        var from=new Vector3(1140,-3380,-1.5f);var to=from+new Vector3(3,0,0);
+        var dirty=new OutputArgument { NativeBoolStorage=0x1234567800000000UL };
+        Check(dirty.GetResult<bool>()&&dirty.GetResult<int>()==0,"Harness reproduces a false native BOOL with stale upper padding");
+        Check(MarineSites.Native.Clear(from,to),"A clear underwater ray ignores dirty bytes outside the native BOOL");
+        Function.MarineBlocked=true;
+        Check(!MarineSites.Native.Clear(from,to),"A genuine underwater obstruction still blocks placement with dirty padding");
+        Function.MarineBlocked=false;
+        var nativeCrew=Roster();var nativeContext=Context(nativeCrew);
+        var launch=MarineSites.ResolveOrThrow(nativeContext.Locations,"M21.LaunchSpawn",3f,3f,6f);
+        Check(launch.X==1140&&launch.Y==-3380,"M20 escort boat accepts its clear authored site with the live bug reproduced");
         var probe = new MarineProbe(); Vector3 found; string error;
         Check(MarineSites.TryResolve(Vector3.Zero, 12, 8, 10, 0, 0, out found, out error, probe), "Marine: one deep clear footprint is accepted");
         probe.At = p => new MarineColumn { Known = true, Surface = 0, Floor = 15 };

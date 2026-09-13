@@ -1,10 +1,19 @@
 """Regression tests for speech boundaries in the real extracted design bibles."""
 from pathlib import Path
 import unittest
-from parse_bible import parse_missions
+from parse_bible import parse_missions, apply_mission_edits
 ROOT=Path(__file__).resolve().parents[1]
 
 class DialogueParserTests(unittest.TestCase):
+    def test_bunker_editorial_override(self):
+        missions=[{'id':'M23','location':'Old radar yard','title':'GHOST IN THE SAGE'}]
+        apply_mission_edits(missions,str(ROOT/'data/mission_edits.json'))
+        self.assertEqual(missions[0]['location'],'Grand Senora Desert Bunker')
+        self.assertIn('underground',missions[0]['synopsis'])
+        self.assertEqual(missions[0]['title'],'GHOST IN THE SAGE')
+        with self.assertRaises(ValueError):
+            apply_mission_edits([{'id':'M01'}],str(ROOT/'data/mission_edits.json'))
+
     def test_bibles_and_final_cue(self):
         missions=[];cues=[]
         for source in ('omnibus_v2.txt','solo_missions_v1.txt'):

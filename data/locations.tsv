@@ -107,13 +107,13 @@ M21.RoadPickup	1130.000	-3340.000	6.000	90	land	estimate	Terminal southern quay 
 M22.AlamoDrop	1150.000	4200.000	30.000	0	water	estimate	Alamo Sea / Alamo west inlet, six-meter minimum sampled depth; CodeWalker checked, live survey pending
 M22.Beach	1100.000	4250.000	32.180	0	land	estimate	Alamo Sea / Alamo west inlet dry bank; CodeWalker checked, live survey pending
 M22.RoadArrival	1100.000	4450.000	61.427	180	land	estimate	Mount Chiliad / Alamo west inlet road approach; CodeWalker checked, live survey pending
-M23.DomeApproach	2000.000	2880.000	50.022	0	land	estimate	Grand Senora Desert / Existing mission site, corrected support height; CodeWalker geometry checked, awaiting live survey
-M23.BunkerDoor	2020.000	2920.000	48.175	0.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
-M23.BayOne	2012.000	2934.000	47.185	0.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
-M23.BayTwo	2026.000	2934.000	48.020	0.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
-M23.BayThree	2040.000	2934.000	47.710	0.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
-M23.Generator	2032.000	2902.000	48.554	0.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
-M23.SecondExit	2050.000	2908.000	47.917	90.0	land	estimate	Grand Senora Desert / Radar exterior service yard; CodeWalker checked, live survey pending
+M23.Approach	846	2946	49.122	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Entrance	848.6	2991	44.783	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.ToolBay	863	2980	44.527	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.FuelBay	869	2992	43.709	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.VehicleBay	860	2964	45.636	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.PowerPanel	860	2998	42.285	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.EscapeRoad	868	3078	39.729	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M24.CraneSpawn	1090.000	4250.000	34.111	180	land	estimate	Alamo Sea / Alamo dry recovery bank; CodeWalker checked, live survey pending
 M24.DredgePoint	1150.000	4200.000	30.000	0	water	estimate	Alamo Sea / Same Alamo cache as M22; CodeWalker checked, live survey pending
 M24.RidgeLine	1100.000	4450.000	61.427	180	land	estimate	Mount Chiliad / Alamo road lookout; CodeWalker checked, live survey pending
@@ -167,7 +167,7 @@ M29.Approach	2414	4996	46	0	land	estimate
 M29.Cover	2451	5025	46	0	land	estimate	
 M29.Valve	2486.000	5050.000	48.691	0	land	estimate	Grapeseed / Existing mission site, corrected support height; CodeWalker geometry checked, awaiting live survey
 M29.Truck	2473	5007	46	225	land	estimate	
-M29.Delivery	1993.000	2898.000	48.388	0	land	estimate	Grand Senora Desert / Existing mission site, corrected support height; CodeWalker geometry checked, awaiting live survey
+M29.Senora.Delivery	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M30.Start	-432.500	3946.250	67.630	300	land	estimate	Mount Josiah / Calafia road approach; saved Bend and Exit retained; CodeWalker geometry checked, awaiting live survey
 M30.Bend	-685	3996	130	0	land	estimate	
 M30.Exit	-1083	4362	13	0	land	estimate	
@@ -290,25 +290,25 @@ M18.LauncherWork	1094	-3233	5.9	90	land	estimate	Terminal / LauncherWork; map pr
 M18.LauncherCrate	1095	-3233	5.9	90	land	estimate	Terminal / LauncherCrate; map preflight, live survey pending
 M18.PodWork	1060	-3205	5.9	180	land	estimate	Terminal / PodWork; map preflight, live survey pending
 M18.PodCrate	1061	-3205	5.9	180	land	estimate	Terminal / PodCrate; map preflight, live survey pending
-M31.Start	1995	2840	49.26	0	land	estimate	Offline support checked; live survey pending
-M31.IceStart	1995	2840	49.26	0	land	estimate	Offline support checked; live survey pending
-M31.GohanStart	2030	2905	47.728	0	land	estimate	Offline support checked; live survey pending
-M31.GuessStart	2022.25	2867.75	49.07	0	land	estimate	Offline support checked; live survey pending
-M31.CrewCar	2022.25	2867.75	49.07	270	land	estimate	Offline support checked; live survey pending
-M31.Generator	2032	2902	47.634	0	land	estimate	Offline support checked; live survey pending
-M31.GeneratorWork	2029.5	2902	47.735	0	land	estimate	Offline support checked; live survey pending
-M31.Barrier1	1996.5	2878.5	48.911	90	land	estimate	Offline support checked; live survey pending
-M31.Barrier2	1998.25	2910.75	47.497	90	land	estimate	Offline support checked; live survey pending
-M31.Barrier3	2041.75	2933	46.748	0	land	estimate	Offline support checked; live survey pending
-M31.Retreat	2103	2860.5	46.665	270	land	estimate	Offline support checked; live survey pending
-M31.Convoy1	1956.5	2976	44.809	180	land	estimate	Offline support checked; live survey pending
-M31.Convoy2	1989.5	2982.75	44.856	180	land	estimate	Offline support checked; live survey pending
-M31.Work1	1999.5	2878.5	48.991	0	land	estimate	Offline support checked; live survey pending
-M31.Charge1	1996.5	2877.5	48.909	0	land	estimate	Offline support checked; live survey pending
-M31.Work2	2001.25	2910.75	47.497	0	land	estimate	Offline support checked; live survey pending
-M31.Charge2	1998.25	2909.75	47.496	0	land	estimate	Offline support checked; live survey pending
-M31.Work3	2044.75	2933	46.676	0	land	estimate	Offline support checked; live survey pending
-M31.Charge3	2041.75	2932	46.766	0	land	estimate	Offline support checked; live survey pending
+M31.Senora.Start	841	2964	44.846	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.IceStart	841	2964	44.846	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.GohanStart	860	2998	42.285	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.GuessStart	846	2956	46.619	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.CrewCar	846	2956	46.619	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Generator	862.5	2998	42.348	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.GeneratorWork	860	2998	42.285	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Barrier1	840	2970	44.57	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Barrier2	868	2982	44.828	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Barrier3	850	3020	41.009	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Retreat	868	3078	39.729	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Convoy1	868	3091.75	39.699	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Convoy2	871.75	2853	56.528	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Work1	843	2970	43.737	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Charge1	840	2969	44.654	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Work2	871	2982	44.271	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Charge2	868	2981	44.841	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Work3	853	3020	40.475	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M31.Senora.Charge3	850	3019	41.367	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M32.Start	-2770	2498	1.801	0	land	estimate	Offline support checked; live survey pending
 M32.IceStart	-2760	2540	1.77	0	land	estimate	Offline support checked; live survey pending
 M32.GohanStart	-2760	2500	1.734	0	land	estimate	Offline support checked; live survey pending
@@ -327,8 +327,8 @@ M32.Guard3	-2746	2745	1.294	0	land	estimate	Offline support checked; live survey
 M32.Guard4	-2774	2750	0.595	0	land	estimate	Offline support checked; live survey pending
 M32.Response	-2746	2828.5	1.373	180	land	estimate	Offline support checked; live survey pending
 M32.Exit	-2662	2609	15.759	0	land	estimate	Offline support checked; live survey pending
-M32.Delivery	2022.25	2921.5	47.222	0	land	estimate	Offline support checked; live survey pending
-M32.Workbench	2030	2945	46.71	0	land	estimate	Offline support checked; live survey pending
+M32.Senora.Delivery	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M32.Senora.Workbench	863	2980	44.527	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M32.Boat	-2960	2620	0	120	water	estimate	Offline support checked; live survey pending
 M32.LandingWater	-2840	2540	0	90	water	estimate	Offline support checked; live survey pending
 M33.Start	2440	3180	45.16	0	land	estimate	Offline support checked; live survey pending
@@ -363,9 +363,9 @@ M34.BarrierRoad1	2163.75	1982.75	93.111	90	land	estimate	Offline support checked
 M34.BarrierPark1	2169.75	1982.75	93.237	0	land	estimate	Offline support checked; live survey pending
 M34.BarrierRoad2	2148.5	2253.5	106.515	90	land	estimate	Offline support checked; live survey pending
 M34.BarrierPark2	2154.5	2253.5	106.29	0	land	estimate	Offline support checked; live survey pending
-M34.Shelter	2022.25	2921.5	47.222	0	land	estimate	Offline support checked; live survey pending
-M34.MedicalKit	2026	2934	47.1	0	land	estimate	Offline support checked; live survey pending
-M34.MedicalWork	2024	2934	47.015	0	land	estimate	Offline support checked; live survey pending
+M34.Senora.Shelter	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M34.Senora.MedicalKit	866	2980	44.901	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M34.Senora.MedicalWork	864	2980	44.675	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M35.Start	2942	4356.25	50.862	0	land	estimate	Offline support checked; live survey pending
 M35.IceStart	2942	4356.25	50.862	0	land	estimate	Offline support checked; live survey pending
 M35.GohanStart	2942	4390	49.649	0	land	estimate	Offline support checked; live survey pending
@@ -382,7 +382,7 @@ M35.LeadSpawn	2976.25	4636.5	51.908	180	land	estimate	Offline support checked; l
 M35.TechnicalSpawn	2974.5	4710	48.749	180	land	estimate	Offline support checked; live survey pending
 M35.TechnicalHold	2982.5	4564.75	51.159	180	land	estimate	Offline support checked; live survey pending
 M35.Trap	2975	4494	46.187	0	land	estimate	Offline support checked; live survey pending
-M35.Delivery	2041.75	2933	46.748	0	land	estimate	Offline support checked; live survey pending
+M35.Senora.Delivery	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M35.IceCover	2950	4460	45.802	0	land	estimate	Offline support checked; live survey pending
 M36.Start	-1600	5240	3.069	0	land	estimate	Offline collision/water checked; live survey pending
 M36.IceStart	-1600	5240	3.069	0	land	estimate	Offline collision/water checked; live survey pending
@@ -433,7 +433,7 @@ M38.Guard3	2950	2790	40.211	0	land	estimate	Offline collision/water checked; liv
 M38.Guard4	2955	2770	37.972	0	land	estimate	Offline collision/water checked; live survey pending
 M38.Response	2905	2817	53.048	90	land	estimate	Offline collision/water checked; live survey pending
 M38.Exit	2700	2770	38.042	0	land	estimate	Offline collision/water checked; live survey pending
-M38.Delivery	2039	2930	46.874	0	land	estimate	Offline collision/water checked; live survey pending
+M38.Senora.Delivery	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M38.Crate1	2952.0	2778	38.684	0	land	estimate	Offline collision/water checked; live survey pending
 M38.Crate2	2953.2	2778	38.857	0	land	estimate	Offline collision/water checked; live survey pending
 M38.Crate3	2954.4	2778	39.098	0	land	estimate	Offline collision/water checked; live survey pending
@@ -789,3 +789,17 @@ SM03.Sprint276	485.000	5523.250	776.913	0	land	estimate	Mount Chiliad / offline 
 SM03.Sprint277	502.750	5561.500	781.819	0	land	estimate	Mount Chiliad / offline connected road graph
 SM03.Sprint278	506.750	5565.500	782.038	0	land	estimate	Mount Chiliad / offline connected road graph
 SM03.Summit	506.750	5565.500	781.438	0	land	estimate	Chiliad summit trail finish; connected vehicle-node graph
+M23.ArrivalCar	846	2956	46.619	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard01	838	2982	44.408	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard02	853	3005	41.474	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard03	865	3008	41.512	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard04	878	2983	42.05	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard05	866	2964	44.202	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard06	835	2960	47.091	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard07	836	3010	42.802	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard08	870	3017	40.915	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Guard09	860	2954	45.714	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+Bunker.Senora.Interior	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
+Bunker.Senora.Room.Door	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
+Bunker.Senora.Room.Inspect	899	-3244	-98.114	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
+M23.GuessStart	841	2964	44.846	0	land	estimate	Grand Senora bunker approach; collision checked, beside the arrival car

@@ -66,8 +66,8 @@ namespace Bloodlines.Missions.Campaign
             _drop = Ctx.Locations.Position("M22.AlamoDrop");
             _ridge = Ctx.Locations.Position("M24.RidgeLine");
             _ridgeRoad = Ctx.Locations.Position("M24.RidgeRoad");
-            _bunker = Ctx.Locations.Position("M23.BunkerDoor");
-            _bay = Ctx.Locations.Position("M23.BayOne");
+            _bunker = Ctx.Locations.Position("M23.VehicleBay");
+            _bay = Ctx.Locations.Position("M23.ToolBay");
             // The cache needs deep water; Gohan works the cable from verified dry ground.
             _workPoint = Ctx.Locations.Position("M24.GohanWork");
 
@@ -209,7 +209,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M24 unload scene did not play; the crates are placed directly."); blocking.Complete(); PlaceCrates(); Say("M24_S1_03_GOHAN"); }
             float dredged = Ctx.State?.AlamoGoldDredgedTons ?? 0f;
             float remaining = 30f - dredged - (Ctx.State != null && !Ctx.State.IsComplete(Id) ? 5f : 0f);
-            Ctx.State?.SetCargo("recoveredGold", "M23.BayOne");
+            Ctx.State?.SetCargo("recoveredGold", "M23.ToolBay");
             GameUtils.Subtitle("~g~Five tons in bay one. " + remaining.ToString("0") + " tons still in the Alamo. The deputies knew where to look; that is the next problem.", 6000);
             Logger.Info("M24: first portion in bay one; " + remaining.ToString("0") + " t remain hidden in the Alamo.");
         }
@@ -336,9 +336,12 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("prop_container_01a");
             if (!GameUtils.RequestModel(model)) return;
-            _container = Track(PortHeist.NearbyProp(model, _drop, 15f) ?? World.CreateProp(model, _drop, false, false));
+            var hidden = PortHeist.HiddenContainerPoint(_drop);
+            _container = Track(PortHeist.NearbyProp(model, hidden, 15f) ?? World.CreateProp(model, hidden, false, false));
             model.MarkAsNoLongerNeeded();
             if (_container == null || !_container.Exists()) return;
+            _container.Rotation = Vector3.Zero;
+            _container.Position = hidden;
             _container.IsPersistent = true;
             _container.IsPositionFrozen = true;
         }

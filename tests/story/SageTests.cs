@@ -16,21 +16,30 @@ public static partial class StoryTests
   // ---- M23: the survey before anyone moves, the bays looked into, the generator by hand, the limits named, the walk to the door.
   Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage23.json"));c.Vans=new CrewVan(c.State,c.Locations);var m23=new M23GhostInTheSage();
   Check(m23.Begin(c)&&c.Cutscenes.IsActive&&m23.Granger!=null&&m23.EndpointKind==MissionEndpoint.SafehouseArrival,"M23 opens on the exterior survey with the Granger they came in; the bunker is a safehouse endpoint");
-  c.Cutscenes.Skip();m23.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M23.BunkerDoor");m23.Tick();
+  c.Cutscenes.Skip();m23.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M23.Entrance");m23.Tick();
   Check(m23.CurrentStage==1&&m23.Roles.For(CrewSlot.Guess).State==RoleState.Covering&&m23.Roles.For(CrewSlot.Gohan).State==RoleState.Covering,"On the approach the other two take cover; nobody teleports into the yard");
   foreach(var p in World.Created.Where(p=>p.Model.Name.StartsWith("g_m_y_mex")))p.IsDead=true;m23.Tick();Check(m23.CurrentStage==2,"The yard clear, the bays are Ron's");
-  foreach(var key in new[]{"M23.BayOne","M23.BayTwo","M23.BayThree"})Interact(m23,c,CrewSlot.Guess,c.Locations.Position(key),5);
+  foreach(var key in new[]{"M23.ToolBay","M23.FuelBay","M23.VehicleBay"})Interact(m23,c,CrewSlot.Guess,c.Locations.Position(key),5);
   Check(m23.Limits.Count==2&&m23.Limits.Contains("no tools")&&m23.Limits.Contains("no fuel reserve"),"Each bay checked says what is there and adds what is missing to the list");
   m23.Tick();m23.Tick();Check(m23.CurrentStage==3,"The bays checked, the generator is Gohan's");
-  GTA.UI.Screen.Subtitle=null;Interact(m23,c,CrewSlot.Gohan,c.Locations.Position("M23.Generator"),10);
+  GTA.UI.Screen.Subtitle=null;Interact(m23,c,CrewSlot.Gohan,c.Locations.Position("M23.PowerPanel"),10);
   Check(m23.CurrentStage==4&&m23.Powered&&c.Cutscenes.IsActive&&m23.LimitsShown&&m23.Limits.Count==4&&c.State.FleetUpgrades["bunkerGenerator"],"The generator started by hand plays as a scene and the four limits are named as the next jobs");
-  c.Cutscenes.Skip();m23.Tick();Game.Player.Character.Position=c.Locations.Position("M23.BunkerDoor");c.Dialogue.Clear();m23.Tick();c.Dialogue.Clear();m23.Tick();
-  Check(m23.Status==MissionStatus.Passed,"The walk to the door ends the job");
+  c.Cutscenes.Skip();m23.Tick();c.Dialogue.Clear();World.CollisionReady=true;
+  Game.Player.Character.Position=c.Locations.Position(BunkerSite.EntranceKey);Game.Accept=true;m23.Tick();
+  Check(m23.Interior.Busy&&m23.CurrentStage==4,"M23 waits for the real room rather than passing at an exterior gate");
+  Game.GameTime+=300;m23.Tick();m23.Tick();m23.Tick();
+  Check(m23.Interior.Inside&&m23.CurrentStage==5,"The loaded room is a required playable stage");
+  Interact(m23,c,CrewSlot.Gohan,c.Locations.Position(BunkerSite.InspectKey),6);
+  Check(m23.CurrentStage==6,"Inspecting the bunker asks Gohan to return outside");
+  Game.Player.Character.Position=c.Locations.Position(BunkerSite.DoorKey);Game.Accept=true;m23.Tick();
+  Game.GameTime+=300;m23.Tick();m23.Tick();m23.Tick();c.Dialogue.Clear();m23.Tick();
+  for(int finish=0;finish<4&&m23.Status==MissionStatus.Running;finish++){c.Dialogue.Clear();m23.Tick();}
+  Check(m23.Status==MissionStatus.Passed&&!m23.Interior.Inside&&Game.Player.Character.Position.DistanceTo(c.Locations.Position(BunkerSite.EntranceKey))<3f,"M23 passes only after a successful return to the actual entrance");
   m23.Cleanup();Check(m23.Granger.Exists(),"The Granger stays at the bunker");
 
   // ---- M24: the truck and the container seen, the hoist as a lift, the deputies by road, Gohan aboard before it rolls, the crates into bay one, the ledger once.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage24.json"));var m24=new M24LiquidGold();
-  Check(m24.Begin(c)&&c.Cutscenes.IsActive&&m24.Container!=null&&m24.Container.IsPositionFrozen&&m24.Container.Position==c.Locations.Position("M22.AlamoDrop"),"M24 opens on the truck and the container still in the Alamo water");
+  Check(m24.Begin(c)&&c.Cutscenes.IsActive&&m24.Container!=null&&m24.Container.IsPositionFrozen&&m24.Container.Position==PortHeist.HiddenContainerPoint(c.Locations.Position("M22.AlamoDrop")),"M24 opens on the truck and the container still in the Alamo water");
   var gohanWork=crew.PedFor(CrewSlot.Gohan).Position;Check(gohanWork==c.Locations.Position("M24.GohanWork")&&!crew.PedFor(CrewSlot.Gohan).IsInVehicle(),"Gohan starts at the dry cable controls instead of in the deep cargo water");
   c.Cutscenes.Skip();m24.Tick();Use(crew,CrewSlot.Guess);var dredge=c.Locations.Position("M24.RecoveryPad");Game.Player.Character.SetIntoVehicle(m24.Crane,VehicleSeat.Driver);m24.Crane.Position=dredge;Game.Player.Character.Position=dredge;m24.Tick();
   Check(m24.CurrentStage==1,"The truck parked, the dredge and the ridge run together");
@@ -48,10 +57,10 @@ public static partial class StoryTests
   c.Cutscenes.Skip();m24.Tick();Check(m24.Crates.All(cr=>cr.AttachedTo==m24.Crane),"Skipped or watched, both crates are on the bed");
   m24.Tick();Check(crew.PedFor(CrewSlot.Gohan).Task.Enters==1&&c.Dialogue.HasPending&&m24.CurrentStage==2,"Once the scene is over Gohan is called aboard and walks to the truck; the truck waits");
   crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m24.Crane,VehicleSeat.Passenger);c.Dialogue.Clear();m24.Tick();Check(m24.CurrentStage==3&&m24.Boarded,"Gohan in the cab, the truck may roll");
-  Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m24.Crane,VehicleSeat.Driver);m24.Crane.Position=c.Locations.Position("M23.BunkerDoor");Game.Player.Character.Position=m24.Crane.Position;c.Dialogue.Clear();m24.Tick();
+  Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m24.Crane,VehicleSeat.Driver);m24.Crane.Position=c.Locations.Position("M23.VehicleBay");Game.Player.Character.Position=m24.Crane.Position;c.Dialogue.Clear();m24.Tick();
   Check(m24.Unloaded&&c.Cutscenes.IsActive,"At the bunker the unloading plays as a scene");
-  c.Cutscenes.Skip();m24.Tick();var bay=c.Locations.Position("M23.BayOne");
-  Check(m24.Crates.All(cr=>cr.AttachedTo==null&&cr.IsPositionFrozen&&cr.Position.DistanceTo(bay)<3f)&&c.State.CargoAt("recoveredGold")=="M23.BayOne","Skipped or watched, the crates stand in bay one and the first portion is recorded there");
+  c.Cutscenes.Skip();m24.Tick();var bay=c.Locations.Position("M23.ToolBay");
+  Check(m24.Crates.All(cr=>cr.AttachedTo==null&&cr.IsPositionFrozen&&cr.Position.DistanceTo(bay)<3f)&&c.State.CargoAt("recoveredGold")=="M23.ToolBay","Skipped or watched, the crates stand in bay one and the first portion is recorded there");
   c.Dialogue.Clear();m24.Tick();c.Dialogue.Clear();m24.Tick();Check(m24.Status==MissionStatus.Passed&&c.State.AlamoGoldDredgedTons==0f,"M24 passes; the ledger moves only when completion commits");
   string m24src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act2","M24LiquidGold.cs"));
   Check(m24src.Contains("StartVehicleMission(cruiser, _ridge + new Vector3(0f, 14f, 0f)")&&m24src.Contains("Bought deputies")&&!m24src.Contains("all police"),"The deputies drive in on a route and are named as bought men, not a police force");

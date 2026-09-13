@@ -55,7 +55,7 @@ namespace Bloodlines.Missions
             switch (key)
             {
                 case "cypressFoundry": return "Cypress Foundry";
-                case "grandSenoraRadarBunker": return "Grand Senora radar bunker";
+                case "grandSenoraRadarBunker": return "Grand Senora bunker";
                 case "mckenzieAirfieldHangar": return "McKenzie airfield hangar";
                 case "pillboxPenthouse": return "Penthouse access";
                 case "grangerTurbineInstalled": return "Granger turbine";

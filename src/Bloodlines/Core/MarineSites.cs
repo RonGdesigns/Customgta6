@@ -196,7 +196,10 @@ namespace Bloodlines.Core
                 var didHit = new OutputArgument(); var at = new OutputArgument();
                 var normal = new OutputArgument(); var entity = new OutputArgument();
                 int state = Function.Call<int>(Hash.GET_SHAPE_TEST_RESULT, ray, didHit, at, normal, entity);
-                hit = state == 2 && didHit.GetResult<bool>();
+                // Native BOOL* writes four bytes. SHVDN GetResult<bool>() reads
+                // eight, including uninitialized padding from OutputArgument.
+                // On Enhanced that made clear harbor rays randomly report hits.
+                hit = state == 2 && didHit.GetResult<int>() != 0;
                 end = state == 2 ? at.GetResult<Vector3>() : Vector3.Zero;
                 return state == 2;
             }

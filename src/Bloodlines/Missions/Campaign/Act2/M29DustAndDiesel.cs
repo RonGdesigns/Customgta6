@@ -61,14 +61,14 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(c=>_roles.For(CrewSlot.Gohan).Observe(At("M29.Approach"),At("M29.Approach")))
                 .OnExit(c=>{_fuelLoaded=true;Radio("ICE","Transfer complete. The tanker is full. Guess, take the tractor; Gohan, watch the road.","M29_FILLED");}).AfterCues("M29_S1_02_ICE");
             yield return new MissionStage("Take the tractor",new EnterVehicleObjective("Guess: take the orange-marked Phantom tractor attached to the fuel tanker. The brothers will ride or follow in another car.",()=>_truck,VehicleSeat.Driver)).OwnedBy(CrewSlot.Guess).OnEnter(c=>{_roles.Release();c.Crew.CompanionsHoldPosition=false;c.Crew.CompanionAI.ReleaseAll();c.Crew.AssignCompanionAI();});
-            yield return new MissionStage("Fuel for the bunker",new DeliverVehicleObjective("Guess: deliver the Phantom AND its tanker to the bunker. Reconnect if you detach it.",()=>_truck,()=>At("M29.Delivery"),25),new TrailerDeliveryObjective(()=>_truck,()=>_trailer,()=>At("M29.Delivery")),new ProtectObjective("",()=>_trailer,"The fuel tanker was destroyed.")).OwnedBy(CrewSlot.Guess).OnEnter(c=>StartPursuit()).OnExit(c=>EndPursuit());
-            yield return new MissionStage("Unload the reserves",new MissionInteraction("Guess: keep the rig stopped at the bunker and start unloading the fuel reserves",()=>At("M29.Delivery"),6,30,()=>_truck,stopVehicle:true),new TrailerDeliveryObjective(()=>_truck,()=>_trailer,()=>At("M29.Delivery")),new ProtectObjective("",()=>_trailer,"The tanker was destroyed before unloading.")).OwnedBy(CrewSlot.Guess).OnExit(c=>UnloadFuel());
+            yield return new MissionStage("Fuel for the bunker",new DeliverVehicleObjective("Guess: deliver the Phantom AND its tanker to the bunker. Reconnect if you detach it.",()=>_truck,()=>At("M29.Senora.Delivery"),25),new TrailerDeliveryObjective(()=>_truck,()=>_trailer,()=>At("M29.Senora.Delivery")),new ProtectObjective("",()=>_trailer,"The fuel tanker was destroyed.")).OwnedBy(CrewSlot.Guess).OnEnter(c=>StartPursuit()).OnExit(c=>EndPursuit());
+            yield return new MissionStage("Unload the reserves",new MissionInteraction("Guess: keep the rig stopped at the bunker and start unloading the fuel reserves",()=>At("M29.Senora.Delivery"),6,30,()=>_truck,stopVehicle:true),new TrailerDeliveryObjective(()=>_truck,()=>_trailer,()=>At("M29.Senora.Delivery")),new ProtectObjective("",()=>_trailer,"The tanker was destroyed before unloading.")).OwnedBy(CrewSlot.Guess).OnExit(c=>UnloadFuel());
             yield return new MissionStage("Reserves received",new ConditionObjective("The fuel is being secured in the bunker yard.",()=>_unloaded&&!Ctx.Cutscenes.IsActive)).OwnedBy(CrewSlot.Guess).AfterCues("M29_S1_03_GUESS");
         }
         private void UnloadFuel()
         {
             if(!_fuelLoaded)throw new InvalidOperationException("The tanker never completed its transfer.");
-            var bay=At("M23.BayTwo");
+            var bay=At("M23.FuelBay");
             for(int i=0;i<2;i++)
             {
                 var drum=WorkProp("prop_barrel_02a",bay+new Vector3(i==0?-1.1f:1.1f,1.5f,0),reuse:true);
@@ -85,13 +85,13 @@ namespace Bloodlines.Missions.Campaign
             if(_truck==null||!_truck.Exists()||_trailer==null||!_trailer.Exists())return false;
             var coupled=new OutputArgument();
             return Function.Call<bool>(Hash.GET_VEHICLE_TRAILER_VEHICLE,_truck,coupled)&&coupled.GetResult<int>()==_trailer.Handle
-                &&_truck.Position.DistanceTo(At("M29.Delivery"))<=30f&&_trailer.Position.DistanceTo(At("M29.Delivery"))<=35f
+                &&_truck.Position.DistanceTo(At("M29.Senora.Delivery"))<=30f&&_trailer.Position.DistanceTo(At("M29.Senora.Delivery"))<=35f
                 &&_truck.Speed<2f&&_trailer.Speed<2f;
         }
         private float Remaining(bool preferRoad)
         {
             if (_truck==null||!_truck.Exists()) return 0f;
-            var from=_truck.Position;var goal=At("M29.Delivery");
+            var from=_truck.Position;var goal=At("M29.Senora.Delivery");
             if (preferRoad)
             {
                 float distance=Function.Call<float>(Hash.CALCULATE_TRAVEL_DISTANCE_BETWEEN_POINTS,from.X,from.Y,from.Z,goal.X,goal.Y,goal.Z);
@@ -188,7 +188,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             if(!_fuelLoaded||!_unloaded)throw new InvalidOperationException("Fuel reserves were not received.");
-            Ctx.State?.SetCargo("bunkerFuel","M23.BayTwo");
+            Ctx.State?.SetCargo("bunkerFuel","M23.FuelBay");
             foreach(var drum in _reserves)if(drum!=null&&drum.Exists())Release(drum);
         }
 

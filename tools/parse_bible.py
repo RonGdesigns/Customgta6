@@ -356,6 +356,23 @@ def write_registry(path, missions, anchors):
     print('wrote {} ({} entries)'.format(os.path.relpath(path, REPO), len(entries)))
 
 
+def apply_mission_edits(missions, path):
+    """Reviewed setting/summary revisions without changing the source bibles."""
+    if not os.path.exists(path):
+        return
+    with io.open(path, encoding='utf-8') as stream:
+        edits = json.load(stream)
+    known = {mission['id']: mission for mission in missions}
+    if set(edits) - set(known):
+        raise ValueError('Unknown edited mission IDs')
+    for key, changes in edits.items():
+        if set(changes) - {'location', 'hud', 'synopsis'}:
+            raise ValueError('Unsupported mission edit: ' + key)
+        if any(not isinstance(value, str) or not value.strip() for value in changes.values()):
+            raise ValueError('Empty mission edit: ' + key)
+        known[key].update(changes)
+
+
 def write_tsv(path, columns, rows):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with io.open(path, 'w', encoding='utf-8', newline=CRLF) as handle:
@@ -392,6 +409,7 @@ def main():
 
     all_missions.sort(key=lambda mission: (mission['kind'] == 'solo', mission['number']))
     decorate(all_missions)
+    apply_mission_edits(all_missions, os.path.join(DATA, "mission_edits.json"))
 
     write_tsv(os.path.join(DATA, 'missions.tsv'),
               ['id', 'number', 'kind', 'type', 'owner', 'insert_after', 'prerequisite',

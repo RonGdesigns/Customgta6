@@ -37,9 +37,9 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("M35_S1_01_ICE");
             yield return new MissionStage("Take the driver seat",new EnterVehicleObjective("Guess: take the captured technical's driver seat",()=>_technical,VehicleSeat.Driver)).OwnedBy(CrewSlot.Guess).AfterCues("M35_S1_02_GUESS");
             yield return new MissionStage("Bring both brothers",new ConditionObjective("Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat",()=>BoardTeam())).OwnedBy(CrewSlot.Guess)
-                .OnExit(c=>{Fighting=false;DrivingDestination=()=>At("M35.Delivery");});
+                .OnExit(c=>{Fighting=false;DrivingDestination=()=>At("M35.Senora.Delivery");});
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before taking the captured technical to the bunker."));
-            yield return new MissionStage("Deliver the gun truck",new TravelObjective("Deliver the same technical with both brothers to the bunker vehicle bay and stop",()=>At("M35.Delivery"),15,()=>_technical));
+            yield return new MissionStage("Deliver the gun truck",new TravelObjective("Deliver the same technical with both brothers to the bunker vehicle bay and stop",()=>At("M35.Senora.Delivery"),15,()=>_technical));
             yield return new MissionStage("Inspect the capture",new MissionInteraction("Gohan: get out and inspect the gun mount at the rear of the parked technical",()=>_technical.Position-_technical.ForwardVector*2f,5,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>DrivingDestination=null).OnExit(c=>{_delivered=true;Establish("delivery","Protection for the way home","The captured technical arrives intact. Gohan checks the real gun mount. It provides machine-gun cover against exposed targets and low aircraft; it is not a missile launcher or an automatic air-defense system.",_technical);}).AfterCues("M35_S1_03_GOHAN");
         }
@@ -93,6 +93,6 @@ namespace Bloodlines.Missions.Campaign
             }
             base.OnUpdate();
         }
-        protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("The captured technical has not been inspected.");Ctx.State?.SetCargo("antiAirTechnical","M35.Delivery");Release(_technical);}
+        protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("The captured technical has not been inspected.");Ctx.State?.SetCargo("antiAirTechnical","M35.Senora.Delivery");Release(_technical);}
     }
 }

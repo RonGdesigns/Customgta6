@@ -27,13 +27,10 @@ public static partial class StoryTests
   for(int i=0;i<16&&!dyno.IsFinished;i++){Game.GameTime+=500;dyno.Update(c);}
   Check(dyno.IsFinished,"Controller calibration finishes after correcting with the brake trigger");
   Reset();crew=Roster();c=Context(crew);var m23=new M23GhostInTheSage();
-  Check(m23.Begin(c)&&m23.YardGate!=null&&m23.GeneratorProp!=null,"M23 creates the actual gate and generator before briefing");
-  Check(World.Props.Any(p=>p.Model.Name=="prop_tool_bench02")&&World.Props.Any(p=>p.Model.Name=="prop_barrel_02a"),"M23 inspection bays contain the objects the dialogue names");
-  m23.Abort();m23.Cleanup();Check(!m23.YardGate.Exists()&&!m23.GeneratorProp.Exists(),"Aborting M23 removes its temporary structures for a clean retry");
-  var gate=new Prop{Position=new Vector3(10,20,30)};var slide=new SlideYardGateStep(gate,new Vector3(8,0,0));slide.Start();
-  Game.GameTime+=1000;Check(!slide.IsComplete&&gate.Position.X>10&&gate.Position.X<18,"The powered gate visibly moves through its opening travel");
-  slide.Cancel();float canceled=gate.Position.X;Check(canceled<18,"Canceling the gate scene does not claim a completed opening");
-  var skipped=new SlideYardGateStep(gate,new Vector3(8,0,0));skipped.Finish();Check(gate.Position.X==canceled+8,"Skipping the gate scene reaches its explicit open position");
+  Check(m23.Begin(c)&&m23.GeneratorProp!=null&&!World.Props.Any(p=>p.Model.Name=="prop_gate_airport_01"),"M23 uses the shipped bunker entrance instead of an unrelated airport gate");
+  Check(World.Props.Any(p=>p.Model.Name=="prop_tool_bench02")&&World.Props.Any(p=>p.Model.Name=="prop_barrel_02a"),"M23 yard inspections have the named props");
+  m23.Abort();m23.Cleanup();Check(!m23.GeneratorProp.Exists(),"Aborting removes mission props for a clean retry");
+  BunkerAccessChecks();
   Check(!M29DustAndDiesel.AtRetreatPoint(1000,251)&&M29DustAndDiesel.AtRetreatPoint(1000,250),"M29 pursuit breaks off at the final quarter of its initial delivery distance");
   Check(!M29DustAndDiesel.AtRetreatPoint(1000,-1)&&!M29DustAndDiesel.AtRetreatPoint(0,0),"Failed or uninitialized road-distance queries cannot dismiss M29 pursuit");
   Reset();crew=Roster();c=Context(crew);var fuel=new M29DustAndDiesel();Check(fuel.Begin(c),"M29 starts for pursuit lifecycle checks");

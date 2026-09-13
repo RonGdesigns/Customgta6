@@ -1,5 +1,7 @@
 # From Story to Play: implementation plan
 
+> September 13: M23 now moves to the actual Grand Senora bunker exterior with a required interior inspection and return, plus permanent safehouse access. Bunker deliveries and M31 defenses move with it. See [Senora bunker implementation](SENORA-BUNKER-2026-09-13.md). Archive collision and automated checks do not replace the live pass.
+
 > Current September 13 follow-through: **M41–M43 implemented after the user requested the next steps**, bringing the runtime to 49 jobs. See [final preparation](FINAL-PREPARATION-M41-M43.md). M44 onward and SM07–SM09 remain plans. Prior dated snapshots below describe their earlier scope.
 
 > September 13 current package: **M31–M35 implemented on explicit user approval**, bringing the runtime to 41 jobs. See [offshore preparation](OFFSHORE-PREPARATION-M31-M35.md). The historical snapshots below retain their original scope; they are not the current mission count. M13 startup still needs the user’s live retest of the preceding fix26 repair.

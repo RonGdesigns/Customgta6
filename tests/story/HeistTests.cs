@@ -13,6 +13,7 @@ public static partial class StoryTests
 {
  static void HeistChecks()
  {
+  HeistArrivalSeatChecks();
   // ---- M19: the sub where it was staged, Ice on the pier, Ron in the lift; the floats as real parts; the container surfaced by the finished work; everything recorded.
   Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"heist19.json"));c.State.SetCargo("kraken","M18.ChannelMark");c.State.SetCargo("radarPod","M18.SaltHangar");var m19=new M19UnderwaterBreach();
   Check(m19.Begin(c)&&c.Cutscenes.IsActive&&m19.EndpointKind==MissionEndpoint.ContinuousNext,"M19 opens on a cut into the staged operation and continues into M20");
@@ -52,6 +53,7 @@ public static partial class StoryTests
   Check(m20.Status==MissionStatus.Passed&&toM21!=null&&toM21.CargoAttached&&toM21.Notes["launch"].Contains("helm")&&toM21.Notes["radarPod"].Contains("live")&&c.State.CargoAt("kraken")=="M12.PierWatch","M20 passes with the lift loaded, the escort crewed and the Kraken's storage recorded");
   m20.Cleanup();Check(m20.Launch.Exists()&&m20.Container.Exists()&&m20.Kraken.Exists(),"The launch, the container and the sub survive the chapter");
 
+  crew.PedFor(CrewSlot.Gohan).EjectOnTaskClear=true;
   // ---- M21: the launch and the lift carried on; M13 and M15 felt in the harbor; the split announced; the shore landing and the Granger boarded on camera.
   World.NearbyVehicles=new[]{m20.Launch,m20.Cargobob};c.State.SetUpgrade("harborPatrolsReduced",true);c.State.SetUpgrade("harborGateAccess",true);c.Vans=new CrewVan(c.State,c.Locations);var m21=new M21OpenWater();
   Check(m21.Begin(c)&&c.Cutscenes.IsActive&&m21.EndpointKind==MissionEndpoint.ContinuousNext,"M21 opens on the escort seen and continues into M22");
@@ -82,7 +84,7 @@ public static partial class StoryTests
   c.Cutscenes.Skip();m22.Tick();Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m22.Cargobob,VehicleSeat.Driver);m22.Tick();
   Check(m22.Arrived&&m22.CurrentStage==1&&!m22.Cargobob.IsPositionFrozen,"Everyone arrived, the lift is released and the drop is the job");
   var drop=c.Locations.Position("M22.AlamoDrop");Interact(m22,c,CrewSlot.Guess,drop+new Vector3(0,0,20),3,afloat:true);
-  Check(m22.Dropped&&m22.CargoRecorded&&c.Cutscenes.IsActive&&c.State.CargoAt(PortHeist.BullionCargo)=="M22.AlamoDrop"&&m22.Container.Position==drop&&m22.Container.IsPositionFrozen,"The drop plays as an insert and the hidden cargo is recorded in the shallows");
+  Check(m22.Dropped&&m22.CargoRecorded&&c.Cutscenes.IsActive&&c.State.CargoAt(PortHeist.BullionCargo)=="M22.AlamoDrop"&&m22.Container.Position==PortHeist.HiddenContainerPoint(drop)&&m22.Container.IsPositionFrozen,"The drop plays as an insert and the hidden cargo is recorded in the shallows");
   c.Cutscenes.Skip();m22.Tick();m22.Cargobob.Position=c.Locations.Position("M22.Beach");m22.Cargobob.HeightAboveGround=0f;m22.Cargobob.Speed=0f;Game.Player.Character.Position=m22.Cargobob.Position;c.Dialogue.Clear();m22.Tick();
   Check(m22.Landed&&m22.CurrentStage==3&&!m22.Cargobob.IsEngineRunning,"Landed and shut down, the regroup is on foot");
   Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.CurrentVehicle=null;Game.Player.Character.Position=c.Locations.Position("M22.Beach")+new Vector3(-6,6,0);c.Dialogue.Clear();m22.Tick();

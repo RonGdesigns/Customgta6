@@ -41,16 +41,16 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Collect the satellite parts",new EnterVehicleObjective("Guess: take the Dubsta 6x6. Ice and Gohan ride with the parts.",()=>_truck,VehicleSeat.Driver,true)).OwnedBy(CrewSlot.Guess).OnExit(c=>ReleaseForPickup());
             yield return new MissionStage("Down the ridge",new DeliverVehicleObjective("Guess: drive the loaded 6x6 to the yellow canyon bend. Use the road, not the cliff face.",()=>_truck,()=>At("M30.Bend"),25),new ProtectObjective("",()=>_truck,"The truck and satellite parts were destroyed.")).OwnedBy(CrewSlot.Guess).OnEnter(c=>LaunchPursuit()).WithCues("M30_S1_01_GUESS").AfterCues("M30_S1_02_GOHAN");
             yield return new MissionStage("Sheltered approach",new DeliverVehicleObjective("Guess: follow the yellow road marker out of the canyon. Passengers cover the gunship.",()=>_truck,()=>At("M30.Exit"),30),new ProtectObjective("",()=>_truck,"The parts truck was lost.")).OwnedBy(CrewSlot.Guess).OnExit(c=>LoseGunship());
-            yield return new MissionStage("Deliver the parts",new DeliverVehicleObjective("Guess: park the same 6x6 at the bunker unloading marker.",()=>_truck,()=>At("M29.Delivery"),25),new ProtectObjective("",()=>_truck,"The satellite parts never reached the bunker.")).OwnedBy(CrewSlot.Guess);
-            yield return new MissionStage("Unload",new MissionInteraction("Guess: stop the 6x6 in the unloading area; transfer its roof case to the bunker workbench",()=>At("M29.Delivery"),5,30,()=>_truck,stopVehicle:true)).OwnedBy(CrewSlot.Guess).OnExit(c=>UnloadParts());
-            yield return new MissionStage("Fit the receiver",new MissionInteraction("Gohan: get out and use the laptop beside the delivered parts on the marked bunker workbench",()=>At("M23.BayOne"),6,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan).OnExit(c=>ReceiveSignal());
+            yield return new MissionStage("Deliver the parts",new DeliverVehicleObjective("Guess: park the same 6x6 at the bunker unloading marker.",()=>_truck,()=>At("M29.Senora.Delivery"),25),new ProtectObjective("",()=>_truck,"The satellite parts never reached the bunker.")).OwnedBy(CrewSlot.Guess);
+            yield return new MissionStage("Unload",new MissionInteraction("Guess: stop the 6x6 in the unloading area; transfer its roof case to the bunker workbench",()=>At("M29.Senora.Delivery"),5,30,()=>_truck,stopVehicle:true)).OwnedBy(CrewSlot.Guess).OnExit(c=>UnloadParts());
+            yield return new MissionStage("Fit the receiver",new MissionInteraction("Gohan: get out and use the laptop beside the delivered parts on the marked bunker workbench",()=>At("M23.ToolBay"),6,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan).OnExit(c=>ReceiveSignal());
             yield return new MissionStage("First reception",new ConditionObjective("Listen to the receiver check. The parts must be fitted before the job is complete.",()=>_received&&!Ctx.Cutscenes.IsActive)).OwnedBy(CrewSlot.Gohan).AfterCues("M30_S1_03_GUESS");
         }
         private void UnloadParts()
         {
             if(!Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY,_parts,_truck))throw new System.InvalidOperationException("The truck arrived without its satellite parts case.");
             // Opposite the M23 tool bench, with the shared work marker between them.
-            _bench=WorkProp("prop_table_03",At("M23.BayOne")+new Vector3(0,-1.5f,0),reuse:true);
+            _bench=WorkProp("prop_table_03",At("M23.ToolBay")+new Vector3(0,-1.5f,0),reuse:true);
             if(!RequireAssets(_bench))throw new System.InvalidOperationException("The receiving workbench failed to load.");
             _receiver=WorkProp("prop_laptop_01a",PropPlacement.OnTop(_bench,_bench.Model,new Model("prop_laptop_01a"),0,-.35f),false,true);
             if(!RequireAssets(_receiver))throw new System.InvalidOperationException("The receiver controls failed to load.");
@@ -100,7 +100,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             if(!_received||!_unloaded)throw new System.InvalidOperationException("The satellite receiver has not been fitted and checked.");
-            Ctx.State?.SetCargo("satelliteParts","M23.BayOne");
+            Ctx.State?.SetCargo("satelliteParts","M23.ToolBay");
             foreach(var prop in new[]{_parts,_receiver,_bench})if(prop!=null&&prop.Exists())Release(prop);
         }
     }

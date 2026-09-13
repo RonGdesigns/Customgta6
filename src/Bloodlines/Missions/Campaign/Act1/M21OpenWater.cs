@@ -211,6 +211,8 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             _liveTransfer?.Update();
+            if (_liveTransfer != null && (_liveTransfer.Failed || _liveTransfer.Canceled))
+            { Fail("The shore crew could not board the Granger. Retry the Port Heist; see Bloodlines.log."); return; }
             base.OnUpdate();
         }
 

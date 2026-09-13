@@ -102,6 +102,7 @@ namespace Bloodlines
                 _abilities, _dialogue, _checkpoints, _state);
             context.Cutscenes = _cutscenes = new CutsceneDirector(_crew, _dialogue, _locations, dataDirectory);
             context.Vans = _vans;
+            context.Interior = _homes.Apartment;
             _missions = new MissionManager(context, _state, _catalog);
             // Keep the real arriving car and cast through the briefing.
             _missions.BeforeGameplay = () => { if (_crew.IsDeployed) StandDown(); };

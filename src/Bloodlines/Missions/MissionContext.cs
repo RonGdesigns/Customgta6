@@ -22,6 +22,7 @@ namespace Bloodlines.Missions
             State = state;
         }
 
+        public ApartmentAccess Interior { get; set; }
         public CutsceneDirector Cutscenes { get; set; }
         public PortHeistWorld PortHeist { get; set; }
 

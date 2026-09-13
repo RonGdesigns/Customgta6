@@ -196,7 +196,7 @@ namespace Bloodlines.Core
             if (rows.Count == 0) rows.Add(new PhoneEntry { Id = "empty", Title = "Your garage is empty", Subtitle = "Store a car first",
                 Body = "Save an eligible vehicle at an owned garage or from a customization shop. It will then appear here with its saved modifications. Phone deliveries use that exact owned vehicle record." });
             rows.Add(new PhoneEntry { Id = "crew-car", Title = "Crew vehicle", Subtitle = CrewCarName,
-                Body = "Current crew vehicle: " + CrewCarName + ".\n\nThis is the shared mission/fleet vehicle. Change it at the held Foundry's fleet service; it is separate from personally stored cars and cannot be duplicated through KJ delivery." });
+                Body = "Current crew vehicle: " + CrewCarName + ".\n\nThis is the shared mission/fleet vehicle. Change it at the crew headquarters fleet service; it is separate from personally stored cars and cannot be duplicated through KJ delivery." });
             rows.Add(RecoveryFolder());
             return rows;
         }
@@ -331,7 +331,7 @@ namespace Bloodlines.Core
         }
         private static readonly Unlock[] Unlocks = {
             new Unlock("M03","cypressFoundry","Cypress Foundry",true), new Unlock("M11","burroHeightsChopShop","Guess's chop bay",true),
-            new Unlock("M14","mckenzieAirfieldHangar","McKenzie hangar",true), new Unlock("M23","grandSenoraRadarBunker","Radar bunker",true),
+            new Unlock("M14","mckenzieAirfieldHangar","McKenzie hangar",true), new Unlock("M23","grandSenoraRadarBunker","Senora bunker",true),
             new Unlock("M11","grangerTurbineInstalled","Granger turbine"), new Unlock("M17","krakenSubmarineReinforced","Reinforced Kraken"),
             new Unlock("SM01","armorPiercingSupply","Ice's rifle ammo supply"), new Unlock("SM02","surveillanceWormInstalled","Camera archive access"),
             new Unlock("SM03","racingTransmissionInstalled","Racing transmission"), new Unlock("M28","northernRelayDisabled","Northern relay access"),
@@ -400,7 +400,7 @@ namespace Bloodlines.Core
             var rows = new List<PhoneEntry>();
             bool desert = _state.IsComplete("M22");
             rows.Add(new PhoneEntry { Id = "overview", Title = desert ? "Offshore preparation" : "Harbor preparation", Subtitle = "Recorded campaign inventory",
-                Body = "This board reads completed work and saved assets. It does not spawn equipment or certify that a vehicle is physically staged now.\n\n" + (_missions.IsRunning ? "A mission is active. Complete it to commit preparation." : _state.DescribeProgress(_catalog)) + "\n\n" + (desert ? "The Foundry is no longer held. This portable plan continues at the radar bunker. The operation must still verify the physical staging." : "Review this plan at the Foundry planning table after securing the headquarters.") });
+                Body = "This board reads completed work and saved assets. It does not spawn equipment or certify that a vehicle is physically staged now.\n\n" + (_missions.IsRunning ? "A mission is active. Complete it to commit preparation." : _state.DescribeProgress(_catalog)) + "\n\n" + (desert ? "The Foundry is no longer held. This portable plan continues at the Senora bunker. The operation must still verify the physical staging." : "Review this plan at the Foundry planning table after securing the headquarters.") });
             Action<string, string, bool, string> add = (id, name, held, evidence) => rows.Add(new PhoneEntry {
                 Id = "plan:" + name, Title = name, Subtitle = _state.AttemptActive ? "Verify after current job" : held && _state.IsComplete(id) ? "Recorded" : "Missing / " + id,
                 Body = name + "\n\nSupplier: " + id + " - " + Title(id) + "\n\n" + (_state.AttemptActive ? "Mission work is provisional until the job ends. " : held && _state.IsComplete(id) ? "Recorded in the committed campaign. " : "Not yet recorded as completed preparation. ") + evidence,

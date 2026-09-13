@@ -47,14 +47,14 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c=>{DrivingDestination=()=>At("M32.Exit");Fighting=true;ResponseCar("M32.Response",CrewCar.Position);});
             yield return new MissionStage("Leave the base",new TravelObjective("Drive the case-loaded crew car to the yellow road escape marker",()=>At("M32.Exit"),20,()=>CrewCar)).OnExit(c=>{RetreatResponse();DrivingDestination=null;});
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before bringing military cargo to the bunker."));
-            yield return new MissionStage("Deliver both cases",new TravelObjective("Return the same car with both cases to the bunker unloading marker and stop",()=>At("M32.Delivery"),15,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M32.Delivery"));
-            yield return new MissionStage("Secure the warheads",new MissionInteraction("Gohan: get out and secure both cases at the marked bunker work area",()=>At("M32.Workbench"),4,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Deliver both cases",new TravelObjective("Return the same car with both cases to the bunker unloading marker and stop",()=>At("M32.Senora.Delivery"),15,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M32.Senora.Delivery"));
+            yield return new MissionStage("Secure the warheads",new MissionInteraction("Gohan: get out and secure both cases at the marked bunker work area",()=>At("M32.Senora.Workbench"),4,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>{DrivingDestination=null;Fighting=false;}).OnExit(c=>Unload()).AfterCues("M32_S1_03_GUESS");
         }
         private void Unload()
         {
             if(!_access||_loaded!=2||!Attached(_caseOne,CrewCar)||!Attached(_caseTwo,CrewCar))throw new InvalidOperationException("Both EMP cases must arrive in the extraction car.");
-            var bench=Equipment("prop_table_03","M32.Workbench");
+            var bench=Equipment("prop_table_03","M32.Senora.Workbench");
             float height=bench.Model.Dimensions.Item2.Z-_caseOne.Model.Dimensions.Item1.Z+.01f;
             SaveCargo(_caseOne,bench,new Vector3(-.4f,0,height));SaveCargo(_caseTwo,bench,new Vector3(.4f,0,height));
             Establish("delivery","Hardware secured","Two physical cases are unloaded onto the bunker table. The warheads provide hardware, not rig access codes.",bench);
@@ -64,6 +64,6 @@ namespace Bloodlines.Missions.Campaign
             if(_loaded>0&&CurrentStage<12&&(!Attached(_caseOne,CrewCar)||(_loaded==2&&!Attached(_caseTwo,CrewCar)))){Fail("An EMP case came loose from the extraction car.");return;}
             base.OnUpdate();
         }
-        protected override void OnPassed(){Ctx.State?.SetCargo("empWarheads","M32.Workbench");}
+        protected override void OnPassed(){Ctx.State?.SetCargo("empWarheads","M32.Senora.Workbench");}
     }
 }

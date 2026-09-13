@@ -387,15 +387,18 @@ Prerequisite: M22. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Breach the dome** — ReachZoneObjective: Ice: approach the marked radar yard gate. Guess covers the west side; Gohan watches the generator. |
-| 2 | Ice | **Clear the radar yard** — KillTargetsObjective: Clear the cartel squatters out. |
+| 1 | Ice | **Approach the bunker** — ReachZoneObjective: Ice: approach the marked bunker entrance. Guess covers the west side; Gohan watches the generator. |
+| 2 | Ice | **Clear the bunker yard** — KillTargetsObjective: Clear the cartel squatters out. |
 | 3 | Guess | **Secure the bays** — MultiHoldObjective: Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay. |
-| 4 | Gohan | **Power up** — MissionInteraction: Gohan: use the control side of the visible generator to power the yard gate. |
-| 5 | Gohan | **Walk the yard** — ReachZoneObjective: Walk to the opened radar yard gate. Underground rooms are still sealed. |
+| 4 | Gohan | **Power up** — MissionInteraction: Gohan: use the control side of the visible generator to restore bunker access. |
+| 5 | Gohan | **Enter the bunker** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 6 | Gohan | **Check the interior** — MissionInteraction: Gohan: walk down the marked entry passage and inspect the bunker. Ice guards outside; Guess checks vehicle access. |
+| 7 | Gohan | **Return outside** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 8 | Gohan | **Regroup at the entrance** — ReachZoneObjective: Gohan: rejoin the crew at the bunker entrance. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.BayOne, M23.BayThree, M23.BayTwo, M23.BunkerDoor, M23.DomeApproach, M23.Generator, M23.SecondExit.
+Survey references: M23.Approach, M23.ArrivalCar, M23.Entrance, M23.EscapeRoad, M23.FuelBay, M23.Guard, M23.GuessStart, M23.PowerPanel, M23.ToolBay, M23.VehicleBay.
 
 ## M24 — LIQUID GOLD
 
@@ -410,7 +413,7 @@ Prerequisite: M23. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M22.AlamoDrop, M23.BayOne, M23.BunkerDoor, M24.CraneSpawn, M24.GohanWork, M24.IceStart, M24.RecoveryPad, M24.RidgeLine, M24.RidgeRoad.
+Survey references: M22.AlamoDrop, M23.ToolBay, M23.VehicleBay, M24.CraneSpawn, M24.GohanWork, M24.IceStart, M24.RecoveryPad, M24.RidgeLine, M24.RidgeRoad.
 
 ## M25 — BOUNTY HUNTERS' CANYON
 
@@ -472,11 +475,11 @@ Prerequisite: M27. Retry: full mission restart.
 | 4 | Gohan | **Connect the surge unit** — MissionInteraction: Gohan: connect the case to the laptop on the relay worktable |
 | 5 | Ice | **Cover the splice** — AssignedWorkObjective: Gohan continues the splice. Ice: defeat the responding squads.<br>SurviveWavesObjective: Ice: clear both response squads marked red. |
 | 6 | Guess | **Extraction** — EnterVehicleObjective: Guess: take the Granger driver seat. Wait for both brothers to board. |
-| 7 | Guess | **Back to shelter** — DeliverVehicleObjective: Guess: bring the crew's Granger back to the radar bunker. |
+| 7 | Guess | **Back to shelter** — DeliverVehicleObjective: Guess: bring the crew's Granger back to the Senora bunker. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.DomeApproach, M28.Approach, M28.Cover, M28.Pickup, M28.Relay, M28.Response.
+Survey references: M23.VehicleBay, M28.Approach, M28.Cover, M28.Pickup, M28.Relay, M28.Response.
 
 ## M29 — DUST & DIESEL
 
@@ -494,7 +497,7 @@ Prerequisite: M28. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.BayTwo, M29.Approach, M29.Cover, M29.Delivery, M29.Truck, M29.Valve.
+Survey references: M23.FuelBay, M29.Approach, M29.Cover, M29.Senora.Delivery, M29.Truck, M29.Valve.
 
 ## M30 — REDLINE RIDGE
 
@@ -512,7 +515,7 @@ Prerequisite: M29. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.BayOne, M29.Delivery, M30.Bend, M30.Exit, M30.Start.
+Survey references: M23.ToolBay, M29.Senora.Delivery, M30.Bend, M30.Exit, M30.Start.
 
 ## M31 — THE IRON PERIMETER
 
@@ -529,7 +532,7 @@ Prerequisite: M30. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M31.Barrier, M31.Barrier1, M31.Barrier2, M31.Charge, M31.Convoy1, M31.Convoy2, M31.CrewCar, M31.Generator, M31.GeneratorWork, M31.GohanStart, M31.IceStart, M31.Retreat, M31.Work.
+Survey references: M31.Senora.Barrier, M31.Senora.Barrier1, M31.Senora.Barrier2, M31.Senora.Charge, M31.Senora.Convoy1, M31.Senora.Convoy2, M31.Senora.CrewCar, M31.Senora.Generator, M31.Senora.GeneratorWork, M31.Senora.GohanStart, M31.Senora.IceStart, M31.Senora.Retreat, M31.Senora.Work.
 
 ## M32 — BLACK SITE ZANCUDO
 
@@ -553,7 +556,7 @@ Prerequisite: M31. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M32.Boat, M32.CaseOne, M32.CaseTwo, M32.CrewCar, M32.Delivery, M32.Exit, M32.Gate, M32.Guard, M32.LandingWater, M32.Office, M32.Panel, M32.PanelWork, M32.Pickup, M32.Response, M32.Workbench.
+Survey references: M32.Boat, M32.CaseOne, M32.CaseTwo, M32.CrewCar, M32.Exit, M32.Gate, M32.Guard, M32.LandingWater, M32.Office, M32.Panel, M32.PanelWork, M32.Pickup, M32.Response, M32.Senora.Delivery, M32.Senora.Workbench.
 
 ## M33 — THE INFORMANT'S GRAVE
 
@@ -589,7 +592,7 @@ Prerequisite: M33. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M34.BarrierPark, M34.BarrierRoad, M34.CrewCar, M34.Exit, M34.Halftrack, M34.MedicalKit, M34.MedicalWork, M34.Ramos, M34.Response1, M34.Response2, M34.Route1, M34.Route2, M34.Route3, M34.Shelter.
+Survey references: M34.BarrierPark, M34.BarrierRoad, M34.CrewCar, M34.Exit, M34.Halftrack, M34.Ramos, M34.Response1, M34.Response2, M34.Route1, M34.Route2, M34.Route3, M34.Senora.MedicalKit, M34.Senora.MedicalWork, M34.Senora.Shelter.
 
 ## M35 — THE CHIANSKI AMBUSH
 
@@ -610,7 +613,7 @@ Prerequisite: M34. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M35.BlockExit, M35.Charge, M35.ChargeWork, M35.CrewCar, M35.Delivery, M35.DeviceWork, M35.IceCover, M35.LeadSpawn, M35.Table, M35.TechnicalHold, M35.TechnicalSpawn, M35.Trap.
+Survey references: M35.BlockExit, M35.Charge, M35.ChargeWork, M35.CrewCar, M35.DeviceWork, M35.IceCover, M35.LeadSpawn, M35.Senora.Delivery, M35.Table, M35.TechnicalHold, M35.TechnicalSpawn, M35.Trap.
 
 ## M36 — DEEP WELL RECON
 
@@ -664,7 +667,7 @@ Prerequisite: M37. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M38.Cabinet, M38.CabinetWork, M38.Crate, M38.Delivery, M38.Exit, M38.GohanStart, M38.Guard, M38.Hauler, M38.IceStart, M38.Load, M38.Response.
+Survey references: M38.Cabinet, M38.CabinetWork, M38.Crate, M38.Exit, M38.GohanStart, M38.Guard, M38.Hauler, M38.IceStart, M38.Load, M38.Response, M38.Senora.Delivery.
 
 ## M39 — THE PALETO CABLE
 

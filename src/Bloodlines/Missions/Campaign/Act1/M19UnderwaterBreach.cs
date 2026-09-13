@@ -17,6 +17,10 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The cargo key the bullion container is recorded under from the moment it surfaces.</summary>
         public const string BullionCargo = "bullion";
 
+        // The verified container extends 2.83m above its origin. Four meters
+        // below the waterline hides its roof while fitting the 5m-deep drop site.
+        public static Vector3 HiddenContainerPoint(Vector3 waterSurface) => waterSurface - new Vector3(0f, 0f, 4f);
+
         public static void RecordCargo(MissionContext context, string key, string destination)
         {
             if (context.PortHeist != null) context.PortHeist.StageCargo(key, destination);
@@ -86,6 +90,8 @@ namespace Bloodlines.Missions.Campaign
 
         /// <summary>The Titan Star stand-in: a tug hull, frozen at the surface, that the Kraken works under.</summary>
         public const string HullModel = "tug";
+        // Verified in the installed Enhanced archives. prop_buoy_01 does not exist.
+        public const string FloatModel = "prop_dock_bouy_3";
         /// <summary>How far the hull reaches below the surface (an estimate for the loop, not a measured draft).</summary>
         public const float KeelDepth = 4.5f;
         /// <summary>Room the Kraken needs between the keel and the work point.</summary>
@@ -125,6 +131,17 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            _floated = false;
+            _floats.Clear();
+            // Catch missing assets before the player spends time cutting and clamping.
+            var floatModel = new Model(FloatModel);
+            if (!GameUtils.RequestModel(floatModel))
+            {
+                Logger.Error("M19: ballast float model unavailable: " + FloatModel);
+                GameUtils.Notify("~r~The heist's ballast floats could not load. Retry M19.");
+                return false;
+            }
+            floatModel.MarkAsNoLongerNeeded();
             // Do not independently snap three water markers to unrelated points.
             MissionSites.Ground(Ctx.Locations, "M12.PierWatch");
             MissionSites.Ground(Ctx.Locations, "M18.SaltHangar");
@@ -308,16 +325,20 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>A clamp set: a real float at the site, seen under the keel.</summary>
         private void FitFloat(int site)
         {
-            if (site < 0 || site >= _clamps.Count) return;
-            var model = new Model("prop_buoy_01");
-            if (!GameUtils.RequestModel(model)) return;
+            if (site < 0 || site >= _clamps.Count)
+                throw new InvalidOperationException("Invalid ballast clamp index: " + site);
+            var model = new Model(FloatModel);
+            if (!GameUtils.RequestModel(model))
+                throw new InvalidOperationException("Ballast float model could not load: " + FloatModel);
             var floatPoint = _submergedCargo + _hullBearing * (site == 0 ? -3f : 3f) + new Vector3(0f, 0f, 2f);
-            var f = Track(World.CreateProp(model, floatPoint, false, false));
-            model.MarkAsNoLongerNeeded();
+            Prop f;
+            try { f = Track(World.CreateProp(model, floatPoint, false, false)); }
+            finally { model.MarkAsNoLongerNeeded(); }
             if (f == null || !f.Exists()) throw new InvalidOperationException("A ballast float could not be created.");
             f.IsPersistent = true;
             f.IsPositionFrozen = true;
             _floats.Add(f);
+            Logger.Info("M19: fitted ballast float " + _floats.Count + "/" + _clamps.Count + " at clamp " + site + ".");
             GameUtils.Subtitle("~y~Float " + _floats.Count + " of " + _clamps.Count + " clamped.", 2500);
         }
 
@@ -359,6 +380,7 @@ namespace Bloodlines.Missions.Campaign
                     throw new InvalidOperationException("A float could not be secured to the surfaced container.");
             }
             _floated = true;
+            Logger.Info("M19: bullion surfaced with both floats secured; Gohan can surface the Kraken.");
         }
 
         /// <summary>The aftermath: the sub at the support mark, the container floating beside it, the pier and the lift beyond.</summary>

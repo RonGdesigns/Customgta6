@@ -25,15 +25,17 @@ namespace Bloodlines.Missions.Campaign
         protected Func<Vector3> DrivingDestination;
         protected bool BeginCrew(CrewSlot active)
         {
+            string site = Id == "M31" ? "M31.Senora" : Id;
+            if (Id == "M31") BunkerSite.LoadMaps();
             if (!MissionSites.Prepare(Ctx.Locations, Id) ||
-                !Ctx.Crew.Deploy(active, At(Id + ".Start"), Ctx.Locations.Heading(Id + ".Start"))) return false;
+                !Ctx.Crew.Deploy(active, At(site + ".Start"), Ctx.Locations.Heading(site + ".Start"))) return false;
             ProtectCrew(); ApplyBibleSetting();
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
-                Station(slot, At(Id + "." + slot + "Start"));
+                Station(slot, At(site + "." + slot + "Start"));
             Ctx.Crew.CompanionsHoldPosition = true;
             Roles = new RoleTracks(Ctx.Crew, () => Opposition);
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
-                Roles.For(slot).Observe(At(Id + "." + slot + "Start"), At(Id + "." + slot + "Start"));
+                Roles.For(slot).Observe(At(site + "." + slot + "Start"), At(site + "." + slot + "Start"));
             return true;
         }
         protected Vehicle CrewTransport(string key)

@@ -486,7 +486,7 @@ namespace Bloodlines.Core
         {
             var page = new Page(_homes.ResidenceName);
             if (_homes.Apartment.Inside)
-                page.Add(_homes.FoundryVisit ? "Exit Foundry HQ" : "Exit apartment", () => "return outside", () => { Close(); _homes.ExitApartment(); });
+                page.Add(_homes.BunkerVisit ? "Exit Senora bunker" : _homes.FoundryVisit ? "Exit Foundry HQ" : "Exit apartment", () => "return outside", () => { Close(); _homes.ExitApartment(); });
             else
             {
                 page.Add("Enter apartment", () => _homes.Progression, () => { Close(); _homes.EnterApartment(); });
@@ -498,8 +498,8 @@ namespace Bloodlines.Core
                 page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(_homes.RoomSurveyKeys); });
                 page.Add("Map this room", () => "writes Bloodlines.Room.txt", () => { Close(); MapRoom(); });
             }
-            if (_homes.FoundryVisit && Shops?.Vans!=null)page.Add("Crew car fleet",()=>"buy / select four-door vehicles",()=>_stack.Push(BuildCrewFleet()));
-            if (_homes.FoundryVisit)
+            if ((_homes.FoundryVisit || _homes.BunkerVisit) && Shops?.Vans!=null)page.Add("Crew car fleet",()=>"buy / select four-door vehicles",()=>_stack.Push(BuildCrewFleet()));
+            if (_homes.FoundryVisit || _homes.BunkerVisit)
                 page.Add("Planning table", () => "preparation, equipment and next lead", () => { Close(); _homes.ReviewFoundryPlan(); });
             if (Garages != null && !_homes.FoundryVisit)
             {

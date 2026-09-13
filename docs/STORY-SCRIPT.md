@@ -539,21 +539,21 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Intro
 
-**ICE** (M23_SCENE_INTRO_01_ICE) — The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
+**ICE** (M23_SCENE_INTRO_01_ICE) — This old Senora bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
 
 **GUESS** (M23_SCENE_INTRO_02_GUESS) — A door that locks is a start. A way out is better. I'll check the second one while you take the first.
 
 ### Outro
 
-**GOHAN** (M23_SCENE_OUTRO_01_GOHAN) — The yard has power and the gate works. The underground rooms stay sealed for now. We still need fuel and money to keep three people alive out here.
+**GOHAN** (M23_SCENE_OUTRO_01_GOHAN) — The lights work and the interior is dry. We have shelter, but we still need fuel, tools and money to keep three people alive out here.
 
 **GUESS** (M23_SCENE_OUTRO_02_GUESS) — Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
 
 ### Approach
 
-**ICE** (M23_SCENE_APPROACH_01_ICE) — Nine of them in the yard, on the walkway and in the bays. They live here; they'll fight for it. I go up to the dome first.
+**ICE** (M23_SCENE_APPROACH_01_ICE) — Nine around the entrance and the service yard. They live here; they will fight for it. I take the approach. Keep the vehicle clear.
 
-**GUESS** (M23_SCENE_APPROACH_02_GUESS) — Fence line runs to a second gate on the east side. That's our way out if the front goes bad. Gohan, check that trailer generator before we touch the gate.
+**GUESS** (M23_SCENE_APPROACH_02_GUESS) — There is a dirt road out to the north. I will check the yard for our rigs. Gohan, find the generator controls; we need to know what still works.
 
 ## M24 — LIQUID GOLD
 

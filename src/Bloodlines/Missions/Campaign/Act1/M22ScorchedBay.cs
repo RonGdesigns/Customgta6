@@ -11,7 +11,7 @@ namespace Bloodlines.Missions.Campaign
     /// <summary>
     /// M22 — "The Port Heist: Scorched Bay". Alamo Sea, 04:30, sunrise smoke.
     ///
-    /// The end of Act I. The bullion goes into four feet of Alamo water, the crew
+    /// The end of Act I. The bullion is hidden beneath the Alamo waterline, the crew
     /// stands on the beach, and Aegis answers by putting a cruise missile through
     /// their Los Santos shop. Everything they built in twenty-two missions is gone in
     /// one shot, and the exile to Blaine County is not a choice.
@@ -151,10 +151,12 @@ namespace Bloodlines.Missions.Campaign
             if (_liveArrival != null && !_arrived)
             {
                 _liveArrival.Update();
+                if (_liveArrival.Failed || _liveArrival.Canceled)
+                { Fail("The road team could not complete its beach arrival. Retry the Port Heist; see Bloodlines.log."); return; }
                 if (_liveArrival.IsFinished)
                 {
                     if (RoadTeamAtRegroup()) { _arrived = true; Logger.Info("M22: the road team is on the beach; no cut at the join."); }
-                    else Fail("The road team did not reach the beach. Restart the entire Port Heist.");
+                    else { Fail("The road team did not reach the beach. Restart the entire Port Heist."); return; }
                     _liveArrival = null;
                 }
             }
@@ -277,7 +279,7 @@ namespace Bloodlines.Missions.Campaign
             {
                 RequiresCompletion = true,
                 MissionId = Id, Phase = "approach", Title = "The Alamo",
-                Reason = "Four feet of water at the drop point, the lift held over the lake with the container under it, and the Granger from the coast coming down the road with Gohan driving and Ice beside him. Everyone arrives the way they left the ocean. The deposit is thirty tons in the shallows, not spendable money.",
+                Reason = "Submerged cargo at the drop point, the lift held over the lake with the container under it, and the Granger from the coast coming down the road with Gohan driving and Ice beside him. Everyone arrives the way they left the ocean. The deposit is thirty tons in the shallows, not spendable money.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) PortHeist.RequireFallback(blocking, "The road team's beach arrival");
@@ -287,7 +289,7 @@ namespace Bloodlines.Missions.Campaign
         private void PlayDrop()
         {
             ReleaseContainer();
-            if (_container == null || !_container.Exists() || PortHeistWorld.Attached(_container, _cargobob) || _container.Position.DistanceTo(_drop) > 3f)
+            if (_container == null || !_container.Exists() || PortHeistWorld.Attached(_container, _cargobob) || _container.Position.DistanceTo(PortHeist.HiddenContainerPoint(_drop)) > 1f)
                 throw new System.InvalidOperationException("The bullion drop did not reach the shallows.");
             _dropped = true;
             var blocking = new SceneBlocking();
@@ -295,7 +297,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "drop", Title = "The shallows",
-                Reason = "Thirty tons of bullion in four feet of Alamo water: the campaign's bank until M24 starts dredging it back out. Recorded once; a replay does not move it.",
+                Reason = "Thirty tons of bullion hidden below the Alamo waterline: the campaign's bank until M24 starts dredging it back out. Recorded once; a replay does not move it.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M22_S1_01_GUESS");
@@ -379,12 +381,13 @@ namespace Bloodlines.Missions.Campaign
             if (_container == null || !_container.Exists()) return;
 
             Function.Call(Hash.DETACH_ENTITY, _container, true, true);
-            _container.Position = _drop;
+            _container.Rotation = Vector3.Zero;
+            _container.Position = PortHeist.HiddenContainerPoint(_drop);
             _container.IsPositionFrozen = true;
 
             if (_cargobob != null && _cargobob.Exists()) _cargobob.EnginePowerMultiplier = 1f;
 
-            GameUtils.Subtitle("~g~Thirty tons of bullion, sitting in four feet of Alamo water.", 6000);
+            GameUtils.Subtitle("~g~Thirty tons of bullion, hidden below the Alamo waterline.", 6000);
         }
 
         /// <summary>The aftermath: the Granger and the lift on the beach, the three of them between them, the column to the south.</summary>

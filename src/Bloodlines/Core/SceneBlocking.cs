@@ -361,6 +361,11 @@ namespace Bloodlines.Core
         public override void Finish()
         {
             if (!Usable(_vehicle)) return;
+            // Clearing a driver's task or relocating a vehicle can unseat riders
+            // on Enhanced, particularly when skipping immediately after boarding.
+            // Keep the actual occupants and their seats through the arrival.
+            var riders = _vehicle.Occupants.Where(p => Usable(p))
+                .Select(p => new { Ped = p, Seat = p.SeatIndex }).ToArray();
             if (Usable(Actor)) Actor.Task.ClearAllImmediately();
             if (!GameUtils.IsWithinFlat(_vehicle.Position, _destination, 6f))
             {
@@ -369,6 +374,15 @@ namespace Bloodlines.Core
                 _vehicle.Heading = _heading;
             }
             _vehicle.Speed = 0f;
+            foreach (var rider in riders)
+            {
+                if (rider.Ped.IsInVehicle(_vehicle) && _vehicle.GetPedOnSeat(rider.Seat) == rider.Ped) continue;
+                var occupant = _vehicle.GetPedOnSeat(rider.Seat);
+                if (!Usable(rider.Ped) || (Usable(occupant) && occupant != rider.Ped)) { Failed = true; continue; }
+                rider.Ped.SetIntoVehicle(_vehicle, rider.Seat);
+                if (!rider.Ped.IsInVehicle(_vehicle) || _vehicle.GetPedOnSeat(rider.Seat) != rider.Ped) Failed = true;
+            }
+            if (Failed) Logger.Error("DriveUpStep: could not preserve the arrival vehicle's occupied seats.");
         }
 
         /// <summary>GTA heading (0 north, counterclockwise) from one point toward another.</summary>

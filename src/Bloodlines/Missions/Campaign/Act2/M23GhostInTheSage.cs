@@ -7,24 +7,8 @@ using GTA.Math;
 
 namespace Bloodlines.Missions.Campaign
 {
-    /// <summary>
-    /// M23 â€” "Ghost in the Sage". Grand Senora radar facility, 08:00, desert dust.
-    ///
-    /// Act II opens with the crew homeless. A Cold War radar installation full of
-    /// cartel squatters becomes the new base â€” three exterior storage bays for the heavy
-    /// rigs, a generator room, and nobody within twenty miles.
-    ///
-    /// Seen, not told: the crew arriving from the Alamo in their own Granger with what
-    /// they have left; a short exterior survey before anyone moves (Ice on the occupied
-    /// approach, Ron looking for a second exit, Gohan on the utility problem); the
-    /// clearing, each bay inspected for what is actually in it, the generator started
-    /// by hand; the limits of the place (power, fuel, tools, cash) named as the reasons
-    /// for the next jobs; a quiet walk through the yard to end on. Nobody calls it home.
-    ///
-    /// Structurally this is the mirror of M03: the mission that gives the act its
-    /// home. Where M03 built the foundry with a crane and a hauler, this one takes a
-    /// bunker off people who are already living in it.
-    /// </summary>
+    /// <summary>M23 secures the Grand Senora bunker, verifies its loaded interior,
+    /// and establishes the shortages that drive the next desert jobs.</summary>
     public sealed class M23GhostInTheSage : ComposedMission
     {
         private readonly List<Ped> _squatters = new List<Ped>();
@@ -32,9 +16,10 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<string> _limits = new List<string>();
 
         private Vehicle _granger;
-        private Prop _yardGate, _generatorProp;
+        private Prop _generatorProp;
+        private ApartmentAccess _interior;
+        public ApartmentAccess Interior => _interior;
         private readonly List<Prop> _siteProps = new List<Prop>();
-        public Prop YardGate => _yardGate;
         public Prop GeneratorProp => _generatorProp;
         private RoleTracks _roles;
         private Vector3 _approach;
@@ -55,16 +40,18 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            BunkerSite.LoadMaps();
+            _interior = Ctx.Interior ?? new ApartmentAccess(Ctx.Crew);
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _approach = Ctx.Locations.Position("M23.DomeApproach");
-            _door = Ctx.Locations.Position("M23.BunkerDoor");
-            _secondExit = Ctx.Locations.Position("M23.SecondExit");
-            _generator = Ctx.Locations.Position("M23.Generator");
-            _bays.Add(Ctx.Locations.Position("M23.BayOne"));
-            _bays.Add(Ctx.Locations.Position("M23.BayTwo"));
-            _bays.Add(Ctx.Locations.Position("M23.BayThree"));
+            _approach = Ctx.Locations.Position("M23.Approach");
+            _door = Ctx.Locations.Position("M23.Entrance");
+            _secondExit = Ctx.Locations.Position("M23.EscapeRoad");
+            _generator = Ctx.Locations.Position("M23.PowerPanel");
+            _bays.Add(Ctx.Locations.Position("M23.ToolBay"));
+            _bays.Add(Ctx.Locations.Position("M23.FuelBay"));
+            _bays.Add(Ctx.Locations.Position("M23.VehicleBay"));
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _approach, Ctx.Locations.Heading("M23.DomeApproach")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _approach, Ctx.Locations.Heading("M23.Approach")))
             {
                 return false;
             }
@@ -74,8 +61,8 @@ namespace Bloodlines.Missions.Campaign
             SpawnSquatters();
             SpawnGranger();
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Guess, _approach + new Vector3(-6f, -6f, 0f));
-            Station(CrewSlot.Gohan, _approach + new Vector3(6f, -6f, 0f));
+            Station(CrewSlot.Guess, Ctx.Locations.Position("M23.GuessStart"));
+            Station(CrewSlot.Gohan, Ctx.Locations.Position("M23.VehicleBay"));
             _roles = new RoleTracks(Ctx.Crew, () => _squatters);
             PlayApproach();
             return true;
@@ -83,18 +70,18 @@ namespace Bloodlines.Missions.Campaign
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            yield return new MissionStage("Breach the dome",
-                    new ReachZoneObjective("Ice: approach the marked radar yard gate. Guess covers the west side; Gohan watches the generator.", () => _door, 10f))
+            yield return new MissionStage("Approach the bunker",
+                    new ReachZoneObjective("Ice: approach the marked bunker entrance. Guess covers the west side; Gohan watches the generator.", () => _door, 10f))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
                 {
                     // The other two cover the approach; nobody teleports into the yard.
-                    _roles.For(CrewSlot.Guess).TakeCover(_approach + new Vector3(-8f, -4f, 0f));
-                    _roles.For(CrewSlot.Gohan).TakeCover(_approach + new Vector3(8f, -4f, 0f));
+                    _roles.For(CrewSlot.Guess).TakeCover(Ctx.Locations.Position("M23.GuessStart"));
+                    _roles.For(CrewSlot.Gohan).TakeCover(_bays[2]);
                 })
                 .WithCues("M23_S1_01_ICE");
 
-            yield return new MissionStage("Clear the radar yard",
+            yield return new MissionStage("Clear the bunker yard",
                     new KillTargetsObjective("Clear the cartel squatters out.", () => _squatters))
                 .OnEnter(context =>
                 {
@@ -118,7 +105,7 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M23_S1_02_GUESS");
 
             yield return new MissionStage("Power up",
-                    new MissionInteraction("Gohan: use the control side of the visible generator to power the yard gate.", () => _generator, 6, 2.5f, animation: MissionInteraction.ReachInside))
+                    new MissionInteraction("Gohan: use the control side of the visible generator to restore bunker access.", () => _generator, 6, 2.5f, animation: MissionInteraction.ReachInside))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context =>
                 {
@@ -127,19 +114,30 @@ namespace Bloodlines.Missions.Campaign
                 })
                 .OnExit(context => PlayPower());
 
-            // The quiet walk: through the usable yard to the door, the three of them.
-            yield return new MissionStage("Walk the yard",
-                    new ReachZoneObjective("Walk to the opened radar yard gate. Underground rooms are still sealed.", () => _door, 4f))
+            yield return new MissionStage("Enter the bunker",
+                    new BunkerAccessObjective(_interior, true, _door))
+                .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context =>
                 {
-                    foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Guess, CrewSlot.Gohan })
-                        if (slot != Ctx.Crew.ActiveSlot) _roles.For(slot).Approach(_door + new Vector3(slot == CrewSlot.Ice ? -3f : slot == CrewSlot.Guess ? 3f : 0f, -3f, 0f), _door);
-                })
-                .OnExit(context =>
-                {
-                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    GameUtils.Subtitle("~g~A place to work from in the desert. Not home; a door that locks and a way out.", 6000);
+                    _roles.For(CrewSlot.Ice).Observe(_door, _door);
+                    _roles.For(CrewSlot.Guess).Observe(_bays[2], _bays[2]);
                 });
+
+            yield return new MissionStage("Check the interior",
+                    new MissionInteraction("Gohan: walk down the marked entry passage and inspect the bunker. Ice guards outside; Guess checks vehicle access.",
+                        () => Ctx.Locations.Position(BunkerSite.InspectKey), 4, 2f))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnExit(context => Ctx.Dialogue.Play(new DialogueCue { CueId = "M23_INTERIOR_REPORT", MissionId = Id,
+                    Speaker = "GOHAN", Line = "Interior's dry. Lights work. This gives us shelter, but we still need fuel, tools and money." }));
+
+            yield return new MissionStage("Return outside",
+                    new BunkerAccessObjective(_interior, false, Ctx.Locations.Position(BunkerSite.DoorKey)))
+                .OwnedBy(CrewSlot.Gohan);
+
+            yield return new MissionStage("Regroup at the entrance",
+                    new ReachZoneObjective("Gohan: rejoin the crew at the bunker entrance.", () => _door, 4f))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnExit(context => GameUtils.Subtitle("~g~Senora bunker secured. Return to its home marker between jobs to enter, rest and plan.", 6500));
         }
 
         // ---------- beats ----------
@@ -153,13 +151,13 @@ namespace Bloodlines.Missions.Campaign
             var blocking = new SceneBlocking();
             if (_granger != null && _granger.Exists()) blocking.Then(new ShotStep(3000, _granger, new Vector3(-7f, 4f, 2f), _granger, new Vector3(0f, 0f, 0.8f), 0.8f));
             if (ice != null && ice.Exists()) blocking.Then(ShotStep.Watching(2800, ice, _squatters.Count > 0 && _squatters[0].Exists() ? (Entity)_squatters[0] : ice));
-            if (guess != null && guess.Exists()) blocking.Then(new WalkToStep(guess, _approach + new Vector3(-14f, 2f, 0f), 1.5f)).Then(new LookAtStep(guess, guess, 1200));
-            if (gohan != null && gohan.Exists()) blocking.Then(new InspectStep(gohan, _approach + new Vector3(6f, -6f, 0f), 2600, "WORLD_HUMAN_BINOCULARS"));
+            if (guess != null && guess.Exists()) blocking.Then(ShotStep.Watching(2200, guess, guess));
+            if (gohan != null && gohan.Exists()) blocking.Then(new InspectStep(gohan, gohan.Position, 2600, "WORLD_HUMAN_BINOCULARS"));
             blocking.Then(ShotStep.Wide(2800, _generator + new Vector3(0f, 0f, 1f), 22f, 9f, 8f));
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The sage",
-                Reason = "The Granger from the Alamo with what they have left, parked short of the dome. Ice reads the occupied approach; Ron walks the fence line looking for a second way out; Gohan identifies the visible trailer generator and the powered gate it controls. The bunker is a place to clear, not a home.",
+                Reason = "The Granger from the Alamo with what they have left, parked short of the bunker. Ice reads the occupied approach; Guess watches the withdrawal road from beside the car; Gohan identifies the visible trailer generator and the bunker access it powers. The bunker is a place to clear, not a home.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M23 approach scene did not play; the approach stands on its own.");
@@ -183,16 +181,14 @@ namespace Bloodlines.Missions.Campaign
         private void PlayPower()
         {
             _powered = true;
-            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var blocking = new SceneBlocking();
-            if (gohan != null && gohan.Exists()) blocking.Then(new InspectStep(gohan, _generator, 3000, "WORLD_HUMAN_WELDING"));
+            // The player already worked the generator controls during the objective.
             blocking.Then(new ShotStep(2200, _generatorProp, new Vector3(-5f,-4f,2f), _generatorProp, new Vector3(0f,0f,1f),0.6f));
-            blocking.Then(new SlideYardGateStep(_yardGate, new Vector3(8f,0f,0f)));
-            blocking.Then(new ShotStep(1800,null,_door+new Vector3(0f,-9f,3f),_yardGate,new Vector3(0f,0f,1f),0.4f));
+            blocking.Then(ShotStep.Wide(1800,_door,12f,4f,5f));
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "power", Title = "The generator",
-                Reason = "Gohan starts the generator by hand and the yard has power for as long as the tank lasts. The motor opens the visible yard gate. Only the exterior service yard is usable; the underground rooms remain sealed.",
+                Reason = "Gohan starts the generator by hand and the yard has power for as long as the tank lasts. The access controls respond. Gohan must enter and verify the underground room before anyone claims this base.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M23_S1_03_GOHAN");
@@ -207,7 +203,7 @@ namespace Bloodlines.Missions.Campaign
             _limits.Add("four hours of power on the tank");
             _limits.Add("no operating cash");
             Ctx.State?.SetUpgrade("bunkerGenerator", true);
-            GameUtils.Notify("~y~Radar yard secured; underground rooms remain sealed. Limits: " + string.Join("; ", _limits) + ". Cash first, from the Alamo; fuel and tools after.");
+            GameUtils.Notify("~y~Bunker access powered. Check inside before moving in. Limits: " + string.Join("; ", _limits) + ". Cash first, from the Alamo; fuel and tools after.");
             Logger.Info("M23 limits: " + string.Join("; ", _limits));
         }
 
@@ -225,8 +221,10 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+            if (_interior != null && _interior.Busy) { _interior.Update(); return; }
             base.OnUpdate();
-            _roles?.Update();
+            // Outside actors retain their assigned posts while Gohan is underground.
+            if (_interior == null || !_interior.Inside) _roles?.Update();
         }
 
         // ---------- world building ----------
@@ -249,7 +247,6 @@ namespace Bloodlines.Missions.Campaign
             // Models are confirmed in the installed Enhanced archetype catalog.
             // Use the generator's control side as the objective, leaving room to stand.
             _generatorProp=PlaceYardProp("prop_generator_03b",_generator+new Vector3(2.5f,0f,0f),0f);
-            _yardGate=PlaceYardProp("prop_gate_airport_01",_door+new Vector3(3.6f,2f,0f),0f);
             var bench=PlaceYardProp("prop_tool_bench02",_bays[0]+new Vector3(0f,1.5f,0f),90f);
             var drum=PlaceYardProp("prop_barrel_02a",_bays[1]+new Vector3(0f,1.5f,0f));
             foreach(var bay in _bays)
@@ -257,9 +254,8 @@ namespace Bloodlines.Missions.Campaign
                 PlaceYardProp("prop_barrier_work05",bay+new Vector3(-3f,0f,0f),90f);
                 PlaceYardProp("prop_barrier_work05",bay+new Vector3(3f,0f,0f),90f);
             }
-            if (!RequireAssets(_yardGate,_generatorProp,bench,drum)) return false;
-            RequireAsset(_generatorProp,"The generator was destroyed. Restart the radar yard mission.");
-            RequireAsset(_yardGate,"The powered yard gate was lost. Restart the radar yard mission.");
+            if (!RequireAssets(_generatorProp,bench,drum)) return false;
+            RequireAsset(_generatorProp,"The generator was destroyed. Restart the bunker mission.");
             return true;
         }
 
@@ -273,9 +269,8 @@ namespace Bloodlines.Missions.Campaign
                 var model = new Model(models[i % models.Length]);
                 if (!GameUtils.RequestModel(model)) continue;
 
-                var post = i < 4
-                    ? _door + new Vector3(-8f + i * 5f, 8f, 0f)
-                    : _bays[(i - 4) % _bays.Count] + new Vector3((i % 2) * 4f - 2f, 5f, 0f);
+                string key = "M23.Guard" + (i + 1).ToString("00");
+                var post = MissionSites.Actor(Ctx.Locations, key, Ctx.Locations.Position(key));
 
                 var squatter = World.CreatePed(model, post, 180f);
                 model.MarkAsNoLongerNeeded();
@@ -292,16 +287,16 @@ namespace Bloodlines.Missions.Campaign
             }
         }
 
-        /// <summary>The Granger they came in from the Alamo, parked short of the dome: the crew and what it has left.</summary>
+        /// <summary>The Granger they came in from the Alamo, parked short of the bunker: the crew and what it has left.</summary>
         private void SpawnGranger()
         {
-            var spot = _approach + new Vector3(-4f, -18f, 0f);
-            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M23.DomeApproach")) : null;
+            var spot = Ctx.Locations.Position("M23.ArrivalCar");
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M23.Approach")) : null;
             if (granger == null)
             {
                 var model = new Model("granger");
                 if (!GameUtils.RequestModel(model)) return;
-                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M23.DomeApproach"));
+                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M23.Approach"));
                 model.MarkAsNoLongerNeeded();
             }
             _granger = Track(granger);
@@ -320,32 +315,10 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            _interior?.Cancel();
             _roles?.Release();
             Ctx.Crew.CompanionsHoldPosition = false;
             _squatters.Clear();
         }
     }
-    internal sealed class SlideYardGateStep : SceneStep
-    {
-        private readonly Prop _gate;
-        private readonly Vector3 _origin, _destination;
-        public SlideYardGateStep(Prop gate,Vector3 travel)
-        { _gate=gate;_origin=gate?.Position??Vector3.Zero;_destination=_origin+travel;TimeoutMs=2600; }
-        public override Entity CameraTarget => _gate;
-        protected override void OnStart() { if (_gate==null||!_gate.Exists()) Failed=true; }
-        public override bool IsComplete
-        {
-            get
-            {
-                if (_gate==null||!_gate.Exists()) { Failed=true;return true; }
-                float fraction=System.Math.Max(0f,System.Math.Min(1f,(Game.GameTime-StartedAt)/2000f));
-                _gate.Position=_origin+(_destination-_origin)*fraction;
-                return fraction>=1f;
-            }
-        }
-        public override void Finish()
-        { if (_gate!=null&&_gate.Exists()) _gate.Position=_destination;else Failed=true; }
-        public override void Cancel() { }
-    }
-
 }

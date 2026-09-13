@@ -31,6 +31,7 @@ public static partial class StoryTests
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
    if(m.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
+   if(m.Id=="M23")World.CollisionReady=true;
    if(m.Id=="M10")GameUtils.RoadAvailable=true; if(m.Id=="SM02")World.CollisionReady=true;
    if(m.Id=="SM03")
    {
@@ -51,6 +52,7 @@ public static partial class StoryTests
     {
      if(objective.RequiredCharacter.HasValue&&!objective.IsPassive)Use(crew,objective.RequiredCharacter.Value);
      string name=objective.GetType().Name;
+     if(name=="BunkerAccessObjective" && !((Bloodlines.Missions.Campaign.M23GhostInTheSage)m).Interior.Busy) PositionActor(c,objective,objective.AssignmentPosition.Value);
      if(name=="ConditionObjective"&&m.Id=="M15")
      {
       if(m.CurrentStage==0)Game.Player.Character.Task.LeaveVehicle();

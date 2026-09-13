@@ -42,12 +42,12 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c=>{Fighting=true;DrivingDestination=()=>At("M38.Exit");ResponseCar("M38.Response",CrewCar.Position);}).AfterCues("M38_S1_02_GOHAN");
             yield return new MissionStage("Escape the quarry",new TravelObjective("Drive the loaded Benson out through the yellow quarry escape marker",()=>At("M38.Exit"),20,()=>CrewCar)).OnExit(c=>{RetreatResponse();DrivingDestination=null;}).AfterCues("M38_S1_03_GUESS");
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before returning with explosives"));
-            yield return new MissionStage("Deliver seismic stock",new TravelObjective("Stop the same loaded Benson at the bunker delivery marker",()=>At("M38.Delivery"),12,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M38.Delivery"));
+            yield return new MissionStage("Deliver seismic stock",new TravelObjective("Stop the same loaded Benson at the bunker delivery marker",()=>At("M38.Senora.Delivery"),12,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M38.Senora.Delivery"));
             yield return new MissionStage("Verify the load",new MissionInteraction("Gohan: inspect all four packages at the back of the stopped truck",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,4,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>DrivingDestination=null).OnExit(c=>{_delivered=_loaded==4&&_crates.All(p=>Attached(p,CrewCar));if(!_delivered)throw new InvalidOperationException("Explosives delivery is incomplete.");Establish("delivery","Four accounted for","Gohan verifies each package in the arrived truck. The crew now has measured demolition stock, but the mainland cable remains connected.",CrewCar);});
         }
         private bool BoardTeam(){Roles.Release();Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);bool ice=Board(Ctx.Crew.PedFor(CrewSlot.Ice),CrewCar,VehicleSeat.Passenger);bool gohan=Board(Ctx.Crew.PedFor(CrewSlot.Gohan),CrewCar,VehicleSeat.LeftRear);return ice&&gohan;}
         protected override void OnUpdate(){for(int i=0;i<_loaded;i++)if(!Attached(_crates[i],CrewCar)){Fail("A charge package came loose from the truck.");return;}base.OnUpdate();}
-        protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("No delivered charge stock.");Ctx.State?.SetCargo("seismicCharges","M38.Delivery");Release(CrewCar);foreach(var crate in _crates)Release(crate);}
+        protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("No delivered charge stock.");Ctx.State?.SetCargo("seismicCharges","M38.Senora.Delivery");Release(CrewCar);foreach(var crate in _crates)Release(crate);}
     }
 }

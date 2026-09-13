@@ -1135,7 +1135,7 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M22_S1_01_GUESS`
-Container detached! Thirty tons of bullion sitting safe in four feet of Alamo water.
+Container detached! Thirty tons of bullion hidden below the Alamo waterline.
 Delivery: Turboprops cutting out, container splashing into mud
 Trigger: Gameplay stage 2 completion
 
@@ -1181,7 +1181,7 @@ Trigger: outro
 ### Intro
 
 **ICE** `M23_SCENE_INTRO_01_ICE`
-The radar bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
+This old Senora bunker gives us cover after Cypress. We clear the outpost, but nobody calls it home because I say so.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1193,24 +1193,24 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M23_S1_01_ICE`
-Breaching upper radar dome. Four cartel riflemen on walkway.
+People at the bunker entrance. I clear the approach; you two cover the yard.
 Delivery: 
-Trigger: Gameplay stage 1 entry
+Trigger: Matching playable objective in rebuilt Grand Senora bunker M23
 
 **GUESS** `M23_S1_02_GUESS`
-The three storage bays are secure. We can stage the heavy rigs in this yard.
+Room to park the rigs, but no tools or fuel reserve. Gohan, see if the power works.
 Delivery: 
-Trigger: Gameplay stage 3 completion
+Trigger: Matching playable objective in rebuilt Grand Senora bunker M23
 
 **GOHAN** `M23_S1_03_GOHAN`
-Generator room online. We have our command center in the desert.
+Generator is running. Access controls are live. I will check inside; hold the entrance.
 Delivery: 
-Trigger: Gameplay stage 4 completion
+Trigger: Matching playable objective in rebuilt Grand Senora bunker M23
 
 ### Aftermath
 
 **GOHAN** `M23_SCENE_OUTRO_01_GOHAN`
-The yard has power and the gate works. The underground rooms stay sealed for now. We still need fuel and money to keep three people alive out here.
+The lights work and the interior is dry. We have shelter, but we still need fuel, tools and money to keep three people alive out here.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 

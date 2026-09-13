@@ -385,10 +385,11 @@ namespace Bloodlines.Missions.Objectives
             int elapsed = (Game.GameTime - _startedAt) / 1000;
             if (elapsed >= _secondsEach)
             {
+                // A failed physical action must not award a completed site.
+                SiteDone?.Invoke(near);
                 _done.Add(near);
                 _activeSite = -1; StopWork();
                 GameUtils.Subtitle("~g~Set. " + Remaining + " left.", 2000);
-                SiteDone?.Invoke(near);
                 return;
             }
 

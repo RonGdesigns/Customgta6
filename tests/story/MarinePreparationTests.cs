@@ -44,9 +44,9 @@ public static partial class StoryTests
   }
   Check(m38.Loaded==4&&crates.All(p=>p.AttachedTo==m38.Hauler),"All four packages stay attached to the required truck");
   Use(crew,CrewSlot.Guess);crew.PedFor(CrewSlot.Guess).SetIntoVehicle(m38.Hauler,VehicleSeat.Driver);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m38.Hauler,VehicleSeat.Passenger);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m38.Hauler,VehicleSeat.LeftRear);DrainPreparation(m38,c);
-  MarineDrive(m38,c,m38.Hauler,"M38.Exit",CrewSlot.Guess);MarineDrive(m38,c,m38.Hauler,"M38.Delivery",CrewSlot.Guess);
+  MarineDrive(m38,c,m38.Hauler,"M38.Exit",CrewSlot.Guess);MarineDrive(m38,c,m38.Hauler,"M38.Senora.Delivery",CrewSlot.Guess);
   Interact(m38,c,CrewSlot.Gohan,m38.Hauler.Position-m38.Hauler.ForwardVector*5.5f,4);DrainPreparation(m38,c);
-  Check(m38.Status==MissionStatus.Passed&&c.State.CargoAt("seismicCharges")=="M38.Delivery","M38 delivers the same carrier and verifies its attached load");
+  Check(m38.Status==MissionStatus.Passed&&c.State.CargoAt("seismicCharges")=="M38.Senora.Delivery","M38 delivers the same carrier and verifies its attached load");
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"marine39.json"));var m39=new M39ThePaletoCable();Check(m39.Begin(c),"M39 starts with a real underwater junction");DrainPreparation(m39,c);
   MarineDrive(m39,c,m39.SurveySub,"M39.Route1",CrewSlot.Gohan);MarineDrive(m39,c,m39.SurveySub,"M39.Route2",CrewSlot.Gohan);

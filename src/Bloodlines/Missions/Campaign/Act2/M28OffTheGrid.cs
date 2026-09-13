@@ -77,7 +77,7 @@ namespace Bloodlines.Missions.Campaign
                 new SurviveWavesObjective("Ice: clear both response squads marked red.", Wave, 2, 6000) { GapProvider = () => _responseGapMs }).OwnedBy(CrewSlot.Ice)
                 .WithCues("M28_S1_02_ICE").OnExit(c=>FinishSplice());
             yield return new MissionStage("Extraction", new EnterVehicleObjective("Guess: take the Granger driver seat. Wait for both brothers to board.", ()=>_pickup, VehicleSeat.Driver, true)).OwnedBy(CrewSlot.Guess).OnEnter(c=>{_roles.Release();ReleaseForPickup();});
-            yield return new MissionStage("Back to shelter", new DeliverVehicleObjective("Guess: bring the crew's Granger back to the radar bunker.", ()=>_pickup, ()=>At("M23.DomeApproach"), 25), new ProtectObjective("", ()=>_pickup,"The extraction Granger was destroyed.")).OwnedBy(CrewSlot.Guess).AfterCues("M28_S1_03_GOHAN");
+            yield return new MissionStage("Back to shelter", new DeliverVehicleObjective("Guess: bring the crew's Granger back to the Senora bunker.", ()=>_pickup, ()=>At("M23.VehicleBay"), 25), new ProtectObjective("", ()=>_pickup,"The extraction Granger was destroyed.")).OwnedBy(CrewSlot.Guess).AfterCues("M28_S1_03_GOHAN");
         }
         private void FinishSplice()
         {

@@ -42,7 +42,7 @@ public static partial class StoryTests
 
   Reset();roster=Roster();ctx=Context(roster);ctx.State=CampaignState.Load(Path.Combine(root,"p5b-fuel.json"));var fuel=new M29DustAndDiesel();
   Check(fuel.Begin(ctx)&&ctx.Cutscenes.IsActive&&!fuel.FuelLoaded,"M29 opens with unloaded fuel and visible transfer controls");ctx.Cutscenes.Skip();
-  var truck=Field<Vehicle>(fuel,"_truck");var trailer=Field<Vehicle>(fuel,"_trailer");var delivery=ctx.Locations.Position("M29.Delivery");
+  var truck=Field<Vehicle>(fuel,"_truck");var trailer=Field<Vehicle>(fuel,"_trailer");var delivery=ctx.Locations.Position("M29.Senora.Delivery");
   Flow(fuel)[2].Teardown(ctx);Check(fuel.FuelLoaded&&ctx.State.CargoAt("bunkerFuel")==null,"Finishing the depot transfer fills only this attempt; it does not bank bunker fuel");
   truck.Position=delivery;trailer.Position=delivery;Function.Trailers[truck.Handle]=trailer;
   PackageCall(fuel,"UnloadFuel");ctx.Cutscenes.Stop();
@@ -50,7 +50,7 @@ public static partial class StoryTests
   Check(World.Props.All(p=>!p.Exists()),"A canceled fuel attempt removes its temporary equipment and drums");
 
   Reset();roster=Roster();ctx=Context(roster);fuel=new M29DustAndDiesel();fuel.Begin(ctx);ctx.Cutscenes.Skip();Flow(fuel)[2].Teardown(ctx);
-  truck=Field<Vehicle>(fuel,"_truck");trailer=Field<Vehicle>(fuel,"_trailer");truck.Position=ctx.Locations.Position("M29.Delivery");trailer.Position=truck.Position;
+  truck=Field<Vehicle>(fuel,"_truck");trailer=Field<Vehicle>(fuel,"_trailer");truck.Position=ctx.Locations.Position("M29.Senora.Delivery");trailer.Position=truck.Position;
   Function.Trailers.Remove(truck.Handle);PackageCall(fuel,"UnloadFuel");ctx.Cutscenes.Skip();
   Check(!fuel.Unloaded&&ctx.Cutscenes.LastOutcome==SceneOutcome.Failed,"A detached tanker fails final receipt verification even if both vehicles are in the bay");fuel.Abort();
 
@@ -58,11 +58,11 @@ public static partial class StoryTests
   {
    Reset();roster=Roster();ctx=Context(roster);ctx.State=CampaignState.Load(Path.Combine(root,"p5b-reserves-"+skip+".json"));fuel=new M29DustAndDiesel();
    fuel.Begin(ctx);ctx.Cutscenes.Skip();Flow(fuel)[2].Teardown(ctx);
-   truck=Field<Vehicle>(fuel,"_truck");trailer=Field<Vehicle>(fuel,"_trailer");truck.Position=ctx.Locations.Position("M29.Delivery");trailer.Position=truck.Position;
+   truck=Field<Vehicle>(fuel,"_truck");trailer=Field<Vehicle>(fuel,"_trailer");truck.Position=ctx.Locations.Position("M29.Senora.Delivery");trailer.Position=truck.Position;
    Function.Trailers[truck.Handle]=trailer;PackageCall(fuel,"UnloadFuel");
    if(skip)ctx.Cutscenes.Skip();else WatchPackageScene(ctx);
    Check(fuel.Unloaded&&ctx.State.CargoAt("bunkerFuel")==null,"Watching or skipping verifies the attached fuel rig before persistent reward");
-   fuel.Pass();Check(fuel.Status==MissionStatus.Passed&&ctx.State.CargoAt("bunkerFuel")=="M23.BayTwo","A successful fuel delivery records the reserves in the receiving bay");
+   fuel.Pass();Check(fuel.Status==MissionStatus.Passed&&ctx.State.CargoAt("bunkerFuel")=="M23.FuelBay","A successful fuel delivery records the reserves in the receiving bay");
   }
 
   foreach(bool skip in new[]{false,true})
@@ -76,14 +76,14 @@ public static partial class StoryTests
    Check(Field<Blip>(ridge,"_gunshipBlip").Color==BlipColor.Red&&Function.Values.ContainsKey(Hash.SET_HELI_BLADES_FULL_SPEED),"The ridge gunship starts with spinning rotors and an enemy marker");
    PackageCall(ridge,"LoseGunship");
    Check(!Field<Blip>(ridge,"_gunshipBlip").Exists()&&Field<Vehicle>(ridge,"_heli").Exists(),"The canyon exit removes the gunship's threat marker without deleting its aircraft");
-   truck.Position=ctx.Locations.Position("M29.Delivery");PackageCall(ridge,"UnloadParts");
+   truck.Position=ctx.Locations.Position("M29.Senora.Delivery");PackageCall(ridge,"UnloadParts");
    Check(!ridge.Unloaded&&ctx.State.CargoAt("satelliteParts")==null,"Starting the unload scene does not award parts or receiver intelligence");
    if(skip)ctx.Cutscenes.Skip();else WatchPackageScene(ctx);
    Check(ridge.Unloaded&&ridge.Parts.AttachedTo==Field<Prop>(ridge,"_bench")&&ice.IsInVehicle(truck)&&gohan.IsInVehicle(truck),"The same case reaches the table without ejecting either passenger");
-   Use(roster,CrewSlot.Gohan);gohan.Task.LeaveVehicle();gohan.Position=ctx.Locations.Position("M23.BayOne");
+   Use(roster,CrewSlot.Gohan);gohan.Task.LeaveVehicle();gohan.Position=ctx.Locations.Position("M23.ToolBay");
    PackageCall(ridge,"ReceiveSignal");if(skip)ctx.Cutscenes.Skip();else WatchPackageScene(ctx);
    Check(ridge.Received&&ctx.State.CargoAt("satelliteParts")==null,"Receiver check completes physically; persistent cargo still waits for mission success");
-   ridge.Pass();Check(ridge.Status==MissionStatus.Passed&&ctx.State.CargoAt("satelliteParts")=="M23.BayOne"&&ridge.Parts.Exists(),"Only a verified successful M30 stores the receiver parts and leaves them at the workbench");
+   ridge.Pass();Check(ridge.Status==MissionStatus.Passed&&ctx.State.CargoAt("satelliteParts")=="M23.ToolBay"&&ridge.Parts.Exists(),"Only a verified successful M30 stores the receiver parts and leaves them at the workbench");
   }
   Reset();roster=Roster();ctx=Context(roster);var lost=new M30RedlineRidge();lost.Begin(ctx);ctx.Cutscenes.Skip();lost.Parts.Detach();lost.Tick();
   Check(lost.Status==MissionStatus.Failed&&lost.FailReason.Contains("parts came off"),"M30 fails explicitly if its physical cargo detaches en route");

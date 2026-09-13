@@ -56,7 +56,7 @@ namespace Bloodlines.Core
         public Action OpenPlanningBoard { get; set; }
         public void ReviewFoundryPlan()
         {
-            if (_foundryVisit && Apartment.Inside && CanUse(55f)) (OpenPlanningBoard ?? RouteNextLead)?.Invoke();
+            if ((_foundryVisit || _bunkerVisit) && Apartment.Inside && CanUse(55f)) (OpenPlanningBoard ?? RouteNextLead)?.Invoke();
         }
         private void UpdateFoundry(Ped player)
         {

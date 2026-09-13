@@ -221,6 +221,8 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             _liveTransfer?.Update();
+            if (_liveTransfer != null && (_liveTransfer.Failed || _liveTransfer.Canceled))
+            { Fail("The escort could not board the launch. Retry the Port Heist; see Bloodlines.log."); return; }
             base.OnUpdate();
         }
 

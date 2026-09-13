@@ -21,7 +21,7 @@ M19	M18.SaltHangar
 M20	M19.Surface
 M21	M21.LaunchSpawn
 M22	M22.Beach
-M23	M23.DomeApproach
+M23	M23.Approach
 M24	M24.CraneSpawn
 M25	M25.BridgeDeck
 M26	M26.DusterPad
@@ -35,7 +35,7 @@ M30	M30.Start
 SM04	SM04.Approach
 SM05	SM05.Shore
 SM06	SM06.Approach
-M31	M31.Start
+M31	M31.Senora.Start
 M32	M32.Start
 M33	M33.Start
 M34	M34.Start

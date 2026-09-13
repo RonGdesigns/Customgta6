@@ -41,13 +41,13 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Close the rear route",new ConvoyRouteObjective("Clear the second barrier with both vehicles and follow the shelter road",()=>_halftrack,()=>CrewCar,()=>At("M34.Exit"),18),new ConditionObjective("Both crew vehicles must clear the second road barrier",()=>DropBarrier(1)))
                 .OnEnter(c=>DrivingDestination=()=>At("M34.Exit")).AfterCues("M34_S1_04_GOHAN");
             yield return new MissionStage("Lose the police",new LoseWantedObjective("Lose any police pursuit before arriving at the medical shelter.")).OnEnter(c=>RetreatResponse());
-            yield return new MissionStage("Medical shelter",new ConvoyRouteObjective("Stop the half-track at the yellow medical shelter marker with Ramos aboard",()=>_halftrack,()=>CrewCar,()=>At("M34.Shelter"),12))
-                .OnEnter(c=>DrivingDestination=()=>At("M34.Shelter"))
+            yield return new MissionStage("Medical shelter",new ConvoyRouteObjective("Stop the half-track at the yellow medical shelter marker with Ramos aboard",()=>_halftrack,()=>CrewCar,()=>At("M34.Senora.Shelter"),12))
+                .OnEnter(c=>DrivingDestination=()=>At("M34.Senora.Shelter"))
                 .OnExit(c=>{DrivingDestination=null;Fighting=false;_ramos.Task.LeaveVehicle();});
-            yield return new MissionStage("Patient first",new ConditionObjective("Wait for Ramos to leave the stopped half-track",()=>!_ramos.IsInVehicle()&&_ramos.Position.DistanceTo(At("M34.MedicalWork"))<7f),new MissionInteraction("Gohan: get out and prepare the marked medical kit for Ramos",()=>At("M34.MedicalWork"),5,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Patient first",new ConditionObjective("Wait for Ramos to leave the stopped half-track",()=>!_ramos.IsInVehicle()&&_ramos.Position.DistanceTo(At("M34.Senora.MedicalWork"))<7f),new MissionInteraction("Gohan: get out and prepare the marked medical kit for Ramos",()=>At("M34.Senora.MedicalWork"),5,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>
                 {
-                    var table=Equipment("prop_table_03","M34.MedicalKit");
+                    var table=Equipment("prop_table_03","M34.Senora.MedicalKit");
                     var kit=WorkProp("prop_ld_health_pack",PropPlacement.OnTop(table,table.Model,new Model("prop_ld_health_pack")),false);
                     if(!RequireAssets(kit))throw new InvalidOperationException("The medical kit failed to load.");
                 })
@@ -65,7 +65,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             if(CurrentStage==6&&!_patientWalking&&!_ramos.IsInVehicle())
-            { _ramos.Task.GoTo(At("M34.MedicalWork")); _patientWalking=true; }
+            { _ramos.Task.GoTo(At("M34.Senora.MedicalWork")); _patientWalking=true; }
             if(!_safe&&CurrentStage<6&&!_ramos.IsInVehicle(_halftrack)){Fail("Ramos is no longer aboard the evacuation half-track.");return;}
             if(Game.GameTime>=_escortOrder&&CurrentStage<6)
             {
@@ -79,7 +79,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             if(!_safe)throw new InvalidOperationException("Ramos has not reached medical care.");
-            Ctx.State?.SetCargo("ramos","M34.Shelter");Ctx.State?.SetEvidence("rigAccessCodes",EvidenceState.CopyHeld);
+            Ctx.State?.SetCargo("ramos","M34.Senora.Shelter");Ctx.State?.SetEvidence("rigAccessCodes",EvidenceState.CopyHeld);
             Release(_halftrack);
         }
     }

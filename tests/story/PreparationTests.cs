@@ -46,15 +46,15 @@ public static partial class StoryTests
         var m31=new M31TheIronPerimeter();Check(m31.Begin(c),"M31 starts with physical perimeter equipment and separate crew roles");
         Check(!m31.ProbeStarted&&!World.Created.Any(p=>p.Model.Name=="s_m_y_blackops_01"),"The probe convoy does not exist during the preparation scene");
         DrainPreparation(m31,c);
-        foreach(int i in new[]{3,1,2})Interact(m31,c,CrewSlot.Ice,c.Locations.Position("M31.Work"+i),2);
+        foreach(int i in new[]{3,1,2})Interact(m31,c,CrewSlot.Ice,c.Locations.Position("M31.Senora.Work"+i),2);
         DrainPreparation(m31,c);Check(m31.CurrentStage==1,"M31 accepts scouting the approaches in any order");
-        foreach(int i in new[]{2,3,1})Interact(m31,c,CrewSlot.Gohan,c.Locations.Position("M31.Work"+i),4);
+        foreach(int i in new[]{2,3,1})Interact(m31,c,CrewSlot.Gohan,c.Locations.Position("M31.Senora.Work"+i),4);
         DrainPreparation(m31,c);Check(m31.ArmedCount==3&&m31.CurrentStage==2,"Three completed arming actions create three real charges");
-        var car=World.Vehicles.First(v=>v.Model.Name=="granger");ParkPreparation(m31,c,car,"M31.Retreat");
+        var car=World.Vehicles.First(v=>v.Model.Name=="granger");ParkPreparation(m31,c,car,"M31.Senora.Retreat");
         Check(m31.ProbeStarted&&World.Vehicles.Count(v=>v.Model.Name=="mesa")==2,"The two-car probe arrives only after Guess proves the retreat road");
         var fighters=World.Created.Where(p=>p.Model.Name=="s_m_y_blackops_01").ToArray();Check(fighters.Length==4,"Both response cars have their own driver and passenger");
         Game.GameTime+=3000;m31.Tick();Check(fighters.Where(p=>p.SeatIndex==VehicleSeat.Driver).All(p=>p.Task.Drives>0),"Response drivers retain driving assignments");
-        ClearPreparationEnemies();DrainPreparation(m31,c);Interact(m31,c,CrewSlot.Gohan,c.Locations.Position("M31.GeneratorWork"),4);DrainPreparation(m31,c);
+        ClearPreparationEnemies();DrainPreparation(m31,c);Interact(m31,c,CrewSlot.Gohan,c.Locations.Position("M31.Senora.GeneratorWork"),4);DrainPreparation(m31,c);
         Check(m31.Status==MissionStatus.Passed&&c.State.FleetUpgrades["bunkerPerimeterReady"],"M31 passes only after combat and the generator inspection");
 
         Reset();crew=Roster();c=Context(crew);m31=new M31TheIronPerimeter();m31.Begin(c);DrainPreparation(m31,c);
@@ -81,9 +81,9 @@ public static partial class StoryTests
         var responseDriver=World.Created.First(p=>p.Model.Name=="s_m_y_blackops_01"&&!p.IsDead&&p.SeatIndex==VehicleSeat.Driver);
         ParkPreparation(m32,c,m32.Extraction,"M32.Exit");
         Check(responseDriver.Task.LastDrivePoint.DistanceTo(Game.Player.Character.Position)>400f,"M32 response retreats at the road exit before delivery work begins");
-        ParkPreparation(m32,c,m32.Extraction,"M32.Delivery");
-        Interact(m32,c,CrewSlot.Gohan,c.Locations.Position("M32.Workbench"),4);DrainPreparation(m32,c);
-        Check(m32.Status==MissionStatus.Passed&&c.State.CargoAt("empWarheads")=="M32.Workbench","M32 secures both delivered cases before its completion consequence");
+        ParkPreparation(m32,c,m32.Extraction,"M32.Senora.Delivery");
+        Interact(m32,c,CrewSlot.Gohan,c.Locations.Position("M32.Senora.Workbench"),4);DrainPreparation(m32,c);
+        Check(m32.Status==MissionStatus.Passed&&c.State.CargoAt("empWarheads")=="M32.Senora.Workbench","M32 secures both delivered cases before its completion consequence");
 
         Reset();crew=Roster();c=Context(crew);var m33=new M33TheInformantsGrave();Check(m33.Begin(c),"M33 starts with an identifiable living prisoner");DrainPreparation(m33,c);
         Game.GameTime+=180000;m33.Tick();Check(!m33.ExecutionStarted&&m33.Status==MissionStatus.Running,"Three minutes of approach time do not consume the execution window");
@@ -119,8 +119,8 @@ public static partial class StoryTests
         Check(m34.RoadblocksDropped==1,"First road barrier activates after both crew vehicles pass it");
         ParkPreparation(m34,c,m34.Halftrack,"M34.Route3");escort.Position=c.Locations.Position("M34.Exit");ParkPreparation(m34,c,m34.Halftrack,"M34.Exit");
         Check(m34.RoadblocksDropped==2,"Second barrier has its own clearance and route trigger");
-        ParkPreparation(m34,c,m34.Halftrack,"M34.Shelter");m34.Ramos.Position=c.Locations.Position("M34.MedicalWork");Interact(m34,c,CrewSlot.Gohan,c.Locations.Position("M34.MedicalWork"),5);DrainPreparation(m34,c);
-        Check(m34.Status==MissionStatus.Passed&&c.State.EvidenceOf("rigAccessCodes")==EvidenceState.CopyHeld&&c.State.CargoAt("ramos")=="M34.Shelter","Medical arrival precedes Ramos's access-code consequence");
+        ParkPreparation(m34,c,m34.Halftrack,"M34.Senora.Shelter");m34.Ramos.Position=c.Locations.Position("M34.Senora.MedicalWork");Interact(m34,c,CrewSlot.Gohan,c.Locations.Position("M34.Senora.MedicalWork"),5);DrainPreparation(m34,c);
+        Check(m34.Status==MissionStatus.Passed&&c.State.EvidenceOf("rigAccessCodes")==EvidenceState.CopyHeld&&c.State.CargoAt("ramos")=="M34.Senora.Shelter","Medical arrival precedes Ramos's access-code consequence");
 
         Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"p35.json"));var m35=new M35TheChianskiAmbush();Check(m35.Begin(c),"M35 opens before the moving convoy is created");DrainPreparation(m35,c);
         Check(!m35.ConvoyStarted,"No convoy escape clock runs during trap preparation");
@@ -134,8 +134,8 @@ public static partial class StoryTests
         Check(m35.Trapped&&m35.CurrentStage==4,"A clear trap stops the lead escort without claiming an unstaged capture");
         ClearPreparationEnemies();DrainPreparation(m35,c);Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m35.Technical,VehicleSeat.Driver);DrainPreparation(m35,c);
         crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m35.Technical,VehicleSeat.Passenger);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m35.Technical,VehicleSeat.LeftRear);DrainPreparation(m35,c);
-        ParkPreparation(m35,c,m35.Technical,"M35.Delivery");Interact(m35,c,CrewSlot.Gohan,m35.Technical.Position-m35.Technical.ForwardVector*2f,5);DrainPreparation(m35,c);
-        Check(m35.Status==MissionStatus.Passed&&c.State.CargoAt("antiAirTechnical")=="M35.Delivery","M35 requires the same captured technical at its destination and a real gun-mount inspection");
+        ParkPreparation(m35,c,m35.Technical,"M35.Senora.Delivery");Interact(m35,c,CrewSlot.Gohan,m35.Technical.Position-m35.Technical.ForwardVector*2f,5);DrainPreparation(m35,c);
+        Check(m35.Status==MissionStatus.Passed&&c.State.CargoAt("antiAirTechnical")=="M35.Senora.Delivery","M35 requires the same captured technical at its destination and a real gun-mount inspection");
 
         Reset();crew=Roster();c=Context(crew);World.FailVehicles=true;
         Check(!new M34MudAndIron().Begin(c),"Missing essential armored transport rejects M34 startup without a fake completion");

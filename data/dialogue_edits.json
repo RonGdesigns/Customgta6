@@ -482,20 +482,20 @@
     "trigger": "Gameplay stage 4 entry"
   },
   "M22_S1_01_GUESS": {
-    "line": "Container detached! Thirty tons of bullion sitting safe in four feet of Alamo water.",
+    "line": "Container detached! Thirty tons of bullion hidden below the Alamo waterline.",
     "trigger": "Gameplay stage 2 completion"
   },
   "M23_S1_03_GOHAN": {
-    "line": "Generator room online. We have our command center in the desert.",
-    "trigger": "Gameplay stage 4 completion"
+    "line": "Generator is running. Access controls are live. I will check inside; hold the entrance.",
+    "trigger": "Matching playable objective in rebuilt Grand Senora bunker M23"
   },
   "M23_S1_02_GUESS": {
-    "line": "The three storage bays are secure. We can stage the heavy rigs in this yard.",
-    "trigger": "Gameplay stage 3 completion"
+    "line": "Room to park the rigs, but no tools or fuel reserve. Gohan, see if the power works.",
+    "trigger": "Matching playable objective in rebuilt Grand Senora bunker M23"
   },
   "M23_S1_01_ICE": {
-    "line": "Breaching upper radar dome. Four cartel riflemen on walkway.",
-    "trigger": "Gameplay stage 1 entry"
+    "line": "People at the bunker entrance. I clear the approach; you two cover the yard.",
+    "trigger": "Matching playable objective in rebuilt Grand Senora bunker M23"
   },
   "M24_S1_03_GOHAN": {
     "line": "Crates loaded! Cash reserves replenished for Blaine operations.",

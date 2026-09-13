@@ -91,15 +91,15 @@ M20_S1_03_GUESS	M20	1	GUESS		Full cyclic forward! We are airborne and clearing t
 M21_S1_01_GOHAN	M21	1	GOHAN		Running the launch alongside the lift. Ice, watch the boats. Guess, keep your route over the water.	Gameplay stage 2 entry
 M21_S1_02_ICE	M21	1	ICE		Pursuit boats clear. Gohan, take the launch through the breakwater.	Gameplay stage 3 completion
 M21_S1_03_GUESS	M21	1	GUESS		Water exit clear. I'm taking the bullion north. Meet me at the Alamo.	Gameplay stage 4 completion
-M22_S1_01_GUESS	M22	1	GUESS	Turboprops cutting out, container splashing into mud	Container detached! Thirty tons of bullion sitting safe in four feet of Alamo water.	Gameplay stage 2 completion
+M22_S1_01_GUESS	M22	1	GUESS	Turboprops cutting out, container splashing into mud	Container detached! Thirty tons of bullion hidden below the Alamo waterline.	Gameplay stage 2 completion
 M22_S1_02_ICE	M22	1	ICE	Looking south at black smoke column over mountains	Our Cypress Foundry is gone. Aegis just leveled the entire city block with precision cruise missiles.	Gameplay stage 4 entry
 M22_S1_03_GOHAN	M22	1	GOHAN	Staring at laptop screen, jaw clenched	Servers, tools, clothes... everything we set up in Los Santos is ash. They declared us military combatants.	Gameplay stage 4 entry
 M22_S1_04_GUESS	M22	1	GUESS	Kicking sand, determined glare	They burned our city shop? Fine. They don't know who they dealing with out here in the dirt. Blaine County belongs to us now.	Gameplay stage 4 entry
 M22_S1_05_ICE	M22	1	ICE	Racking bolt of assault rifle	We need shelter before another strike. That radar site in the desert is our next move.	Gameplay stage 4 entry
 M22_S1_06_GOHAN	M22	1	GOHAN		They know our names now. We take care of each other, and we take back the initiative.	Gameplay stage 4 entry
-M23_S1_01_ICE	M23	1	ICE		Breaching upper radar dome. Four cartel riflemen on walkway.	Gameplay stage 1 entry
-M23_S1_02_GUESS	M23	1	GUESS		The three storage bays are secure. We can stage the heavy rigs in this yard.	Gameplay stage 3 completion
-M23_S1_03_GOHAN	M23	1	GOHAN		Generator room online. We have our command center in the desert.	Gameplay stage 4 completion
+M23_S1_01_ICE	M23	1	ICE		People at the bunker entrance. I clear the approach; you two cover the yard.	Matching playable objective in rebuilt Grand Senora bunker M23
+M23_S1_02_GUESS	M23	1	GUESS		Room to park the rigs, but no tools or fuel reserve. Gohan, see if the power works.	Matching playable objective in rebuilt Grand Senora bunker M23
+M23_S1_03_GOHAN	M23	1	GOHAN		Generator is running. Access controls are live. I will check inside; hold the entrance.	Matching playable objective in rebuilt Grand Senora bunker M23
 M24_S1_01_GUESS	M24	1	GUESS		First five tons recovered. Secure the haul; it still has to reach the radar base.	Gameplay stage 2 completion
 M24_S1_02_ICE	M24	1	ICE		Sheriff cruisers coming over the ridge! They aren't taking this haul!	Gameplay stage 2 entry
 M24_S1_03_GOHAN	M24	1	GOHAN		Crates loaded! Cash reserves replenished for Blaine operations.	Gameplay stage 3 completion

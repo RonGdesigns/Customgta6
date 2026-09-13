@@ -272,6 +272,8 @@ public static partial class StoryTests
         for (int i = 0; i < 10 && !m22.Arrived; i++) { Game.GameTime += 16000; c.Dialogue.Clear(); m22.Tick(); }
         Check(m22.Arrived && !actors[CrewSlot.Gohan].IsInVehicle() && !actors[CrewSlot.Ice].IsInVehicle() && actors[CrewSlot.Ice].Position.DistanceTo(c.Locations.Position("M22.Beach") + new Vector3(-6, 6, 0)) < 8f, "Both road passengers are genuinely out and at the regroup point");
         var drop = c.Locations.Position("M22.AlamoDrop"); Interact(m22, c, CrewSlot.Guess, drop + new Vector3(0, 0, 20), 3, afloat: true);
+        Check(bullion.Position.Z+2.822155f<drop.Z-1f&&Math.Abs(bullion.Position.X-drop.X)<.01f&&Math.Abs(bullion.Position.Y-drop.Y)<.01f,
+            "M22 puts the verified container roof below the waterline without moving its recovery location");
         Check(m22.Dropped && !PortHeistWorld.Attached(bullion, helicopter) && state.CargoAt("bullion") == null, "The deposit detaches the real container but remains temporary until operation success");
         c.Cutscenes.Skip(); MovePortVehicle(helicopter, c.Locations.Position("M22.Beach")); helicopter.Speed = 0; helicopter.IsInAir = false; c.Dialogue.Clear(); m22.Tick();
         actors[CrewSlot.Guess].Task.LeaveVehicle(); actors[CrewSlot.Guess].Position = c.Locations.Position("M22.Beach") + new Vector3(-6, 6, 0); c.Dialogue.Clear(); m22.Tick();
@@ -280,7 +282,7 @@ public static partial class StoryTests
         for (int i = 0; i < 12 && manager.ActivePortHeist != null; i++) { c.Dialogue.Clear(); manager.Update(); }
         Check(operation.Status == MissionStatus.Passed && manager.ActivePortHeist == null && PortHeistOperation.PhaseIds.All(state.IsComplete), "The parent completes all internal ids at one final result");
         Check(state.CashOnHand == 250000 && state.CargoAt("bullion") == "M22.AlamoDrop" && !crew.Arsenal.LoanActive, "One final payout, final cargo ledger, and one closed loan session");
-        Check(bullion.Exists() && bullion.Position == drop && !PortHeistWorld.Attached(bullion, helicopter) && helicopter.Exists() && roadCar.Exists(), "The delivered cargo and extraction vehicles survive the final cleanup");
+        Check(bullion.Exists() && bullion.Position == PortHeist.HiddenContainerPoint(drop) && !PortHeistWorld.Attached(bullion, helicopter) && helicopter.Exists() && roadCar.Exists(), "The delivered cargo stays underwater and extraction vehicles survive the final cleanup");
         Check(actors.All(p => crew.PedFor(p.Key) == p.Value), "All three original character objects survived the complete live operation");
         c.Cutscenes.Stop();
 
