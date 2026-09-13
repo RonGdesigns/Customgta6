@@ -66,8 +66,17 @@ public static partial class StoryTests
 
         // Actual mission layout, default keys, code exchange and required loading.
         var cases = ReadySoloCases(out c);
-        Check(cases.Guards.All(p => GameUtils.IsWithinFlat(p.Position, anchor, 10.1f) && Math.Abs(p.Heading - 180.3f) < .01f),
-            "All six SM01 guards use the user-anchored keys and headings, not the obsolete fallback offsets");
+        Check(Enumerable.Range(1, 6).All(i => cases.Guards[i - 1].Position.DistanceTo(c.Locations.Position("SM01.Guard" + i)) < .01f &&
+                Math.Abs(cases.Guards[i - 1].Heading - c.Locations.Heading("SM01.Guard" + i)) < .01f),
+            "All six SM01 guards stand at Ron's placed keys with his captured headings, not fallback offsets");
+        Check(c.Locations.Get("SM01.Guard1").Status == LocationStatus.Surveyed && c.Locations.Get("SM01.SergeiOffice").Status == LocationStatus.Surveyed,
+            "Ron's September 13 SM01 placements ship as the surveyed layout");
+        World.SafeCoordHandler = p => Vector3.Zero; World.RaycastHandler = (a, b) => new RaycastResult();
+        var unchecked_ = new SM01LeadAndKevlar(); var c2 = Context(Roster()); c2.State = CampaignState.Load(Path.Combine(root, "cases-unchecked-" + Guid.NewGuid() + ".json"));
+        Check(unchecked_.Begin(c2) && unchecked_.Guards.Count == 6 && unchecked_.Car != null &&
+                unchecked_.Sergei.Position.DistanceTo(c2.Locations.Position("SM01.SergeiOffice")) < .01f,
+            "A placement check that cannot pass is a warning: SM01 still starts on Ron's points as they are");
+        unchecked_.Abort(); unchecked_.Cleanup(); World.SafeCoordHandler = null; World.RaycastHandler = null;
         Check(cases.Guards.All(p => BoundedPlacement.OutsideSoloFreight(p.Position)) &&
             cases.Crates.All(p => BoundedPlacement.OutsideSoloFreight(p.Position)) &&
             BoundedPlacement.OutsideSoloFreight(cases.Car.Position) && BoundedPlacement.OutsideSoloFreight(cases.Sergei.Position),
@@ -113,7 +122,8 @@ public static partial class StoryTests
         cases = ReadySoloCases(out c);
         Interact(cases, c, CrewSlot.Ice, c.Locations.Position("SM01.CrateLoad"), 2);
         c.Cutscenes.Stop(); cases.Tick();
-        Check(!cases.Loaded && cases.Status == MissionStatus.Failed, "Canceling the required loading scene cannot certify delivery");
+        Check(cases.Loaded && cases.Status == MissionStatus.Running && cases.Crates.All(p => p.AttachedTo == cases.Car),
+            "A canceled loading scene still ends with both cases really in the car; nothing unattached is certified");
         cases.Cleanup();
 
         // Nonlethal control is shared with M15 and persists after subdual ends.

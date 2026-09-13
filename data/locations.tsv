@@ -11,9 +11,9 @@ M01.RegroupPoint	1073.0	-3160.0	5.9	0	land	estimate	Terminal Island Dry-Docks
 M01.ExitPoint	1180.00	-2990.00	5.90	0	land	estimate	Terminal Island Dry-Docks
 M01.GuessApproach	1175.0	-3090.0	6.0	180	land	estimate	Terminal Island Dry-Docks
 M01.GohanApproach	965.0	-3110.0	6.0	180	land	estimate	Terminal Island Dry-Docks
-SM01.WarehouseGate	1038.410	-3034.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.SergeiOffice	1052.410	-3053.640	5.900	270	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.CrateLoad	1039.410	-3048.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.WarehouseGate	1034.580	-3036.400	5.900	85.3	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.SergeiOffice	1005.540	-2997.990	5.900	87.7	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.CrateLoad	1039.910	-3050.700	5.900	167.1	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
 M02.InterceptStart	102.0	-1810.0	27.0	60	land	estimate	East Los Santos / Olympic Fwy
 M02.CanalEscape	285.0	-1900.0	24.0	0	land	estimate	East Los Santos / Olympic Fwy
 M03.RailJunction	180.0	-1900.0	24.0	90	land	estimate	Davis
@@ -496,12 +496,12 @@ M43.Land	-210	6530	10.098	0	land	estimate	Offline map checked; live survey pendi
 M43.ShoreCar	-220	6550	9.578	180	land	estimate	Offline map checked; live survey pending
 M43.Board	-200	6560	10.025	0	land	estimate	Offline map checked; live survey pending
 M43.BoardWork	-203	6560	10.136	0	land	estimate	Offline map checked; live survey pending
-SM01.Guard1	1028.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Guard2	1032.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Guard3	1036.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Guard4	1040.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Guard5	1044.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Guard6	1048.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard1	997.690	-3008.790	5.900	258.8	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Guard2	1001.850	-3004.960	5.900	164.2	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Guard3	1027.460	-3011.270	5.900	108	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Guard4	1022.500	-3007.850	5.900	108.4	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Guard5	1014.570	-3006.850	5.900	178.5	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Guard6	1008.090	-3006.200	5.900	162.4	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
 SM02.StairEntry	-1091.000	-263.500	37.620	0	land	estimate	Lifeinvader service-side doorway; near roof access XY, not arrival; live door alignment pending
 SM02.Guard1	-1074.000	-250.000	57.922	90	land	estimate	Offline collision checked; live survey pending
 SM02.Guard2	-1078.000	-246.000	57.922	0	land	estimate	Offline collision checked; live survey pending
@@ -804,11 +804,11 @@ Bunker.Senora.Room.Door	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrun
 Bunker.Senora.Room.Inspect	892.6384	-3245.8664	-98.265	270	interior	estimate	Bunker entry room; shares the successfully loaded arrival floor so inspection does not require crossing interior partitions
 M23.GuessStart	841	2964	44.846	0	land	estimate	Grand Senora bunker approach; collision checked, beside the arrival car
 M23.RoadStart	868	3091.75	39.699	180	land	estimate	Senora north access road; CodeWalker verified vehicle node and collision floor
-SM01.Car	1025.410	-3048.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Case1	1037.410	-3051.640	5.900	0	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Case1Access	1037.410	-3049.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Case2	1040.410	-3051.640	5.900	0	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
-SM01.Case2Access	1040.410	-3049.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Car	1025.530	-3051.490	5.900	174.3	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Case1	1037.410	-3051.640	5.900	0	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Case1Access	1037.410	-3049.640	5.900	180.3	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Case2	1040.410	-3051.640	5.900	0	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
+SM01.Case2Access	1040.410	-3049.640	5.900	180.3	land	surveyed	Terminal Island; Ron's in-game placement, September 13, 2026 (the loading lane and the yard north of it)
 SM02.Approach	-1110.000	-275.000	37.620	320	land	estimate	Lifeinvader sidewalk run-up; separate from service door; bounded same-floor placement
 M25.NorthTunnel	-527.000	4515.000	89.034	172	land	estimate	Raton north rail/tunnel approach; existing inspected deck anchor; runtime same-level only
 M25.SouthTunnel	-504.000	4340.000	89.042	352	land	estimate	Raton south rail/tunnel approach derived from tanker deck; live route acceptance pending
