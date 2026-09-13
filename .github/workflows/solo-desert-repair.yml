@@ -1,31 +1,38 @@
+# Read-only comparison verification and downloadable preview; never publishes commits.
 name: solo-desert-repair
 on:
   push:
     branches: [codex/solo-desert-playtest-repairs]
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: solo-desert-repair
+  group: solo-desert-repair-${{ github.event_name }}
   cancel-in-progress: true
 jobs:
   verify:
-    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/solo-desert-playtest-repairs'
+    if: github.repository == 'RonGdesigns/Customgta6' && (github.ref == 'refs/heads/codex/solo-desert-playtest-repairs' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'codex/solo-desert-playtest-repairs'))
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Snapshot exact committed source
-        shell: pwsh
+      - name: Restore exact committed source bytes
+        shell: python
         run: |
-          New-Item -ItemType Directory -Force build | Out-Null
-          git archive -o build/solo-desert-source.zip HEAD
-      - name: Build and behavioral checks
+          import pathlib, subprocess
+          subprocess.run(['git','config','core.autocrlf','false'],check=True)
+          for name in filter(None,subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
+              pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
+          pathlib.Path('build').mkdir(exist_ok=True)
+      - name: Build and full behavioral checks
         shell: pwsh
         run: |
           dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror *> build/repair-build.log
@@ -44,13 +51,57 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           python tools/audit_campaign.py --check
           if ($LASTEXITCODE -ne 0) { exit 1 }
+          python tools/render_campaign_doc.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python tools/render_feasibility_doc.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git diff --exit-code --ignore-space-at-eol docs/CAMPAIGN.md docs/FEASIBILITY.md docs/LOCATION-AUDIT.md
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-Content build/repair-story.log -Tail 5
           Get-Content build/repair-regression.log -Tail 3
+      - name: Rebuild and create a clean preview
+        shell: pwsh
+        run: |
+          python tools/build_roslyn.py *> build/repair-roslyn.log
+          if ($LASTEXITCODE -ne 0) { Get-Content build/repair-roslyn.log -Tail 60; exit 1 }
+          python tools/package.py --clean *> build/repair-package.log
+          if ($LASTEXITCODE -ne 0) { Get-Content build/repair-package.log -Tail 60; exit 1 }
+      - name: Enforce zero findings, exact DLL identity and save-free packaging
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, re, shutil, subprocess
+          p=pathlib.Path
+          audit=p('docs/LOCATION-AUDIT.md').read_text(encoding='utf-8')
+          assert re.search(r'\*\*\d+ coordinates checked, 0 flagged\.\*\*',audit), 'Location findings must be resolved; a zero process exit is insufficient.'
+          binary=p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
+          assert binary==p('prebuilt/Bloodlines.dll').read_bytes(), 'Fresh and committed DLLs differ.'
+          assert binary==p('build/deploy/scripts/Bloodlines.dll').read_bytes(), 'Packaged DLL differs.'
+          deploy=p('build/deploy')
+          assert not list(deploy.rglob('savegame.json')), 'No campaign save may ship.'
+          assert not list(deploy.rglob('Bloodlines.Surveyed.ini')), 'No personal survey may ship.'
+          assert not (deploy/'scripts/Bloodlines/Bloodlines.ini').exists(), 'Only example configuration may ship.'
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          provenance={'commit':sha,'branch':'codex/solo-desert-playtest-repairs','baseline':'de923e018203b76c55e1b0b475528e6b06aff3b6','dll_sha256':hashlib.sha256(binary).hexdigest(),'actions_run':os.environ['GITHUB_RUN_ID'],'live_verified':False,'fresh_local_map_query':False}
+          (deploy/'BUILD-PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
+          for name in ['SOLO-DESERT-PLAYTEST-REPAIRS.md','SOLO-DESERT-VERIFICATION.md']:
+              shutil.copy2(p('docs')/name,deploy/name)
+          (deploy/'READ-ME-FIRST.txt').write_text('Bloodlines - solo/desert playtest repair, not a live-verified release.\n\nCommit: '+sha+'\nDLL SHA-256: '+provenance['dll_sha256']+'\n\nClose GTA. Back up scripts/Bloodlines.dll and the entire scripts/Bloodlines directory outside the scripts tree. Use Story Mode and a disposable copied campaign. Install the matching packaged scripts directory, retaining existing runtime dependencies, audio, configuration and appearance files. Never leave another Bloodlines DLL under scripts or its subfolders. Do not import the optional OpenIV pack for this comparison.\n\nPersonal surveyed overrides are preserved. An old overridden point inside the excluded freight rows or on the wrong level is refused with its key; use the existing editor to correct that specific key, not delete all your survey work. New SM01 positions use Ron\'s anchor and nearby offsets. New SM02/tunnel/parking positions need live acceptance. Existing M37 runway centers are reused but larger-aircraft clearance remains a live check. No fresh archive survey was performed here.\n\nTest SM01 watched/skipped loading; SM02/M15 living stun victims and response; home/warehouse ammo; M25 both tunnel approaches and actual 100m boat departure; M26 and M27 clear runway takeoffs. Full instructions are in SOLO-DESERT-PLAYTEST-REPAIRS.md. Restore the backed-up DLL AND data/save directory together to roll back.\n',encoding='utf-8')
+          shutil.make_archive('build/Bloodlines-Solo-Desert-Playtest-Preview','zip',deploy)
+          subprocess.run(['git','archive','-o','build/Bloodlines-Solo-Desert-Playtest-Source.zip','HEAD'],check=True)
+          print(json.dumps(provenance,indent=2))
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: solo-desert-repair-evidence
+          name: Bloodlines-solo-desert-playtest-preview
           retention-days: 14
+          if-no-files-found: error
           path: |
-            build/solo-desert-source.zip
+            build/Bloodlines-Solo-Desert-Playtest-Preview.zip
+            build/Bloodlines-Solo-Desert-Playtest-Source.zip
+            build/deploy/BUILD-PROVENANCE.json
             build/repair-*.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: solo-desert-repair-failure-evidence
+          retention-days: 7
+          path: build/repair-*.log
