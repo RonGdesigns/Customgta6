@@ -18,7 +18,7 @@ fetching Microsoft.NETFramework.ReferenceAssemblies.net48 1.0.3...
 ## regression
 ```text
 PASS: Arrest enters the same recovery path
-PASS: Cancelling recovery restores restart and control
+PASS: Canceling recovery restores restart and control
 PASS: Revive failure returns to story and opens the screen
 PASS: Partial native failure still releases restart suppression
 206 checks passed (stand-ins; live GTA validation still required).
