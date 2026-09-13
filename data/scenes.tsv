@@ -445,7 +445,7 @@ SM01_SCENE_INTRO_01_ICE	SM01	intro	ICE	Briefing; intent before tactics	Sergei so
 SM01_SCENE_INTRO_02_GUESS	SM01	intro	GUESS	Briefing; intent before tactics	You can work alone without pretending you don't have anyone to call. Tell us when you're leaving the warehouse.
 SM01_SCENE_OUTRO_01_ICE	SM01	outro	ICE	Reflective; allow the response to land	Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.
 SM01_SCENE_OUTRO_02_GOHAN	SM01	outro	GOHAN	Reflective; allow the response to land	I heard you. That's enough for tonight. We'll check the ammunition together when you get back.
-SM01_SCENE_APPROACH_01_ICE	SM01	approach	ICE	On the approach; the place and the job seen before anyone moves	Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+SM01_SCENE_APPROACH_01_ICE	SM01	approach	ICE	On the approach; the place and the job seen before anyone moves	Sergei's in the loading lane. The two ammunition cases he shorted me are outside the containers, six men between us. I'm going around the stacks.
 SM01_SCENE_APPROACH_02_GUESS	SM01	approach	GUESS	On the approach; the place and the job seen before anyone moves	Say when you're leaving. That's the whole of what I'm asking.
 SM02_SCENE_INTRO_01_GOHAN	SM02	intro	GOHAN	Briefing; intent before tactics	The annex gives me municipal optical access for the drone work. One person can reach it quietly. That's why I'm going alone.
 SM02_SCENE_INTRO_02_ICE	SM02	intro	ICE	Briefing; intent before tactics	Send the check-in time. You aren't asking permission. You're giving us a chance to notice if you need help.

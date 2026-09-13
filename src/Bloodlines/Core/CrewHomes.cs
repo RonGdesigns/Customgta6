@@ -105,7 +105,7 @@ namespace Bloodlines.Core
             if (!CanUse(35f)) return;
             var player = Game.Player.Character;
             if (_crew.ActiveSlot == CrewSlot.Ice)
-            { _weapons.SaveCrew(_crew); _weapons.Apply(_crew.ActiveSlot, player, true); player.Armor = CrewDurability.Armor; GameUtils.Notify("~b~Personal locker restocked. Armor replaced."); }
+            { _weapons.SaveCrew(_crew); _weapons.Apply(_crew.ActiveSlot, player, true); player.Armor = CrewDurability.Armor; GameUtils.Notify(_weapons.LastRestockSucceeded ? "~b~Weapons and ammunition restocked. Armor replaced." : "~y~Weapons and armor restored; an ammo refill failed. Check Bloodlines.log."); }
             else if (_crew.ActiveSlot == CrewSlot.Gohan) RouteNextLead?.Invoke();
             else
             {
@@ -121,7 +121,7 @@ namespace Bloodlines.Core
         {
             if (!CanUse(35f)) return;
             _weapons.SaveCrew(_crew); _weapons.Apply(_crew.ActiveSlot, Game.Player.Character, true);
-            GameUtils.Notify("~g~Personal weapon locker restocked.");
+            GameUtils.Notify(_weapons.LastRestockSucceeded ? "~g~Owned weapons and ammunition restocked." : "~y~Weapons restored, but some ammunition could not be refilled. Check Bloodlines.log.");
         }
         public CrewHomes(CrewRoster crew, CampaignState state, LocationBook locations, WeaponProgression weapons)
         { _crew = crew; _state = state; _locations = locations; _weapons = weapons; Apartment = new ApartmentAccess(crew); }

@@ -62,7 +62,7 @@ public static partial class StoryTests
   var guards=World.Created.Where(p=>p.Model.Name=="s_m_m_security_01").ToArray();
   Check(guards.Length==3&&guards.All(p=>p.Health==p.MaxHealth&&p.Health>=500),"Dock workers have enough health to survive the stun hit");
   foreach(var guard in guards)guard.LastWeaponHit=(uint)WeaponHash.StunGun;
-  m15.Tick();Check(m15.CurrentStage==3&&guards.All(p=>p.IsCuffed&&p.IsInvincible&&!p.IsDead),"A recorded stun hit scores even after the brief stunned flag has cleared");
+  m15.Tick();Check(m15.CurrentStage==3&&guards.All(p=>p.IsCuffed&&p.DamageProof&&!p.IsInvincible&&!p.IsDead),"A recorded stun hit scores even after the brief stunned flag has cleared");
   foreach(var guard in guards)guard.LastWeaponHit=0;
   int ragdolls=Function.Calls.Count(h=>h.Item1==Hash.SET_PED_TO_RAGDOLL);Game.GameTime+=12000;m15.Tick();
   Check(Function.Calls.Count(h=>h.Item1==Hash.SET_PED_TO_RAGDOLL)>=ragdolls+3,"Incapacitation continues through the splice stage so guards cannot get back up");m15.Abort();

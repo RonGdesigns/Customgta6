@@ -57,15 +57,15 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            if (!MissionSites.Water(Ctx.Locations, "M27.SeaPickup")) return false;
             _formUp = Ctx.Locations.Position("M27.FormUp");
             _jetTrack = Ctx.Locations.Position("M27.JetTrack");
             _seaPickup = Ctx.Locations.Position("M27.SeaPickup");
 
             // On the McKenzie apron. The climb to eight thousand feet is the player's
             // to fly — deploying at altitude drops the crew out of the sky.
-            _apron = Ctx.Locations.Position("M26.DusterPad");
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _apron, Ctx.Locations.Heading("M26.DusterPad")))
+            _apron = Ctx.Locations.Position("M27.RunwayStart");
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, BoundedPlacement.Ped(Ctx.Locations, "M27.CrewStart"), Ctx.Locations.Heading("M27.CrewStart")))
             {
                 return false;
             }
@@ -76,14 +76,14 @@ namespace Bloodlines.Missions.Campaign
             player.Weapons.Give(WeaponHash.Parachute, 1, false, true);
             player.Weapons.Give(WeaponHash.SMG, 250, false, true);
 
+            SpawnLazer(); // clear M26's aircraft from the runway before staging the Duster
             SpawnStuntPlane();
-            SpawnLazer();
             SpawnShamal();
             SpawnDinghy();
             if (!RequireAssets(_stuntPlane, _shamal, _shamalPilot, _dinghy)) return false;
             RequireAsset(_dinghy, "Gohan's boat was lost. There is no pickup under the jump.");
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Ice, _apron + new Vector3(-8f, 4f, 0f));
+            Station(CrewSlot.Ice, BoundedPlacement.Ped(Ctx.Locations, "M27.IcePost"));
             Station(CrewSlot.Gohan, _dinghy, VehicleSeat.Driver);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.Parachute, 1, false, false);
@@ -286,9 +286,19 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("duster");
             if (!GameUtils.RequestModel(model)) return;
 
-            var spot = _apron + new Vector3(24f, 0f, 0f);
-            var existing = PortHeist.Nearby(model, spot, 30f);
-            _stuntPlane = Track(existing ?? World.CreateVehicle(model, spot, Ctx.Locations.Heading("M26.DusterPad")));
+            var existing = PortHeist.Nearby(model, Ctx.Locations.Position("M26.SparePlane"), 30f);
+            if (existing != null && existing.Occupants.Length > 0)
+                throw new System.InvalidOperationException("The preparation Duster is occupied. Clear it before starting M27.");
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M27.RunwayStart", model, existing, departureMeters: 25f);
+            _stuntPlane = Track(existing ?? World.CreateVehicle(model, spot, Ctx.Locations.Heading("M27.RunwayStart")));
+            if (_stuntPlane != null && _stuntPlane.Exists())
+            {
+                // This is between-mission staging, before the opening. It preserves
+                // the existing aircraft and its damage, not a live in-flight warp.
+                _stuntPlane.Position = spot;
+                _stuntPlane.Heading = Ctx.Locations.Heading("M27.RunwayStart");
+                _stuntPlane.Velocity = Vector3.Zero;
+            }
             model.MarkAsNoLongerNeeded();
             if (_stuntPlane == null || !_stuntPlane.Exists()) return;
 
@@ -307,8 +317,17 @@ namespace Bloodlines.Missions.Campaign
             if (Ctx.State?.CargoAt("lazer") != "M26.DusterPad") return;
             var model = new Model("lazer");
             if (!GameUtils.RequestModel(model)) return;
-            var existing = PortHeist.Nearby(model, _apron, 30f);
-            _lazer = Track(existing ?? World.CreateVehicle(model, _apron + new Vector3(-6f, 0f, 0f), Ctx.Locations.Heading("M26.DusterPad")));
+            var existing = PortHeist.Nearby(model, Ctx.Locations.Position("M26.RunwayStart"), 45f);
+            if (existing != null && existing.Occupants.Length > 0)
+                throw new System.InvalidOperationException("The parked Lazer is occupied. Clear it before starting M27.");
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M27.ParkedLazer", model, existing);
+            _lazer = Track(existing ?? World.CreateVehicle(model, spot, Ctx.Locations.Heading("M27.ParkedLazer")));
+            if (_lazer != null && _lazer.Exists())
+            {
+                _lazer.Position = spot;
+                _lazer.Heading = Ctx.Locations.Heading("M27.ParkedLazer");
+                _lazer.Velocity = Vector3.Zero;
+            }
             model.MarkAsNoLongerNeeded();
             if (_lazer == null || !_lazer.Exists()) return;
             _lazer.IsPersistent = true;

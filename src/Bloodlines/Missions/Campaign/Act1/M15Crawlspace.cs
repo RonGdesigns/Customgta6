@@ -29,7 +29,7 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Ped> _watchmen = new List<Ped>();
 
-        private readonly HashSet<int> _stunned = new HashSet<int>();
+        private readonly NonlethalGuards _nonlethal = new NonlethalGuards();
         private Prop _office;
         private Prop _panel;
         private Vehicle _granger;
@@ -207,9 +207,7 @@ namespace Bloodlines.Missions.Campaign
                 watchman.RelationshipGroup = group;
                 watchman.IsPersistent = true;
                 watchman.BlockPermanentEvents = true;
-                // Stun damage must not kill a stock 100-health civilian before our tick.
-                watchman.MaxHealth = 500; watchman.Health = 500;
-                Function.Call(Hash.SET_PED_SUFFERS_CRITICAL_HITS, watchman, false);
+                _nonlethal.Add(watchman);
                 watchman.Accuracy = 20;
                 watchman.Weapons.Give(WeaponHash.Nightstick, 1, true, true);
                 watchman.Task.StartScenario("WORLD_HUMAN_GUARD_PATROL", watchman.Position, watchman.Heading);
@@ -272,19 +270,7 @@ namespace Bloodlines.Missions.Campaign
                     }
                 }
             }
-            foreach (var guard in _watchmen)
-            {
-                if (!guard.Exists() || guard.IsDead) continue;
-                bool hit = guard.IsBeingStunned || Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, guard, (uint)WeaponHash.StunGun, 0);
-                if (hit && _stunned.Add(guard.Handle))
-                {
-                    guard.IsInvincible = true;
-                    Function.Call(Hash.SET_ENABLE_HANDCUFFS, guard, true);
-                    guard.Task.ClearAll();
-                }
-                if (_stunned.Contains(guard.Handle))
-                    Function.Call(Hash.SET_PED_TO_RAGDOLL, guard, 2000, 2000, 0, false, false, false);
-            }
+            _nonlethal.Update();
             base.OnUpdate();
         }
 
@@ -297,7 +283,7 @@ namespace Bloodlines.Missions.Campaign
         {
             Ctx.Crew.CompanionsHoldPosition = false;
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);
-            _stunned.Clear();
+            _nonlethal.Dispose();
             _watchmen.Clear();
         }
     }

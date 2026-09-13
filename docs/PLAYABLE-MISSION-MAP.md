@@ -426,11 +426,12 @@ Prerequisite: M24. Retry: full mission restart.
 | 2 | Ice | **Seal the pass** — DestroyVehicleObjective: Detonate the fuel tanker across the southern pass. |
 | 3 | Ice | **Hold the bridge** — SurviveWavesObjective: Ice: defeat the three red-marked assault waves. Use cover and your rifle. |
 | 4 | Ice | **Off the bridge** — ReachZoneObjective: Ice: parachute down toward the marked extraction boat. |
-| 5 | Ice | **River extraction** — EnterVehicleObjective: Get in the boat. |
+| 5 | Ice | **River extraction** — EnterVehicleObjective: Ice: board the extraction boat as a passenger. |
+| 6 | any brother | **Clear the pickup** — ConditionObjective: Stay in the boat while Guess takes you at least 100 meters clear of the pickup. You can switch to Guess and drive. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M25.BridgeDeck, M25.DeckApproach, M25.HunterApproach, M25.RimPost, M25.Riverbed, M25.TankerSpot.
+Survey references: M25.BoatEscape, M25.BridgeDeck, M25.DeckApproach, M25.HunterApproach, M25.NorthTunnel, M25.RimPost, M25.Riverbed, M25.SouthTunnel, M25.TankerSpot.
 
 ## M26 — THE ALAMO SCRAMBLE
 
@@ -446,7 +447,7 @@ Prerequisite: M25. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M14.McKenzieHangar, M26.DusterPad, M26.PatrolBox.
+Survey references: M26.CrewCar, M26.CrewStart, M26.DusterPad, M26.GohanPost, M26.IcePost, M26.PatrolBox, M26.RunwayStart, M26.SparePlane.
 
 ## M27 — FLIGHT RISK
 
@@ -462,7 +463,7 @@ Prerequisite: M26. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M26.DusterPad, M27.FormUp, M27.JetTrack, M27.SeaPickup.
+Survey references: M26.DusterPad, M26.RunwayStart, M26.SparePlane, M27.CrewStart, M27.FormUp, M27.IcePost, M27.JetTrack, M27.ParkedLazer, M27.RunwayStart, M27.SeaPickup.
 
 ## M28 — OFF THE GRID
 
@@ -758,15 +759,15 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Breach** — ReachZoneObjective: Breach the side entrance. |
-| 2 | Ice | **Clear the floor** — KillTargetsObjective: Clear Sergei's men. |
+| 1 | Ice | **Breach** — ReachZoneObjective: Ice: enter the open loading lane and confront Sergei's men. |
+| 2 | Ice | **Clear the loading lane** — KillTargetsObjective: Clear Sergei's men. |
 | 3 | Ice | **Sergei** — MissionInteraction: Ice: approach Sergei and demand the crate codes |
-| 4 | Ice | **The crates** — MissionInteraction: Ice: load the two marked crates into your car |
-| 5 | Ice | **Bring it back** — DeliverVehicleObjective: Ice: drive the crates back to your door. |
+| 4 | Ice | **The crates** — MissionInteraction: Ice: collect the two cases at the outside loading point |
+| 5 | Ice | **Bring it back** — DeliverVehicleObjective: Ice: drive the crates back to your door.<br>ConditionObjective: Secure both cases at your door and lose the police. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM01.CrateLoad, SM01.Guard, SM01.SergeiOffice, SM01.WarehouseGate.
+Survey references: SM01.Car, SM01.Case, SM01.CrateLoad, SM01.Guard, SM01.SergeiOffice, SM01.WarehouseGate.
 
 ## SM02 — ZERO-DAY INJECTION
 
@@ -774,14 +775,14 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Rooftop** — MissionInteraction: Gohan: use the marked service entrance to take the maintenance stairs to the roof. |
+| 1 | Gohan | **Rooftop** — MissionInteraction: Gohan: run to the building's service door, then take the maintenance stairs to the roof. |
 | 2 | Gohan | **Server bay** — SubdueTargetsObjective: Gohan: use the stun gun on both marked guards. Keep them alive. |
 | 3 | Gohan | **Root terminal** — MissionInteraction: Inject the worm at the root terminal. |
 | 4 | Gohan | **Fire escape** — MissionInteraction: Gohan: return to the roof access and take the maintenance stairs down before IT traces you. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM02.Exit, SM02.Guard, SM02.RoofAccess, SM02.ServerBay, SM02.StairEntry, SM02.Terminal.
+Survey references: SM02.Approach, SM02.Exit, SM02.Guard, SM02.RoofAccess, SM02.ServerBay, SM02.StairEntry, SM02.Terminal.
 
 ## SM03 — MIDNIGHT DRIFT
 

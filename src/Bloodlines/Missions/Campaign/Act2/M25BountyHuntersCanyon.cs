@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Bloodlines.Core;
@@ -35,7 +36,12 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _bridge;
         private Vector3 _riverbed;
         private Vector3 _rim;
-        private bool _escapeShown, _talkedDown;
+        private bool _escapeShown, _talkedDown, _departing;
+        private Vector3 _departureOrigin, _boatEscape;
+        private int _departureStarted, _nextBoatOrder;
+        public const float DepartureDistance = 100f;
+        public bool Departing => _departing;
+        public Vector3 DepartureOrigin => _departureOrigin;
 
         public override string Id => "M25";
         public override string Title => "Bounty Hunters' Canyon";
@@ -48,9 +54,12 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _deckApproach = Ctx.Locations.Position("M25.DeckApproach");
-            _bridge = Ctx.Locations.Position("M25.BridgeDeck");
+            // These keys belong to the rail/tunnel deck, not the gorge floor.
+            if (!MissionSites.Prepare(Ctx.Locations, Id, "M25.DeckApproach", "M25.BridgeDeck", "M25.TankerSpot",
+                    "M25.HunterApproach", "M25.NorthTunnel", "M25.SouthTunnel")) return false;
+            _deckApproach = BoundedPlacement.Ped(Ctx.Locations, "M25.DeckApproach");
+            _bridge = BoundedPlacement.Ped(Ctx.Locations, "M25.BridgeDeck");
+            _boatEscape = Ctx.Locations.Position("M25.BoatEscape");
             _riverbed = Ctx.Locations.Position("M25.Riverbed");
             _rim = Ctx.Locations.Position("M25.RimPost");
 
@@ -71,6 +80,7 @@ namespace Bloodlines.Missions.Campaign
             SpawnBoat();
             if (!RequireAssets(_tanker, _boat)) return false;
             RequireAsset(_boat, "The extraction boat was lost. There is no way off the bridge.");
+            foreach (var hero in Protagonist.All) RequireSurvivor(Ctx.Crew.PedFor(hero.Slot), "A brother was lost before the canyon extraction finished.");
             Game.Player.Character.Weapons.Give(WeaponHash.RPG, 6, false, false);
             Ctx.Crew.CompanionsHoldPosition = true;
             Station(CrewSlot.Guess, _boat, VehicleSeat.Driver);
@@ -109,14 +119,48 @@ namespace Bloodlines.Missions.Campaign
                     GameUtils.Subtitle("~y~Deploy the parachute immediately. Steer east toward the marked boat at the river mouth.", 5000));
 
             yield return new MissionStage("River extraction",
-                    new EnterVehicleObjective("Get in the boat.", () => _boat))
+                    new EnterVehicleObjective("Ice: board the extraction boat as a passenger.", () => _boat, VehicleSeat.Passenger))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context =>
                 {
-                    /* Awarded once by CampaignState.MarkComplete after the mission passes. */
-                    GameUtils.Subtitle("~g~In the boat. The sheriff's department doesn't chase anyone down this gorge; their spotters are over the Alamo.", 5000);
-                })
+                    _departing = true;
+                    _departureOrigin = _boat.Position;
+                    _departureStarted = Game.GameTime;
+                    _nextBoatOrder = 0;
+                    Radio("GUESS", "You're aboard. Hold on while I put some water between us and that bridge.", "M25_RADIO_02_GUESS");
+                });
+
+            yield return new MissionStage("Clear the pickup",
+                    new ConditionObjective("Stay in the boat while Guess takes you at least 100 meters clear of the pickup. You can switch to Guess and drive.", DepartureComplete))
+                .AnyBrother()
                 .AfterCues("M25_S1_03_ICE");
+        }
+
+        private bool DepartureComplete() => _departing && _boat != null && _boat.Exists() && _boat.IsDriveable &&
+            Ctx.Crew.PedFor(CrewSlot.Ice).IsInVehicle(_boat) &&
+            _boat.GetPedOnSeat(VehicleSeat.Driver) == Ctx.Crew.PedFor(CrewSlot.Guess) &&
+            new Vector3(_boat.Position.X, _boat.Position.Y, 0f).DistanceTo(new Vector3(_departureOrigin.X, _departureOrigin.Y, 0f)) >= DepartureDistance;
+
+        protected override void OnUpdate()
+        {
+            if (_departing && !Ctx.Cutscenes.IsActive)
+            {
+                if (Game.GameTime - _departureStarted > 120000)
+                { Fail("The boat did not clear the pickup. Retry the canyon extraction."); return; }
+                var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                // Hold for a passenger who falls out; do not drive off and then
+                // satisfy distance using an empty boat. Never task the active hero.
+                if (guess != null && guess.Exists() && Ctx.Crew.ActiveSlot != CrewSlot.Guess && Game.GameTime >= _nextBoatOrder)
+                {
+                    _nextBoatOrder = Game.GameTime + 3000;
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                    if (ice.IsInVehicle(_boat) && _boat.GetPedOnSeat(VehicleSeat.Driver) == guess)
+                        guess.Task.StartBoatMission(_boat, _boatEscape, VehicleMissionType.GoTo, 12f, VehicleDrivingFlags.None, 8f, (BoatMissionFlags)0);
+                    else guess.Task.ClearAll();
+                }
+            }
+            base.OnUpdate();
         }
 
         // ---------- beats ----------
@@ -187,16 +231,19 @@ namespace Bloodlines.Missions.Campaign
 
             // They come up the access road, which is the only reason a sniper on a
             // bridge is a fair fight rather than a firing range.
-            var approach = Ctx.Locations.Position("M25.HunterApproach");
+            var north = Ctx.Locations.Get("M25.NorthTunnel");
+            var south = Ctx.Locations.Get("M25.SouthTunnel");
 
             for (int i = 0; i < 3 + wave; i++)
             {
                 // Keep the formation on the narrow rail deck instead of spreading
                 // it across the gorge or accepting a nav point on the ground below.
-                var post = approach + new Vector3(i * 0.52f, -i * 4f, 0f);
-                var safe = World.GetSafeCoordForPed(post, false, 0);
-                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe,post,2f) && System.Math.Abs(safe.Z-post.Z)<2f) post=safe;
-                var hunter = World.CreatePed(model, post, 0f);
+                var entry = i % 2 == 0 ? north : south;
+                // Alternate the two tunnel mouths. Stagger along the rail axis,
+                // not outward into the gorge; no lower-level navmesh is accepted.
+                var requested = BoundedPlacement.Offset(entry.Position, entry.Heading, (i % 3 - 1) * .6f, -(i / 2) * 3f);
+                var post = BoundedPlacement.PedAt(requested, entry.Key + " wave " + wave);
+                var hunter = World.CreatePed(model, post, entry.Heading);
                 if (hunter == null || !hunter.Exists()) continue;
 
                 hunter.RelationshipGroup = law;
@@ -204,7 +251,8 @@ namespace Bloodlines.Missions.Campaign
                 hunter.BlockPermanentEvents = true;
                 hunter.Accuracy = 25 + wave * 5;
                 hunter.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
-                hunter.Task.FightAgainstHatedTargets(150f);
+                GTA.Native.Function.Call(GTA.Native.Hash.SET_PED_COMBAT_MOVEMENT, hunter, 1);
+                hunter.Task.FightAgainst(Ctx.Crew.PedFor(CrewSlot.Ice));
 
                 spawned.Add(Track(hunter));
                 _hunters.Add(hunter);
@@ -259,6 +307,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess);
             _hunters.Clear();
         }
     }

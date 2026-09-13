@@ -26,8 +26,8 @@ public static partial class StoryTests
   GTA.UI.Screen.Subtitle=null;Interact(s1,c,CrewSlot.Ice,s1.Sergei.Position,4);
   Check(s1.CurrentStage==3&&s1.CodesGiven&&s1.Sergei.IsAlive&&s1.Sergei.Task.Flees==1&&s1.Sergei.IsInvincible,"The codes given, Sergei runs alive: his outcome is deliberate");
   Interact(s1,c,CrewSlot.Ice,c.Locations.Position("SM01.CrateLoad"),2);
-  Check(s1.CurrentStage==4&&c.Cutscenes.IsActive&&s1.Loaded,"Loading plays as a scene, counted");
-  c.Cutscenes.Skip();Check(s1.Crates.All(cr=>cr.AttachedTo==s1.Car),"Skipping lands both crates in Ice's car");
+  Check(s1.CurrentStage==4&&c.Cutscenes.IsActive&&!s1.Loaded,"Loading starts a required scene but is not counted before physical attachment");
+  c.Cutscenes.Skip();Check(s1.Loaded&&s1.Crates.All(cr=>cr.AttachedTo==s1.Car),"Skipping lands both crates in Ice's car");
   Game.Player.Character.SetIntoVehicle(s1.Car,VehicleSeat.Driver);s1.Car.Position=c.Locations.Position("Apartment.Starter.Ice");Game.Player.WantedLevel=0;s1.Tick();c.Dialogue.Clear();s1.Tick();
   Check(s1.Status==MissionStatus.Passed&&c.State.CargoAt("sergeiCrates")=="Apartment.Starter.Ice","At Ice's door the crates are recorded home");
   string s1src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Solo","SM01LeadAndKevlar.cs"));Check(s1src.Contains("Pump Shotgun Mk II and issues double rifle ammunition")&&!s1src.Contains("armor-piercing damage"),"SM01's reward is said as it works: the Mk II and double rifle ammunition, no invented damage mechanic");

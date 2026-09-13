@@ -90,7 +90,10 @@ public static partial class StoryTests
   Check(m25.CurrentStage==3&&m25.EscapeShown&&c.Cutscenes.IsActive,"The waves held, the way out is shown as a scene before the jump is asked for");
   c.Cutscenes.Skip();m25.Tick();m25.Tick();Check(m25.TalkedDown&&c.Dialogue.HasPending,"Ron talks him down over the radio once the scene is over");
   Game.Player.Character.Position=c.Locations.Position("M25.Riverbed");c.Dialogue.Clear();m25.Tick();Check(m25.CurrentStage==4,"Down at the water, the boat is the job");
-  Game.Player.Character.SetIntoVehicle(m25.Boat,VehicleSeat.Passenger);m25.Tick();c.Dialogue.Clear();m25.Tick();c.Dialogue.Clear();m25.Tick();Check(m25.Status==MissionStatus.Passed,"Ice aboard, M25 passes");
+  Game.Player.Character.SetIntoVehicle(m25.Boat,VehicleSeat.Passenger);m25.Tick();c.Dialogue.Clear();m25.Tick();
+  Check(m25.Status==MissionStatus.Running&&m25.Departing,"Boarding alone no longer passes M25");
+  m25.Boat.Position=m25.DepartureOrigin+new Vector3(101,0,0);c.Dialogue.Clear();m25.Tick();c.Dialogue.Clear();m25.Tick();
+  Check(m25.Status==MissionStatus.Passed,"Ice and Guess actually leave the pickup before M25 passes");
 
   // ---- M26: the spotters, the parked Lazer with its history, Gohan at the laptop; the lead held by listening; the Lazer parked beside the Duster.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage26.json"));c.Vans=new CrewVan(c.State,c.Locations);var m26=new M26AlamoScramble();
@@ -100,7 +103,7 @@ public static partial class StoryTests
   c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&!m26.LeadHeld,"Too early: the call sign is not in yet");
   Game.GameTime+=M26AlamoScramble.ListenMs+1;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==3&&m26.LeadHeld&&c.State.EvidenceOf("charterCallSign")==EvidenceState.CopyHeld,"Listening long enough holds the charter's call sign as evidence");
   m26.Spotters[1].IsDriveable=false;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==4,"The second spotter down, home is the job");
-  m26.Lazer.Position=c.Locations.Position("M26.DusterPad");m26.Lazer.HeightAboveGround=0f;m26.Lazer.Speed=0f;Game.Player.Character.Position=m26.Lazer.Position;c.Dialogue.Clear();m26.Tick();
+  m26.Lazer.Position=c.Locations.Position("M26.RunwayStart");m26.Lazer.HeightAboveGround=0f;m26.Lazer.Speed=0f;Game.Player.Character.Position=m26.Lazer.Position;c.Dialogue.Clear();m26.Tick();
   Check(m26.Parked&&c.Cutscenes.IsActive&&c.State.CargoAt("lazer")=="M26.DusterPad","Landed, the Lazer is parked as a scene beside the Duster and recorded at McKenzie");
   c.Cutscenes.Skip();m26.Tick();c.Dialogue.Clear();m26.Tick();c.Dialogue.Clear();m26.Tick();Check(m26.Status==MissionStatus.Passed,"M26 passes");
   m26.Cleanup();Check(m26.Lazer.Exists()&&m26.ApproachPlane.Exists(),"Both aircraft stay on the apron for M27");

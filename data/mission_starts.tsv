@@ -24,10 +24,10 @@ M22	M22.Beach
 M23	M23.RoadStart
 M24	M24.CraneSpawn
 M25	M25.BridgeDeck
-M26	M26.DusterPad
-M27	M26.DusterPad
+M26	M26.CrewStart
+M27	M27.CrewStart
 SM01	SM01.WarehouseGate
-SM02	SM02.StairEntry
+SM02	SM02.Approach
 SM03	SM03.StartLine
 M28	M28.Approach
 M29	M29.Approach

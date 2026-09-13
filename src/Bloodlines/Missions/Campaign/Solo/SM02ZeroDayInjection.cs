@@ -27,6 +27,11 @@ namespace Bloodlines.Missions.Campaign
         public const int TraceSeconds = 75;
 
         private readonly List<Ped> _guards = new List<Ped>();
+        private readonly NonlethalGuards _nonlethal = new NonlethalGuards();
+        private bool _alarm;
+        private int _nextGuardOrder;
+        public IReadOnlyList<Ped> Guards => _guards;
+        public bool AlarmRaised => _alarm;
 
         private Prop _desk, _terminalProp;
         private Vector3 _roof;
@@ -44,14 +49,20 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Ground(Ctx.Locations, "SM02.StairEntry", "SM02.Exit")) return false;
+            // The arrival is distinct from the building's service door. Both stay
+            // near their authored floor rather than snapping to an unrelated street.
+            var arrival = BoundedPlacement.Ped(Ctx.Locations, "SM02.Approach");
+            Ctx.Locations.Get("SM02.StairEntry").Position = BoundedPlacement.Ped(Ctx.Locations, "SM02.StairEntry");
+            Ctx.Locations.Get("SM02.Exit").Position = BoundedPlacement.Ped(Ctx.Locations, "SM02.Exit");
+            if (GameUtils.IsWithinFlat(arrival, Ctx.Locations.Position("SM02.StairEntry"), 10f))
+                throw new System.InvalidOperationException("SM02 approach must be at least ten meters from the service door. Correct the two survey points.");
             _roof = Ctx.Locations.Position("SM02.RoofAccess");
             _serverBay = Ctx.Locations.Position("SM02.ServerBay");
             _terminal = Ctx.Locations.Position("SM02.Terminal");
             _exit = Ctx.Locations.Position("SM02.Exit");
 
-            if (!Ctx.Crew.DeploySolo(CrewSlot.Gohan, Ctx.Locations.Position("SM02.StairEntry"),
-                    Ctx.Locations.Heading("SM02.RoofAccess")))
+            if (!Ctx.Crew.DeploySolo(CrewSlot.Gohan, arrival,
+                    Ctx.Locations.Heading("SM02.Approach")))
             {
                 return false;
             }
@@ -74,7 +85,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Rooftop",
-                    new MissionInteraction("Gohan: use the marked service entrance to take the maintenance stairs to the roof.", () => Ctx.Locations.Position("SM02.StairEntry"), 2, 2.5f))
+                    new MissionInteraction("Gohan: run to the building's service door, then take the maintenance stairs to the roof.", () => Ctx.Locations.Position("SM02.StairEntry"), 2, 2.5f))
                 .PlayedBy(CrewSlot.Gohan)
                 .WithCues("SM02_S1_01_GOHAN")
                 .OnExit(context => TakeStairs(_roof));
@@ -190,7 +201,10 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 2; i++)
             {
-                var guard = World.CreatePed(model, Ctx.Locations.Position("SM02.Guard" + (i+1)), 90f);
+                string key = "SM02.Guard" + (i + 1);
+                var point = BoundedPlacement.Ped(Ctx.Locations, key);
+                float facing = Ctx.Locations.Get(key).Status == LocationStatus.Surveyed ? Ctx.Locations.Heading(key) : DriveUpStep.HeadingBetween(_roof, point);
+                var guard = World.CreatePed(model, point, facing);
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = aegis;
@@ -198,7 +212,8 @@ namespace Bloodlines.Missions.Campaign
                 guard.BlockPermanentEvents = true;
                 guard.Accuracy = 25;
                 guard.Weapons.Give(WeaponHash.Pistol, 40, true, true);
-                guard.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", guard.Position, 90f);
+                _nonlethal.Add(guard);
+                guard.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", guard.Position, facing);
 
                 _guards.Add(Track(guard));
             }
@@ -220,8 +235,26 @@ namespace Bloodlines.Missions.Campaign
             if (_terminalProp != null && _terminalProp.Exists()) _terminalProp.IsPositionFrozen = true;
         }
 
+        protected override void OnUpdate()
+        {
+            _nonlethal.Update();
+            // One guard dropping is an audible alarm to his partner. Only the
+            // living, not-yet-subdued guard receives a combat task. Never revive or
+            // retask the downed guard when the terminal stage starts.
+            if (!_alarm && _nonlethal.DownCount > 0) { _alarm = true; _nextGuardOrder = 0; }
+            if (_alarm && !Ctx.Cutscenes.IsActive && Game.GameTime >= _nextGuardOrder)
+            {
+                _nextGuardOrder = Game.GameTime + 3000;
+                foreach (var guard in _guards)
+                    if (guard != null && guard.Exists() && !guard.IsDead && !_nonlethal.IsDown(guard))
+                    { guard.Task.ClearAll(); guard.Task.FightAgainst(Game.Player.Character); }
+            }
+            base.OnUpdate();
+        }
+
         protected override void OnCleanup()
         {
+            _nonlethal.Dispose();
             _guards.Clear();
         }
     }
