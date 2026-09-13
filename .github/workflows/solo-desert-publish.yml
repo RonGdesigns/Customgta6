@@ -1,9 +1,9 @@
-# Temporary publisher scoped to Ron's requested comparison branch. Never merges main.
+# One-time metadata correction and verification on the repair branch; self-removes.
 name: solo-desert-publish
 on:
   push:
     branches: [codex/solo-desert-playtest-repairs]
-    paths: ['tools/ci/solo_desert_apply.py']
+    paths: ['.github/workflows/solo-desert-publish.yml']
 permissions:
   contents: read
 concurrency:
@@ -23,8 +23,21 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
-      - name: Apply checksum-verified source patch
-        run: python tools/ci/solo_desert_apply.py
+      - name: Correct the district description without moving the boat endpoint
+        shell: python
+        run: |
+          import pathlib, subprocess
+          p=pathlib.Path
+          subprocess.run(['git','config','core.autocrlf','false'],check=True)
+          for name in filter(None,subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
+              p(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
+          file='data/locations.tsv'
+          raw=subprocess.check_output(['git','show','HEAD:'+file])
+          old=b'Raton river-mouth departure into Alamo; require actual 100 meter separation after boarding'
+          new=b'Cassidy Creek / Raton river-mouth departure; require actual 100 meter separation after boarding'
+          assert raw.count(old)==1, 'Unexpected endpoint description; no source overwritten.'
+          p(file).write_bytes(raw.replace(old,new))
+          p('build').mkdir(exist_ok=True)
       - name: Production and full behavioral verification
         shell: pwsh
         run: |
@@ -45,61 +58,56 @@ jobs:
           python tools/audit_campaign.py --check
           if ($LASTEXITCODE -ne 0) { exit 1 }
           python tools/render_campaign_doc.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           python tools/render_feasibility_doc.py
-          git diff --exit-code docs/FEASIBILITY.md
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git diff --exit-code --ignore-space-at-eol docs/CAMPAIGN.md docs/FEASIBILITY.md
           if ($LASTEXITCODE -ne 0) { exit 1 }
           Get-Content build/repair-story.log -Tail 5
           Get-Content build/repair-regression.log -Tail 3
-      - name: Rebuild and package the actual repaired source
+      - name: Verify the existing binary and clean package
         shell: pwsh
         run: |
           python tools/build_roslyn.py *> build/repair-roslyn.log
           if ($LASTEXITCODE -ne 0) { Get-Content build/repair-roslyn.log -Tail 80; exit 1 }
-          Copy-Item src/Bloodlines/bin/Release/Bloodlines.dll prebuilt/Bloodlines.dll -Force
           python tools/package.py --clean *> build/repair-package.log
           if ($LASTEXITCODE -ne 0) { Get-Content build/repair-package.log -Tail 60; exit 1 }
-      - name: Publish only tested files on the repair branch
+      - name: Publish the verified metadata only and remove this workflow
         shell: python
         env:
           EXPECTED_HEAD: ${{ github.sha }}
         run: |
-          import hashlib, json, os, pathlib, subprocess
-          p = pathlib.Path
-          branch = 'codex/solo-desert-playtest-repairs'
-          assert subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch],text=True).split()[0] == os.environ['EXPECTED_HEAD'], 'Branch advanced; do not overwrite it.'
-          binary = p('prebuilt/Bloodlines.dll').read_bytes()
-          assert binary == p('build/deploy/scripts/Bloodlines.dll').read_bytes(), 'Package mismatch'
-          assert not list(p('build/deploy').rglob('savegame.json'))
-          assert not list(p('build/deploy').rglob('Bloodlines.Surveyed.ini'))
-          assert not p('build/deploy/scripts/Bloodlines/Bloodlines.ini').exists()
-          report = p('docs/SOLO-DESERT-VERIFICATION.md')
-          text = '# Solo/desert repair - automated verification\n\nBaseline: `de923e018203b76c55e1b0b475528e6b06aff3b6`.\n\n'
-          text += 'Verified input: `' + os.environ['EXPECTED_HEAD'] + '`; Actions run `' + os.environ['GITHUB_RUN_ID'] + '`.\n\n'
+          import hashlib, os, pathlib, re, subprocess
+          p=pathlib.Path
+          branch='codex/solo-desert-playtest-repairs'
+          assert subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch],text=True).split()[0]==os.environ['EXPECTED_HEAD'], 'Branch advanced; do not overwrite it.'
+          audit=p('docs/LOCATION-AUDIT.md').read_text(encoding='utf-8')
+          assert re.search(r'\*\*\d+ coordinates checked, 0 flagged\.\*\*',audit), 'District findings remain.'
+          binary=p('prebuilt/Bloodlines.dll').read_bytes()
+          assert binary==p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes(), 'Exact-source rebuild differs.'
+          assert binary==p('build/deploy/scripts/Bloodlines.dll').read_bytes(), 'Package mismatch.'
+          report=p('docs/SOLO-DESERT-VERIFICATION.md')
+          text='# Solo/desert repair - automated verification\n\nBaseline: `de923e018203b76c55e1b0b475528e6b06aff3b6`.\n\nImplementation commit: `48df0a32ab2d86cf5a1902eeb08972820b60223e`.\n\nVerified input: `'+os.environ['EXPECTED_HEAD']+'`; Actions run `'+os.environ['GITHUB_RUN_ID']+'`.\n\n'
           for log in ['story','regression','parser','lint','locations']:
-              text += '## ' + log + '\n```text\n' + '\n'.join(p('build/repair-'+log+'.log').read_text(errors='replace').splitlines()[-5:]) + '\n```\n\n'
-          text += 'Production warnings-as-errors compilation, generated scene/map freshness, Roslyn build and clean packaging passed.\n\nDLL SHA-256: `' + hashlib.sha256(binary).hexdigest() + '`.\n\nNo live GTA run or fresh CodeWalker archive query was performed. See SOLO-DESERT-PLAYTEST-REPAIRS.md for placement evidence, limits and the acceptance route.\n'
+              text+='## '+log+'\n```text\n'+'\n'.join(p('build/repair-'+log+'.log').read_text(encoding='utf-8-sig',errors='replace').splitlines()[-5:])+'\n```\n\n'
+          text+='Production warnings-as-errors compilation, generated scene/map/campaign freshness, Roslyn build and clean packaging passed. Zero district findings are enforced explicitly; the report-only validator exit code alone is not sufficient.\n\nThe M25 departure is still in Cassidy Creek. Its district hint was corrected; its coordinates were not moved to satisfy the report.\n\nFreshly rebuilt, committed and packaged DLLs agree byte-for-byte. DLL SHA-256: `'+hashlib.sha256(binary).hexdigest()+'`.\n\nNo live GTA run or fresh CodeWalker archive query was performed. See SOLO-DESERT-PLAYTEST-REPAIRS.md for evidence, limits and the acceptance route. The retained comparison workflow is read-only and publishes source, preview and provenance artifacts.\n'
           report.write_text(text,encoding='utf-8')
-          paths = json.loads(p('build/repair-paths.json').read_text())
-          paths += ['prebuilt/Bloodlines.dll', str(report)]
-          paths += ['tools/ci/solo_desert_payload.'+str(i) for i in range(7)]
-          paths += ['tools/ci/solo_desert_apply.py']
-          for name in paths:
-              if name.startswith('tools/ci/solo_desert_'): p(name).unlink(missing_ok=True)
+          self_path='.github/workflows/solo-desert-publish.yml'
+          p(self_path).unlink()
+          paths=['data/locations.tsv','docs/LOCATION-AUDIT.md',report.as_posix(),self_path]
           subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
           subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
-          subprocess.run(['git','add','--']+sorted(set(paths)),check=True)
+          subprocess.run(['git','add','--']+paths,check=True)
+          assert set(subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines())==set(paths), 'Unexpected staged scope.'
           subprocess.run(['git','-c','core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol','diff','--cached','--check'],check=True)
-          subprocess.run(['git','commit','-m','fix: repair solo freight, nonlethal guards, ammo restock and desert extraction placements'],check=True)
+          subprocess.run(['git','commit','-m','fix: identify the creek departure accurately and verify the repaired package'],check=True)
           subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
           print('Published:',subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: solo-desert-publisher-evidence
+          name: solo-desert-final-verification
           retention-days: 14
           path: |
             build/repair-*.log
-            build/repair-*.json
-            src/Bloodlines/**/*.cs
-            tests/story/*.cs
-            docs/SOLO-DESERT*.md
+            docs/SOLO-DESERT-VERIFICATION.md
