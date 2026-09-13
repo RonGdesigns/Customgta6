@@ -44,16 +44,16 @@ public static partial class StoryTests
 
   // ---- 2. Weapon loan policy and the SM01 supply line.
   Reset();var crew=Roster();var c=Context(crew);var loans=CampaignState.Load(Path.Combine(root,"loans.json"));var arsenal=new WeaponProgression(loans);
-  var ice=crew.PedFor(CrewSlot.Ice);ice.Weapons.Give(WeaponHash.MG,100,false,true);
+  var ice=crew.PedFor(CrewSlot.Ice);ice.Weapons.MaximumAmmo=9999;ice.Weapons.Give(WeaponHash.MG,100,false,true);
   Game.GameTime+=5000;arsenal.Update(crew,captureAllowed:false);
   Check(!loans.Weapons.TryGetValue("Ice",out var owned)||!owned.Contains((uint)WeaponHash.MG),"A mission-issued weapon is a loan: not captured to the locker while a mission runs");
   for(int i=0;i<3;i++){Game.GameTime+=5000;arsenal.Update(crew,captureAllowed:true);}
   Check(loans.Weapons["Ice"].Contains((uint)WeaponHash.MG),"Free-roam capture still records what the hero actually carries");
-  ice.Weapons.LastAmmo=0;arsenal.Apply(CrewSlot.Ice,ice,restock:true);int before=ice.Weapons.LastAmmo;
+  ice.Weapons.Ammo[(uint)WeaponHash.MG]=0;arsenal.Apply(CrewSlot.Ice,ice,restock:true);int before=ice.Weapons.Ammo[(uint)WeaponHash.MG];
   loans.MarkComplete("SM01",cat);
   Check(loans.FleetUpgrades["armorPiercingSupply"]&&arsenal.HasArmorPiercingSupply(CrewSlot.Ice)&&!arsenal.HasArmorPiercingSupply(CrewSlot.Guess),"SM01 commits Ice's armor-piercing supply line once");
   arsenal.Apply(CrewSlot.Ice,ice,restock:true);
-  Check(ice.Weapons.LastAmmo==before*2&&arsenal.RestockCount(CrewSlot.Ice,(uint)WeaponHash.MG,false)==before,"The supply doubles Ice's rifle restock and leaves ordinary top-ups alone");
+  Check(ice.Weapons.Ammo[(uint)WeaponHash.MG]==Math.Min(ice.Weapons.MaximumAmmo,before*2)&&arsenal.RestockCount(CrewSlot.Ice,(uint)WeaponHash.MG,false)==before,"The supply doubles Ice's rifle restock and leaves ordinary top-ups alone");
 
   // ---- 3. Required assets fail the whole mission, not just a protected stage.
   Reset();crew=Roster();c=Context(crew);var probe=new AssetProbeMission();

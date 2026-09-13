@@ -105,7 +105,7 @@ M24_S1_02_ICE	M24	1	ICE		Sheriff cruisers coming over the ridge! They aren't tak
 M24_S1_03_GOHAN	M24	1	GOHAN		Crates loaded! Cash reserves replenished for Blaine operations.	Gameplay stage 3 completion
 M25_S1_01_ICE	M25	1	ICE		Deputies blocked the southern pass. Detonating fuel tanker on bridge.	Gameplay stage 2 entry
 M25_S1_02_GUESS	M25	1	GUESS		The extraction boat is waiting below, Ice. Use the parachute; I'll talk you down over the radio.	Gameplay stage 4 entry
-M25_S1_03_ICE	M25	1	ICE		In the boat. Getting out of this gorge before another wave arrives.	Gameplay stage 5 completion
+M25_S1_03_ICE	M25	1	ICE		Clear of the bridge. Keep her moving before another wave arrives.	M25 boat has traveled 100 meters with Ice aboard and Guess at the helm
 M26_S1_01_GUESS	M26	1	GUESS		Two spotters over the Alamo. Taking the Lazer up to stop them finding our stash.	Gameplay stage 2 entry
 M26_S1_02_GOHAN	M26	1	GOHAN		Spotter one splashed! Spotter two is diving for Grapeseed-kill him!	Gameplay stage 3 entry
 M26_S1_03_GUESS	M26	1	GUESS		Both spotters down in the lake! Our Alamo stash remains a ghost.	Gameplay stage 4 completion
@@ -258,7 +258,7 @@ SM01_S1_01_ICE	SM01	1	ICE	Low, dangerous growl	Sergei thought he could pocket tw
 SM01_S1_02_ICE	SM01	1	ICE	Kicking side door open, racking heavy shotgun	Six guards between me and Sergei. I'm clearing the floor before I ask for the codes.	Gameplay stage 2 entry
 SM01_S2_03_ENEMY	SM01	2	SERGEI		Vance! Put the gun down! We can work something out, brother!	Gameplay stage 3 entry
 SM01_S2_04_ICE	SM01	2	ICE		We aren't brothers, Sergei. And your credit just expired.	Gameplay stage 3 entry
-SM01_S2_05_ICE	SM01	2	ICE		Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.	Gameplay stage 4 completion
+SM01_S2_05_ICE	SM01	2	ICE		Both cases are secured in the car. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.	Gameplay stage 4 completion
 SM02_S1_01_GOHAN	SM02	1	GOHAN	Whispering through comm headset	Lifeinvader annex. Roof first, then both guards go down quiet. Nobody needs to die for a camera archive.	Gameplay stage 1 entry
 SM02_S1_02_GOHAN	SM02	1	GOHAN		Two guards between me and the server room. Stun gun first; the thermal pulse finds them for me.	Gameplay stage 2 entry
 SM02_S2_03_GOHAN	SM02	2	GOHAN	Keystrokes clicking rapidly	Worm installed. Camera archive access is ours. Getting out before IT traces the connection.	Gameplay stage 3 completion

@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using GTA.Native;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -36,6 +39,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _trunk;
         private Vector3 _home;
         private bool _codesGiven, _loaded;
+        private int _loadingSequence;
+        private bool _loadingStarted;
+        public IReadOnlyList<Ped> Guards => _guards;
 
         public override string Id => "SM01";
         public override string Title => "Lead & Kevlar";
@@ -49,10 +55,12 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _warehouse = Ctx.Locations.Position("SM01.WarehouseGate");
-            _office = Ctx.Locations.Position("SM01.SergeiOffice");
-            _trunk = Ctx.Locations.Position("SM01.CrateLoad");
+            // Do not let a broad navmesh/ground correction return us to the old
+            // container grid. Authored defaults and surveyed positions both use
+            // the same bounded exterior-lane rules.
+            _warehouse = BoundedPlacement.Ped(Ctx.Locations, "SM01.WarehouseGate", BoundedPlacement.OutsideSoloFreight);
+            _office = BoundedPlacement.Ped(Ctx.Locations, "SM01.SergeiOffice", BoundedPlacement.OutsideSoloFreight);
+            _trunk = BoundedPlacement.Ped(Ctx.Locations, "SM01.CrateLoad", BoundedPlacement.OutsideSoloFreight);
             var door = Ctx.Locations.Get(ApartmentTiers.For(CrewSlot.Ice, ApartmentTier.Starter).EntranceKey);
             _home = door != null ? door.Position : _warehouse;
 
@@ -70,6 +78,8 @@ namespace Bloodlines.Missions.Campaign
             SpawnCar();
             if (!RequireAssets(_sergei, _car)) return false;
             if (_guards.Count != 6 || _crates.Count != 2) return false;
+            RequireAsset(_car, "Ice's loading vehicle was lost.");
+            foreach (var crate in _crates) RequireAsset(crate, "A required ammunition case was lost.");
             PlayApproach();
             return true;
         }
@@ -77,7 +87,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Breach",
-                    new ReachZoneObjective("Breach the side entrance.", () => _office, 30f, flat: true))
+                    new ReachZoneObjective("Ice: enter the open loading lane and confront Sergei's men.", () => _office, 17f, flat: true))
                 .PlayedBy(CrewSlot.Ice)
                 .OnExit(context =>
                 {
@@ -88,7 +98,7 @@ namespace Bloodlines.Missions.Campaign
                 })
                 .WithCues("SM01_S1_01_ICE");
 
-            yield return new MissionStage("Clear the floor",
+            yield return new MissionStage("Clear the loading lane",
                     new KillTargetsObjective("Clear Sergei's men.", () => _guards))
                 .PlayedBy(CrewSlot.Ice)
                 .WithCues("SM01_S1_02_ICE");
@@ -107,13 +117,16 @@ namespace Bloodlines.Missions.Campaign
 
             // Counted into his own car: two crates, seen going in.
             yield return new MissionStage("The crates",
-                    new MissionInteraction("Ice: load the two marked crates into your car", () => _trunk, 2, 3.5f))
+                    new MissionInteraction("Ice: collect the two cases at the outside loading point", () => _trunk, 2, 3.5f))
                 .PlayedBy(CrewSlot.Ice)
                 .OnExit(context => PlayLoading());
 
             // Back to his own door with the material; the reward is what the locker actually stocks.
             yield return new MissionStage("Bring it back",
                     new DeliverVehicleObjective("Ice: drive the crates back to your door.", () => _car, () => _home, 25f),
+                    new ConditionObjective("Secure both cases at your door and lose the police.", () =>
+                        _loaded && CargoAttached() && Game.Player.WantedLevel == 0 &&
+                        Game.Player.Character.IsInVehicle(_car) && GameUtils.IsWithinFlat(_car.Position, _home, 25f) && _car.Speed < 2f),
                     new ProtectObjective("", () => _car, "The car went with the crates in it."))
                 .PlayedBy(CrewSlot.Ice)
                 .OnExit(context =>
@@ -140,7 +153,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The shipment",
-                Reason = "Sergei in his office, the two crates he shorted Ice on the floor beside it, six men on the warehouse floor, Ice's car at the gate. Ron and Gohan are on the radio, not here.",
+                Reason = "Sergei in his office, the two crates he shorted Ice on the floor beside it, six men in the exterior lane, Ice's car clear of the freight rows. Ron and Gohan are on the radio, not here.",
                 Blocking = blocking
             }.With("SERGEI", _sergei);
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("SM01 approach scene did not play; the warehouse stands on its own.");
@@ -158,32 +171,52 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>Two crates into the trunk, counted: the material seen going in.</summary>
+        private bool CargoAttached() => _car != null && _car.Exists() && _car.IsDriveable &&
+            _crates.Count == 2 && _crates.All(crate => crate != null && crate.Exists() &&
+                Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY, crate, _car));
+
+        /// <summary>Verify the outside path and real cargo before announcing success.</summary>
         private void PlayLoading()
         {
-            _loaded = true;
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice == null || !ice.Exists() || _car == null || !_car.Exists()) return;
-            var rear = _car.Position - _car.ForwardVector * 3.6f;
-            var blocking = new SceneBlocking();
+            if (ice == null || !ice.Exists() || _car == null || !_car.Exists())
+                throw new InvalidOperationException("Ice or his loading vehicle is missing.");
+            var rear = BoundedPlacement.PedAt(_car.Position - BoundedPlacement.Forward(_car.Heading) * 4f,
+                "SM01 vehicle rear", BoundedPlacement.OutsideSoloFreight);
+            var blocking = new SceneBlocking { DialogueAfterStep = 9 };
             for (int i = 0; i < _crates.Count; i++)
             {
                 var crate = _crates[i];
-                if (crate == null || !crate.Exists()) continue;
-                blocking.Then(new WalkToStep(ice, crate.Position + new Vector3(0.8f, 0f, 0f), 1.1f))
+                var pickup = BoundedPlacement.Ped(Ctx.Locations, "SM01.Case" + (i + 1) + "Access", BoundedPlacement.OutsideSoloFreight);
+                BoundedPlacement.ClearWalk(i == 0 ? ice.Position : rear, pickup, "SM01 case approach");
+                BoundedPlacement.ClearWalk(pickup, rear, "SM01 case to vehicle");
+                blocking.Then(new WalkToStep(ice, pickup, 1.1f))
                     .Then(new CarryPropStep(ice, crate))
                     .Then(new WalkToStep(ice, rear, 1.1f))
-                    .Then(new StowPropStep(ice, crate, _car, TrunkSlots[i % TrunkSlots.Length]));
+                    .Then(new StowPropStep(ice, crate, _car, TrunkSlots[i]));
             }
-            blocking.Then(new ShotStep(2400, _car, new Vector3(-4f, -4f, 1.4f), _car, new Vector3(0f, -2f, 0.7f), 0.5f));
+            blocking.Then(new VerifySceneStep("Both SM01 cases secured outside the freight grid", CargoAttached, () =>
+                { _loaded = true; GameUtils.Subtitle("~g~2 of 2 cases secured in the car.", 4000); }))
+                .Then(new ShotStep(2400, _car, new Vector3(-4f, -4f, 1.4f), _car, new Vector3(0f, -2f, .7f), .5f));
             var spec = new SceneSpec
             {
-                MissionId = Id, Phase = "crates", Title = "Two crates",
-                Reason = "Both crates go into Ice's car, one after the other, counted. The material is his now.",
-                Blocking = blocking
+                MissionId = Id, Phase = "crates", Title = "Two cases",
+                Reason = "Ice collects two portable cases from the outside loading point and secures them in his car. Nobody enters the closed freight containers.",
+                RequiresCompletion = true, Blocking = blocking
             };
+            _loadingSequence = Ctx.Cutscenes.FinishedSequence;
+            _loadingStarted = true;
             var cue = Ctx.Data?.Cue("SM01_S2_05_ICE");
-            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("SM01 crates scene did not play; the crates are placed in the car directly."); blocking.Complete(); }
-            GameUtils.Subtitle("~g~2 of 2 crates in the car.", 4000);
+            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue }))
+                throw new InvalidOperationException("The required loading scene could not start. Retry this mission.");
+        }
+
+        protected override void OnUpdate()
+        {
+            if (_loadingStarted && !Ctx.Cutscenes.IsActive && !_loaded && Ctx.Cutscenes.FinishedSequence != _loadingSequence)
+            { Fail("The cases were not secured. Restart the mission; no delivery was awarded."); return; }
+            if (_loaded && !CargoAttached()) { Fail("The ammunition cases came loose or were lost."); return; }
+            base.OnUpdate();
         }
 
         /// <summary>The aftermath: the car at Ice's door with the crates in it.</summary>
@@ -205,7 +238,7 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("g_m_m_armboss_01");
             if (!GameUtils.RequestModel(model)) return;
 
-            _sergei = Track(World.CreatePed(model, _office, 180f));
+            _sergei = Track(World.CreatePed(model, _office, Ctx.Locations.Heading("SM01.SergeiOffice")));
             model.MarkAsNoLongerNeeded();
             if (_sergei == null || !_sergei.Exists()) return;
 
@@ -215,7 +248,7 @@ namespace Bloodlines.Missions.Campaign
             _sergei.BlockPermanentEvents = true;
             _sergei.Armor = 50;
             _sergei.Weapons.Give(WeaponHash.Pistol, 60, true, true);
-            _sergei.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", _office, 180f);
+            _sergei.Task.StartScenario("WORLD_HUMAN_CLIPBOARD", _office, Ctx.Locations.Heading("SM01.SergeiOffice"));
 
             var blip = Track(_sergei.AddBlip());
             blip.Sprite = BlipSprite.Enemy;
@@ -232,8 +265,9 @@ namespace Bloodlines.Missions.Campaign
                 var model = new Model(GuardModels[i % GuardModels.Length]);
                 if (!GameUtils.RequestModel(model)) continue;
 
-                var offset = new Vector3(-6f + i * 3f, 8f + (i % 3) * 6f, 0f);
-                var guard = World.CreatePed(model, MissionSites.Actor(Ctx.Locations, "SM01.Guard" + (i+1), _warehouse + offset), 0f);
+                string key = "SM01.Guard" + (i + 1);
+                var post = BoundedPlacement.Ped(Ctx.Locations, key, BoundedPlacement.OutsideSoloFreight);
+                var guard = World.CreatePed(model, post, Ctx.Locations.Heading(key));
                 model.MarkAsNoLongerNeeded();
                 if (guard == null || !guard.Exists()) continue;
 
@@ -255,9 +289,11 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
             for (int i = 0; i < 2; i++)
             {
-                var crate = Track(World.CreateProp(model, _trunk + new Vector3(i * 1.2f, 1.5f, 0f), true, false));
+                var point = BoundedPlacement.Ped(Ctx.Locations, "SM01.Case" + (i + 1), BoundedPlacement.OutsideSoloFreight);
+                var crate = Track(World.CreateProp(model, point - new Vector3(0, 0, model.Dimensions.Item1.Z), false, false));
                 if (crate == null || !crate.Exists()) continue;
-                crate.IsPersistent = true;
+                crate.IsPersistent = true; crate.IsPositionFrozen = true;
+                Function.Call(Hash.SET_ENTITY_COLLISION, crate, false, false);
                 _crates.Add(crate);
             }
             model.MarkAsNoLongerNeeded();
@@ -268,7 +304,8 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("baller");
             if (!GameUtils.RequestModel(model)) return;
-            _car = Track(World.CreateVehicle(model, _warehouse + new Vector3(-6f, -6f, 0f), Ctx.Locations.Heading("SM01.WarehouseGate")));
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "SM01.Car", model, allowed: BoundedPlacement.OutsideSoloFreight, departureMeters: 6f);
+            _car = Track(World.CreateVehicle(model, spot, Ctx.Locations.Heading("SM01.Car")));
             model.MarkAsNoLongerNeeded();
             if (_car == null || !_car.Exists()) return;
             _car.IsPersistent = true;

@@ -650,7 +650,7 @@ GUESS|You can work alone without pretending you don't have anyone to call. Tell 
 ICE|Crates secured. I'm clear. I almost switched the radio off out of habit. Thought you ought to know.
 GOHAN|I heard you. That's enough for tonight. We'll check the ammunition together when you get back.
 @approach
-ICE|Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+ICE|Sergei's in the loading lane. The two ammunition cases he shorted me are outside the containers, six men between us. I'm going around the stacks.
 GUESS|Say when you're leaving. That's the whole of what I'm asking.
 
 SM02

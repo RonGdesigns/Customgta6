@@ -53,6 +53,13 @@ public static partial class StoryTests
      if(objective.RequiredCharacter.HasValue&&!objective.IsPassive)Use(crew,objective.RequiredCharacter.Value);
      string name=objective.GetType().Name;
      if(name=="BunkerAccessObjective" && !((Bloodlines.Missions.Campaign.M23GhostInTheSage)m).Interior.Busy) PositionActor(c,objective,objective.AssignmentPosition.Value);
+     if(name=="ConditionObjective"&&m.Id=="M25")
+     {
+      var canyon=(Bloodlines.Missions.Campaign.M25BountyHuntersCanyon)m;
+      crew.PedFor(CrewSlot.Guess).SetIntoVehicle(canyon.Boat,VehicleSeat.Driver);
+      crew.PedFor(CrewSlot.Ice).SetIntoVehicle(canyon.Boat,VehicleSeat.Passenger);
+      canyon.Boat.Position=canyon.DepartureOrigin+new Vector3(101,0,0);
+     }
      if(name=="ConditionObjective"&&m.Id=="M15")
      {
       if(m.CurrentStage==0)Game.Player.Character.Task.LeaveVehicle();

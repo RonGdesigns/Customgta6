@@ -1471,7 +1471,7 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 ### Approach
 
-**ICE** (SM01_SCENE_APPROACH_01_ICE) — Sergei's in the office. The two crates he shorted me are on the floor beside it, six men between. I'm going in the side door.
+**ICE** (SM01_SCENE_APPROACH_01_ICE) — Sergei's in the loading lane. The two ammunition cases he shorted me are outside the containers, six men between us. I'm going around the stacks.
 
 **GUESS** (SM01_SCENE_APPROACH_02_GUESS) — Say when you're leaving. That's the whole of what I'm asking.
 

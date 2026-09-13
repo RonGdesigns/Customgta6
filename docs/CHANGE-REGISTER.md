@@ -292,3 +292,7 @@ User request: “LETS DO the next steps,” following the installed M31–M35 pa
 ## September 13 — M41–M43 final preparation
 
 The user requested the next steps after M36–M40. Added the Bradley credential operation, manned submarine airdrop and final three-vehicle staging. The older 10,000ft cargo-hold proposal is adapted to an airborne 150–350m external cradle: no safe internal fit has been validated for the Kraken, and the external drop remains observable. Gohan stays in the actual sub, two canopy attachments are required before release, collision/water contact and a settling interval determine handover, and a stalled/unsafe drop fails without granting cargo. No rig or cave geometry is invented. New placements receive read-only CodeWalker checks; manual prior locations stay unchanged. Automated fixtures do not constitute live flight/physics acceptance.
+
+## September 13: solo/desert playtest repair (comparison branch)
+
+Ron requested fixes for freight-contained SM01 actors/cargo, the SM02 approach and guard response, persistent nonlethal M15/SM02 subdual, actual home/warehouse ammunition restocks, M25 elevated waves and a 100-meter boat departure, and M26/M27 runway staging. Implemented on `codex/solo-desert-playtest-repairs` from `de923e0`; no main merge. See `SOLO-DESERT-PLAYTEST-REPAIRS.md` for exact scope, conservative placement assumptions, override handling and live acceptance. Preserve the newer campaign and mapping systems; do not interpret this as fresh CodeWalker verification or a live-tested release.

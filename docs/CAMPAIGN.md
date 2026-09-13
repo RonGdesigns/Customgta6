@@ -45,7 +45,7 @@ Exiled to Blaine County, the trio wages asymmetrical warfare from a Cold War rad
 
 | # | Mission | Setting | Objective | Lines | Status |
 |---|---|---|---|---|---|
-| M23 | Ghost In The Sage | Grand Senora Radar Facility · 08:00 HRS · Desert Dust | Clear out cartel outpost at abandoned radar bunker for new base. | 3 | **playable** |
+| M23 | Ghost In The Sage | Grand Senora Desert Bunker · 08:00 HRS · Desert Dust | Secure the bunker entrance, restore power and inspect its underground shelter. | 3 | **playable** |
 | M24 | Liquid Gold | Alamo Sea Shallows · 14:00 HRS · Harsh Sunlight | Salvage first five tons of bullion from Alamo Sea with crane hauler. | 3 | **playable** |
 | M25 | Bounty Hunters' Canyon | Raton Canyon Suspension Bridge · 17:30 HRS · Sunset / Shadows | Ice holds high bridge with thermal sniper against corrupt deputies. | 3 | **playable** |
 | M26 | The Alamo Scramble | Alamo Airspace · 11:00 HRS · Clear / High Wind | Dogfight over Alamo Sea in weaponized Dusters against spotters. | 3 | **playable** |

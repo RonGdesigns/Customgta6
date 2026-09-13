@@ -239,13 +239,59 @@ namespace Bloodlines.Crew
         }
         public void Apply(CrewSlot slot, Ped ped, bool restock = false)
         {
+            if (restock) LastRestockSucceeded = false;
             UnlockRewards();
             if (ped == null || !ped.Exists() || ped.IsDead) return;
             foreach (uint weapon in Owned(slot))
                 if (Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) &&
-                    (restock || !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)))
+                    !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false))
                     ped.Weapons.Give((WeaponHash)weapon, RestockCount(slot, weapon, restock), false, true);
+            // Magazine components determine Mk II ammo types. Install them before
+            // calculating shared pools, and never re-Give an owned weapon as a
+            // substitute for explicitly replenishing its ammunition.
             foreach(uint weapon in Owned(slot)) Core.WeaponUpgrades.Apply(_state,slot,ped,weapon);
+            if (restock) LastRestockSucceeded = RefillAmmo(slot, ped);
+        }
+
+        public bool LastRestockSucceeded { get; private set; }
+
+        private bool RefillAmmo(CrewSlot slot, Ped ped)
+        {
+            bool okay = true;
+            // A pool can be shared by several guns. Use its largest entitlement,
+            // not repeated additive grants or the last gun's smaller allowance.
+            var pools = new Dictionary<uint, Tuple<uint, int>>();
+            foreach (uint weapon in Owned(slot).OrderBy(w => w))
+            {
+                if (!Function.Call<bool>(Hash.IS_WEAPON_VALID, weapon) ||
+                    !Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ped, weapon, false)) continue;
+                try
+                {
+                    uint ammoType = Function.Call<uint>(Hash.GET_PED_AMMO_TYPE_FROM_WEAPON, ped, weapon);
+                    if (ammoType == 0) continue; // melee / an item with no ammunition
+                    var max = new OutputArgument();
+                    if (!Function.Call<bool>(Hash.GET_MAX_AMMO, ped, weapon, max)) { okay = false; continue; }
+                    int capacity = max.GetResult<int>();
+                    if (capacity <= 0) continue;
+                    int have = Function.Call<int>(Hash.GET_AMMO_IN_PED_WEAPON, ped, weapon);
+                    int desired = Math.Max(have, Math.Min(capacity, RestockCount(slot, weapon, true)));
+                    if (!pools.TryGetValue(ammoType, out var pool) || desired > pool.Item2)
+                        pools[ammoType] = Tuple.Create(weapon, desired);
+                }
+                catch (Exception ex) { okay = false; Core.Logger.Error("Locker ammo inspection: " + NameOf((WeaponHash)weapon), ex); }
+            }
+            foreach (var pool in pools.Values)
+            {
+                try
+                {
+                    Function.Call(Hash.SET_PED_AMMO, ped, pool.Item1, pool.Item2, false);
+                    if (Function.Call<int>(Hash.GET_AMMO_IN_PED_WEAPON, ped, pool.Item1) < pool.Item2) okay = false;
+                }
+                catch (Exception ex) { okay = false; Core.Logger.Error("Locker ammo refill", ex); }
+            }
+            // No weapon selection, upgrade removal, unlimited-ammo flag or global
+            // ammo modification. This is a top-up of the active hero's owned guns.
+            return okay;
         }
         /// <summary>
         /// Ownership capture runs only in free roam. A weapon a mission hands out is a

@@ -39,7 +39,6 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _granger;
         private Prop _laptop;
         private Vector3 _pad;
-        private Vector3 _hangar;
         private Vector3 _patrolBox;
         private int _listenUntil;
         private bool _listening, _leadHeld, _parked;
@@ -58,13 +57,12 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
-            _pad = Ctx.Locations.Position("M26.DusterPad");
-            _hangar = Ctx.Locations.Position("M14.McKenzieHangar");
+            // Do not run aircraft keys through broad pedestrian ground snapping.
+            _pad = Ctx.Locations.Position("M26.RunwayStart");
             _patrolBox = Ctx.Locations.Position("M26.PatrolBox");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _pad + new Vector3(6f, 0f, 0f),
-                    Ctx.Locations.Heading("M26.DusterPad")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, BoundedPlacement.Ped(Ctx.Locations, "M26.CrewStart"),
+                    Ctx.Locations.Heading("M26.CrewStart")))
             {
                 return false;
             }
@@ -77,8 +75,8 @@ namespace Bloodlines.Missions.Campaign
             if (!RequireAssets(_duster)) return false;
             if (_spotters.Count != 2 || _pilots.Count != 2) return false;
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Ice, _hangar + new Vector3(4f, -6f, 0f));
-            Station(CrewSlot.Gohan, _granger != null && _granger.Exists() ? _granger.Position + new Vector3(0f, 3.5f, 0f) : _pad + new Vector3(0f, -20f, 0f));
+            Station(CrewSlot.Ice, BoundedPlacement.Ped(Ctx.Locations, "M26.IcePost"));
+            Station(CrewSlot.Gohan, BoundedPlacement.Ped(Ctx.Locations, "M26.GohanPost"));
             PlayApproach();
             return true;
         }
@@ -113,7 +111,7 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("M26_S1_02_GOHAN");
 
             yield return new MissionStage("Home",
-                    new DeliverVehicleObjective("Guess: land the Lazer at McKenzie and stop.", () => _duster, () => _pad, 65f, land: true))
+                    new DeliverVehicleObjective("Guess: land the Lazer at McKenzie and stop.", () => _duster, () => _pad, 12f, land: true))
                 .OnExit(context => PlayPark());
         }
 
@@ -192,7 +190,8 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("lazer");
             if (!GameUtils.RequestModel(model)) return;
 
-            _duster = Track(World.CreateVehicle(model, _pad, Ctx.Locations.Heading("M26.DusterPad")));
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M26.RunwayStart", model, departureMeters: 25f);
+            _duster = Track(World.CreateVehicle(model, spot, Ctx.Locations.Heading("M26.RunwayStart")));
             model.MarkAsNoLongerNeeded();
             if (_duster == null || !_duster.Exists()) return;
 
@@ -210,7 +209,8 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("duster");
             if (!GameUtils.RequestModel(model)) return;
-            _approachPlane = Track(World.CreateVehicle(model, _pad + new Vector3(24f, 0f, 0f), Ctx.Locations.Heading("M26.DusterPad")));
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M26.SparePlane", model);
+            _approachPlane = Track(World.CreateVehicle(model, spot, Ctx.Locations.Heading("M26.SparePlane")));
             model.MarkAsNoLongerNeeded();
             if (_approachPlane == null || !_approachPlane.Exists()) return;
             _approachPlane.IsPersistent = true;
@@ -220,13 +220,16 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The crew's Granger on the apron with Gohan's laptop on the hood: the transmission problem has a place.</summary>
         private void SpawnGranger()
         {
-            var spot = _pad + new Vector3(-30f, 12f, 0f);
-            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, 90f) : null;
+            var carModel = new Model("granger");
+            if (!GameUtils.RequestModel(carModel)) return;
+            var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M26.CrewCar", carModel);
+            carModel.MarkAsNoLongerNeeded();
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M26.CrewCar")) : null;
             if (granger == null)
             {
                 var model = new Model("granger");
                 if (!GameUtils.RequestModel(model)) return;
-                granger = World.CreateVehicle(model, spot, 90f);
+                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M26.CrewCar"));
                 model.MarkAsNoLongerNeeded();
             }
             _granger = Track(granger);

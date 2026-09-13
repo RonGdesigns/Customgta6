@@ -11,9 +11,9 @@ M01.RegroupPoint	1073.0	-3160.0	5.9	0	land	estimate	Terminal Island Dry-Docks
 M01.ExitPoint	1180.00	-2990.00	5.90	0	land	estimate	Terminal Island Dry-Docks
 M01.GuessApproach	1175.0	-3090.0	6.0	180	land	estimate	Terminal Island Dry-Docks
 M01.GohanApproach	965.0	-3110.0	6.0	180	land	estimate	Terminal Island Dry-Docks
-SM01.WarehouseGate	1035.0	-3100.0	5.9	340	land	estimate	Terminal Island Warehouse 4
-SM01.SergeiOffice	1046.0	-3080.0	5.9	0	land	estimate	Terminal Island Warehouse 4
-SM01.CrateLoad	1028.0	-3096.0	5.9	0	land	estimate	Terminal Island Warehouse 4
+SM01.WarehouseGate	1038.410	-3034.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.SergeiOffice	1052.410	-3053.640	5.900	270	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.CrateLoad	1039.410	-3048.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
 M02.InterceptStart	102.0	-1810.0	27.0	60	land	estimate	East Los Santos / Olympic Fwy
 M02.CanalEscape	285.0	-1900.0	24.0	0	land	estimate	East Los Santos / Olympic Fwy
 M03.RailJunction	180.0	-1900.0	24.0	90	land	estimate	Davis
@@ -496,13 +496,13 @@ M43.Land	-210	6530	10.098	0	land	estimate	Offline map checked; live survey pendi
 M43.ShoreCar	-220	6550	9.578	180	land	estimate	Offline map checked; live survey pending
 M43.Board	-200	6560	10.025	0	land	estimate	Offline map checked; live survey pending
 M43.BoardWork	-203	6560	10.136	0	land	estimate	Offline map checked; live survey pending
-SM01.Guard1	1026.000	-3106.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM01.Guard2	1033.000	-3106.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM01.Guard3	1040.000	-3113.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM01.Guard4	1047.000	-3064.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM01.Guard5	1061.000	-3113.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM01.Guard6	1068.000	-3085.000	5.900	180	land	estimate	Offline collision checked; live survey pending
-SM02.StairEntry	-1098.000	-266.000	37.620	0	land	estimate	Offline collision checked; live survey pending
+SM01.Guard1	1028.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard2	1032.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard3	1036.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard4	1040.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard5	1044.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Guard6	1048.410	-3059.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM02.StairEntry	-1091.000	-263.500	37.620	0	land	estimate	Lifeinvader service-side doorway; near roof access XY, not arrival; live door alignment pending
 SM02.Guard1	-1074.000	-250.000	57.922	90	land	estimate	Offline collision checked; live survey pending
 SM02.Guard2	-1078.000	-246.000	57.922	0	land	estimate	Offline collision checked; live survey pending
 M16.TankEntry1	-2285.000	3170.000	32.800	90	land	estimate	Road-resolved armor approach; vehicle clearance checked at runtime
@@ -804,3 +804,22 @@ Bunker.Senora.Room.Door	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrun
 Bunker.Senora.Room.Inspect	892.6384	-3245.8664	-98.265	270	interior	estimate	Bunker entry room; shares the successfully loaded arrival floor so inspection does not require crossing interior partitions
 M23.GuessStart	841	2964	44.846	0	land	estimate	Grand Senora bunker approach; collision checked, beside the arrival car
 M23.RoadStart	868	3091.75	39.699	180	land	estimate	Senora north access road; CodeWalker verified vehicle node and collision floor
+SM01.Car	1025.410	-3048.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Case1	1037.410	-3051.640	5.900	0	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Case1Access	1037.410	-3049.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Case2	1040.410	-3051.640	5.900	0	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM01.Case2Access	1040.410	-3049.640	5.900	180.3	land	estimate	Terminal Island; exterior lane relative to Ron reference 1038.41 -3059.64 5.90 H180.3; offsets need live acceptance
+SM02.Approach	-1110.000	-275.000	37.620	320	land	estimate	Lifeinvader sidewalk run-up; separate from service door; bounded same-floor placement
+M25.NorthTunnel	-527.000	4515.000	89.034	172	land	estimate	Raton north rail/tunnel approach; existing inspected deck anchor; runtime same-level only
+M25.SouthTunnel	-504.000	4340.000	89.042	352	land	estimate	Raton south rail/tunnel approach derived from tanker deck; live route acceptance pending
+M25.BoatEscape	-245.000	4440.000	30.000	90	water	estimate	Raton river-mouth departure into Alamo; require actual 100 meter separation after boarding
+M26.RunwayStart	2030.000	4760.000	40.140	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M26.SparePlane	2060.000	4770.000	40.448	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M26.CrewStart	2035.000	4747.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M26.CrewCar	2000.000	4780.000	40.762	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M26.IcePost	2006.000	4786.000	40.762	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M26.GohanPost	1995.000	4778.000	40.762	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M27.RunwayStart	2030.000	4760.000	40.140	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M27.ParkedLazer	2065.000	4750.000	40.638	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M27.CrewStart	2035.000	4747.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M27.IcePost	2038.000	4748.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending

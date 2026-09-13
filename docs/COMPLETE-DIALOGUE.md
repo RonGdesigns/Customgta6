@@ -1289,9 +1289,9 @@ Delivery:
 Trigger: Gameplay stage 4 entry
 
 **ICE** `M25_S1_03_ICE`
-In the boat. Getting out of this gorge before another wave arrives.
+Clear of the bridge. Keep her moving before another wave arrives.
 Delivery: 
-Trigger: Gameplay stage 5 completion
+Trigger: M25 boat has traveled 100 meters with Ice aboard and Guess at the helm
 
 ### Aftermath
 
@@ -3382,7 +3382,7 @@ Delivery:
 Trigger: Gameplay stage 3 entry
 
 **ICE** `SM01_S2_05_ICE`
-Crates loaded in the trunk. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.
+Both cases are secured in the car. Armor-piercing tungsten-core 7.62. Gohan and Guess have what they need.
 Delivery: 
 Trigger: Gameplay stage 4 completion
 
