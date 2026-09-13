@@ -387,18 +387,19 @@ Prerequisite: M22. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Approach the bunker** — ReachZoneObjective: Ice: approach the marked bunker entrance. Guess covers the west side; Gohan watches the generator. |
-| 2 | Ice | **Clear the bunker yard** — KillTargetsObjective: Clear the cartel squatters out. |
-| 3 | Guess | **Secure the bays** — MultiHoldObjective: Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay. |
-| 4 | Gohan | **Power up** — MissionInteraction: Gohan: use the control side of the visible generator to restore bunker access. |
-| 5 | Gohan | **Enter the bunker** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 6 | Gohan | **Check the interior** — MissionInteraction: Gohan: walk down the marked entry passage and inspect the bunker. Ice guards outside; Guess checks vehicle access. |
-| 7 | Gohan | **Return outside** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 8 | Gohan | **Regroup at the entrance** — ReachZoneObjective: Gohan: rejoin the crew at the bunker entrance. |
+| 1 | Guess | **Drive to the approach** — DeliverVehicleObjective: Guess: drive the crew to the marked bunker approach and stop. Ice takes point once you arrive.<br>ConditionObjective: Stop the crew car with Ice and Gohan aboard. |
+| 2 | Ice | **Approach the bunker** — ReachZoneObjective: Ice: approach the marked bunker entrance. Guess covers the west side; Gohan watches the generator. |
+| 3 | Ice | **Clear the bunker yard** — KillTargetsObjective: Clear the cartel squatters out. |
+| 4 | Guess | **Secure the bays** — MultiHoldObjective: Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay. |
+| 5 | Gohan | **Power up** — MissionInteraction: Gohan: use the control side of the visible generator to restore bunker access. |
+| 6 | Gohan | **Enter the bunker** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 7 | Gohan | **Check the interior** — MissionInteraction: Gohan: inspect the bunker entry room at the yellow marker. Stay here while checking the lights and shelter; the crew waits outside. |
+| 8 | Gohan | **Return outside** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 9 | Gohan | **Regroup at the entrance** — ReachZoneObjective: Gohan: rejoin the crew at the bunker entrance. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M23.Approach, M23.ArrivalCar, M23.Entrance, M23.EscapeRoad, M23.FuelBay, M23.Guard, M23.GuessStart, M23.PowerPanel, M23.ToolBay, M23.VehicleBay.
+Survey references: M23.Approach, M23.Entrance, M23.EscapeRoad, M23.FuelBay, M23.Guard, M23.GuessStart, M23.PowerPanel, M23.RoadStart, M23.ToolBay, M23.VehicleBay.
 
 ## M24 — LIQUID GOLD
 

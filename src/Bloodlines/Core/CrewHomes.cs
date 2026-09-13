@@ -84,6 +84,12 @@ namespace Bloodlines.Core
         public Action RouteNextLead { get; set; }
         public Action<Vehicle> ApplyFleetUpgrade { get; set; }
         public Func<bool> Allowed { get; set; }
+        /// <summary>Revalidate the held headquarters and visit when a fleet purchase is confirmed.</summary>
+        public bool CanManageFleet => _crew.IsDeployed &&
+            ((_foundryVisit && FoundryUnlocked) || (_bunkerVisit && BunkerUnlocked)) &&
+            Apartment.Inside && !Apartment.Busy && Allowed?.Invoke() != false &&
+            Game.Player.Character != null && Game.Player.Character.Exists() && !Game.Player.Character.IsDead &&
+            !Game.Player.Character.IsInCombat && Game.Player.WantedLevel == 0;
         public string WorkbenchName => _crew.ActiveSlot == CrewSlot.Ice ? "Restock weapons and armor" :
             _crew.ActiveSlot == CrewSlot.Gohan ? "Review the next verified lead" : "Repair the nearby vehicle";
         private bool CanUse(float radius)

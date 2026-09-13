@@ -29,6 +29,9 @@ public static partial class StoryTests
   Reset();crew=Roster();c=Context(crew);var m23=new M23GhostInTheSage();
   Check(m23.Begin(c)&&m23.GeneratorProp!=null&&!World.Props.Any(p=>p.Model.Name=="prop_gate_airport_01"),"M23 uses the shipped bunker entrance instead of an unrelated airport gate");
   Check(World.Props.Any(p=>p.Model.Name=="prop_tool_bench02")&&World.Props.Any(p=>p.Model.Name=="prop_barrel_02a"),"M23 yard inspections have the named props");
+  c.Cutscenes.Skip();Game.Player.Character.IsShooting=true;Game.GameTime+=2200;m23.Tick();
+  Check(World.Created.Where(p=>p.Model.Name.StartsWith("g_m_y_mex")&&p.IsAlive).All(p=>p.Task.Fights>0),"Shooting on the approach provokes retaliation without waiting for the breach marker");
+  Game.Player.Character.IsShooting=false;
   m23.Abort();m23.Cleanup();Check(!m23.GeneratorProp.Exists(),"Aborting removes mission props for a clean retry");
   BunkerAccessChecks();
   Check(!M29DustAndDiesel.AtRetreatPoint(1000,251)&&M29DustAndDiesel.AtRetreatPoint(1000,250),"M29 pursuit breaks off at the final quarter of its initial delivery distance");

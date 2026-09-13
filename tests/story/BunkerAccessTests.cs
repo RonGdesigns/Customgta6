@@ -27,8 +27,17 @@ public static partial class StoryTests
   Function.InteriorId=271617;Function.InteriorReady=true;World.CollisionReady=true;homes.EnterBunker();Game.GameTime+=300;homes.UpdateTransition();homes.UpdateTransition();
   Check(homes.Apartment.Inside&&homes.BunkerVisit&&homes.ResidenceName.Contains("Senora")&&homes.SavePosition==outside,"A ready furnished bunker is usable and saves the outside position");
   Check(Function.Calls.Any(x=>x.Item1==Hash.REQUEST_IPL&&(string)x.Item2[0]==BunkerSite.ExteriorIpl)&&Function.Calls.Any(x=>x.Item1==Hash.ACTIVATE_INTERIOR_ENTITY_SET&&(string)x.Item2[1]=="standard_bunker_set"),"The real exterior and standard interior furnishings are requested");
-  homes.ExitApartment();Game.GameTime+=300;homes.UpdateTransition();homes.UpdateTransition();
+  Check(homes.CanManageFleet,"Fleet purchases are available inside the held Senora bunker without the Foundry");
+  int plans=0;homes.OpenPlanningBoard=()=>plans++;homes.ReviewFoundryPlan();
+  Check(plans==1,"The bunker planning action reaches the shared campaign board");
+  var planSource=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","DevMenu.CampaignPlan.cs"));
+  Check(planSource.Contains("_homes.CanManageFleet")&&!planSource.Contains("!_homes.FoundryVisit"),"The planning menu accepts both headquarters, including the bunker");
+  Game.Player.Character.Health=100;homes.Rest();Check(Game.Player.Character.Health==CrewDurability.Health,"Rest and save remains functional inside the bunker");
+  homes.Allowed=()=>false;Check(!homes.CanManageFleet,"A mission or blocked activity prevents headquarters fleet purchases");homes.Allowed=()=>true;
+  Game.Player.WantedLevel=1;Check(!homes.CanManageFleet,"Wanted heat still blocks headquarters fleet purchases");Game.Player.WantedLevel=0;
+  homes.ExitApartment();Check(!homes.CanManageFleet,"Fleet confirmation cannot proceed during an exit transition");Game.GameTime+=300;homes.UpdateTransition();homes.UpdateTransition();
   Check(!homes.Apartment.Inside&&!homes.BunkerVisit&&Game.Player.Character.Position==outside&&Game.Player.CanControlCharacter,"Leaving returns to the same entrance without losing controls");
+  Check(!homes.CanManageFleet,"A stale fleet menu cannot buy after leaving the headquarters");
   homes.EnterBunker();Game.GameTime+=300;homes.UpdateTransition();homes.UpdateTransition();homes.StopApartment();
   Check(Game.Player.Character.Position==outside&&!homes.Apartment.Inside&&!homes.BunkerVisit,"Cancellation inside returns safely to the exterior");
   var access=new ApartmentAccess(crew);Function.InteriorId=0;World.CollisionReady=false;

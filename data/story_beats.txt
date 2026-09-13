@@ -222,6 +222,8 @@ GUESS|Then we recover only what we can guard from the Alamo. No more betting the
 @approach
 ICE|Nine around the entrance and the service yard. They live here; they will fight for it. I take the approach. Keep the vehicle clear.
 GUESS|There is a dirt road out to the north. I will check the yard for our rigs. Gohan, find the generator controls; we need to know what still works.
+@road
+GUESS|Bunker is down this dirt road. Stay in the car until I pull up. Ice, take point when we stop.
 
 M24
 GOHAN|Five tons first. The rest stays hidden. We need operating money, not a convoy that advertises the entire haul.

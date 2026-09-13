@@ -73,6 +73,21 @@ public static partial class StoryTests
   Check(vans.Select(CrewVan.FleetChoices.First(c=>c.Model=="granger"),true)&&state.CashOnHand==80000,"Returning to the owned Granger costs nothing");car=vans.Spawn(Vector3.Zero,0);Check((int)car.Mods.PrimaryColor==7,"Granger retains its separate saved customization");
   vans.Select(insurgent,true);car=vans.Spawn(Vector3.Zero,0);Check(car.Mods[VehicleModType.Engine].Index==2&&car.Mods.NeonLightsColor.ToArgb()==Color.Purple.ToArgb()&&state.CashOnHand==80000,"Re-selecting the Insurgent restores its upgrades and neon without rebuying");
   restored=CampaignState.Load(Path.Combine(root,"fleet19.json"));Check(restored.CrewVan.Model=="insurgent2"&&restored.CrewVan.Fleet.ContainsKey("granger"),"Crew fleet ownership and active selection survive reload");
+  // The Foundry is lost in M22; the bunker must retain the same fleet commerce.
+  state.Safehouses["cypressFoundry"]=false;state.Safehouses[BunkerSite.Unlock]=true;state.CashOnHand=200000;
+  var baller=CrewVan.FleetChoices.First(x=>x.Model=="baller2");
+  Check(vans.Select(baller,true)&&state.CashOnHand==160000&&state.CrewVan.Model=="baller2","Bunker-only owners can buy a crew vehicle at its listed price");
+  Check(!vans.Select(baller,true)&&state.CashOnHand==160000,"Selecting the current model never charges twice");
+  Check(vans.StashPosition==ctx.Locations.Position("M23.VehicleBay"),"Bunker fleet pickup moves to the exterior vehicle yard");
+  Game.Player.Character.Position=vans.StashPosition.Value;vans.Update(crew,true);
+  Check(vans.Current!=null&&vans.Current.Model.Name=="baller2"&&vans.Current.Position.DistanceTo(vans.StashPosition.Value)<2f,"Purchased crew vehicle appears at the bunker yard on return outside");
+  Game.Player.Character.SetIntoVehicle(vans.Current,VehicleSeat.Driver);
+  Check(!vans.Select(insurgent,true)&&vans.Current.Exists()&&state.CashOnHand==160000,"Bunker selection preserves occupied vehicles and cash");Game.Player.Character.Task.LeaveVehicle();
+  Check(vans.Select(insurgent,true)&&state.CashOnHand==160000,"Previously owned crew vehicles remain free to select at the bunker");
+  state.Safehouses[BunkerSite.Unlock]=false;
+  Check(!vans.Select(baller,true)&&state.CashOnHand==160000,"Losing both headquarters blocks fleet purchases even with a stale menu");
+  var menu=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Core","DevMenu.Shops.cs"));
+  Check(menu.Contains("_homes.CanManageFleet && !_missions.IsRunning")&&!menu.Contains("_homes.FoundryVisit&&_homes.Apartment.Inside"),"The confirmation action uses shared headquarters access, not the old Foundry-only condition");
   var eject=typeof(VehiclePanelDamage).GetMethod("TryEjectCivilian",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static);
   var traffic=new Vehicle();var driver=new Ped();driver.SetIntoVehicle(traffic,VehicleSeat.Driver);
   eject.Invoke(null,new object[]{traffic,new Vector3(0,1,0),20f,new Vector3(0,25,0)});

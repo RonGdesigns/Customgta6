@@ -9,10 +9,11 @@ namespace Bloodlines.Core
     public static class MissionSites
     {
         private static readonly Dictionary<MissionLocation, float> Depths = new Dictionary<MissionLocation, float>();
-        public static bool Prepare(LocationBook book, string mission)
+        public static bool Prepare(LocationBook book, string mission, params string[] fixedSurfaceKeys)
         {
             var sites = book.All.Where(l => !l.IsEditorSlot && l.Key.StartsWith(mission + ".", StringComparison.OrdinalIgnoreCase)).ToArray();
-            if (!Ground(book, sites.Where(l => l.Kind == "land").Select(l => l.Key).ToArray())) return false;
+            // A verified prop/platform surface must not snap to the terrain navmesh beneath it.
+            if (!Ground(book, sites.Where(l => l.Kind == "land" && !fixedSurfaceKeys.Contains(l.Key, StringComparer.OrdinalIgnoreCase)).Select(l => l.Key).ToArray())) return false;
             foreach (var location in sites.Where(l => l.Kind == "water"))
             {
                 // Negative authored sea coordinates represent depth, not a bad spawn height.

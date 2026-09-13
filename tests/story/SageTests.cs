@@ -14,24 +14,38 @@ public static partial class StoryTests
  static void SageChecks()
  {
   // ---- M23: the survey before anyone moves, the bays looked into, the generator by hand, the limits named, the walk to the door.
-  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage23.json"));c.Vans=new CrewVan(c.State,c.Locations);var m23=new M23GhostInTheSage();
+  Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage23.json"));c.Vans=new CrewVan(c.State,c.Locations);var m23=new M23GhostInTheSage();var entranceBefore=c.Locations.Position(BunkerSite.EntranceKey);
   Check(m23.Begin(c)&&c.Cutscenes.IsActive&&m23.Granger!=null&&m23.EndpointKind==MissionEndpoint.SafehouseArrival,"M23 opens on the exterior survey with the Granger they came in; the bunker is a safehouse endpoint");
-  c.Cutscenes.Skip();m23.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.Position=c.Locations.Position("M23.Entrance");m23.Tick();
-  Check(m23.CurrentStage==1&&m23.Roles.For(CrewSlot.Guess).State==RoleState.Covering&&m23.Roles.For(CrewSlot.Gohan).State==RoleState.Covering,"On the approach the other two take cover; nobody teleports into the yard");
-  foreach(var p in World.Created.Where(p=>p.Model.Name.StartsWith("g_m_y_mex")))p.IsDead=true;m23.Tick();Check(m23.CurrentStage==2,"The yard clear, the bays are Ron's");
+  Check(c.Locations.Position(BunkerSite.EntranceKey)==entranceBefore&&entranceBefore.Z>45f,"Preparing M23 preserves the live hatch surface instead of snapping it below the entrance");
+  Check(crew.ActiveSlot==CrewSlot.Guess&&Protagonist.All.All(h=>crew.PedFor(h.Slot).IsInVehicle(m23.Granger))&&m23.Granger.Position.DistanceTo(c.Locations.Position("M23.Entrance"))>90f,"M23 starts with all three in their crew car on the approach road");
+  c.Cutscenes.Skip();m23.Tick();Check(m23.CurrentStage==0,"The parked starting car cannot satisfy the approach automatically");
+  m23.Granger.Position=c.Locations.Position("M23.Approach");m23.Granger.Speed=0;Game.Player.Character.Position=m23.Granger.Position;m23.Tick();
+  Check(m23.CurrentStage==1&&c.Cutscenes.IsActive,"Driving to the approach triggers the site survey before Ice takes point");
+  c.Cutscenes.Skip();m23.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.Position=c.Locations.Position("M23.Entrance");m23.Tick();
+  Check(m23.CurrentStage==2&&m23.Roles.For(CrewSlot.Guess).State==RoleState.Covering&&m23.Roles.For(CrewSlot.Gohan).State==RoleState.Covering,"On the approach the other two take cover; nobody teleports into the yard");
+  Check(World.Created.Where(p=>p.Model.Name.StartsWith("g_m_y_mex")&&p.IsAlive).All(p=>p.Task.Fights>0),"Every surviving squatter receives a direct combat target when Ice breaches");
+  foreach(var p in World.Created.Where(p=>p.Model.Name.StartsWith("g_m_y_mex")))p.IsDead=true;m23.Tick();Check(m23.CurrentStage==3,"The yard clear, the bays are Ron's");
   foreach(var key in new[]{"M23.ToolBay","M23.FuelBay","M23.VehicleBay"})Interact(m23,c,CrewSlot.Guess,c.Locations.Position(key),5);
   Check(m23.Limits.Count==2&&m23.Limits.Contains("no tools")&&m23.Limits.Contains("no fuel reserve"),"Each bay checked says what is there and adds what is missing to the list");
-  m23.Tick();m23.Tick();Check(m23.CurrentStage==3,"The bays checked, the generator is Gohan's");
+  m23.Tick();m23.Tick();Check(m23.CurrentStage==4,"The bays checked, the generator is Gohan's");
   GTA.UI.Screen.Subtitle=null;Interact(m23,c,CrewSlot.Gohan,c.Locations.Position("M23.PowerPanel"),10);
-  Check(m23.CurrentStage==4&&m23.Powered&&c.Cutscenes.IsActive&&m23.LimitsShown&&m23.Limits.Count==4&&c.State.FleetUpgrades["bunkerGenerator"],"The generator started by hand plays as a scene and the four limits are named as the next jobs");
+  Check(m23.CurrentStage==5&&m23.Powered&&c.Cutscenes.IsActive&&m23.LimitsShown&&m23.Limits.Count==4&&c.State.FleetUpgrades["bunkerGenerator"],"The generator started by hand plays as a scene and the four limits are named as the next jobs");
   c.Cutscenes.Skip();m23.Tick();c.Dialogue.Clear();World.CollisionReady=true;
   Game.Player.Character.Position=c.Locations.Position(BunkerSite.EntranceKey);Game.Accept=true;m23.Tick();
-  Check(m23.Interior.Busy&&m23.CurrentStage==4,"M23 waits for the real room rather than passing at an exterior gate");
+  Check(m23.Interior.Busy&&m23.CurrentStage==5,"M23 waits for the real room rather than passing at an exterior gate");
   Game.GameTime+=300;m23.Tick();m23.Tick();m23.Tick();
-  Check(m23.Interior.Inside&&m23.CurrentStage==5,"The loaded room is a required playable stage");
-  Interact(m23,c,CrewSlot.Gohan,c.Locations.Position(BunkerSite.InspectKey),6);
-  Check(m23.CurrentStage==6,"Inspecting the bunker asks Gohan to return outside");
-  Game.Player.Character.Position=c.Locations.Position(BunkerSite.DoorKey);Game.Accept=true;m23.Tick();
+  Check(m23.Interior.Inside&&m23.CurrentStage==6,"The loaded room is a required playable stage");
+  var arrivalInside=Game.Player.Character.Position;
+  Check(arrivalInside.DistanceTo(c.Locations.Position(BunkerSite.InspectKey))<1f,"Bunker inspection is reachable on the actual loaded entry floor, without a test teleport across partitions");
+  Game.Accept=false;Game.GameTime+=5000;c.Dialogue.Clear();m23.Tick();
+  Check(m23.CurrentStage==6,"Entering the bunker does not automatically inspect it; Gohan must press the interaction button");
+  Game.Accept=true;m23.Tick();Game.Accept=false;Game.GameTime+=2000;m23.Tick();
+  Check(m23.CurrentStage==6,"Bunker inspection takes time after the explicit button press");
+  Game.GameTime+=2500;m23.Tick();
+  Check(Game.Player.Character.Position==arrivalInside,"Inspection completes from the arrival room without moving or teleporting the player");
+  Check(m23.CurrentStage==7,"Inspecting the bunker asks Gohan to return outside");
+  Check(Game.Player.Character.Position.DistanceTo(c.Locations.Position(BunkerSite.DoorKey))<2.5f,"The return marker is reachable in the same entry room after inspection");
+  Game.Accept=true;m23.Tick();
   Game.GameTime+=300;m23.Tick();m23.Tick();m23.Tick();c.Dialogue.Clear();m23.Tick();
   for(int finish=0;finish<4&&m23.Status==MissionStatus.Running;finish++){c.Dialogue.Clear();m23.Tick();}
   Check(m23.Status==MissionStatus.Passed&&!m23.Interior.Inside&&Game.Player.Character.Position.DistanceTo(c.Locations.Position(BunkerSite.EntranceKey))<3f,"M23 passes only after a successful return to the actual entrance");

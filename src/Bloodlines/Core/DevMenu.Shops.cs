@@ -121,7 +121,7 @@ namespace Bloodlines.Core
         }
         private Page BuildCrewFleet()
         {
-            var page=new Page("Foundry - crew car fleet");
+            var page=new Page(_homes.ResidenceName + " - crew car fleet");
             foreach(var item in CrewVan.FleetChoices)
             {
                 var choice=item;
@@ -129,10 +129,13 @@ namespace Bloodlines.Core
                 {
                     var confirm=new Page(choice.Name+" - crew car");
                     confirm.Add("Confirm selection",()=>Shops.Vans.Owns(choice.Model)?"Free":"$"+choice.Price,()=>
-                    {Shops.Vans.Select(choice,_homes.FoundryVisit&&_homes.Apartment.Inside&&!_missions.IsRunning);_stack.Pop();});
+                    {
+                        if (Shops.Vans.Select(choice, _homes.CanManageFleet && !_missions.IsRunning)) _stack.Pop();
+                    });
                     confirm.Add("Cancel",()=>"keep current crew car",()=>_stack.Pop());_stack.Push(confirm);
                 });
             }
+            page.Add("Collect your crew car",()=>"Outside in the headquarters vehicle yard");
             page.Add("Customize your crew car",()=>"Drive it to any Customs shop");return page;
         }
         private void PreviewCar(ShopSite site,Func<bool> buy)

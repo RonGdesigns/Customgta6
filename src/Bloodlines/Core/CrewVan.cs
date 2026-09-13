@@ -88,7 +88,9 @@ namespace Bloodlines.Core
         public bool Select(Choice choice,bool atHideout)
         {
             var player=Game.Player.Character;
-            if(!atHideout||!_state.IsUnlocked("cypressFoundry")||Game.Player.WantedLevel!=0||player==null||player.IsDead||
+            if (!atHideout || !(_state.IsUnlocked("cypressFoundry") || _state.IsUnlocked(BunkerSite.Unlock)))
+            { GameUtils.Notify("Use the fleet service inside a secured crew headquarters between jobs."); return false; }
+            if(Game.Player.WantedLevel!=0||player==null||player.IsDead||
                 choice==null||!FleetChoices.Contains(choice)||ShopService.PreviewVehicleHandle!=0)return false;
             if(choice.Model==Record.Model)return false;
             // Never delete a vehicle with a brother or another occupant still in it.
@@ -130,11 +132,15 @@ namespace Bloodlines.Core
         public CrewVanRecord Record => _state.CrewVan;
         public bool IsVan(Vehicle vehicle) => vehicle != null && _van != null && vehicle.Handle == _van.Handle;
 
+        private MissionLocation StashLocation => _state.IsUnlocked(BunkerSite.Unlock)
+            ? _locations.Get("M23.VehicleBay")
+            : _locations.Get(StashKey) ?? _locations.Get("Base.CypressFlats");
+
         public Vector3? StashPosition
         {
             get
             {
-                var stash = _locations.Get(StashKey) ?? _locations.Get("Base.CypressFlats");
+                var stash = StashLocation;
                 return stash?.Position;
             }
         }
@@ -158,7 +164,7 @@ namespace Bloodlines.Core
             if (!available) return;
             var stash = StashPosition;
             if (!stash.HasValue || !GameUtils.IsWithinFlat(player.Position, stash.Value, SpawnRadius)) return;
-            var heading = _locations.Get(StashKey)?.Heading ?? 0f;
+            var heading = StashLocation?.Heading ?? 0f;
             var van = Create(stash.Value, heading);
             if (van == null) return;
             van.IsEngineRunning = false;

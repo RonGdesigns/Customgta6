@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using GTA.Native;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -27,6 +29,8 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _secondExit;
         private Vector3 _generator;
         private bool _powered, _limitsShown;
+        private bool _engaged;
+        private int _nextCombat;
 
         public override string Id => "M23";
         public override string Title => "Ghost in the Sage";
@@ -42,7 +46,7 @@ namespace Bloodlines.Missions.Campaign
         {
             BunkerSite.LoadMaps();
             _interior = Ctx.Interior ?? new ApartmentAccess(Ctx.Crew);
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            if (!MissionSites.Prepare(Ctx.Locations, Id, BunkerSite.EntranceKey)) return false;
             _approach = Ctx.Locations.Position("M23.Approach");
             _door = Ctx.Locations.Position("M23.Entrance");
             _secondExit = Ctx.Locations.Position("M23.EscapeRoad");
@@ -51,7 +55,7 @@ namespace Bloodlines.Missions.Campaign
             _bays.Add(Ctx.Locations.Position("M23.FuelBay"));
             _bays.Add(Ctx.Locations.Position("M23.VehicleBay"));
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _approach, Ctx.Locations.Heading("M23.Approach")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, Ctx.Locations.Position("M23.RoadStart"), Ctx.Locations.Heading("M23.RoadStart")))
             {
                 return false;
             }
@@ -61,15 +65,30 @@ namespace Bloodlines.Missions.Campaign
             SpawnSquatters();
             SpawnGranger();
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Guess, Ctx.Locations.Position("M23.GuessStart"));
-            Station(CrewSlot.Gohan, Ctx.Locations.Position("M23.VehicleBay"));
+            if (_granger == null || !_granger.Exists() || _granger.PassengerCapacity < 2) return false;
+            Ctx.Crew.PedFor(CrewSlot.Guess).SetIntoVehicle(_granger, VehicleSeat.Driver);
+            Ctx.Crew.PedFor(CrewSlot.Ice).SetIntoVehicle(_granger, VehicleSeat.Passenger);
+            Ctx.Crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(_granger, VehicleSeat.LeftRear);
             _roles = new RoleTracks(Ctx.Crew, () => _squatters);
-            PlayApproach();
+            _roles.For(CrewSlot.Ice);
+            _roles.For(CrewSlot.Gohan);
+            var arrival = new SceneSpec { MissionId = Id, Phase = "road", Title = "The road to shelter",
+                Reason = "The crew arrives together by road; Guess must drive to the approach before Ice clears the entrance.",
+                Blocking = new SceneBlocking().Then(new ShotStep(2200,_granger,new Vector3(-4f,-6f,2f),_granger,new Vector3(0f,0f,1f),.6f)) };
+            Ctx.Cutscenes.Play(arrival);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            yield return new MissionStage("Drive to the approach",
+                    new DeliverVehicleObjective("Guess: drive the crew to the marked bunker approach and stop. Ice takes point once you arrive.",
+                        () => _granger, () => _approach, 10f),
+                    new ConditionObjective("Stop the crew car with Ice and Gohan aboard.", () => _granger.Speed < 1.5f &&
+                        Ctx.Crew.PedFor(CrewSlot.Ice).IsInVehicle(_granger) && Ctx.Crew.PedFor(CrewSlot.Gohan).IsInVehicle(_granger)))
+                .OwnedBy(CrewSlot.Guess)
+                .OnExit(context => { _granger.IsEngineRunning = false; PlayApproach(); });
+
             yield return new MissionStage("Approach the bunker",
                     new ReachZoneObjective("Ice: approach the marked bunker entrance. Guess covers the west side; Gohan watches the generator.", () => _door, 10f))
                 .OwnedBy(CrewSlot.Ice)
@@ -85,10 +104,8 @@ namespace Bloodlines.Missions.Campaign
                     new KillTargetsObjective("Clear the cartel squatters out.", () => _squatters))
                 .OnEnter(context =>
                 {
-                    foreach (var squatter in _squatters)
-                    {
-                        if (squatter != null && squatter.Exists()) squatter.Task.FightAgainstHatedTargets(100f);
-                    }
+                    _engaged = true;
+                    EngageSquatters();
                 });
 
             // Each bay is looked into for what is there, which is mostly nothing: the
@@ -124,7 +141,7 @@ namespace Bloodlines.Missions.Campaign
                 });
 
             yield return new MissionStage("Check the interior",
-                    new MissionInteraction("Gohan: walk down the marked entry passage and inspect the bunker. Ice guards outside; Guess checks vehicle access.",
+                    new MissionInteraction("Gohan: inspect the bunker entry room at the yellow marker. Stay here while checking the lights and shelter; the crew waits outside.",
                         () => Ctx.Locations.Position(BunkerSite.InspectKey), 4, 2f))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => Ctx.Dialogue.Play(new DialogueCue { CueId = "M23_INTERIOR_REPORT", MissionId = Id,
@@ -152,7 +169,7 @@ namespace Bloodlines.Missions.Campaign
             if (_granger != null && _granger.Exists()) blocking.Then(new ShotStep(3000, _granger, new Vector3(-7f, 4f, 2f), _granger, new Vector3(0f, 0f, 0.8f), 0.8f));
             if (ice != null && ice.Exists()) blocking.Then(ShotStep.Watching(2800, ice, _squatters.Count > 0 && _squatters[0].Exists() ? (Entity)_squatters[0] : ice));
             if (guess != null && guess.Exists()) blocking.Then(ShotStep.Watching(2200, guess, guess));
-            if (gohan != null && gohan.Exists()) blocking.Then(new InspectStep(gohan, gohan.Position, 2600, "WORLD_HUMAN_BINOCULARS"));
+            if (gohan != null && gohan.Exists()) blocking.Then(ShotStep.Watching(1800,gohan,gohan));
             blocking.Then(ShotStep.Wide(2800, _generator + new Vector3(0f, 0f, 1f), 22f, 9f, 8f));
             var spec = new SceneSpec
             {
@@ -222,9 +239,29 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             if (_interior != null && _interior.Busy) { _interior.Update(); return; }
+            if (!Ctx.Cutscenes.IsActive && CurrentStage <= 3 && Game.GameTime >= _nextCombat)
+            {
+                _nextCombat = Game.GameTime + 2000;
+                if (_engaged || Game.Player.Character.IsShooting || _squatters.Any(p => p.Exists() && (p.IsDead || p.IsInCombat)))
+                { _engaged = true; EngageSquatters(); }
+            }
             base.OnUpdate();
             // Outside actors retain their assigned posts while Gohan is underground.
             if (_interior == null || !_interior.Inside) _roles?.Update();
+        }
+
+        private void EngageSquatters()
+        {
+            foreach (var guard in _squatters.Where(p => p != null && p.Exists() && p.IsAlive))
+            {
+                var target = Protagonist.All.Select(h => Ctx.Crew.PedFor(h.Slot))
+                    .Where(p => p != null && p.Exists() && p.IsAlive)
+                    .OrderBy(p => p.Position.DistanceTo(guard.Position)).FirstOrDefault();
+                if (target == null || target.Position.DistanceTo(guard.Position) > 240f) continue;
+                var current = Function.Call<Ped>(Hash.GET_PED_TARGET_FROM_COMBAT_PED, guard, 0);
+                if (!guard.IsInCombat || current == null || !current.Exists() || !current.IsAlive || current.RelationshipGroup != Ctx.Crew.CrewGroup)
+                    guard.Task.FightAgainst(target);
+            }
         }
 
         // ---------- world building ----------
@@ -263,6 +300,8 @@ namespace Bloodlines.Missions.Campaign
         {
             var models = new[] { "g_m_y_mexgoon_01", "g_m_y_mexgoon_03", "g_m_y_mexgang_01" };
             var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS,5,cartel,Ctx.Crew.CrewGroup);
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS,5,Ctx.Crew.CrewGroup,cartel);
 
             for (int i = 0; i < 9; i++)
             {
@@ -279,7 +318,12 @@ namespace Bloodlines.Missions.Campaign
                 squatter.RelationshipGroup = cartel;
                 squatter.IsPersistent = true;
                 squatter.BlockPermanentEvents = true;
-                squatter.Accuracy = 30;
+                squatter.Accuracy = 32; squatter.Health = 220; squatter.Armor = 25;
+                foreach (int attribute in new[] { 0, 4, 5, 13, 21, 46 })
+                    Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES,squatter,attribute,true);
+                Function.Call(Hash.SET_PED_COMBAT_MOVEMENT,squatter,i % 3 == 0 ? 2 : 1);
+                Function.Call(Hash.SET_PED_COMBAT_ABILITY,squatter,2);
+                Function.Call(Hash.SET_PED_COMBAT_RANGE,squatter,2);
                 squatter.Weapons.Give(i % 3 == 0 ? WeaponHash.AssaultRifle : WeaponHash.MicroSMG, 200, true, true);
                 squatter.Task.GuardCurrentPosition();
 
@@ -290,13 +334,13 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The Granger they came in from the Alamo, parked short of the bunker: the crew and what it has left.</summary>
         private void SpawnGranger()
         {
-            var spot = Ctx.Locations.Position("M23.ArrivalCar");
-            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M23.Approach")) : null;
+            var spot = Ctx.Locations.Position("M23.RoadStart");
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M23.RoadStart")) : null;
             if (granger == null)
             {
                 var model = new Model("granger");
                 if (!GameUtils.RequestModel(model)) return;
-                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M23.Approach"));
+                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M23.RoadStart"));
                 model.MarkAsNoLongerNeeded();
             }
             _granger = Track(granger);

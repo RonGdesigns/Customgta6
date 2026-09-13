@@ -12,7 +12,7 @@ namespace Bloodlines.Missions.Objectives
         private bool _requested;
         public BunkerAccessObjective(ApartmentAccess access,bool enter,Vector3 point) : base(enter ?
             "Gohan: walk to the bunker entrance and press E / D-pad Right to check inside." :
-            "Gohan: return to the entrance marker and press E / D-pad Right to rejoin the crew outside.")
+            "Gohan: use the exit marker where you entered this room. Press E / D-pad Right to return to the crew outside.")
         { _access=access;_enter=enter;_point=point; }
         public override Vector3? AssignmentPosition => _point;
         public override void Update(MissionContext context)

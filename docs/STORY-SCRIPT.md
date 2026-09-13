@@ -555,6 +555,10 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (M23_SCENE_APPROACH_02_GUESS) — There is a dirt road out to the north. I will check the yard for our rigs. Gohan, find the generator controls; we need to know what still works.
 
+### Road
+
+**GUESS** (M23_SCENE_ROAD_01_GUESS) — Bunker is down this dirt road. Stay in the car until I pull up. Ice, take point when we stop.
+
 ## M24 — LIQUID GOLD
 
 ### Intro

@@ -170,6 +170,7 @@ M23_SCENE_OUTRO_01_GOHAN	M23	outro	GOHAN	Reflective; allow the response to land	
 M23_SCENE_OUTRO_02_GUESS	M23	outro	GUESS	Reflective; allow the response to land	Then we recover only what we can guard from the Alamo. No more betting the house on the whole pile.
 M23_SCENE_APPROACH_01_ICE	M23	approach	ICE	On the approach; the place and the job seen before anyone moves	Nine around the entrance and the service yard. They live here; they will fight for it. I take the approach. Keep the vehicle clear.
 M23_SCENE_APPROACH_02_GUESS	M23	approach	GUESS	On the approach; the place and the job seen before anyone moves	There is a dirt road out to the north. I will check the yard for our rigs. Gohan, find the generator controls; we need to know what still works.
+M23_SCENE_ROAD_01_GUESS	M23	road	GUESS	Staged action	Bunker is down this dirt road. Stay in the car until I pull up. Ice, take point when we stop.
 M24_SCENE_INTRO_01_GOHAN	M24	intro	GOHAN	Briefing; intent before tactics	Five tons first. The rest stays hidden. We need operating money, not a convoy that advertises the entire haul.
 M24_SCENE_INTRO_02_ICE	M24	intro	ICE	Briefing; intent before tactics	If deputies arrive, call them out. Keep that cable steady; I've got the ridge.
 M24_SCENE_OUTRO_01_GUESS	M24	outro	GUESS	Reflective; allow the response to land	Enough recovered to keep the lights on. The rest can wait. I'm keeping track of what surviving actually costs.

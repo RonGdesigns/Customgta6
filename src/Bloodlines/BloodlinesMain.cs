@@ -266,7 +266,7 @@ namespace Bloodlines
             Step("aiming reticle", () => CombatReticle.Draw(_config.VisibleCrosshair, !_crew.IsDeployed || _menu.IsOpen || _characterWheel.IsOpen || _prologue.IsActive || _survey.IsActive));
             Step("garage", _garage.Update);
             Step("aircraft smoke", () => _garage.UpdateSmoke(!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
-            Step("crew van", () => _vans.Update(_crew, !_missions.IsRunning && !_prologue.IsActive && !_cutscenes.IsActive && !_survey.IsActive));
+            Step("crew van", () => _vans.Update(_crew, !_homes.Apartment.Inside && !_homes.Apartment.Busy && !_missions.IsRunning && !_prologue.IsActive && !_cutscenes.IsActive && !_survey.IsActive));
             Step("world speed", () => _worldTuning.Update(_crew));
             Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));

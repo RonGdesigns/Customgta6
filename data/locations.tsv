@@ -108,7 +108,7 @@ M22.AlamoDrop	1150.000	4200.000	30.000	0	water	estimate	Alamo Sea / Alamo west i
 M22.Beach	1100.000	4250.000	32.180	0	land	estimate	Alamo Sea / Alamo west inlet dry bank; CodeWalker checked, live survey pending
 M22.RoadArrival	1100.000	4450.000	61.427	180	land	estimate	Mount Chiliad / Alamo west inlet road approach; CodeWalker checked, live survey pending
 M23.Approach	846	2946	49.122	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
-M23.Entrance	848.6	2991	44.783	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
+M23.Entrance	848.9076	2996.916	45.44828	0	land	estimate	Bunker hatch platform; position from successful live entry on September 13; preserve above terrain navmesh
 M23.ToolBay	863	2980	44.527	90	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M23.FuelBay	869	2992	43.709	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M23.VehicleBay	860	2964	45.636	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
@@ -801,5 +801,6 @@ M23.Guard08	870	3017	40.915	180	land	estimate	Grand Senora Desert bunker - insta
 M23.Guard09	860	2954	45.714	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 Bunker.Senora.Interior	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
 Bunker.Senora.Room.Door	892.6384	-3245.8664	-98.265	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
-Bunker.Senora.Room.Inspect	899	-3244	-98.114	270	interior	estimate	Gunrunning bunker interior - gr_grdlc_int_02 collision floor verified
+Bunker.Senora.Room.Inspect	892.6384	-3245.8664	-98.265	270	interior	estimate	Bunker entry room; shares the successfully loaded arrival floor so inspection does not require crossing interior partitions
 M23.GuessStart	841	2964	44.846	0	land	estimate	Grand Senora bunker approach; collision checked, beside the arrival car
+M23.RoadStart	868	3091.75	39.699	180	land	estimate	Senora north access road; CodeWalker verified vehicle node and collision floor

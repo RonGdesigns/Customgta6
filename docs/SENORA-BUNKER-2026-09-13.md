@@ -4,7 +4,7 @@ The former radar-array yard did not contain the bunker promised by the mission. 
 
 ## Playable sequence
 
-1. Ice approaches and clears the occupied bunker yard. Guess and Gohan cover separate positions; the arriving crew car stays outside.
+1. Guess drives all three brothers from the north access road to the bunker approach and stops. Ice then takes point while the others cover. Squatters retaliate when fired on and fight when the entrance is breached; the crew car stays outside.
 2. Guess checks the workbench, empty fuel reserve and room for vehicles.
 3. Gohan works the visible generator controls, restoring access.
 4. Gohan enters on foot using E / D-pad Right. The player remains protected and faded until the interior and collision are ready.
@@ -12,6 +12,8 @@ The former radar-array yard did not contain the bunker promised by the mission. 
 6. Gohan returns to the interior entrance marker, uses the same button to leave, and rejoins the crew. Completion grants the existing bunker unlock.
 
 The entrance is a controlled fade transition into a real loaded interior. The external hatch model is static. Vehicles remain outside; this is not a seamless drive-in garage or an Online business simulation.
+
+Follow-up fixes for fleet purchases, the planning menu, the driven approach and the hatch marker are documented in [bunker service and approach repairs](BUNKER-SERVICE-REPAIRS-2026-09-13.md).
 
 ## Repeat visits and failure behavior
 

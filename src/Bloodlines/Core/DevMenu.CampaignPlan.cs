@@ -9,9 +9,9 @@ namespace Bloodlines.Core
         public Func<List<PhoneEntry>> CampaignPlan { get; set; }
         public void OpenCampaignPlan()
         {
-            if (!_homes.FoundryVisit || !_homes.Apartment.Inside || _homes.Apartment.Busy || _missions.IsRunning) return;
+            if (!_homes.CanManageFleet || _missions.IsRunning) { GameUtils.Notify("Use the planning table inside a secured headquarters between jobs."); return; }
             Close(); IsOpen = true; _openedAt = GTA.Game.GameTime; _stick.Reset();
-            var page = new Page("Foundry / Preparation board");
+            var page = new Page(_homes.ResidenceName + " / Preparation board");
             foreach (var item in CampaignPlan?.Invoke() ?? new List<PhoneEntry>())
             {
                 string id = item.Id;
