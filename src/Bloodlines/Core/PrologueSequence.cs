@@ -29,7 +29,7 @@ namespace Bloodlines.Core
     /// </summary>
     public sealed class PrologueSequence
     {
-        public enum Phase { Idle, Arrival, Drive, Homecoming, Interior, Finished }
+        public enum Phase { Idle, Arrival, Drive, Homecoming, Interior, ExitWalk, ExitTransition, Finished }
 
         private const string CarModel = "primo";
         private const float ArriveRadius = 9f;
@@ -43,6 +43,7 @@ namespace Bloodlines.Core
 
         private Vehicle _car;
         private bool _callStarted;
+        private SceneBlocking _exitWalk;
         private Blip _carBlip;
         private Vector3 _homePoint;
         private int _lastHint;
@@ -113,7 +114,7 @@ namespace Bloodlines.Core
             var doorSide = _car.Position + LeftOf(_car) * 1.9f;
             var blocking = new SceneBlocking()
                 .Then(new WaitStep(1200, guess))
-                .Then(new UsePhoneStep(guess, 4200))
+                .Then(new UsePhoneStep(guess, 4200, holdForDialogue: false))
                 .Then(new LookAtStep(guess, _car, 900))
                 .Then(new WalkToStep(guess, doorSide, 1.6f))
                 .Then(new EnterVehicleStep(guess, _car, VehicleSeat.Driver));
@@ -172,6 +173,19 @@ namespace Bloodlines.Core
                 case Phase.Interior:
                     UpdateInterior(player);
                     break;
+                case Phase.ExitWalk:
+                    _exitWalk.Update();
+                    if (!_exitWalk.IsFinished) break;
+                    if (!_apartment.Begin(_apartment.ExitPosition, null, false))
+                    { GameUtils.Notify("~y~Walk to the apartment exit to leave."); break; }
+                    Current = Phase.ExitTransition;
+                    break;
+                case Phase.ExitTransition:
+                    if (_apartment.Busy) break;
+                    if (_apartment.Inside) { BeginExit(); break; }
+                    // The apartment transition has returned Guess to his own street door.
+                    Finish();
+                    break;
             }
         }
 
@@ -190,7 +204,7 @@ namespace Bloodlines.Core
                 PlayCall(atDoor: true);
                 return;
             }
-            if (!_apartment.Begin(room.Position, null, true, null, room.Heading))
+            if (!_apartment.Begin(room.Position, home.Ipl, true, home.Probe, room.Heading, home.EntitySets))
             {
                 Logger.Warn("Prologue: the apartment could not be entered; the job is read at the door.");
                 PlayCall(atDoor: true);
@@ -219,9 +233,13 @@ namespace Bloodlines.Core
             }
             // The scene has ended; the host does not tick the prologue while one runs.
             if (_sceneStarted && _cutscenes.LastOutcome != SceneOutcome.Completed && _cutscenes.LastOutcome != SceneOutcome.Skipped)
-                Logger.Warn("Prologue: the call scene ended by " + _cutscenes.LastOutcome + "; the job counts as read.");
+            {
+                Logger.Warn("Prologue: interrupted call will retry without completing the arrival.");
+                _callStarted = false; _sceneStarted = false;
+                return;
+            }
             _sceneStarted = false;
-            Finish();
+            BeginExit();
         }
 
         /// <summary>
@@ -230,6 +248,15 @@ namespace Bloodlines.Core
         /// puts the phone away on the same mark. Whatever ends the scene, the job
         /// counts as read; the host cuts to the dock from wherever he stands.
         /// </summary>
+        private void BeginExit()
+        {
+            if (_apartment == null || !_apartment.Inside) { Finish(); return; }
+            var player = Game.Player.Character;
+            _exitWalk = new SceneBlocking().Then(new WalkToStep(player, _apartment.InteriorPosition, 1.1f));
+            Current = Phase.ExitWalk;
+            GameUtils.Subtitle("~y~Head out. The dockyard job is waiting.", 4500);
+        }
+
         private void PlayCall(bool atDoor)
         {
             _callStarted = true;
@@ -241,17 +268,19 @@ namespace Bloodlines.Core
                 // The message spot once Ron has surveyed the room; until then two
                 // meters into it from the door.
                 var spot = _locations.Get(ApartmentTiers.For(CrewSlot.Guess, ApartmentTier.Starter).RoomPrefix + ".Message");
-                var across = spot != null && spot.Status == LocationStatus.Surveyed ? spot.Position : guess.Position + guess.ForwardVector * 2f;
+                // An unsurveyed furniture mark must not walk through a wall or another room.
+                var across = spot != null && spot.Status == LocationStatus.Surveyed && spot.Position.DistanceTo(guess.Position) < 15f
+                    ? spot.Position : guess.Position;
                 blocking.DialogueAfterStep = 2;
                 blocking.Then(new WalkToStep(guess, across, 0.9f)).Then(new WaitStep(1400, guess));
             }
-            blocking.Then(new UsePhoneStep(guess, 4200))
+            blocking.Then(new UsePhoneStep(guess, 4200, holdForDialogue: false))
                 .Then(new ShotStep(3600, guess, new Vector3(1.7f, 0.5f, 1.55f), guess, new Vector3(0f, 0f, 1.45f), -0.3f));
             _sceneStarted = _cutscenes.Play("M01", "call", "The job", null, null, blocking);
             if (_sceneStarted) return;
             Logger.Warn("Prologue: the call scene is unavailable; the job counts as read.");
             blocking.Complete();
-            Finish();
+            BeginExit();
         }
 
         private void UpdateDrive(Ped player)
@@ -279,7 +308,7 @@ namespace Bloodlines.Core
             // Home: get out, walk to the door, read the job. Same end state on skip.
             var blocking = new SceneBlocking();
             if (ride != null && ride.Exists()) blocking.Then(new ExitVehicleStep(player));
-            blocking.Then(new WalkToStep(player, _homePoint, 1.4f)).Then(new UsePhoneStep(player, 3200));
+            blocking.Then(new WalkToStep(player, _homePoint, 1.4f));
             // After a canceled or failed homecoming the scene is not trusted again:
             // the end state is placed directly, and if even that cannot unseat Ron
             // the drive keeps asking him to get out at the door.
@@ -330,6 +359,7 @@ namespace Bloodlines.Core
         {
             if (Current == Phase.Idle) return;
             _cutscenes.Stop();
+            _exitWalk?.Cancel(); _exitWalk = null;
             if (_apartment != null && (_apartment.Inside || _apartment.Busy)) _apartment.Cancel();
             if (_car != null && _car.Exists()) GameUtils.SafeDelete(_car);
             _car = null;

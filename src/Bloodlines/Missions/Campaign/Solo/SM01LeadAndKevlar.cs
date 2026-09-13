@@ -233,7 +233,7 @@ namespace Bloodlines.Missions.Campaign
                 if (!GameUtils.RequestModel(model)) continue;
 
                 var offset = new Vector3(-6f + i * 3f, 8f + (i % 3) * 6f, 0f);
-                var guard = World.CreatePed(model, _warehouse + offset, 0f);
+                var guard = World.CreatePed(model, MissionSites.Actor(Ctx.Locations, "SM01.Guard" + (i+1), _warehouse + offset), 0f);
                 model.MarkAsNoLongerNeeded();
                 if (guard == null || !guard.Exists()) continue;
 

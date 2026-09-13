@@ -132,12 +132,19 @@ namespace Bloodlines.Crew
             return true;
         }
 
-        public static void Adjust(Ped ped, CrewSlot slot, string field, int direction)
+        public static void Adjust(Ped ped, CrewSlot slot, string field, int direction, bool allowHair = false)
         {
             if (ped == null || !ped.Exists()) return;
             var look = For(slot);
-            // Head hair is part of each hero's identity, including debug/home paths.
-            if (field == "Hair" || field == "HairColor") return;
+            // Ordinary shops and home wardrobes retain each hero's hair identity.
+            // The developer appearance menu explicitly opts into hair authoring.
+            if (field == "Hair" || field == "HairColor")
+            {
+                if(!allowHair)return;
+                if(field=="Hair")look.Hair=Wrap(look.Hair+direction,Function.Call<int>(Hash.GET_NUMBER_OF_PED_DRAWABLE_VARIATIONS,ped,2));
+                else look.HairColor=Wrap(look.HairColor+direction,Function.Call<int>(Hash.GET_NUM_PED_HAIR_TINTS));
+                Apply(ped,slot);return;
+            }
             if (field == "Face") look.Face = (look.Face + direction + 21) % 21;
             else if (field == "Skin") look.Skin = (look.Skin + direction + 21) % 21;
             else if (field == "Outfit")

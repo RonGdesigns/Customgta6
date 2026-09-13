@@ -6,15 +6,15 @@ Reviewed against `docs/bibles/design_bible_v1.txt`, the omnibus v2 interstitial 
 
 | Original proposal | Current implementation | Remaining work |
 |---|---|---|
-| 70 main jobs and 9 solo stories | M01-M30 and SM01-SM06 playable; dialogue/flow plans exist for the rest | 43 gameplay scripts: M31-M70 and SM07-SM09, including setup, role work, visible interactions, failure/retry and earned rewards |
+| 70 main jobs and 9 solo stories | M01-M43 and SM01-SM06 playable; dialogue/flow plans exist for the rest | 30 gameplay scripts: M44-M70 and SM07-SM09, including setup, role work, visible interactions, failure/retry and earned rewards |
 | Mission checkpoints | Full mission restart with failure cleanup and safe player recovery | Reconstruct actors, vehicles, damage, timers, role assignments and private mission state before enabling mid-mission retry |
 | Three specialized bases/workbenches | Enterable starter/luxury housing, personal lockers, wardrobe, repairs and story flags | Ice's AP/incendiary ammunition press; Gohan's persistent camera/radar disruption; Guess's earned turbine/conversion workshop and saved fleet builds |
 | Trade-specific off-duty life | Independent companion activities, travel, crimes, personal wanted state and ride modes | More authored work animations, visits and consequences that persist between play sessions |
-| News and encrypted group-phone reactions | Campaign dispatch/subtitle follow-ups and dialogue | A readable phone inbox/history, branching reactions to optional jobs, recorded radio/news audio |
+| News and encrypted group-phone reactions | Custom campaign phone with persistent completed-job inbox/history, news, crew contacts, live objectives/destinations and wallet; existing notifications and dialogue | Garage/KJ ordering, crew commands, journal, progression, alerts and the planning board are connected; remaining work includes optional voice calls, further branching reactions, recorded radio/news audio and in-world handset screen rendering |
 | Custom character appearance | Three Black freemode heroes, fixed head hair, adjustable clothing | Bespoke body shapes, faces and properly rigged locs/custom ped assets |
 | Enterable dock, hangar and tower interiors with cover | Stock interiors/exterior staging where currently supported | Authored MLO spaces and verified connected navigation/cover; game files do not automatically provide every location described in the bible |
 | Fully voiced/animated cinematic production | Subtitle-driven scenes, optional WAV playback, local actors/actions and remote conversation framing | Recorded voices, more authored animation/blocking and tested moving-vehicle/air/sea set pieces |
-| Offshore operation and three-site finale | Detailed remaining-campaign plan | M42's aircraft/submarine transfer, M44-M48 rig encounter, M55 simultaneous penthouse work, M62 train/boat/helicopter convergence and the M68-M70 finale need physical prototypes |
+| Offshore operation and three-site finale | M42 aircraft/submarine transfer and M43 staging implemented; remaining-campaign plan | M44-M48 rig encounter, M55 simultaneous penthouse work, M62 train/boat/helicopter convergence and the M68-M70 finale need physical prototypes |
 
 The friends' relationship remains the story's foundation: trust is rebuilt through sharing information, accepting another brother's decisions and counting people before cargo. Optional solo missions should deepen that arc without becoming required exposition. KJ remains Guess's occasional supporting contact, including the planned SM09 handoff.
 

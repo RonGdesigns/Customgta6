@@ -89,16 +89,16 @@ namespace Bloodlines.Core
                             ? new Vector3(-773.2258f, 322.8252f, 194.8862f) : new Vector3(-787.7805f, 334.9232f, 186.1134f)
                     };
                 default:
-                    // Three different rooms behind each brother's own door: a studio, a
-                    // one-bedroom, a house. The doors stay where they always were (Ron,
-                    // September 11: the interior changes, never the home's location);
-                    // Ron's is the Mission Row apartment, the room behind it the stock
-                    // Strawberry house, entered through the fade like the other two.
-                    string name = slot == CrewSlot.Ice ? "Little Seoul studio" : slot == CrewSlot.Gohan ? "Richards Majestic one-bedroom" : "Mission Row apartment";
+                    // Guess returns to the modest starter-house shell at the user's
+                    // request; each brother keeps a distinct interior and street door.
+                    string name = slot == CrewSlot.Ice ? "Little Seoul studio" : slot == CrewSlot.Gohan ? "Richards Majestic one-bedroom" : "Mission Row starter house";
                     return new Residence
                     {
                         Tier = tier, Slot = slot, Name = Protagonist.Of(slot).DisplayName + " - " + name, Short = name,
-                        InteriorKey = "Apartment.Starter.Interior." + slot, EntranceKey = "Apartment.Starter." + slot, RoomPrefix = "Apartment.Room." + slot
+                        InteriorKey = "Apartment.Starter.Interior." + slot,
+                        EntranceKey = "Apartment.Starter." + slot,
+                        RoomPrefix = "Apartment.Room." + slot,
+                        Probe = slot == CrewSlot.Guess ? (Vector3?)new Vector3(-14.30f, -1438.50f, 31.10f) : null
                     };
             }
         }

@@ -26,24 +26,29 @@ namespace Bloodlines.Missions.Campaign
     /// shipment. Nothing installs an engine; that is M11's.
     ///
     /// The camera loop is a window, not a switch: it runs out. The forklift is
-    /// driven by the player to each crate; the lift and the set-down are staged,
-    /// because scripted forks that reliably land a crate on a bed do not exist.
+    /// driven by the player for pickup and delivery. Cargo rides visually without
+    /// fork collisions; a stopped delivery verifies its attachment to the bed.
     /// </summary>
     public sealed class M08SupplyAndSever : ComposedMission
     {
-        public const int LoopSeconds = 240;
-        private static readonly Vector3 ForkOffset = new Vector3(0f, 1.6f, 0.35f);
+        public const int LoopSeconds = 420;
+        private static readonly Vector3 ForkOffset = new Vector3(0f, 1.6f, 0.75f);
         private static readonly Vector3[] BedSlots = { new Vector3(0f, -0.9f, 1.05f), new Vector3(0f, -3.1f, 1.05f) };
 
         private readonly List<Ped> _sentries = new List<Ped>();
         private readonly List<Prop> _crates = new List<Prop>();
 
+        private Prop _cameraPanel, _securityCabin;
+        public Prop SecurityCabin => _securityCabin;
+        public Prop CameraPanel => _cameraPanel;
+        private int _nextDefense;
+        private bool _liftHeld;
         private Vehicle _hauler;
         private Vehicle _forklift;
         private Vehicle _granger;
         private Vehicle _technical;
-        private Ped _technicalDriver;
-        private ForksUnderCrateObjective _crateTwo;
+        private readonly List<Ped> _responseCrew = new List<Ped>();
+        private ForkliftDeliveryObjective _crateTwo;
         private bool _alerted;
         private Vector3 _gate;
         private Vector3 _cameras;
@@ -82,16 +87,18 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Game.Player.Character.Weapons.Give(WeaponHash.APPistol, 120, false, true);
 
+            SpawnCameraPanel();
             SpawnSentries();
+            SpawnForklift();
             SpawnHauler();
             SpawnCrates();
-            SpawnForklift();
             SpawnGranger();
-            if (!RequireAssets(_hauler, _forklift) || _crates.Count != 2) return false;
+            if (!RequireAssets(_hauler, _forklift, _cameraPanel, _securityCabin) || _crates.Count != 2) return false;
             Station(CrewSlot.Gohan, _cameras + new Vector3(0f, -12f, 0f));
             Station(CrewSlot.Ice, _gate + new Vector3(-18f, 0f, 0f));
             Station(CrewSlot.Guess, _padOne + new Vector3(-20f, 0f, 0f));
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.RPG, 8, false, false);
+            Ctx.Crew.CompanionsHoldPosition = true;
             PlayApproach();
             return true;
         }
@@ -99,7 +106,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Loop the cameras",
-                    new MissionInteraction("Gohan — loop the CCTV feed.", () => _cameras, 5, 3f))
+                    new MissionInteraction("Gohan: use the security cabinet outside the port security cabin to loop CCTV. Press E / D-pad Right.", () => _cameras, 5, 2f, animation: M07WiretapWaltz.RelayAnimation))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context =>
                 {
@@ -123,27 +130,27 @@ namespace Bloodlines.Missions.Campaign
             // The forks under the crate is the whole action: drive in, stop, and the
             // crate is on the forks. No button, no physics lift (Ron, September 11).
             yield return new MissionStage("Crate one",
-                    new ForksUnderCrateObjective("Guess — drive the forks under the first turbine crate and stop.", () => _padOne, () => _forklift),
+                    Delivery(0, "first turbine crate"),
                     LoopWindow())
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
                     SpawnTechnical();
-                    PlayLoading(0);
+
                 });
 
-            // The technical is shown coming before it is a fight. Ice handles it;
+            // The technical is called over radio without taking control. Ice handles it;
             // Ron finishes the loading. Either brother's job can be done first. The
             // owners are named one by one: a stage with none of its own inherits the
             // last owner (Ron) for every job, and the fight demanded Ron too. The
             // forks are Ron's; the technical is Ice's in name and anyone's kill.
-            _crateTwo = new ForksUnderCrateObjective("Guess — drive the forks under the second crate and stop.", () => _padTwo, () => _forklift) { RequiredCharacter = CrewSlot.Guess };
+            _crateTwo = Delivery(1, "second crate");
             yield return new MissionStage("Crate two, the technical",
                     _crateTwo,
                     new DestroyVehicleObjective("Ice — put the Aegis technical down.", () => _technical).ByAnyone(),
                     new ReactionTrigger(() => !_technicalShown && !Ctx.Cutscenes.IsActive, ShowTechnical),
                     new ReactionTrigger(() => !_technicalDown && _technical != null && _technical.Exists() && _technical.IsDead, TechnicalDown),
-                    new ReactionTrigger(() => _loaded == 1 && !Ctx.Cutscenes.IsActive && _crateTwo.Status == ObjectiveStatus.Complete, () => PlayLoading(1)),
+                    new ConditionObjective("Secure both turbine crates on the flatbed.", () => _loaded == 2),
                     LoopWindow());
 
             yield return new MissionStage("Take the hauler",
@@ -185,45 +192,35 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>
-        /// A crate goes onto the bed: lifted on the forks, driven to the rear of the
-        /// flatbed, set down in its slot, counted. Skipping lands it in the slot.
+        /// A playable pickup and delivery, counted only once attachment succeeds.
         /// </summary>
-        private void PlayLoading(int index)
-        {
-            if (index < 0 || index >= _crates.Count) return;
-            var crate = _crates[index];
-            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
-            if (crate == null || !crate.Exists() || _hauler == null || !_hauler.Exists() || _forklift == null || !_forklift.Exists()) return;
-            _loaded = index + 1;
-            crate.IsPositionFrozen = false;
-            StowPropStep.Stow(crate, _forklift, ForkOffset);
-            var rear = _hauler.Position - _hauler.ForwardVector * 7f;
-            float heading = DriveUpStep.HeadingBetween(rear, _hauler.Position);
-            var blocking = new SceneBlocking()
-                .Then(new ShotStep(2400, _forklift, new Vector3(-4f, 2f, 1.5f), crate, new Vector3(0f, 0f, 0.4f), 0.4f));
-            if (guess != null && guess.Exists()) blocking.Then(new DriveUpStep(guess, _forklift, rear, heading) { TimeoutMs = 16000 });
-            blocking.Then(new TransferPropStep(crate, _hauler, BedSlots[index % BedSlots.Length], 1600, _hauler))
-                .Then(new ShotStep(2400, _hauler, new Vector3(-4.5f, -4f, 1.6f), _hauler, new Vector3(0f, -2f, 1f), 0.5f));
-            var spec = new SceneSpec
-            {
-                MissionId = Id, Phase = "loading", Title = "Crate " + _loaded + " of 2",
-                Reason = "The turbine crate on the forks, across the yard and onto the flatbed: counted, and seen secured.",
-                Blocking = blocking
-            };
-            // One authored line per crate, so the second lift does not repeat the first.
-            var cue = Ctx.Data?.Cue(Id + "_SCENE_LOADING_0" + _loaded + "_GUESS");
-            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M08 loading scene did not play; the crate is placed on the bed directly."); blocking.Complete(); }
-            GameUtils.Subtitle("~g~Crate " + _loaded + " of 2 on the bed.", 4000);
-        }
+        private ForkliftDeliveryObjective Delivery(int index, string name) =>
+            new ForkliftDeliveryObjective("Guess: " + name, () => _crates[index], () => _forklift, () => _hauler,
+                ForkOffset, BedSlots[index], () => { _loaded = index + 1; if (index == 0) Say("M08_SCENE_LOADING_01_GUESS"); else Say("M08_SCENE_LOADING_02_GUESS"); })
+            { RequiredCharacter = CrewSlot.Guess };
 
-        /// <summary>The technical, shown coming up the ramp, once; Guess's line over it.</summary>
         private void ShowTechnical()
         {
             _technicalShown = true;
-            string line = Ctx.Data?.Cue("M08_S2_03_GUESS")?.Line ?? "Crate one seated! Ice, armored technical coming up the boat ramp!";
-            if (_technicalDriver != null && _technicalDriver.Exists() && _technical != null && _technical.Exists())
-                Ctx.Cutscenes.PlayMoment(Id, "Aegis technical", "GUESS", line, _technicalDriver);
-            else Say("M08_S2_03_GUESS");
+            // Keep the forklift and the battle playable while the warning is heard.
+            Say("M08_S2_03_GUESS");
+        }
+
+        private void DefendLoadingCrew()
+        {
+            if (CurrentStage < 1 || CurrentStage > 4 || Game.GameTime < _nextDefense) return;
+            _nextDefense = Game.GameTime + 2000;
+            var threats = _sentries.Concat(_responseCrew).Where(p => p != null && p.Exists() && !p.IsDead).ToList();
+            if (!_alerted && !threats.Any(p => p.IsInCombat)) return;
+            foreach (var hero in Protagonist.All)
+            {
+                if (hero.Slot == Ctx.Crew.ActiveSlot) continue;
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) continue;
+                var enemy = threats.Where(p => p.Position.DistanceTo(ped.Position) < 160f).OrderBy(p => p.Position.DistanceTo(ped.Position)).FirstOrDefault();
+                if (enemy != null) { Ctx.Crew.CompanionAI.TakeControl(hero.Slot); ped.Task.FightAgainst(enemy); }
+                else if (ped.IsInCombat) ped.Task.GuardCurrentPosition();
+            }
         }
 
         private void TechnicalDown()
@@ -236,6 +233,7 @@ namespace Bloodlines.Missions.Campaign
         private void CallCrewAboard()
         {
             _crewCalled = true;
+            Ctx.Crew.CompanionsHoldPosition = false;
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             if (ice != null && ice.Exists() && _hauler != null && _hauler.Exists())
@@ -270,13 +268,25 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            if (CurrentStage >= 2 && CurrentStage <= 4)
+            {
+                var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+                if (Ctx.Crew.ActiveSlot == CrewSlot.Guess) _liftHeld = false;
+                else if (guess != null && guess.Exists() && guess.IsInVehicle(_forklift))
+                {
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                    if (!_liftHeld) { Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, guess, _forklift, 27, 2000); _liftHeld = true; }
+                }
+            }
+            DefendLoadingCrew();
             if (_loopStarted > 0 && Stage >= 1 && Stage <= 4 && !Ctx.Cutscenes.IsActive)
             {
                 int left = LoopSeconds - (Game.GameTime - _loopStarted) / 1000;
                 if (left >= 0) GameUtils.Subtitle("~y~Camera loop: " + left + "s", 500);
             }
-            // Gohan follows in the Granger once he is in it.
-            if (_crewCalled && !_gohanFollowing && _granger != null && _granger.Exists() && _hauler != null && _hauler.Exists())
+            // Re-arm the NPC role after a switch, but never task the active player.
+            if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan) _gohanFollowing = false;
+            if (_crewCalled && Ctx.Crew.ActiveSlot != CrewSlot.Gohan && !_gohanFollowing && _granger != null && _granger.Exists() && _hauler != null && _hauler.Exists())
             {
                 var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
                 if (gohan != null && gohan.Exists() && gohan.IsInVehicle(_granger))
@@ -315,6 +325,24 @@ namespace Bloodlines.Missions.Campaign
             }
             var safe = World.GetSafeCoordForPed(wanted, false, 0);
             return safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 20f) ? safe : wanted;
+        }
+
+        private void SpawnCameraPanel()
+        {
+            var cabinModel = new Model("prop_portacabin01");
+            if (!GameUtils.RequestModel(cabinModel)) return;
+            _securityCabin = Track(World.CreateProp(cabinModel, _cameras + new Vector3(0f, 4f, -1f), false, false));
+            cabinModel.MarkAsNoLongerNeeded();
+            if (_securityCabin != null && _securityCabin.Exists())
+            { _securityCabin.IsPersistent = true; _securityCabin.IsPositionFrozen = true; }
+            var model = new Model("prop_elecbox_12");
+            if (!GameUtils.RequestModel(model)) return;
+            var point = _cameras + new Vector3(0f, 1.2f, -0.9f);
+            _cameraPanel = Track(World.CreateProp(model, point, false, false));
+            model.MarkAsNoLongerNeeded();
+            if (_cameraPanel == null || !_cameraPanel.Exists()) return;
+            _cameraPanel.IsPositionFrozen = true; _cameraPanel.IsPersistent = true;
+            _cameraPanel.Heading = Ctx.Locations.Heading("M08.CameraRoom");
         }
 
         private void SpawnSentries()
@@ -358,12 +386,18 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("flatbed");
             if (!GameUtils.RequestModel(model)) return;
 
-            _hauler = Track(World.CreateVehicle(model, Ctx.Locations.Position("M08.HaulerSpawn"),
-                Ctx.Locations.Heading("M08.HaulerSpawn")));
+            // Stage the bed in the forklift's apron, not across the sheds/fence.
+            if (_forklift == null || !_forklift.Exists()) return;
+            var spot = _forklift.Position + _forklift.ForwardVector * 14f;
+            float heading = _forklift.Heading;
+            if (Ctx.Locations.Get("M08.HaulerSpawn")?.Status == LocationStatus.Surveyed)
+            { spot = Ctx.Locations.Position("M08.HaulerSpawn"); heading = Ctx.Locations.Heading("M08.HaulerSpawn"); }
+            _hauler = Track(World.CreateVehicle(model, spot, heading));
             model.MarkAsNoLongerNeeded();
             if (_hauler == null || !_hauler.Exists()) return;
 
             _hauler.IsPersistent = true;
+            GameUtils.HoldUntilGrounded(_hauler);
 
             var blip = Track(_hauler.AddBlip());
             blip.Sprite = BlipSprite.ArmoredTruck;
@@ -377,7 +411,7 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
             foreach (var pad in new[] { _padOne, _padTwo })
             {
-                var crate = Track(World.CreateProp(model, pad, true, false));
+                var crate = Track(World.CreateProp(model, pad, true, true));
                 if (crate == null || !crate.Exists()) continue;
                 crate.IsPersistent = true;
                 // Static until the forks take it: a bump cannot knock it over or push it off its pad.
@@ -398,6 +432,7 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (_forklift == null || !_forklift.Exists()) return;
             _forklift.IsPersistent = true;
+            GameUtils.HoldUntilGrounded(_forklift);
             var blip = Track(_forklift.AddBlip());
             blip.Sprite = BlipSprite.Standard;
             blip.Color = BlipColor.Orange;
@@ -434,19 +469,24 @@ namespace Bloodlines.Missions.Campaign
             _technical = Track(World.CreateVehicle(model, start, 180f));
             if (_technical == null || !_technical.Exists()) return;
             _technical.IsPersistent = true;
+            _technical.IsEngineRunning = true;
+            GameUtils.HoldUntilGrounded(_technical);
 
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             for (int seat = 0; seat < 2; seat++)
             {
-                var crew = Track(World.CreatePed(crewModel, _technical.Position, 0f));
+                var crew = Track(World.CreatePed(crewModel, _technical.Position + new Vector3(4f + seat * 2f, 0f, 1f), 0f));
                 if (crew == null || !crew.Exists()) continue;
 
                 crew.RelationshipGroup = aegis;
                 crew.IsPersistent = true;
                 crew.BlockPermanentEvents = true;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
-                crew.Task.WarpIntoVehicle(_technical, seat == 0 ? VehicleSeat.Driver : VehicleSeat.Passenger);
-                if (seat == 0) { _technicalDriver = crew; crew.Task.VehicleChase(Game.Player.Character); }
+                crew.SetIntoVehicle(_technical, seat == 0 ? VehicleSeat.Driver : VehicleSeat.LeftRear);
+                if (!crew.IsInVehicle(_technical)) { Logger.Warn("M08: response crew could not seat; leaving this actor out of the chase."); continue; }
+                crew.AlwaysKeepTask = true;
+                _responseCrew.Add(crew);
+                if (seat == 0) { crew.Task.VehicleChase(Game.Player.Character); }
                 else crew.Task.VehicleShootAtPed(Game.Player.Character);
             }
 
@@ -461,47 +501,11 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            Ctx.Crew.CompanionsHoldPosition = false;
             _sentries.Clear();
+            _responseCrew.Clear();
             _crates.Clear();
         }
     }
 
-    /// <summary>
-    /// The forks under a crate: the required driver brings the forklift to the pad
-    /// and stops; after a short dwell the crate is theirs. No button and no physics
-    /// lift, because a real forklift lift is a fight the crate wins (Ron, September 11).
-    /// </summary>
-    internal sealed class ForksUnderCrateObjective : Objective
-    {
-        public const float Radius = 4.5f;
-        public const int DwellMs = 1000;
-        private readonly string _action;
-        private readonly Func<Vector3> _pad;
-        private readonly Func<Vehicle> _forklift;
-        private int _dwell, _lastTick;
-
-        public ForksUnderCrateObjective(string action, Func<Vector3> pad, Func<Vehicle> forklift) : base(action)
-        { _action = action; _pad = pad; _forklift = forklift; }
-
-        public override void Enter(MissionContext c) { base.Enter(c); _dwell = 0; _lastTick = Game.GameTime; }
-
-        public override void Update(MissionContext c)
-        {
-            var forklift = _forklift();
-            if (forklift == null || !forklift.Exists() || forklift.IsDead) { Fail("The forklift is lost. Restart this mission."); return; }
-            var pad = _pad(); var ped = Game.Player.Character;
-            ObjectiveMarkers.Navigation(pad, null, forklift);
-            GameUtils.DrawObjectiveMarker(pad, System.Drawing.Color.Yellow, 2f);
-            int delta = Math.Max(0, Math.Min(1000, Game.GameTime - _lastTick)); _lastTick = Game.GameTime;
-            if (!IsOwnerActive(c)) { _dwell = 0; Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
-            bool seated = ped != null && ped.Exists() && ped.IsInVehicle(forklift);
-            bool near = seated && forklift.Position.DistanceTo(pad) <= Radius;
-            if (!near) { _dwell = 0; Label = _action + (seated ? " — drive the forks under the crate." : " — get in the forklift."); return; }
-            if (forklift.Speed > 1f) { _dwell = 0; Label = _action + " — stop with the forks under it."; return; }
-            _dwell += delta;
-            Label = _action;
-            GameUtils.DrawProgressBar(_dwell / (float)DwellMs);
-            if (_dwell >= DwellMs) Complete();
-        }
-    }
 }

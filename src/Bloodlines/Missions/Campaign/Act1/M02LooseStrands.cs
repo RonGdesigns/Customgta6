@@ -123,7 +123,9 @@ namespace Bloodlines.Missions.Campaign
                                    (remaining % 60).ToString("00"), 500);
             }
 
-            RequiredSwitch = Stage == 2 && Ctx.Crew.ActiveSlot != CrewSlot.Ice ? (CrewSlot?)CrewSlot.Ice : null;
+            // Keep steering available until the driver has pulled up safely.
+            bool safeHandoff = !player.IsInVehicle(_chase) || _chase.GetPedOnSeat(VehicleSeat.Driver) != player || _chase.Speed < 3f;
+            RequiredSwitch = Stage == 2 && safeHandoff && Ctx.Crew.ActiveSlot != CrewSlot.Ice ? (CrewSlot?)CrewSlot.Ice : null;
             switch (Stage)
             {
                 case 0: UpdatePursuit(player); break;
@@ -146,11 +148,11 @@ namespace Bloodlines.Missions.Campaign
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var blocking = new SceneBlocking()
-                .Then(ShotStep.Wide(3000, _chase.Position, 12f, 6f, 5f))
-                .Then(new EnterVehicleStep(guess, _chase, VehicleSeat.Driver))
-                .Then(new EnterVehicleStep(ice, _chase, VehicleSeat.RightFront))
-                .Then(new EnterVehicleStep(gohan, _chase, VehicleSeat.LeftRear))
-                .Then(new ShotStep(2500, _chase, new Vector3(-6f, 2.5f, 1.6f), _chase, new Vector3(0f, 0f, 0.8f), 1.2f));
+                .Then(new TogetherStep(
+                    new EnterVehicleStep(guess, _chase, VehicleSeat.Driver),
+                    new EnterVehicleStep(ice, _chase, VehicleSeat.RightFront),
+                    new EnterVehicleStep(gohan, _chase, VehicleSeat.LeftRear)))
+                .Then(new ShotStep(1400, _chase, new Vector3(-6f, 2.5f, 1.6f), _chase, new Vector3(0f, 0f, 0.8f), 1.2f));
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "stash", Title = "The car stays",
@@ -368,7 +370,7 @@ namespace Bloodlines.Missions.Campaign
             if (Ctx.Crew.ActiveSlot != CrewSlot.Ice)
             {
                 _breachStarted = 0;
-                GameUtils.Subtitle("~y~Switch to Ice, exit the Granger and collect the drives at the van's marked REAR doors.", 1200);
+                GameUtils.Subtitle((_chase.Speed >= 3f ? "~y~Pull up beside the disabled van, then switch to Ice." : "~y~Switch to Ice, exit the Granger and collect the drives at the van's marked REAR doors."), 1200);
                 return;
             }
 
@@ -407,7 +409,7 @@ namespace Bloodlines.Missions.Campaign
         private void UpdateEscape(Ped player)
         {
             var canal = Ctx.Locations.Position("M02.CanalEscape");
-            ObjectiveMarkers.Navigation(canal, null, _chase);
+            ObjectiveMarkers.Navigation(player.IsInVehicle(_chase) ? canal : _chase.Position, null, _chase);
             GameUtils.DrawObjectiveMarker(canal, Color.FromArgb(120, 106, 168, 122), 5f);
 
             if (!_chopperCalled && SecondsInStage >= 3)
@@ -426,8 +428,9 @@ namespace Bloodlines.Missions.Campaign
                 if (Ctx.Crew.CompanionAI.StateOf(Ctx.Crew.ActiveSlot) == CompanionState.Scripted) Ctx.Crew.CompanionAI.ReleaseControl(Ctx.Crew.ActiveSlot);
                 if (!player.IsInVehicle() && GameUtils.IsWithinFlat(player.Position, _chase.Position, 4.5f))
                 {
-                    GameUtils.Subtitle("~y~Press E / D-pad Right to get in the Granger.", 500);
-                    if (Game.IsControlJustPressed(GTA.Control.Context)) player.SetIntoVehicle(_chase, FreeSeat());
+                    GameUtils.Subtitle("~y~Enter the Granger: F / controller Y (or E / D-pad Right).", 500);
+                    if (Game.IsControlJustPressed(GTA.Control.Context) && !Function.Call<bool>(Hash.IS_PED_GETTING_INTO_A_VEHICLE, player))
+                        player.Task.EnterVehicle(_chase, FreeSeat(), 6000, 1f, EnterVehicleFlags.None);
                     return;
                 }
                 GameUtils.Subtitle("~y~Return to the crew's Granger.", 500);
@@ -460,7 +463,7 @@ namespace Bloodlines.Missions.Campaign
         {
             if (_drives == null || !_drives.Exists()) { _drives = null; return; }
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice == null || !ice.Exists() || !ice.IsInVehicle(_chase)) return;
+            if (ice == null || !ice.Exists() || (!ice.IsInVehicle(_chase) && !GameUtils.IsWithinFlat(ice.Position, _chase.Position, 6f))) return;
             _drives.Detach();
             GameUtils.SafeDelete(_drives);
             _drives = null;

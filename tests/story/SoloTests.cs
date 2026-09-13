@@ -34,35 +34,35 @@ public static partial class StoryTests
   s1.Cleanup();Check(s1.Car.Exists()&&World.Props.Any(p=>p.Exists()&&p.AttachedTo==s1.Car),"Ice's car and the crates stay at his door");
 
   // ---- SM02: the annex seen with the check-in said, the tap on camera, the result named, IT's clock.
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"solo2.json"));var s2=new SM02ZeroDayInjection();
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"solo2.json"));var s2=new SM02ZeroDayInjection();World.CollisionReady=true;
   Check(s2.Begin(c)&&c.Cutscenes.IsActive&&s2.TerminalProp!=null&&s2.EndpointKind==MissionEndpoint.EscapeCheckpoint,"SM02 opens on the roof, the bay and a terminal that exists; the fire escape clears nothing by itself");
-  c.Cutscenes.Skip();s2.Tick();Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=c.Locations.Position("SM02.RoofAccess");s2.Tick();Check(s2.CurrentStage==1,"On the roof the guards are the job");
+  c.Cutscenes.Skip();s2.Tick();Use(crew,CrewSlot.Gohan);Interact(s2,c,CrewSlot.Gohan,c.Locations.Position("SM02.StairEntry"),2);Check(s2.CurrentStage==1,"On the roof the guards are the job");
   var annex=World.Created.Where(p=>p.Model.Name=="s_m_m_security_01").ToList();foreach(var g in annex)g.IsBeingStunned=true;s2.Tick();Check(s2.CurrentStage==2&&annex.All(g=>g.IsAlive),"Both guards down and alive, the terminal is the job");
   GTA.UI.Screen.Subtitle=null;Interact(s2,c,CrewSlot.Gohan,c.Locations.Position("SM02.Terminal"),8);
   Check(s2.CurrentStage==3&&c.Cutscenes.IsActive&&s2.TapLive&&c.State.EvidenceOf("cameraArchive")==EvidenceState.CopyHeld,"The tap plays as a scene and the result is recorded as camera archive access, not the dock recording");
   c.Cutscenes.Skip();s2.Tick();Game.GameTime+=SM02ZeroDayInjection.TraceSeconds*1000+1500;s2.Tick();
   Check(s2.Status==MissionStatus.Failed&&s2.FailReason.Contains("traced"),"IT's trace is a clock: too slow down the fire escape and the job is lost");
-  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"solo2b.json"));s2=new SM02ZeroDayInjection();s2.Begin(c);c.Cutscenes.Skip();s2.Tick();
-  Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=c.Locations.Position("SM02.RoofAccess");s2.Tick();foreach(var g in World.Created.Where(p=>p.Model.Name=="s_m_m_security_01"))g.IsBeingStunned=true;s2.Tick();
+  Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"solo2b.json"));s2=new SM02ZeroDayInjection();World.CollisionReady=true;s2.Begin(c);c.Cutscenes.Skip();s2.Tick();
+  Use(crew,CrewSlot.Gohan);Interact(s2,c,CrewSlot.Gohan,c.Locations.Position("SM02.StairEntry"),2);foreach(var g in World.Created.Where(p=>p.Model.Name=="s_m_m_security_01"))g.IsBeingStunned=true;s2.Tick();
   Interact(s2,c,CrewSlot.Gohan,c.Locations.Position("SM02.Terminal"),8);c.Cutscenes.Skip();s2.Tick();
-  Game.Player.Character.Position=c.Locations.Position("SM02.Exit");s2.Tick();c.Dialogue.Clear();s2.Tick();
+  Interact(s2,c,CrewSlot.Gohan,c.Locations.Position("SM02.RoofAccess"),2);c.Dialogue.Clear();s2.Tick();
   Check(s2.Status==MissionStatus.Passed,"Down the fire escape in time, Gohan is clear");
   string s2src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Solo","SM02ZeroDayInjection.cs"));Check(s2src.Contains("stocks the Marksman Rifle")&&s2src.Contains("The dock recording and the witness are untouched"),"SM02's reward and result are said as they work");
 
-  // ---- SM03: KJ walks the prize, a legitimate result, the guns shown, the prize to the chop bay.
+  // ---- SM03: owned car, no cargo, one shared mountain sprint.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"solo3.json"));var s3=new SM03MidnightDrift();
-  Check(s3.Begin(c)&&c.Cutscenes.IsActive&&s3.KJ!=null&&s3.Prize!=null&&s3.Prize.AttachedTo==s3.Coupe,"SM03 opens with KJ walking the prize on the coupe's tail and the coupe itself");
-  c.Cutscenes.Skip();s3.Tick();Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(s3.Coupe,VehicleSeat.Driver);s3.Tick();Check(s3.CurrentStage==1,"In the coupe, the race is on");
-  var circuit=new[]{"SM03.Checkpoint1","SM03.Checkpoint2","SM03.Checkpoint3","SM03.Checkpoint4"};
-  for(int lap=0;lap<3;lap++)foreach(var key in circuit){s3.Coupe.Position=c.Locations.Position(key);Game.Player.Character.Position=s3.Coupe.Position;s3.Tick();}
-  Check(s3.CurrentStage==2&&!s3.GunsShown,"Three laps won on the road, the rivals turn: nothing auto-wins a lap");
-  s3.Tick();Check(s3.GunsShown&&c.Cutscenes.IsActive,"The guns are shown once as the change of plan");
-  c.Cutscenes.Skip();s3.Tick();Check(c.Dialogue.HasPending,"Ron says it: stop them or get the coupe to the finish");
-  foreach(var r in World.Created.Where(p=>p.Model.Name=="g_m_y_salvaboss_01"))r.IsDead=true;s3.Tick();Check(s3.CurrentStage==3,"The shooters down, the chop bay is the job");
-  s3.Coupe.Position=c.Locations.Position("M11.ChopShop");Game.Player.Character.Position=s3.Coupe.Position;Game.Player.WantedLevel=0;s3.Tick();c.Dialogue.Clear();s3.Tick();
-  Check(s3.Status==MissionStatus.Passed&&s3.PrizeHome&&c.State.CargoAt("racePrize")=="M11.ChopShop","At the bay the prize is recorded");
-  string s3src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Solo","SM03MidnightDrift.cs"));Check(s3src.Contains("$25,000 and the race transmission"),"SM03's reward is said as it works: the cash and the transmission the garage fits");
-  s3.Cleanup();Check(s3.Coupe.Exists()&&s3.Prize.Exists(),"The coupe and the prize stay at the bay");
+  Check(!s3.Begin(c)&&SM03MidnightDrift.EntryRequirement(c).Contains("Buy a personal car"),"The race refuses a missing personal car with a purchase instruction");
+  var owned=new OwnedVehicle{Id=1,ModelName="sultanrs",ModelHash=(uint)Game.GenerateHash("sultanrs"),Garage="bay-guess",Label="My sprint car"};c.State.Vehicles.Add(owned);
+  c.Garages=new GarageService(crew,c.State,c.Locations,null);c.Garages.Allowed=()=>true;
+  var personal=c.Garages.Retrieve(owned);Check(personal!=null,"The race fixture retrieves a real owned garage car");
+  Use(crew,CrewSlot.Guess);Game.Player.Character.Position=personal.Position;Game.Player.Character.SetIntoVehicle(personal,VehicleSeat.Driver);
+  s3=new SM03MidnightDrift();Check(s3.Begin(c)&&s3.Coupe==personal&&s3.KJ!=null&&s3.Prize==null,"SM03 uses the actual owned car and spawns no cargo on its tail");
+  Interact(s3,c,CrewSlot.Guess,c.Locations.Position("SM03.StartLine"),3,true);Check(s3.CurrentStage==1,"Ready-up starts one sprint");
+  var route=c.Locations.All.Where(l=>l.Key.StartsWith("SM03.Sprint",StringComparison.Ordinal)).OrderBy(l=>l.Key).ToArray();
+  Check(route.Length==278&&route.Last().Position.Z>750f,"The connected road route reaches the mountain summit");
+  foreach(var gate in route){s3.Coupe.Position=gate.Position;Game.Player.Character.Position=gate.Position;s3.Tick();}
+  c.Dialogue.Clear();s3.Tick();Check(s3.Status==MissionStatus.Passed&&s3.PrizeHome&&c.State.CargoAt("racePrize")=="SM03.Summit"&&!s3.GunsShown,"Winning finishes at the summit without a cargo delivery or surprise gunfight");
+  s3.Cleanup();Check(personal.Exists(),"Cleanup preserves the player's personal car");
   var scenes=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv"));
   Check(scenes.Count(l=>l.StartsWith("SM01_SCENE_APPROACH"))==2&&scenes.Count(l=>l.StartsWith("SM02_SCENE_APPROACH"))==2&&scenes.Count(l=>l.StartsWith("SM03_SCENE_APPROACH"))==2&&scenes.Any(l=>l.StartsWith("SM03_SCENE_APPROACH_01_KJ")),"Each solo's approach has two authored lines, KJ speaking in his own");
  }

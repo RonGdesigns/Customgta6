@@ -1,4 +1,5 @@
 using System;
+using GTA.Native;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -162,7 +163,7 @@ public static partial class StoryTests
   var glued=new Ped{StuckInSeat=true};var gluedCab=new Vehicle{Position=new Vector3(291,-1078,29)};glued.SetIntoVehicle(gluedCab,VehicleSeat.Driver);
   Check(PrologueSequence.PlaceForColdOpen(glued,dockPoint)==PrologueSequence.Placement.StillSeated&&glued.IsInVehicle(gluedCab)&&gluedCab.Position!=dockPoint&&glued.Position!=dockPoint,"If the player cannot be unseated, nothing is moved and the result says so");
   Check(PrologueSequence.PlaceForColdOpen(new Ped{Position=Vector3.Zero},dockPoint)==PrologueSequence.Placement.Placed,"A player on foot is simply placed");
-  var caller=new Ped();var phone=new UsePhoneStep(caller,3000);phone.Start();phone.Finish();Check(caller.Task.Clears>0,"Finishing a phone step puts the phone away immediately");
+  var caller=new Ped();var phone=new UsePhoneStep(caller,3000);phone.Start();phone.Finish();Check(Function.Calls.Any(x=>x.Item1==Hash.TASK_USE_MOBILE_PHONE&&x.Item2[0]==caller&&!(bool)x.Item2[1]),"Finishing a phone step requests the normal phone-lowering task");
   var walker=new Ped();var to=new WalkToStep(walker,new Vector3(7,7,0),1f);to.Start();to.Finish();Check(walker.Position==new Vector3(7,7,0)&&walker.Task.Clears>0,"Finishing a walk places the actor on the mark with tasks cleared");
   var rider=new Ped();var seat=new Vehicle();var enter=new EnterVehicleStep(rider,seat,VehicleSeat.Driver);enter.Start();enter.Finish();Check(rider.IsInVehicle(seat)&&rider.SeatIndex==VehicleSeat.Driver,"Finishing an entry seats the actor now");
   // Cancel mid-step stands the actor down without moving it.

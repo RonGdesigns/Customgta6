@@ -17,12 +17,15 @@ namespace Bloodlines.Core
     public sealed class CrewVanRecord
     {
         public string Model = "granger";
+        public readonly Dictionary<string, OwnedVehicle> Fleet = new Dictionary<string, OwnedVehicle>(StringComparer.OrdinalIgnoreCase);
+        public OwnedVehicle Build = new OwnedVehicle();
         public int PrimaryColor = -1, SecondaryColor = -1, Livery = -1;
         public bool TiresReinforced;
         public readonly Dictionary<int, int> Mods = new Dictionary<int, int>();
 
         public Dictionary<string, object> ToJson() => new Dictionary<string, object>
         {
+            { "fleet", Fleet.ToDictionary(p=>p.Key,p=>(object)p.Value.ToJson()) }, { "build", Build.ToJson() },
             { "model", Model }, { "primaryColor", PrimaryColor }, { "secondaryColor", SecondaryColor }, { "livery", Livery },
             { "tiresReinforced", TiresReinforced },
             { "mods", Mods.OrderBy(p => p.Key).ToDictionary(p => p.Key.ToString(), p => (object)p.Value) }
@@ -32,6 +35,8 @@ namespace Bloodlines.Core
         {
             if (map == null) return;
             Model = Json.String(map, "model", Model);
+            Build=OwnedVehicle.FromJson(Json.Object(map.TryGetValue("build",out var build)?build:null))??new OwnedVehicle();
+            Fleet.Clear();foreach(var pair in Json.Object(map.TryGetValue("fleet",out var fleet)?fleet:null)){var car=OwnedVehicle.FromJson(Json.Object(pair.Value));if(car!=null)Fleet[pair.Key]=car;}
             PrimaryColor = Json.Int(map, "primaryColor", PrimaryColor);
             SecondaryColor = Json.Int(map, "secondaryColor", SecondaryColor);
             Livery = Json.Int(map, "livery", Livery);
@@ -39,6 +44,12 @@ namespace Bloodlines.Core
             Mods.Clear();
             foreach (var pair in Json.Object(map.TryGetValue("mods", out var mods) ? mods : null))
                 if (int.TryParse(pair.Key, out int slot) && pair.Value != null && int.TryParse(pair.Value.ToString(), out int index)) Mods[slot] = index;
+        }
+
+        public void Reset()
+        {
+            Model = "granger"; PrimaryColor = SecondaryColor = Livery = -1;
+            TiresReinforced = false; Mods.Clear(); Fleet.Clear(); Build=new OwnedVehicle();
         }
 
         public string Fingerprint() => Json.Write(ToJson());
@@ -54,6 +65,55 @@ namespace Bloodlines.Core
     /// </summary>
     public sealed class CrewVan
     {
+        public sealed class Choice
+        {
+            public readonly string Model,Name; public readonly int Price;
+            public Choice(string model,string name,int price){Model=model;Name=name;Price=price;}
+        }
+        public static readonly Choice[] FleetChoices={
+            new Choice("granger","Granger",0),new Choice("baller2","Baller",40000),
+            new Choice("schafter2","Schafter",38000),new Choice("kuruma2","Armored Kuruma",80000),
+            new Choice("buffalo4","Buffalo STX",100000),new Choice("jubilee","Jubilee",90000),
+            new Choice("nightshark","Nightshark",110000),new Choice("insurgent2","Insurgent",120000)};
+        private static OwnedVehicle Clone(OwnedVehicle source)
+        {
+            var copy=new OwnedVehicle{PrimaryColor=source.PrimaryColor,SecondaryColor=source.SecondaryColor,Livery=source.Livery,
+                WheelType=source.WheelType,WindowTint=source.WindowTint,Plate=source.Plate,TiresReinforced=source.TiresReinforced};
+            foreach(var pair in source.Mods)copy.Mods[pair.Key]=pair.Value;
+            foreach(var pair in source.Finish)copy.Finish[pair.Key]=pair.Value;
+            return copy;
+        }
+        public bool Owns(string model)=>model==Record.Model||model=="granger"||Record.Fleet.ContainsKey(model);
+        public Action<string, int> Purchased;
+        public bool Select(Choice choice,bool atHideout)
+        {
+            var player=Game.Player.Character;
+            if(!atHideout||!_state.IsUnlocked("cypressFoundry")||Game.Player.WantedLevel!=0||player==null||player.IsDead||
+                choice==null||!FleetChoices.Contains(choice)||ShopService.PreviewVehicleHandle!=0)return false;
+            if(choice.Model==Record.Model)return false;
+            // Never delete a vehicle with a brother or another occupant still in it.
+            if(Current!=null&&Current.Occupants.Length>0){GameUtils.Notify("Park the crew car and let everyone out before replacing it.");return false;}
+            var model=new Model(choice.Model);
+            if(!model.IsValid||!model.IsInCdImage||!model.IsCar||!GameUtils.RequestModel(model,2500))return false;
+            bool fits=Function.Call<int>(Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS,model.Hash)>=4;
+            model.MarkAsNoLongerNeeded();if(!fits){GameUtils.Notify("That vehicle cannot seat the crew.");return false;}
+            int price=Owns(choice.Model)?0:choice.Price;
+            if(_state.CashOnHand<price){GameUtils.Notify("Need $"+price+" crew cash.");return false;}
+            if(Current!=null)Capture(Current);
+            Record.Fleet[Record.Model]=Clone(Record.Build);
+            // Keep legacy saves' Granger customization on their first fleet change.
+            var stored=Record.Fleet[Record.Model];stored.PrimaryColor=Record.PrimaryColor;stored.SecondaryColor=Record.SecondaryColor;
+            stored.Livery=Record.Livery;stored.TiresReinforced=Record.TiresReinforced;
+            foreach(var pair in Record.Mods)stored.Mods[pair.Key]=pair.Value;
+            var next=Record.Fleet.TryGetValue(choice.Model,out var saved)?Clone(saved):new OwnedVehicle();
+            Record.Model=choice.Model;Record.Build=next;
+            Record.PrimaryColor=next.PrimaryColor;Record.SecondaryColor=next.SecondaryColor;Record.Livery=next.Livery;Record.TiresReinforced=next.TiresReinforced;
+            Record.Mods.Clear();foreach(var pair in next.Mods)Record.Mods[pair.Key]=pair.Value;
+            Record.Fleet[choice.Model]=next;_state.CashOnHand-=price;_state.Save();
+            if(price>0)try{Purchased?.Invoke(choice.Name,price);}catch(Exception ex){Logger.Warn("Fleet receipt: "+ex.Message);}
+            GameUtils.SafeDelete(_blip);_blip=null;GameUtils.SafeDelete(_van);_van=null;_wasAboard=false;
+            GameUtils.Notify(choice.Name+" is now the crew car. It will be parked outside and used for crew-car mission scenes.");return true;
+        }
         public const string StashKey = "Stash.CrewVan";
         public const float SpawnRadius = 220f;
 
@@ -149,6 +209,7 @@ namespace Bloodlines.Core
                 if (record.SecondaryColor >= 0) mods.SecondaryColor = (VehicleColor)record.SecondaryColor;
                 if (record.Livery >= 0) mods.Livery = record.Livery;
                 if (record.TiresReinforced) van.CanTiresBurst = false;
+                if(record.Build.Finish.Count>0)GarageService.Apply(van,record.Build);
             }
             catch (Exception ex) { Logger.Error("Crew van customization could not be applied", ex); }
         }
@@ -156,7 +217,7 @@ namespace Bloodlines.Core
         /// <summary>Read a vehicle's customization into the save. True when something changed.</summary>
         public bool Capture(Vehicle van)
         {
-            if (van == null || !van.Exists()) return false;
+            if (van == null || !van.Exists() || van.Handle==ShopService.PreviewVehicleHandle) return false;
             var record = Record;
             string before = record.Fingerprint();
             try
@@ -172,6 +233,8 @@ namespace Bloodlines.Core
                 record.SecondaryColor = (int)mods.SecondaryColor;
                 record.Livery = mods.Livery;
                 record.TiresReinforced = !van.CanTiresBurst;
+                GarageService.Capture(van,record.Build);
+                record.Mods.Clear();foreach(var pair in record.Build.Mods)record.Mods[pair.Key]=pair.Value;
             }
             catch (Exception ex) { Logger.Error("Crew van customization could not be read", ex); return false; }
             if (record.Fingerprint() == before) return false;

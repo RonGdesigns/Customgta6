@@ -27,6 +27,18 @@ namespace Bloodlines.Core
             _state = state;
         }
 
+        private int _smokeAt;
+        public void UpdateSmoke(bool allowed)
+        {
+            if (!allowed || !_state.FleetUpgrades.TryGetValue("aircraftSmokeReady", out bool ready) || !ready) return;
+            var p = Game.Player.Character;
+            if (p == null || !p.IsInVehicle() || p.SeatIndex != VehicleSeat.Driver || p.CurrentVehicle.Model != new Model("duster")) return;
+            if (!Game.IsControlJustPressed(Control.Context)) return;
+            if (Game.GameTime < _smokeAt) { GameUtils.Notify("Smoke release recharging."); return; }
+            if (AircraftSmoke.Emit(p.CurrentVehicle)) { _smokeAt = Game.GameTime + 12000; GameUtils.Notify("Smoke released. Next release in 12 seconds."); }
+            else GameUtils.Notify("Smoke effect unavailable; no release consumed.");
+        }
+
         public void Update()
         {
             var player = Game.Player.Character;
@@ -36,6 +48,16 @@ namespace Bloodlines.Core
             if (vehicle == null || !vehicle.Exists() || _upgraded.Contains(vehicle.Handle)) return;
 
             string model = vehicle.DisplayName;
+
+            bool escort = vehicle.Model == new Model("halftrack") && _state.FleetUpgrades.TryGetValue("armoredEscortReady", out bool armored) && armored;
+            bool technical = vehicle.Model == new Model("technical") && _state.FleetUpgrades.TryGetValue("technicalSupportReady", out bool support) && support;
+            if (escort || technical)
+            {
+                vehicle.Mods.InstallModKit(); Fit(vehicle, VehicleModType.Brakes, 2); Fit(vehicle, VehicleModType.Armor, 3);
+                vehicle.CanTiresBurst = false; _upgraded.Add(vehicle.Handle);
+                GameUtils.Notify("~b~Captured support vehicle: reinforced tires, available armor and brakes fitted.");
+                return;
+            }
 
             if (_state.FleetUpgrades.TryGetValue("grangerTurbineInstalled", out bool turbine) && turbine
                 && (vehicle.Model == new Model("granger") || vehicle.Model == new Model("granger2")))

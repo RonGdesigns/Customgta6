@@ -94,7 +94,7 @@ namespace Bloodlines.Missions.Campaign
                     new DestroyVehicleObjective("Splash the lead spotter.",
                         () => _spotters.Count > 0 ? _spotters[0] : null))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => GameUtils.Subtitle("~y~Use the Lazer aircraft weapons on the two red plane markers.", 5000))
+                .OnEnter(context => GameUtils.Subtitle("~y~Destroy the LEAD spotter first. Keep the second alive until Gohan clears you to fire.", 5000))
                 .OnExit(context => HoldForTraffic())
                 .WithCues("M26_S1_01_GUESS");
 

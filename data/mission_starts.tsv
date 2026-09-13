@@ -27,7 +27,7 @@ M25	M25.BridgeDeck
 M26	M26.DusterPad
 M27	M26.DusterPad
 SM01	SM01.WarehouseGate
-SM02	SM02.RoofAccess
+SM02	SM02.StairEntry
 SM03	SM03.StartLine
 M28	M28.Approach
 M29	M29.Approach
@@ -35,3 +35,16 @@ M30	M30.Start
 SM04	SM04.Approach
 SM05	SM05.Shore
 SM06	SM06.Approach
+M31	M31.Start
+M32	M32.Start
+M33	M33.Start
+M34	M34.Start
+M35	M35.Start
+M36	M36.Start
+M37	M37.Start
+M38	M38.Start
+M39	M39.Start
+M40	M40.Start
+M41	M41.Start
+M42	M42.Start
+M43	M43.Start

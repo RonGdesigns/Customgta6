@@ -1,5 +1,7 @@
 # Integration review: preservation is not full gameplay certification
 
+> Status, September 12 repair: this is a historical review/planning document. See [the repair register](SHARED-SYSTEMS-REPAIR-2026-09-12.md) and [the playable mission map](PLAYABLE-MISSION-MAP.md) for current behavior. M07/M08's newer scene work supersedes the earlier findings about missing staging. The Port Heist has no saved phase bookmark; failure restarts M19–M22 together.
+
 Reviewed main: `f8a37b9837b11f6661df081fd59616b7c06e6bb3` (through PR #32).
 Reviewed harbor repair: `ea4c54667d60d10f8973bfeccdd9713c97499501`.
 Combined source merge: `75274fd2f8e209cca1a86b6b7f871bd3c64b58d4`.

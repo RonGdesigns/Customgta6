@@ -27,12 +27,16 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M13SmugglersCut : ComposedMission
     {
         private readonly List<Vector3> _barges = new List<Vector3>();
+        private readonly List<Vehicle> _fuelBoats = new List<Vehicle>();
         private readonly List<Ped> _watchmen = new List<Ped>();
 
         private Vehicle _kayak;
         private Vehicle _granger;
         private Vehicle _alarmBoat;
         private Ped _alarmCrew;
+        private readonly List<Vehicle> _pursuitBoats = new List<Vehicle>();
+        private readonly List<Ped> _drivers = new List<Ped>(), _gunners = new List<Ped>();
+        private int _nextPursuit;
         private Vector3 _launch;
         private Vector3 _slipway;
         private bool _alarmShown, _blown;
@@ -64,6 +68,7 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Game.Player.Character.Weapons.Give(WeaponHash.StickyBomb, 6, false, true);
 
+            if (!SpawnFuelBoats()) return false;
             SpawnKayak();
             SpawnGranger();
             SpawnWatchmen();
@@ -82,7 +87,7 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Limpets",
-                    new MultiHoldObjective("Plant limpet charges on all three barges.",
+                    new MultiHoldObjective("Ice: approach the marked side of each fuel boat and press E / D-pad Right to plant a charge.",
                         _barges, 6, 6f, "Arming the charge", () => _kayak),
                     new AvoidDetectionObjective(() => _watchmen,
                         "A dock watchman called it in before the charges were set.", 40f, 4))
@@ -93,10 +98,14 @@ namespace Bloodlines.Missions.Campaign
             // The alarm is the reason to leave: a launch turning into the basin,
             // shown once. The charges stay dark until Ice is aboard.
             yield return new MissionStage("Clear the water",
-                    new ReachZoneObjective("Get to the western slipway.", () => _slipway, 10f),
+                    new ReachZoneObjective("Ice: return to the southern quay, climb out onto the dock, and reach Guess at the car marker.", () => _slipway, 10f),
                     new ReactionTrigger(() => !_alarmShown && !Ctx.Cutscenes.IsActive, ShowAlarm))
                 .OnEnter(context => GameUtils.Subtitle("~y~Guess is idling on the slipway. Move.", 4000))
                 .WithCues("M13_S1_02_GUESS");
+
+            yield return new MissionStage("Board Guess's car",
+                    new EnterVehicleObjective("Ice: get into an empty passenger seat in Guess's Granger (F / Y or E / D-pad Right).", () => _granger))
+                .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Blow the basin",
                     new MissionInteraction("Ice: board the Granger, then trigger the planted charges", () => _granger.Position, 1, 5f, () => _granger))
@@ -134,24 +143,38 @@ namespace Bloodlines.Missions.Campaign
             var boatModel = new Model("predator");
             var crewModel = new Model("s_m_y_blackops_01");
             if (!GameUtils.RequestModel(boatModel) || !GameUtils.RequestModel(crewModel)) return;
-            var far = _barges[2] + new Vector3(90f, -60f, 0f);
-            _alarmBoat = Track(World.CreateVehicle(boatModel, far, 0f));
-            if (_alarmBoat == null || !_alarmBoat.Exists()) { boatModel.MarkAsNoLongerNeeded(); crewModel.MarkAsNoLongerNeeded(); return; }
-            _alarmBoat.IsPersistent = true;
-            _alarmCrew = Track(World.CreatePed(crewModel, _alarmBoat.Position, 0f));
-            boatModel.MarkAsNoLongerNeeded();
-            crewModel.MarkAsNoLongerNeeded();
-            if (_alarmCrew == null || !_alarmCrew.Exists()) return;
-            _alarmCrew.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
-            _alarmCrew.IsPersistent = true;
-            _alarmCrew.BlockPermanentEvents = true;
-            _alarmCrew.Weapons.Give(WeaponHash.CarbineRifle, 120, true, true);
-            _alarmCrew.Task.WarpIntoVehicle(_alarmBoat, VehicleSeat.Driver);
-            _alarmCrew.Task.StartBoatMission(_alarmBoat, _barges[1], VehicleMissionType.GoTo, 10f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
-            var blip = Track(_alarmBoat.AddBlip());
-            blip.Sprite = BlipSprite.Boat;
-            blip.Color = BlipColor.Red;
-            blip.Name = "Patrol launch";
+            for (int i=0;i<2;i++)
+            {
+                string key=i==0?"M13.AlarmSpawn":"M13.AlarmSpawn2";
+                var far=MarineSites.ResolveOrThrow(Ctx.Locations,key,3f,3f,6f);
+                var boat=Track(World.CreateVehicle(boatModel,far,Ctx.Locations.Heading(key)));
+                if(!RequireAssets(boat)){boatModel.MarkAsNoLongerNeeded();crewModel.MarkAsNoLongerNeeded();return;}
+                boat.IsPersistent=true;boat.IsEngineRunning=true;
+                var driver=Track(World.CreatePed(crewModel,far,0f));
+                var gunner=Track(World.CreatePed(crewModel,far,0f));
+                if(!RequireAssets(driver,gunner)){boatModel.MarkAsNoLongerNeeded();crewModel.MarkAsNoLongerNeeded();return;}
+                foreach(var ped in new[]{driver,gunner})
+                {ped.IsPersistent=true;ped.BlockPermanentEvents=true;ped.RelationshipGroup=World.AddRelationshipGroup("BLOODLINES_CARTEL");ped.Accuracy=22;ped.Weapons.Give(WeaponHash.CarbineRifle,300,true,true);}
+                driver.SetIntoVehicle(boat,VehicleSeat.Driver);gunner.SetIntoVehicle(boat,VehicleSeat.Passenger);
+                _pursuitBoats.Add(boat);_drivers.Add(driver);_gunners.Add(gunner);
+                if(i==0){_alarmBoat=boat;_alarmCrew=driver;}
+                var blip=Track(boat.AddBlip());blip.Sprite=BlipSprite.Boat;blip.Color=BlipColor.Red;blip.Name="Pursuit launch";
+            }
+            boatModel.MarkAsNoLongerNeeded();crewModel.MarkAsNoLongerNeeded();
+        }
+
+        private void Pursuit()
+        {
+            if(Game.GameTime<_nextPursuit||_blown)return;_nextPursuit=Game.GameTime+2000;
+            var ice=Ctx.Crew.PedFor(CrewSlot.Ice);if(ice==null||!ice.Exists())return;
+            for(int i=0;i<_pursuitBoats.Count;i++)
+            {
+                var boat=_pursuitBoats[i];var driver=_drivers[i];var gunner=_gunners[i];
+                if(boat==null||!boat.Exists()||boat.IsDead)continue;
+                var destination=ice.IsInVehicle(_kayak)?_kayak.Position:_launch;
+                if(driver.Exists()&&!driver.IsDead)driver.Task.StartBoatMission(boat,destination,VehicleMissionType.GoTo,22f,(VehicleDrivingFlags)786603,18f,(BoatMissionFlags)7);
+                if(gunner.Exists()&&!gunner.IsDead)gunner.Task.VehicleShootAtPed(ice);
+            }
         }
 
         private void ShowAlarm()
@@ -170,9 +193,10 @@ namespace Bloodlines.Missions.Campaign
         private void Detonate()
         {
             _blown = true;
+            foreach(var boat in _fuelBoats) if(boat!=null&&boat.Exists()) { boat.IsPositionFrozen=false; GTA.Native.Function.Call(GTA.Native.Hash.SET_BOAT_ANCHOR,boat,false); }
             for (int i = 0; i < _barges.Count; i++)
             {
-                World.AddExplosion(_barges[i], ExplosionType.Tanker, 12f, 1.6f,
+                World.AddExplosion(_fuelBoats[i].Position, ExplosionType.Tanker, 12f, 1.6f,
                     Game.Player.Character, true, false);
                 Script.Wait(450);
             }
@@ -202,6 +226,63 @@ namespace Bloodlines.Missions.Campaign
         }
 
         // ---------- world building ----------
+
+        private bool SpawnFuelBoats()
+        {
+            var model=new Model("tug");
+            if (!GameUtils.RequestModel(model)) return false;
+            try
+            {
+                var keys=new[]{"M13.BargeOne","M13.BargeTwo","M13.BargeThree"};
+                var size=model.Dimensions;
+                float halfWidth=System.Math.Max(System.Math.Abs(size.Item1.X),System.Math.Abs(size.Item2.X));
+                float halfLength=System.Math.Max(System.Math.Abs(size.Item1.Y),System.Math.Abs(size.Item2.Y));
+                Logger.Info("M13 tug bounds: min=" + size.Item1 + ", max=" + size.Item2);
+                var sites = new Vector3[keys.Length];
+                for (int i = 0; i < keys.Length; i++) sites[i] = Ctx.Locations.Position(keys[i]);
+                var originals = (Vector3[])sites.Clone();
+                // Resolve before spawning: no half-built scene, and each hull has a
+                // reserved footprint even if an estimate needs a small adjustment.
+                float separation = 2f * (float)System.Math.Sqrt(
+                    (halfWidth + 2f) * (halfWidth + 2f) + (halfLength + 2f) * (halfLength + 2f)) + 4f;
+                try
+                {
+                    for (int i = 0; i < keys.Length; i++)
+                    {
+                        int index = i;
+                        sites[i] = MarineSites.ResolveOrThrow(Ctx.Locations, keys[i], 5f,
+                            halfWidth + 2f, halfLength + 2f, 30f, 10f, candidate =>
+                            {
+                                for (int other = 0; other < sites.Length; other++)
+                                    if (other != index && GameUtils.IsWithinFlat(candidate, sites[other], separation)) return false;
+                                return true;
+                            });
+                    }
+                }
+                catch
+                {
+                    // A later failed site must not ratchet an earlier estimate
+                    // another thirty metres away on every startup retry.
+                    for (int i = 0; i < keys.Length; i++) Ctx.Locations.Get(keys[i]).Position = originals[i];
+                    throw;
+                }
+                for(int i=0;i<keys.Length;i++)
+                {
+                    var site=sites[i];
+                    var boat=Track(World.CreateVehicle(model,site,Ctx.Locations.Heading(keys[i])));
+                    if (!RequireAssets(boat)) return false;
+                    boat.IsPersistent=true;boat.IsEngineRunning=false;boat.IsPositionFrozen=false;
+                    // Let buoyancy set the waterline. A frozen model origin is not its draft.
+                    GTA.Native.Function.Call(GTA.Native.Hash.SET_BOAT_ANCHOR,boat,true);
+                    _fuelBoats.Add(boat);
+                    // Work beside the hull, where the scooter can actually reach.
+                    _barges[i]=site+new Vector3(boat.ForwardVector.Y,-boat.ForwardVector.X,0f)*(halfWidth+2f);
+                    var blip=Track(boat.AddBlip());blip.Sprite=BlipSprite.Boat;blip.Color=BlipColor.Yellow;blip.Name="Fuel boat "+(i+1);
+                }
+                return true;
+            }
+            finally { model.MarkAsNoLongerNeeded(); }
+        }
 
         private void SpawnKayak()
         {
@@ -253,7 +334,7 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < _barges.Count; i++)
             {
-                var watchman = World.CreatePed(model, _slipway + new Vector3(-12f + i * 9f, 12f, 0f), 180f);
+                var watchman = World.CreatePed(model, Ctx.Locations.Position("M13.Watchman" + (i + 1)), Ctx.Locations.Heading("M13.Watchman" + (i + 1)));
                 if (watchman == null || !watchman.Exists()) continue;
 
                 watchman.RelationshipGroup = workers;
@@ -261,7 +342,7 @@ namespace Bloodlines.Missions.Campaign
                 watchman.BlockPermanentEvents = true;
                 watchman.Accuracy = 20;
                 watchman.Weapons.Give(WeaponHash.Pistol, 40, true, true);
-                watchman.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", watchman.Position, 180f);
+                watchman.Task.StartScenario("WORLD_HUMAN_GUARD_STAND", watchman.Position, watchman.Heading);
 
                 _watchmen.Add(Track(watchman));
             }
@@ -272,6 +353,14 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnPassed()
         {
             if (_granger != null && _granger.Exists()) Release(_granger);
+        }
+
+        protected override void OnUpdate()
+        {
+            if (!_blown && _fuelBoats.Exists(v=>v==null||!v.Exists()||v.IsDead))
+            { Fail("A fuel boat was destroyed before the charges were ready. Restart the mission.");return; }
+            if(!Ctx.Cutscenes.IsActive)Pursuit();
+            base.OnUpdate();
         }
 
         protected override void OnCleanup()

@@ -34,14 +34,15 @@ namespace Bloodlines.Core
         public static readonly IMarineProbe Native = new NativeMarineProbe();
 
         public static bool TryResolve(Vector3 anchor, float depth, float halfWidth, float halfLength,
-            float heading, float searchRadius, out Vector3 surface, out string reason, IMarineProbe probe = null)
+            float heading, float searchRadius, out Vector3 surface, out string reason, IMarineProbe probe = null,
+            float searchStep = 40f, Func<Vector3, bool> available = null)
         {
             probe = probe ?? Native;
             surface = Vector3.Zero;
             reason = "No loaded, unobstructed water column with sufficient depth.";
             if (!Finite(anchor.X) || !Finite(anchor.Y) || !Finite(anchor.Z) || !Finite(depth) ||
                 !Finite(halfWidth) || !Finite(halfLength) || !Finite(heading) || !Finite(searchRadius) ||
-                depth < 1f || halfWidth < 0f || halfLength < 0f) return false;
+                !Finite(searchStep) || searchStep < 5f || depth < 1f || halfWidth < 0f || halfLength < 0f) return false;
             float radians = heading * (float)Math.PI / 180f;
             var forward = new Vector3(-(float)Math.Sin(radians), (float)Math.Cos(radians), 0f);
             var right = new Vector3(forward.Y, -forward.X, 0f);
@@ -49,18 +50,22 @@ namespace Bloodlines.Core
                 forward * halfLength, forward * -halfLength,
                 right * halfWidth + forward * halfLength, right * -halfWidth + forward * halfLength,
                 right * halfWidth - forward * halfLength, right * -halfWidth - forward * halfLength };
-            foreach (var candidate in Candidates(anchor, Math.Max(0f, Math.Min(SearchLimit, searchRadius))))
+            foreach (var candidate in Candidates(anchor, Math.Max(0f, Math.Min(SearchLimit, searchRadius)), searchStep))
             {
+                if (available != null && !available(candidate))
+                { reason = "Hull would overlap another reserved boat at " + candidate; continue; }
                 var center = probe.Column(candidate);
-                if (!center.HasDepth(depth)) continue;
+                if (!center.HasDepth(depth))
+                { reason = ColumnFailure(candidate, center, depth); continue; }
                 bool valid = true;
                 foreach (var offset in offsets)
                 {
                     var column = probe.Column(candidate + offset);
                     if (!column.HasDepth(depth) || Math.Abs(column.Surface - center.Surface) > 1f)
-                    { valid = false; break; }
+                    { reason = ColumnFailure(candidate + offset, column, depth) + "; center water=" + center.Surface; valid = false; break; }
                     var start = new Vector3(candidate.X, candidate.Y, center.Surface - depth * .5f);
-                    if (!probe.Clear(start, start + offset)) { valid = false; break; }
+                    if (!probe.Clear(start, start + offset))
+                    { reason = "Underwater obstruction from " + start + " to " + (start + offset); valid = false; break; }
                 }
                 if (!valid) continue;
                 surface = new Vector3(candidate.X, candidate.Y, center.Surface);
@@ -72,10 +77,15 @@ namespace Bloodlines.Core
 
         private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
-        public static IEnumerable<Vector3> Candidates(Vector3 anchor, float radius)
+        private static string ColumnFailure(Vector3 point, MarineColumn column, float depth) =>
+            "Column at " + point + ": known=" + column.Known + ", assumed=" + column.Assumed +
+            ", water=" + column.Surface + ", floor=" + column.Floor + ", required depth=" + depth;
+
+        public static IEnumerable<Vector3> Candidates(Vector3 anchor, float radius, float step = 40f)
         {
             yield return anchor;
-            for (float ring = 40f; ring <= radius; ring += 40f)
+            if (!Finite(step) || step < 5f) yield break;
+            for (float ring = step; ring <= Math.Min(SearchLimit, radius); ring += step)
                 for (int i = 0; i < 8; i++)
                 {
                     float angle = i * (float)Math.PI / 4f;
@@ -84,7 +94,8 @@ namespace Bloodlines.Core
         }
 
         public static Vector3 ResolveOrThrow(LocationBook book, string key, float depth,
-            float halfWidth = 5f, float halfLength = 8f, float searchRadius = SearchLimit)
+            float halfWidth = 5f, float halfLength = 8f, float searchRadius = SearchLimit,
+            float searchStep = 40f, Func<Vector3, bool> available = null)
         {
             var location = book.Get(key);
             if (location == null) throw new InvalidOperationException("Missing marine location: " + key);
@@ -106,7 +117,19 @@ namespace Bloodlines.Core
                     if (native == null || native.SeabedSeen(original)) break;
                     Script.Wait(300);
                 }
-                if (!TryResolve(original, depth, halfWidth, halfLength, location.Heading, radius, out water, out error))
+                bool resolved = TryResolve(original, depth, halfWidth, halfLength, location.Heading, radius,
+                    out water, out error, null, searchStep, available);
+                // Seeing the center's seabed does not mean the entire hull footprint
+                // has streamed. Retry the full check after yielding, not only its center.
+                for (int attempt = 0; !resolved && attempt < 3; attempt++)
+                {
+                    if (attempt == 0) Logger.Warn("Marine retry " + key + ": " + error +
+                        ", half footprint=" + halfWidth + " x " + halfLength + ", heading=" + location.Heading);
+                    Script.Wait(250);
+                    resolved = TryResolve(original, depth, halfWidth, halfLength, location.Heading, radius,
+                        out water, out error, null, searchStep, available);
+                }
+                if (!resolved)
                 {
                     Logger.Error("Marine preflight " + key + " at " + original + " (" + location.Status + "): " + error);
                     throw new InvalidOperationException("Water placement unavailable at " + key + ". Survey open water with enough depth; see Bloodlines.log.");

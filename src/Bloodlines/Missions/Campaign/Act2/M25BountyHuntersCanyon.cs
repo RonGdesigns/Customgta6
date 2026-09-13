@@ -17,14 +17,13 @@ namespace Bloodlines.Missions.Campaign
     /// bridge into the river when they get close enough to matter.
     ///
     /// Seen, not told: how Ice reaches the deck and how the other two know his route
-    /// (Gohan on the rim with it, Ron in the boat under the span) before the first
+    /// (Gohan on the rim with it, Ron in the boat east of the span at the river mouth) before the first
     /// shot; the pickup established before it is the only answer; the encirclement
     /// closing and the way out shown, down to the water, before the jump is asked
     /// for; the jump itself the player's, talked down over the radio; Ice boarding.
     ///
-    /// One of the two missions that use the bible's own surveyed coordinates — the
-    /// Raton bridge is in the Track 2 index — so this is the closest thing in Act II
-    /// to a position we can trust before the survey pass.
+    /// The old bible coordinate missed the span. The railway deck and downstream
+    /// extraction now use collision-checked defaults; saved survey keys still win.
     /// </summary>
     public sealed class M25BountyHuntersCanyon : ComposedMission
     {
@@ -107,7 +106,7 @@ namespace Bloodlines.Missions.Campaign
                     new ReactionTrigger(() => _escapeShown && !_talkedDown && !Ctx.Cutscenes.IsActive, TalkDown))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
-                    GameUtils.Subtitle("~y~A hundred and ten meters to the water. Jump.", 5000));
+                    GameUtils.Subtitle("~y~Deploy the parachute immediately. Steer east toward the marked boat at the river mouth.", 5000));
 
             yield return new MissionStage("River extraction",
                     new EnterVehicleObjective("Get in the boat.", () => _boat))
@@ -122,7 +121,7 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- beats ----------
 
-        /// <summary>How Ice reaches the deck and who knows it: the route from the north end, Gohan on the rim with it, Ron in the boat under the span, the tanker on the south road.</summary>
+        /// <summary>How Ice reaches the deck and who knows it: the route from the north end, Gohan on the rim with it, Ron in the boat east of the span at the river mouth, the tanker on the south road.</summary>
         private void PlayApproach()
         {
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
@@ -135,13 +134,13 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The span",
-                Reason = "Ice's route: the deck from the north end, sent before he moves. Gohan on the rim with the route on his screen and the radio. Ron in the boat under the span with the engine warm: the way out, established before it is the only one. The tanker on the south road is the door to close.",
+                Reason = "Ice's route: the deck from the north end, sent before he moves. Gohan on the rim with the route on his screen and the radio. Ron in the boat east of the span at the river mouth with the engine warm: the way out, established before it is the only one. The tanker on the south road is the door to close.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M25 approach scene did not play; the deck stands on its own.");
         }
 
-        /// <summary>The encirclement closing and the way out shown: down, to the boat under the span. Ron's line over it. Then the jump is asked for.</summary>
+        /// <summary>The encirclement closing and the way out shown: down, to the boat east of the span at the river mouth. Ron's line over it. Then the jump is asked for.</summary>
         private void PlayEscape()
         {
             _escapeShown = true;
@@ -155,7 +154,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "escape", Title = "The way out",
-                Reason = "The next wave is on the road and the deck has no other end. The way out is down: the boat under the span, engine running, Ron at the helm. Seen before the jump is asked for.",
+                Reason = "The next wave is on the road and the deck has no other end. The way out is down: the boat east of the span at the river mouth, engine running, Ron at the helm. Seen before the jump is asked for.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M25_S1_02_GUESS");
@@ -166,7 +165,7 @@ namespace Bloodlines.Missions.Campaign
         private void TalkDown()
         {
             _talkedDown = true;
-            Radio("GUESS", "Wind's from the west down the gorge. Pull late, steer at my wake, and I'll come to you. You don't have to land in the boat.", "M25_RADIO_01_GUESS");
+            Radio("GUESS", "I'm east of the span at the river mouth. Open the chute early and steer toward my marker. Land beside the boat, then climb aboard.", "M25_RADIO_01_GUESS");
         }
 
         /// <summary>The aftermath: the boat leaving the span behind, Ice aboard.</summary>
@@ -188,12 +187,15 @@ namespace Bloodlines.Missions.Campaign
 
             // They come up the access road, which is the only reason a sniper on a
             // bridge is a fair fight rather than a firing range.
-            var approach = _bridge + new Vector3(0f, -65f - wave * 10f, 0f);
+            var approach = Ctx.Locations.Position("M25.HunterApproach");
 
             for (int i = 0; i < 3 + wave; i++)
             {
-                var post = World.GetSafeCoordForPed(approach + new Vector3(-8f + i * 4f, 0f, 0f), false, 0);
-                if (post == Vector3.Zero) continue;
+                // Keep the formation on the narrow rail deck instead of spreading
+                // it across the gorge or accepting a nav point on the ground below.
+                var post = approach + new Vector3(i * 0.52f, -i * 4f, 0f);
+                var safe = World.GetSafeCoordForPed(post, false, 0);
+                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe,post,2f) && System.Math.Abs(safe.Z-post.Z)<2f) post=safe;
                 var hunter = World.CreatePed(model, post, 0f);
                 if (hunter == null || !hunter.Exists()) continue;
 
@@ -202,7 +204,7 @@ namespace Bloodlines.Missions.Campaign
                 hunter.BlockPermanentEvents = true;
                 hunter.Accuracy = 25 + wave * 5;
                 hunter.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
-                hunter.Task.RunTo(_bridge, true, -1);
+                hunter.Task.FightAgainstHatedTargets(150f);
 
                 spawned.Add(Track(hunter));
                 _hunters.Add(hunter);
@@ -230,7 +232,7 @@ namespace Bloodlines.Missions.Campaign
             blip.Name = "Fuel tanker";
         }
 
-        /// <summary>Ron's boat under the span, engine warm: the pickup, there from the start.</summary>
+        /// <summary>Ron's boat east of the span at the river mouth, engine warm: the pickup, there from the start.</summary>
         private void SpawnBoat()
         {
             var model = new Model("dinghy");

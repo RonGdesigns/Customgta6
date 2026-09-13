@@ -26,14 +26,23 @@ public static partial class StoryTests
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
    .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==30,"All 30 later and solo production mission classes are in the flow harness");
+  Check(types.Length==43,"All 43 later and solo production mission classes are covered by the flow harnesses");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
    if(m.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
+   if(m.Id=="M10")GameUtils.RoadAvailable=true; if(m.Id=="SM02")World.CollisionReady=true;
+   if(m.Id=="SM03")
+   {
+    var owned=new OwnedVehicle{Id=1,ModelName="sultanrs",ModelHash=(uint)Game.GenerateHash("sultanrs"),Garage="bay-guess",Label="Flow race car"};c.State.Vehicles.Add(owned);
+    c.Garages=new GarageService(crew,c.State,c.Locations,null);c.Garages.Allowed=()=>true;
+    var sprintCar=c.Garages.Retrieve(owned);Game.Player.Character.Position=sprintCar.Position;Game.Player.Character.SetIntoVehicle(sprintCar,VehicleSeat.Driver);
+   }
    Check(m.Begin(c),m.Id+" starts with essential assets and valid stages");
    var flow=Flow(m);var cueIds=flow.SelectMany(s=>s.EntryCues.Concat(s.ExitCues)).ToArray();
    Check(cueIds.Length==cueIds.Distinct().Count()&&cueIds.All(id=>c.Data.Cue(id)!=null),m.Id+" uses unique, valid dialogue cues at gameplay events");
+   // M31-M40 have dedicated physical custody, boarding, convoy and marine walkthroughs.
+   if(m is Bloodlines.Missions.Campaign.PreparationOperation){m.Abort();Check(m.Status==MissionStatus.Aborted,m.Id+" supports clean abort before its dedicated walkthrough");continue;}
    for(int tick=0;tick<800&&m.Status==MissionStatus.Running;tick++)
    {
     if(c.Cutscenes.IsActive){c.Cutscenes.Skip();if(c.Cutscenes.LastRequired&&c.Cutscenes.LastOutcome==SceneOutcome.Failed)throw new Exception(m.Id+" required scene failed in flow harness");continue;}
@@ -42,6 +51,16 @@ public static partial class StoryTests
     {
      if(objective.RequiredCharacter.HasValue&&!objective.IsPassive)Use(crew,objective.RequiredCharacter.Value);
      string name=objective.GetType().Name;
+     if(name=="ConditionObjective"&&m.Id=="M15")
+     {
+      if(m.CurrentStage==0)Game.Player.Character.Task.LeaveVehicle();
+      else if(m.CurrentStage==4)
+      {var arrivalCar=((Bloodlines.Missions.Campaign.M15Crawlspace)m).Granger;crew.PedFor(CrewSlot.Guess).SetIntoVehicle(arrivalCar,VehicleSeat.Driver);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(arrivalCar,VehicleSeat.LeftRear);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(arrivalCar,VehicleSeat.RightRear);}
+     }
+     if(m.Id=="M09"&&name=="ConditionObjective"&&m.CurrentStage==0)
+     {var v=Field<Vehicle>(m,"_frogger");v.HeightAboveGround=12;v.IsInAir=true;}
+     if(name=="ConvoyOverwatchObjective")
+     {var v=Field<Func<Vehicle>>(objective,"_aircraft")();var escort=Field<Func<Vehicle>>(objective,"_escort")();PositionActor(c,objective,escort.Position+new Vector3(0,120,50),v);v.HeightAboveGround=50;v.IsInAir=true;}
      if(name=="ConditionObjective"&&m.Id=="M22")PositionActor(c,objective,Field<Vector3>(m,"_regroup"));
      else if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());
      else if(name=="MissionInteraction") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
@@ -49,8 +68,14 @@ public static partial class StoryTests
      // to the target; do not force-pass it or weaken the production depth rule.
      else if(name=="SurfaceSubObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_target")(),Field<Func<Vehicle>>(objective,"_sub")());
      else if(name=="TechnicalChoiceObjective") {PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());Game.GameTime+=CutsceneDirector.SkipGraceMs;Game.Accept=true;}
-     else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v); if(Field<bool>(objective,"_requireCrew")) foreach(var hero in Protagonist.All.Where(h=>h.Slot!=crew.ActiveSlot)) crew.PedFor(hero.Slot)?.SetIntoVehicle(v,hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);}
-     else if(name=="DeliverVehicleObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
+     else if(name=="EnterVehicleObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);var seat=Field<VehicleSeat>(objective,"_seat");if(seat!=VehicleSeat.Any)Game.Player.Character.SetIntoVehicle(v,seat); if(Field<bool>(objective,"_requireCrew")) foreach(var hero in Protagonist.All.Where(h=>h.Slot!=crew.ActiveSlot)) crew.PedFor(hero.Slot)?.SetIntoVehicle(v,hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);}
+     else if(name=="DeliverVehicleObjective"||name=="OccupiedVehicleDestination") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")());
+     else if(name=="FuelUnload"&&m is Bloodlines.Missions.Campaign.SM06CanyonRunner)
+     {
+      var solo=(Bloodlines.Missions.Campaign.SM06CanyonRunner)m;var bay=c.Locations.Position("SM06.Delivery");
+      PositionActor(c,objective,bay,solo.Truck);solo.Tanker.Position=bay;solo.Tanker.Speed=0;
+      GTA.Native.Function.Trailers[solo.Truck.Handle]=solo.Tanker;
+     }
      else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;
      else if(name=="SubdueTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsBeingStunned=true;
      else if(name=="DestroyVehicleObjective") Field<Func<Vehicle>>(objective,"_vehicle")().IsDriveable=false;
@@ -68,8 +93,9 @@ public static partial class StoryTests
      else if(name=="SurviveWavesObjective")foreach(var ped in ((SurviveWavesObjective)objective).Spawned)ped.IsDead=true;
      else if(name=="ShadowTargetObjective")Game.Player.Character.Position=Field<Func<Entity>>(objective,"_target")().Position+new Vector3((Field<float>(objective,"_minDistance")+Field<float>(objective,"_maxDistance"))/2,0,0);
      else if(name=="AssignedWorkObjective") {var worker=crew.PedFor(Field<CrewSlot>(objective,"_worker"));worker.Task.LeaveVehicle();worker.Position=Field<Func<Vector3>>(objective,"_target")();}
+     else if(name=="ForkliftDeliveryObjective") {var cargo=(ForkliftDeliveryObjective)objective;PositionActor(c,objective,cargo.Target,Field<Func<Vehicle>>(objective,"_forklift")());}
      else if(name=="ForksUnderCrateObjective") {var v=Field<Func<Vehicle>>(objective,"_forklift")();PositionActor(c,objective,Field<Func<Vector3>>(objective,"_pad")(),v);}
-     else if(name=="DynoObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);v.CurrentRPM=.625f;}
+     else if(name=="DynoObjective") {var v=Field<Func<Vehicle>>(objective,"_vehicle")();PositionActor(c,objective,v.Position,v);GTA.Native.Function.Held[(Control)71]=Field<float>(objective,"_pressure")<24f;}
      else if(name=="BailOutObjective")Game.Player.Character.Task.LeaveVehicle();
      else if(name=="LoseWantedObjective")Game.Player.WantedLevel=0;
      else if(name=="RaceCheckpointObjective") {var sites=Field<IList<Vector3>>(objective,"_checkpoints");PositionActor(c,objective,sites[Field<int>(objective,"_index")],Field<Func<Vehicle>>(objective,"_vehicle")());}

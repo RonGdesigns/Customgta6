@@ -15,27 +15,18 @@ public static partial class StoryTests
 {
  static void Round2Checks()
  {
-  // ---- 1. Briefing arrival: Guess stands at the start, the others drive up, the lines wait for the car.
+  // Briefings preserve actual arrivals and do not wait on an invented car.
   Reset();var crew=Roster();var c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;var story=Game.Player.Character;
-  story.Position=new Vector3(100,100,10);story.ForwardVector=new Vector3(0,1,0);World.Created.Clear();World.Vehicles.Clear();GTA.UI.Screen.Subtitle=null;
-  Check(c.Cutscenes.Play("M04","intro","Severed Wire"),"M04's briefing plays with no crew deployed");
-  var car=World.Vehicles.FirstOrDefault(v=>v.Model.Name=="granger");
-  Check(car!=null&&car.Position.DistanceTo(story.Position)>60f,"The crew's four-door spawns down the street, not beside the start");
-  var gohan=World.Created.FirstOrDefault(p=>p.CurrentVehicle==car);var host=World.Created.FirstOrDefault(p=>p.CurrentVehicle==null);
-  Check(gohan!=null&&car.GetPedOnSeat(VehicleSeat.Driver)==gohan&&host!=null&&host.Position.DistanceTo(story.Position)<3f&&!story.IsVisible,"Gohan drives in; Guess stands at the start point in place of the hidden story character");
-  Check(GTA.UI.Screen.Subtitle==null,"No line plays before the car has arrived");
-  c.Cutscenes.Update();
-  Check(!car.IsPositionFrozen&&!gohan.IsPositionFrozen&&gohan.Task.Drives==1&&GTA.UI.Screen.Subtitle==null,"The first frame unfreezes the car and starts the drive; the dialogue still waits");
-  car.Position=story.Position;car.Speed=0f;c.Cutscenes.Update();c.Cutscenes.Update();c.Cutscenes.Update();
-  Check(GTA.UI.Screen.Subtitle!=null&&GTA.UI.Screen.Subtitle.Contains("GOHAN"),"The briefing's first line starts once the car has pulled up");
-  c.Cutscenes.Stop();Check(story.IsVisible&&!car.Present&&!gohan.Present,"The scene ends with the story character visible and the temporary car and cast gone");
-  // Skipping lands the car at the curb before the lines run.
-  Reset();crew=Roster();c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;story=Game.Player.Character;story.Position=new Vector3(100,100,10);story.ForwardVector=new Vector3(0,1,0);World.Vehicles.Clear();
-  c.Cutscenes.Play("M04","intro","Severed Wire");car=World.Vehicles.First(v=>v.Model.Name=="granger");c.Cutscenes.Update();c.Cutscenes.Skip();
-  Check(car.Position==story.Position&&c.Cutscenes.LastOutcome==SceneOutcome.Skipped,"A skipped arrival puts the car on the mark before the scene ends");
-  // With the crew deployed nothing is staged and no car appears.
-  Reset();crew=Roster();c=Context(crew);World.Vehicles.Clear();World.Created.Clear();c.Cutscenes.Play("M04","intro","Severed Wire");
-  Check(World.Vehicles.Count==0&&World.Created.Count==0,"A deployed crew acts in person: no arrival car, no temporary cast");c.Cutscenes.Stop();
+  story.Position=new Vector3(100,100,10);World.Created.Clear();World.Vehicles.Clear();GTA.UI.Screen.Subtitle=null;
+  Check(c.Cutscenes.Play("M04","intro","Severed Wire"),"M04 briefing starts without deployed crew");
+  Check(World.Vehicles.Count==0&&World.Created.Count==1&&!story.IsVisible,"Only the local host is staged; remote voices do not invent an arrival car");
+  c.Cutscenes.Update();Check(GTA.UI.Screen.Subtitle!=null,"Briefing speech begins on its first tick instead of waiting for traffic");
+  c.Cutscenes.Stop();Check(story.IsVisible&&World.Created.All(p=>!p.Present),"Stopping restores the player and clears temporary host");
+  Reset();crew=Roster();c=Context(crew);var car=new Vehicle{Position=new Vector3(100,100,10)};World.Vehicles.Add(car);
+  crew.PedFor(CrewSlot.Guess).SetIntoVehicle(car,VehicleSeat.Driver);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(car,VehicleSeat.RightFront);Use(crew,CrewSlot.Guess);
+  var gohan=crew.PedFor(CrewSlot.Gohan);World.Created.Clear();c.Cutscenes.Play("M04","intro","Severed Wire");
+  Check(Game.Player.Character.IsInVehicle(car)&&gohan.IsInVehicle(car)&&World.Vehicles.Count==1&&World.Created.Count==0,"The actual arriving car and its passengers remain the briefing set");
+  c.Cutscenes.Skip();Check(car.Present&&!car.IsPositionFrozen&&Game.Player.Character.IsInVehicle(car)&&gohan.IsInVehicle(car),"Skipping preserves the car and seats and restores its frozen flag");
 
   // ---- 2. M04 is exercised end to end in StoryToPlayTests.RunM04 (both Miller outcomes).
 
@@ -70,22 +61,22 @@ public static partial class StoryTests
   foreach(var t in waveOne)t.IsDead=true;m6.Tick();before=World.Created.Count;int vehiclesBefore=World.Vehicles.Count;Game.GameTime+=6100;m6.Tick();
   var helis=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="polmav").ToList();var waveTwo=World.Created.Skip(before).ToList();
   var grangers=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="fbi2").ToList();
-  Check(helis.Count==2&&grangers.Count==2&&waveTwo.Count==10,"The second wave is eight troopers and two pilots: two Mavericks and two SWAT Grangers");
+  Check(helis.Count==2&&grangers.Count==0&&waveTwo.Count==10,"The second wave is eight troopers and two pilots: two Mavericks and four foot reinforcements");
   Check(helis.All(h=>h.GetPedOnSeat(VehicleSeat.Driver)!=null&&h.GetPedOnSeat(VehicleSeat.LeftRear)!=null&&h.GetPedOnSeat(VehicleSeat.RightRear)!=null&&h.GetPedOnSeat(VehicleSeat.RightFront)==null),"Two troopers ride the rappel seats of each aircraft");
   Check(helis.All(h=>h.Position.DistanceTo(alley)>200f&&h.Position.Z>alley.Z+50f&&h.GetPedOnSeat(VehicleSeat.Driver).Task.HeliTasks==1),"Each aircraft starts high on its own approach line with a flight task");
-  var ropes=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="polmav"&&t.SeatIndex!=VehicleSeat.Driver).ToList();var road=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="fbi2").ToList();
-  Check(ropes.Count==4&&road.Count==4&&waveTwo.Count(t=>t.CurrentVehicle==null)==0&&grangers.All(g=>g.GetPedOnSeat(VehicleSeat.Driver)!=null&&g.GetPedOnSeat(VehicleSeat.Driver).Task.Drives>=1)&&ropes.All(t=>t.Task.HatedFights==0),"Four ride the ropes, four come by road in two driven Grangers, nobody appears on the street; the riders hold their task until they are down");
-  Check(grangers.Select(g=>g.Position).Distinct().Count()==2&&grangers.All(g=>g.Position.DistanceTo(alley)>60f),"The Grangers start at opposite ends of the alley, well out");
+  var ropes=waveTwo.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="polmav"&&t.SeatIndex!=VehicleSeat.Driver).ToList();var road=waveTwo.Where(t=>t.CurrentVehicle==null).ToList();
+  Check(ropes.Count==4&&road.Count==4&&ropes.All(t=>t.Task.HatedFights==0),"Four rappel while four approach on foot; air troopers wait until landed");
+  Check(road.Select(t=>t.Position).Distinct().Count()==4&&road.All(t=>t.Position.DistanceTo(alley)<=75f),"Foot squads use distinct nearby alley approaches");
   c.Cutscenes.Update();
   Check(c.Cutscenes.IsActive&&GTA.UI.Screen.Subtitle!=null&&GTA.UI.Screen.Subtitle.Contains("ICE"),"The first aircraft's arrival is framed as a moment with Ice's call");
   c.Cutscenes.Stop();
   foreach(var h in helis){h.Position=alley+new Vector3(0,0,20f);h.HeightAboveGround=20f;}
   m6.Tick();Check(ropes.All(t=>t.Task.Rappels==1&&!t.IsInVehicle()),"On station the troopers go down the ropes");
   m6.Tick();Check(ropes.All(t=>t.Task.HatedFights==1)&&helis.All(h=>h.GetPedOnSeat(VehicleSeat.Driver).Task.HeliTasks==2),"Landed troopers fight and the aircraft leave");
-  Game.GameTime+=16000;m6.Tick();Check(road.All(t=>!t.IsInVehicle()&&t.Task.HatedFights==1),"At the alley, or fifteen seconds in, the Grangers empty and their troopers fight");
+  Game.GameTime+=16000;m6.Tick();foreach(var t in road)t.Position=alley;Game.GameTime+=3000;m6.Tick();Check(road.All(t=>!t.IsInVehicle()&&t.Task.LastTarget==crew.PedFor(CrewSlot.Ice)),"Foot reinforcements fight Ice when they reach the alley");
   foreach(var t in ropes.Concat(road))t.IsDead=true;m6.Tick();before=World.Created.Count;vehiclesBefore=World.Vehicles.Count;Game.GameTime+=6100;m6.Tick();
   var waveThree=World.Created.Skip(before).ToList();var lateHelis=World.Vehicles.Skip(vehiclesBefore).Where(v=>v.Model.Name=="polmav").ToList();
-  Check(waveThree.Count==12&&lateHelis.Count==2&&World.Vehicles.Skip(vehiclesBefore).Count(v=>v.Model.Name=="fbi2")==2&&!c.Cutscenes.IsActive,"The third wave also flies and drives in, without a second cutscene");
+  Check(waveThree.Count==12&&lateHelis.Count==2&&World.Vehicles.Skip(vehiclesBefore).Count(v=>v.Model.Name=="fbi2")==0&&!c.Cutscenes.IsActive,"The third wave also flies and approaches on foot, without a second cutscene");
   var lateRopes=waveThree.Where(t=>t.CurrentVehicle!=null&&t.CurrentVehicle.Model.Name=="polmav"&&t.SeatIndex!=VehicleSeat.Driver).ToList();
   Game.GameTime+=46000;m6.Tick();
   Check(lateRopes.All(t=>!t.IsInVehicle()&&t.Task.HatedFights==1&&t.Position.DistanceTo(alley)<15f),"An aircraft that never arrives still puts its troopers on the ground so the wave can end");

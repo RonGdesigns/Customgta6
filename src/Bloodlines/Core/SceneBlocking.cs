@@ -20,6 +20,7 @@ namespace Bloodlines.Core
 
         /// <summary>Where the scene camera should look while this step runs; null keeps the speaker framing.</summary>
         public virtual Entity CameraTarget => Actor;
+        public virtual IEnumerable<Ped> Movers => Actor == null ? Enumerable.Empty<Ped>() : new[] { Actor };
 
         /// <summary>An authored shot positions the camera itself each frame. False leaves the director's framing in charge.</summary>
         public virtual bool DriveCamera(Camera camera) => false;
@@ -224,29 +225,49 @@ namespace Bloodlines.Core
         }
     }
 
-    /// <summary>Check the phone for a moment. Finishing simply puts it away.</summary>
+    /// <summary>A call lasts through the scene's dialogue, including the lowering animation.</summary>
     public sealed class UsePhoneStep : SceneStep
     {
         private readonly int _durationMs;
-
-        public UsePhoneStep(Ped actor, int durationMs = 2500)
+        private readonly bool _holdForDialogue;
+        private Func<bool> _dialogueFinished;
+        private int _loweredAt = -1;
+        public UsePhoneStep(Ped actor, int durationMs = 2500, bool holdForDialogue = true)
         {
-            Actor = actor; _durationMs = durationMs; TimeoutMs = durationMs + 4000;
+            Actor = actor; _durationMs = durationMs; _holdForDialogue = holdForDialogue;
+            TimeoutMs = durationMs + 4000;
         }
-
+        internal void BindDialogue(Func<bool> finished)
+        {
+            if (!_holdForDialogue) return;
+            _dialogueFinished = finished; TimeoutMs = 240000;
+        }
         protected override void OnStart()
         {
             if (!Usable(Actor)) return;
-            Actor.Task.UseMobilePhone(_durationMs);
+            if (_holdForDialogue)
+                GTA.Native.Function.Call(GTA.Native.Hash.TASK_USE_MOBILE_PHONE, Actor, true, 1);
+            else Actor.Task.UseMobilePhone(_durationMs); // Airport text check, not a conversation.
         }
-
-        public override bool IsComplete => !Usable(Actor) || Game.GameTime - StartedAt >= _durationMs;
-
-        public override void Finish()
+        public override bool IsComplete
         {
-            // Phone away, now: the immediate clear, not the queued one.
-            if (Usable(Actor) && !IsComplete) Actor.Task.ClearAllImmediately();
+            get
+            {
+                if (!Usable(Actor)) return true;
+                if (Game.GameTime - StartedAt < _durationMs || (_dialogueFinished != null && !_dialogueFinished())) return false;
+                if (!_holdForDialogue) return true;
+                if (_loweredAt < 0) { Lower(); return false; }
+                return Game.GameTime - _loweredAt >= 900;
+            }
         }
+        private void Lower()
+        {
+            if (_loweredAt >= 0 || !HasStarted) return;
+            _loweredAt = Game.GameTime;
+            if (Usable(Actor)) GTA.Native.Function.Call(GTA.Native.Hash.TASK_USE_MOBILE_PHONE, Actor, false, 1);
+        }
+        public override void Finish() { Lower(); }
+        public override void Cancel() { Lower(); }
     }
 
     /// <summary>Turn to face something for a beat. Finishing is immediate; a look has no end state to reproduce.</summary>
@@ -388,12 +409,19 @@ namespace Bloodlines.Core
             return this;
         }
 
+        // A pre-dialogue phone check cannot wait for dialogue that it is itself blocking.
+        public void BindDialogue(Func<bool> finished)
+        {
+            for (int i = DialogueAfterStep; i < _steps.Count; i++)
+                if (_steps[i] is UsePhoneStep phone) phone.BindDialogue(finished);
+        }
+
         public IReadOnlyList<SceneStep> Steps => _steps;
         public SceneStep Current => _index < _steps.Count ? _steps[_index] : null;
         public bool IsFinished => _index >= _steps.Count;
 
         /// <summary>Every ped that moves during the scene: the director leaves these unfrozen.</summary>
-        public IEnumerable<Ped> Actors => _steps.Select(s => s.Actor).Where(a => a != null).Distinct();
+        public IEnumerable<Ped> Actors => _steps.SelectMany(s => s.Movers).Where(a => a != null).Distinct();
 
         public void Update()
         {

@@ -1,0 +1,75 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Bloodlines.Core;
+using Bloodlines.Crew;
+using Bloodlines.Missions.Objectives;
+using GTA;
+using GTA.Math;
+using GTA.Native;
+namespace Bloodlines.Missions.Campaign
+{
+    public sealed class M43StagingPaleto : CoastalOperation
+    {
+        public override string Id => "M43";
+        public override string Title => "Staging Paleto";
+        protected override MissionEndpoint Endpoint => MissionEndpoint.SecuredDelivery;
+        public Vehicle StagingSub => Sub;
+        public Vehicle StagingBoat => Launch;
+        public Vehicle Helicopter { get; private set; }
+        private Prop _table, _board;
+        private bool _subReady, _boatReady, _airReady, _committed;
+        public string MissingPreparation { get; private set; }
+        private static readonly string[] RequiredUpgrades = { "bunkerPerimeterReady", "empCasesSecured", "ramosRescued", "armoredEscortReady", "technicalSupportReady", "offshoreSurveyReady", "aircraftSmokeReady", "seismicStockReady", "rigMainlandCableCut", "extractionLaunchesReady" };
+        protected override bool Setup()
+        {
+            var landing = At("M43.Land"); var departure = At("M43.Helicopter");
+            if (!BeginCrew(CrewSlot.Gohan)) return false;
+            if (!GameUtils.IsWithinFlat(At("M43.Land"), landing, 2f) || !GameUtils.IsWithinFlat(At("M43.Helicopter"), departure, 2f))
+                throw new InvalidOperationException("M43 aircraft site moved outside its checked footprint. Survey the landing/departure key on clear level ground.");
+            Sub = Boat("submersible2", "M43.Sub", 3f, 3.5f, 5f);
+            Launch = Boat("tropic", "M43.Boat", 2f, 1.5f, 4.5f);
+            Helicopter = Car("annihilator", At("M43.Helicopter"), Ctx.Locations.Heading("M43.Helicopter"));
+            if (!RequireAssets(Sub, Launch, Helicopter)) return false;
+            Helicopter.PlaceOnGround(); RequireAsset(Helicopter, "The extraction helicopter was destroyed before staging was signed off.");
+            Station(CrewSlot.Gohan, Sub, VehicleSeat.Driver); Station(CrewSlot.Ice, Launch, VehicleSeat.Driver); Station(CrewSlot.Guess, Helicopter, VehicleSeat.Driver);
+            foreach (var s in new[] { CrewSlot.Guess, CrewSlot.Gohan, CrewSlot.Ice }) Roles.For(s).Stop();
+            _table = Equipment("prop_table_03", "M43.Board"); _board = WorkProp("prop_laptop_01a", PropPlacement.OnTop(_table, _table.Model, new Model("prop_laptop_01a")), false);
+            if (!RequireAssets(_board)) return false;
+            CrewCar = CrewTransport("M43.ShoreCar");
+            if (!RequireAssets(CrewCar)) return false;
+            Establish("approach", "Three positions, one exit", "The brothers check in by radio from the submarine, surface launch and helicopter. Each must put his own vehicle in its actual holding position before Guess uses the shore planning laptop.", Sub, Launch, Helicopter);
+            return true;
+        }
+        protected override IEnumerable<MissionStage> BuildStages()
+        {
+            yield return new MissionStage("Position the sub", new TravelObjective("Gohan: move the Kraken to its yellow offshore holding marker and stop", () => At("M43.SubReady"), 12f, () => Sub)).OwnedBy(CrewSlot.Gohan).OnExit(c => { _subReady = true; Function.Call(Hash.SET_BOAT_ANCHOR, Sub, true); });
+            yield return new MissionStage("Position the launch", new TravelObjective("Ice: move the Tropic to the yellow surface holding marker and stop", () => At("M43.BoatReady"), 12f, () => Launch)).OwnedBy(CrewSlot.Ice).OnExit(c => { _boatReady = true; Function.Call(Hash.SET_BOAT_ANCHOR, Launch, true); }).AfterCues("M43_S1_03_GOHAN");
+            yield return new MissionStage("Land the extraction helicopter", new DeliverVehicleObjective("Guess: fly the Annihilator to the yellow Paleto coastal staging lot and land at its center", () => Helicopter, () => At("M43.Land"), 4f, true)).OwnedBy(CrewSlot.Guess).OnExit(c => _airReady = true).AfterCues("M43_S1_02_GUESS");
+            yield return new MissionStage("Check the preparation ledger", new ConditionObjective("Guess: all three vehicles must stay in their holding positions; complete any missing preparation missions shown below", () => ReadyToCommit())).OwnedBy(CrewSlot.Guess);
+            yield return new MissionStage("Commit the staging plan", new MissionInteraction("Guess: walk to the laptop beside the Paleto landing area and confirm the offshore plan", () => At("M43.BoardWork"), 5, 3f, animation: MissionInteraction.ReachInside, face: () => _board.Position)).OwnedBy(CrewSlot.Guess)
+                .OnExit(c => { if (!ReadyToCommit()) throw new InvalidOperationException("An asset left its holding position or a preparation is missing."); _committed = true; Establish("ready", "We leave as three", "All three assets are in position. Ramos's rescue, the EMP, survey, smoke, charges, cable cut and verified card are in the ledger. This records preparation for the future offshore assault; it does not create an offshore rig or award its vault.", _board); }).AfterCues("M43_S1_01_ICE");
+        }
+        private bool ReadyToCommit()
+        {
+            var missing = new List<string>();
+            for (int n = 31; n <= 42; n++) if (Ctx.State == null || !Ctx.State.Completed.Contains("M" + n)) missing.Add("M" + n);
+            if (Ctx.State != null)
+            {
+                missing.AddRange(RequiredUpgrades.Where(k => !Ctx.State.FleetUpgrades.TryGetValue(k, out bool set) || !set));
+                if (Ctx.State.EvidenceOf("bradleyKeycard") != EvidenceState.CopyHeld) missing.Add("Bradley card");
+                if (string.IsNullOrEmpty(Ctx.State.CargoAt("offshoreSub"))) missing.Add("delivered submarine");
+            }
+            if (!_subReady || Sub.Position.DistanceTo(At("M43.SubReady")) > 25f || Sub.Speed > 3f) missing.Add("sub position");
+            if (!_boatReady || Launch.Position.DistanceTo(At("M43.BoatReady")) > 25f || Launch.Speed > 3f) missing.Add("launch position");
+            if (!_airReady || Helicopter.Position.DistanceTo(At("M43.Land")) > 18f || Helicopter.HeightAboveGround > 3f || Helicopter.Speed > 3f) missing.Add("helicopter landing");
+            MissingPreparation = string.Join(", ", missing);
+            if (missing.Count != 0) GameUtils.Subtitle("Preparation missing: " + MissingPreparation, 500);
+            return missing.Count == 0;
+        }
+        protected override void OnPassed()
+        { if (!_committed) throw new InvalidOperationException("The staging ledger was not confirmed."); Ctx.State?.SetCargo("offshoreStaging", "M43.Board"); Release(Sub); Release(Launch); Release(Helicopter); }
+        protected override void OnCleanup()
+        { if (Sub != null && Sub.Exists()) Function.Call(Hash.SET_BOAT_ANCHOR, Sub, false); if (Launch != null && Launch.Exists()) Function.Call(Hash.SET_BOAT_ANCHOR, Launch, false); base.OnCleanup(); }
+    }
+}

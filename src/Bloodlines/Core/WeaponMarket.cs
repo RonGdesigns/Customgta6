@@ -26,6 +26,7 @@ namespace Bloodlines.Core
         // Campaign-economy prices, not GTA Online's unrelated economy.
         private static readonly Dictionary<string,int> Prices=new Dictionary<string,int> {
             {"WEAPON_PISTOL",1500},{"WEAPON_COMBATPISTOL",2500},{"WEAPON_PISTOL50",5000},{"WEAPON_APPISTOL",6500},
+            {"WEAPON_SNSPISTOL",4000},{"WEAPON_REVOLVER",12000},{"WEAPON_MARKSMANRIFLE",22000},
             {"WEAPON_STUNGUN",5000},{"WEAPON_PUMPSHOTGUN",4500},{"WEAPON_SAWNOFFSHOTGUN",3500},
             {"WEAPON_MICROSMG",5000},{"WEAPON_SMG",6500},{"WEAPON_ASSAULTSMG",9000},{"WEAPON_ASSAULTRIFLE",10000},
             {"WEAPON_CARBINERIFLE",12000},{"WEAPON_BULLPUPRIFLE",14000},{"WEAPON_SPECIALCARBINE",18000},

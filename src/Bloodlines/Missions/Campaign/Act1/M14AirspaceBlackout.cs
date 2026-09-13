@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using GTA.Native;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -29,6 +31,9 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Ped> _apronGuards = new List<Ped>();
 
+        private readonly List<Ped> _hangarGuards = new List<Ped>();
+        private bool _alerted;
+        private int _nextCombat;
         private Vehicle _plane;
         private Vehicle _granger;
         private RoleTracks _roles;
@@ -66,9 +71,9 @@ namespace Bloodlines.Missions.Campaign
             SpawnPlane();
             SpawnGranger();
             if (!RequireAssets(_plane)) return false;
-            Station(CrewSlot.Guess, _hangar + new Vector3(0f, -30f, 0f));
-            Station(CrewSlot.Gohan, _ridge + new Vector3(15f, 0f, 0f));
-            _roles = new RoleTracks(Ctx.Crew, () => _apronGuards);
+            Station(CrewSlot.Guess, Ctx.Locations.Position("M14.GuessStart"));
+            Station(CrewSlot.Gohan, Ctx.Locations.Position("M14.GohanStart"));
+            _roles = new RoleTracks(Ctx.Crew, () => _apronGuards.Concat(_hangarGuards));
             PlayApproach();
             return true;
         }
@@ -81,10 +86,11 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("The hangar",
                     new ReachZoneObjective("Guess — get to the hangar door.", () => _hangar, 8f))
-                .OwnedBy(CrewSlot.Guess);
+                .OwnedBy(CrewSlot.Guess)
+                .OnExit(context => SpawnHangarGuards());
 
             yield return new MissionStage("Hotwire",
-                    new EnterVehicleObjective("Guess: take the marked jammer aircraft.",
+                    new EnterVehicleObjective("Guess: take the marked jammer aircraft. Fight or board under fire.",
                         () => _plane, VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
                 .WithCues("M14_S1_01_GUESS");
@@ -170,6 +176,17 @@ namespace Bloodlines.Missions.Campaign
         {
             base.OnUpdate();
             _roles?.Update();
+            if (Ctx.Cutscenes.IsActive) return;
+            _alerted |= Game.Player.Character.IsShooting || _apronGuards.Any(g => g.Exists() && (g.IsDead || g.IsInCombat || g.Health < g.MaxHealth));
+            if (!_alerted || Game.GameTime < _nextCombat) return;
+            _nextCombat = Game.GameTime + 2500;
+            var crew = new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan }.Select(Ctx.Crew.PedFor).Where(p => p != null && p.Exists() && !p.IsDead).ToArray();
+            foreach (var enemy in _apronGuards.Concat(_hangarGuards))
+            {
+                if (!enemy.Exists() || enemy.IsDead || crew.Length == 0) continue;
+                var target = _apronGuards.Contains(enemy) ? Game.Player.Character : crew.OrderBy(p => enemy.Position.DistanceTo(p.Position)).First();
+                if (!enemy.IsInCombat) enemy.Task.FightAgainst(target);
+            }
         }
 
         // ---------- world building ----------
@@ -183,21 +200,42 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 5; i++)
             {
-                var guard = World.CreatePed(model, _hangar + new Vector3(-10f + i * 5f, 6f, 0f), 300f);
+                var guard = World.CreatePed(model, Ctx.Locations.Position("M14.ApronGuard" + (i + 1)), Ctx.Locations.Heading("M14.ApronGuard" + (i + 1)));
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = aegis;
                 guard.IsPersistent = true;
                 guard.BlockPermanentEvents = true;
+                guard.MaxHealth = 250; guard.Health = 250;
                 guard.Accuracy = 35;
                 guard.Armor = 50;
                 guard.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
+                Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, guard, 46, true);
+                Function.Call(Hash.SET_PED_COMBAT_RANGE, guard, 2);
                 guard.Task.GuardCurrentPosition();
 
                 _apronGuards.Add(Track(guard));
             }
 
             model.MarkAsNoLongerNeeded();
+        }
+
+        private void SpawnHangarGuards()
+        {
+            var model = new Model("s_m_y_blackops_02");
+            if (!GameUtils.RequestModel(model)) { Fail("The hangar response could not load. Retry the mission."); return; }
+            for (int i = 1; i <= 3; i++)
+            {
+                var guard = Track(World.CreatePed(model, Ctx.Locations.Position("M14.HangarGuard" + i), Ctx.Locations.Heading("M14.HangarGuard" + i)));
+                if (!RequireAssets(guard)) { Fail("The hangar response could not spawn. Retry the mission."); break; }
+                guard.IsPersistent = true; guard.BlockPermanentEvents = true;
+                guard.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+                guard.Accuracy = 30; guard.Armor = 35;
+                guard.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
+                guard.Task.FightAgainst(Ctx.Crew.PedFor(CrewSlot.Guess));
+                _hangarGuards.Add(guard);
+            }
+            model.MarkAsNoLongerNeeded(); _alerted = true; _nextCombat = 0;
         }
 
         private void SpawnPlane()
@@ -221,7 +259,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The crew's Granger on the ridge road: how Ice and Gohan leave.</summary>
         private void SpawnGranger()
         {
-            var spot = _ridge + new Vector3(-10f, -14f, 0f);
+            var spot = Ctx.Locations.Position("M14.GrangerSpawn");
             Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, 0f) : null;
             if (granger == null)
             {
@@ -240,6 +278,7 @@ namespace Bloodlines.Missions.Campaign
         {
             _roles?.Release();
             _apronGuards.Clear();
+            _hangarGuards.Clear();
         }
     }
 }

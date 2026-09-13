@@ -20,6 +20,12 @@ namespace Bloodlines.Core
         {
             var page = new Page(site.Name + " - " + Garages.Summary(site));
             page.Add("Crew cash", () => "$" + _state.CashOnHand.ToString("N0"));
+            if (Garages != null)
+            {
+                page.Add("Car sales left today", () => Garages.SalesRemaining + "/10");
+                page.Add("Sell the car you arrived in", () => "$" + Garages.StreetSaleQuote(Garages.ArrivalVehicle()).ToString("N0"),
+                    () => { if (Garages.SellStreetVehicle(Garages.ArrivalVehicle())) Close(); });
+            }
             if (!Garages.Owned(site))
             {
                 page.Add("Buy this garage", () => "$" + site.Price.ToString("N0") + " - " + site.Capacity + " bays", () => { if (Garages.Buy(site)) { _stack.Pop(); _stack.Push(BuildGaragePage(site)); } });
@@ -76,10 +82,16 @@ namespace Bloodlines.Core
         {
             var page = new Page(site.Name);
             page.Add("Crew cash", () => "$" + _state.CashOnHand.ToString("N0"));
-            foreach (string category in StoryVehicles.Catalog.Select(v => v.Category).Distinct())
+            if (Garages != null)
+            {
+                page.Add("Car sales left today", () => Garages.SalesRemaining + "/10");
+                page.Add("Sell the car you arrived in", () => "$" + Garages.StreetSaleQuote(Garages.ArrivalVehicle()).ToString("N0"),
+                    () => { if (Garages.SellStreetVehicle(Garages.ArrivalVehicle())) Close(); });
+            }
+            foreach (string category in StoryVehicles.Catalog.Where(GarageService.RoadModel).Select(v => v.Category).Distinct())
             {
                 string selected = category;
-                page.Add(selected, () => StoryVehicles.Catalog.Count(v => v.Category == selected && StoryVehicles.Available(v)) + " on the floor", () => _stack.Push(BuildDealerCategory(selected)));
+                page.Add(selected, () => StoryVehicles.Catalog.Count(v => v.Category == selected && GarageService.RoadModel(v)) + " on the floor", () => _stack.Push(BuildDealerCategory(selected)));
             }
             return page;
         }
@@ -87,7 +99,7 @@ namespace Bloodlines.Core
         private Page BuildDealerCategory(string category)
         {
             var page = new Page(category + " - Premium Deluxe Motorsport");
-            foreach (var choice in StoryVehicles.Catalog.Where(v => v.Category == category && StoryVehicles.Available(v)))
+            foreach (var choice in StoryVehicles.Catalog.Where(v => v.Category == category && GarageService.RoadModel(v)))
             {
                 var selected = choice;
                 page.Add(selected.Name, () => "$" + VehiclePricing.Of(selected).ToString("N0"), () => _stack.Push(BuildDealerDestination(selected)));

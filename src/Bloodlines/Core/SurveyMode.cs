@@ -13,7 +13,7 @@ using GTA.UI;
 namespace Bloodlines.Core
 {
     /// <summary>GPS-guided survey with explicit teleport and persistent captures.</summary>
-    public sealed class SurveyMode
+    public sealed partial class SurveyMode
     {
         private readonly LocationBook _book;
         private readonly string _outputPath;
@@ -80,15 +80,18 @@ namespace Bloodlines.Core
         public void Stop()
         {
             bool wasActive = IsActive;
+            bool wasEditing = IsEditing;
+            Draft = null;
             CancelTeleport();
             IsActive = IsSurveyRunning = false;
             GameUtils.SafeDelete(_destination);
             _destination = null;
-            if (wasActive && Write()) GameUtils.Notify("~g~Survey saved.~s~ Captures will load next session.");
+            if (wasActive && !wasEditing && Write()) GameUtils.Notify("~g~Survey saved.~s~ Captures will load next session.");
         }
 
         public void Capture()
         {
+            if (IsEditing) { SavePlacement(true); return; }
             var location = Current;
             if (location == null || IsTeleporting) return;
             _lastCaptureFrame = Game.GameTime;
@@ -110,11 +113,12 @@ namespace Bloodlines.Core
 
         public void Next()
         {
+            if (IsEditing) { MovePlacement(1); return; }
             if (!IsActive || IsTeleporting) return;
             if (_index + 1 >= _queue.Count) { Stop(); return; }
             Select(_index + 1);
         }
-        public void Previous() { if (IsActive && !IsTeleporting && _index > 0) Select(_index - 1); }
+        public void Previous() { if (IsEditing) { MovePlacement(-1); return; } if (IsActive && !IsTeleporting && _index > 0) Select(_index - 1); }
         public void Skip() { Next(); }
 
         private void Select(int index)
@@ -221,6 +225,7 @@ namespace Bloodlines.Core
             }
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
+            if (IsEditing) { DrawPlacement(); return; }
             GameUtils.DrawObjectiveMarker(location.Position, Color.FromArgb(120, 232, 168, 56), 1.2f);
             float distance = player.Position.DistanceTo(location.Position);
             new ContainerElement(new PointF(40f, 480f), new SizeF(580f, 108f), Color.FromArgb(225, 18, 20, 24)).Draw();
@@ -246,6 +251,12 @@ namespace Bloodlines.Core
             }
             lines.Add("[Headings]");
             foreach (var l in surveyed) lines.Add(l.Key + " = " + l.Heading.ToString("0.0", CultureInfo.InvariantCulture));
+            lines.Add("[SpawnGroups]");
+            foreach (var l in _book.All.Where(MissionPlacement.HasFormation).OrderBy(l => l.Key, StringComparer.Ordinal))
+            {
+                lines.Add(l.Key + ".Count = " + l.SpawnCount.ToString(CultureInfo.InvariantCulture));
+                lines.Add(l.Key + ".Radius = " + l.SpawnRadius.ToString("0.00", CultureInfo.InvariantCulture));
+            }
             try
             {
                 string temp = _outputPath + ".tmp";

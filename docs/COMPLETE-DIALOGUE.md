@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 36 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 49 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -206,7 +206,7 @@ Trigger: outro
 ### Intro
 
 **GUESS** `M03_SCENE_INTRO_01_GUESS`
-Cypress Foundry has space, but no armor or equipment. That depot gives us a place we can actually defend.
+This foundry can be home, but an empty yard won't stop Aegis. We take the depot's weapons and make it somewhere we can defend.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -264,7 +264,7 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `M04_SCENE_INTRO_02_GUESS`
-Gohan takes the breaker in the surface lot. Ice clears the escort; I chase Miller for his drive. His car or him, we stop one. Tell me where this stops after that, Ice.
+We leave the foundry separately and meet at the Pillbox lot. Gohan takes the breaker, Ice covers the exchange, I stop Miller and take his drive. We move when Gohan cuts the lights.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1210,7 +1210,7 @@ Trigger: Gameplay stage 4 completion
 ### Aftermath
 
 **GOHAN** `M23_SCENE_OUTRO_01_GOHAN`
-The bunker holds. I can work here. We still need fuel and money to keep three people alive out here.
+The yard has power and the gate works. The underground rooms stay sealed for now. We still need fuel and money to keep three people alive out here.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -1535,7 +1535,7 @@ Agreed. While Gohan fits them, we reinforce the perimeter. We can't afford anoth
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M31 - THE IRON PERIMETER (future gameplay)
+## M31 - THE IRON PERIMETER (scripted)
 
 ### Intro
 
@@ -1552,18 +1552,18 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M31_S1_01_ICE`
-Claymores live on access gulley. Let them walk into the kill zone.
-Delivery: 
-Trigger: Minefield set
+Three charges armed beside the barriers. Keep our people clear of those lanes.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GOHAN** `M31_S1_02_GOHAN`
-CIWS tracking four incoming technicals. Engaging auto-fire!
-Delivery: 
-Trigger: Turret fire
+Two probe vehicles coming in. No automatic guns here: we hold the approaches ourselves.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **ICE** `M31_S1_03_ICE`
 Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open.
-Delivery: 
+Delivery: Radio from the current position; preserve actual transport and crew placement
 Trigger: Perimeter held
 
 ### Aftermath
@@ -1578,7 +1578,7 @@ Then we take the smallest team and the clearest route. No one earns trust by tak
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M32 - BLACK SITE ZANCUDO (future gameplay)
+## M32 - BLACK SITE ZANCUDO (scripted)
 
 ### Intro
 
@@ -1595,24 +1595,24 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M32_S1_01_GOHAN`
-Intake grates cut. Warhead storage is behind door four.
-Delivery: 
-Trigger: Sub-level dive
+Coast access control is open. Ice, the cases are outside the service post. No underground route.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **ICE** `M32_S1_02_ICE`
-Warheads secured in pelican cases. Guess, bring boat to estuary!
-Delivery: 
-Trigger: Zancudo escape
+Both EMP cases are in the car. Guess, take us out by road.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GUESS** `M32_S1_03_GUESS`
-Estuary pickup clean! We got military EMP warheads in our hands.
-Delivery: 
-Trigger: Base egress
+Two cases on the bunker table. Hardware secured; we still need to know what it protects.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 ### Aftermath
 
 **GOHAN** `M32_SCENE_OUTRO_01_GOHAN`
-Warheads secured. We still lack access codes. An Aegis engineer named Ramos is marked for execution on the flats.
+Warheads secured. We still lack access codes. An Aegis engineer named Ramos is scheduled for execution on the flats.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -1621,7 +1621,7 @@ Then we go for Ramos as a person first. If he can't give us anything, we still b
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M33 - THE INFORMANT'S GRAVE (future gameplay)
+## M33 - THE INFORMANT'S GRAVE (scripted)
 
 ### Intro
 
@@ -1638,18 +1638,18 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M33_S1_01_ICE`
-Firing smoke canisters! Blind their firing line!
-Delivery: 
-Trigger: Smoke ambush
+Four guards on Ramos. Stop their firing line. Gohan frees him; Guess brings the car.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GUESS** `M33_S1_02_GUESS`
-Ramos is in the trunk! Floor it before the gunships arrive!
-Delivery: 
-Trigger: Salt flat rally
+Ramos is in the front seat and everybody is aboard. Armored transport is our next stop.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GOHAN** `M33_S1_03_GOHAN`
 Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait.
-Delivery: 
+Delivery: Radio from the current position; preserve actual transport and crew placement
 Trigger: Code acquired
 
 ### Aftermath
@@ -1664,7 +1664,7 @@ You heard him. We guard the man before we spend what he knows.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M34 - MUD & IRON (future gameplay)
+## M34 - MUD & IRON (scripted)
 
 ### Intro
 
@@ -1674,36 +1674,36 @@ Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **ICE** `M34_SCENE_INTRO_02_ICE`
-I'll cover your side. Gohan, stay with Ramos. He ought to hear one calm voice in this thing.
+I'll cover your side. Gohan, stay close in the escort car. Ramos ought to hear one calm voice over the radio.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
 ### Gameplay
 
 **GUESS** `M34_S1_01_GUESS`
-Visibility is twenty feet! The wind turbines are spinning like guillotines! Ice, snipers on tower four!
-Delivery: Wipers scraping red desert sand, twin turbochargers spooling
-Trigger: Sandstorm driving
+Ramos has the front seat. Ice, cover us from the turret. Gohan, keep that escort car close through the wind farm.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **ICE** `M34_S1_02_ICE`
-Turbine catwalk suppressed! Keep this half-track moving down the service gully, Guess!
-Delivery: Heavy twin .50-cal hammering rhythmically
-Trigger: Turret barrage
+Rear is covered. Keep the half-track on the service road, Guess.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GOHAN** `M34_S1_03_GOHAN`
-Seismic charges primed on the canyon walls! Detonating trail in three... two... one!
-Delivery: Operating rear detonator console
-Trigger: Seismic prime
+Second response coming up the gully. I have the next road barrier ready. Get both cars past it first.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GOHAN** `M34_S1_04_GOHAN`
-Rockslide triggered! The entire rear ridgeline just buried six pursuing Insurgents!
-Delivery: 
-Trigger: Rockslide triggered
+Both road barriers are down behind us. They can go around, but we have bought some space.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GUESS** `M34_S1_05_GUESS`
-Bunker tunnel mouth dead ahead! Half-track pulled inside! Defector is alive!
-Delivery: 
-Trigger: Safe arrival
+Ramos made it to the medical station. Get him settled. We ask for codes when he can answer.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 ### Aftermath
 
@@ -1717,7 +1717,7 @@ Chianski convoy has a technical we can use. We get it because this rescue has to
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M35 - THE CHIANSKI AMBUSH (future gameplay)
+## M35 - THE CHIANSKI AMBUSH (scripted)
 
 ### Intro
 
@@ -1734,19 +1734,19 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M35_S1_01_ICE`
-Lead truck hit the mine! Box them in the canyon!
-Delivery: 
-Trigger: Mountain trap
+Lead escort is stopped in the trap. Take the occupants; leave the gun truck intact.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GUESS** `M35_S1_02_GUESS`
-Anti-aircraft technical captured! Driving it into the bunker!
-Delivery: 
-Trigger: Technical hijack
+I have the technical. Gohan, front passenger. Ice, rear gun. We take the same truck home.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 **GOHAN** `M35_S1_03_GOHAN`
-Munitions secured. Heavy firepower ready for the rig.
-Delivery: 
-Trigger: Munitions stored
+Gun mount checked. This is machine-gun cover, not a missile system. It gives our extraction a chance.
+Delivery: Radio from the current position; preserve actual transport and crew placement
+Trigger: Matching implemented M31-M35 objective result
 
 ### Aftermath
 
@@ -1760,12 +1760,12 @@ Send us the footage too. This time the risk assessment belongs to everybody.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M36 - DEEP WELL RECON (future gameplay)
+## M36 - DEEP WELL RECON (scripted)
 
 ### Intro
 
 **GOHAN** `M36_SCENE_INTRO_01_GOHAN`
-Ramos's codes get us access, not a clear sea. I'm mapping the sonar and depth-charge tubes before we commit.
+Ramos's codes get us access, not a clear sea. I'm mapping the coastal sensor route before we commit.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1777,19 +1777,19 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M36_S1_01_GOHAN`
-Ballast columns are reinforced concrete. Seismic charges must go on column 2.
-Delivery: 
-Trigger: Rig mapping
+Three approach sensors recorded. That gives us a coastal route, not permission to rush the rig.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M36
 
 **ICE** `M36_S1_02_ICE`
-Depth charge dropped north! Evade, Gohan!
-Delivery: 
-Trigger: Underwater evasion
+Surface patrol heading for the first pickup. Guess, move the boat. Gohan, stay under until the new pickup.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M36
 
 **GOHAN** `M36_S1_03_GOHAN`
-Sonar map completed. All demolition points marked.
-Delivery: 
-Trigger: Recon complete
+Survey is back with us. Now we can fit the smoke aircraft around a route we measured.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M36
 
 ### Aftermath
 
@@ -1803,7 +1803,7 @@ You came back with reasons to wait. That's a successful recon. We build what the
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M37 - THE GRAPESEED HARVEST (future gameplay)
+## M37 - THE GRAPESEED HARVEST (scripted)
 
 ### Intro
 
@@ -1820,19 +1820,19 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M37_S1_01_GUESS`
-Drop tanks welded. One pass will blanket the entire rig in whiteout.
-Delivery: 
-Trigger: Plane retrofit
+First release works. Check the second one too; I am not signing off a pair from one cloud.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M37
 
 **ICE** `M37_S1_02_ICE`
-Hangar secured. Flying both birds back to Sandy Shores.
-Delivery: 
-Trigger: Biplane delivery
+Second strip is clear. I will fly the other bird to its own space on the apron at Sandy Shores.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M37
 
 **GOHAN** `M37_S1_03_GOHAN`
-Smoke tanks are ready. They'll break visual contact, but radar and thermal crews can still find us.
-Delivery: 
-Trigger: Smoke ready
+Both releases tested. Smoke breaks the view; radar, wind and thermal crews are still problems.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M37
 
 ### Aftermath
 
@@ -1846,7 +1846,7 @@ Davis Quartz has seismic stock. We take enough for the surveyed columns, not eno
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M38 - BLOOD IN THE QUARRY (future gameplay)
+## M38 - BLOOD IN THE QUARRY (scripted)
 
 ### Intro
 
@@ -1863,19 +1863,19 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M38_S1_01_ICE`
-Commercial charges in pit 3. Keep haulers rolling as cover.
-Delivery: 
-Trigger: Quarry shootout
+Four charge packages in this loading yard. Keep them intact and leave Guess a lane for the truck.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M38
 
 **GOHAN** `M38_S1_02_GOHAN`
-Charges loaded! Four hundred pounds of high-grade explosive!
-Delivery: 
-Trigger: Explosive secure
+Four loaded and secured. Get us out without turning this truck into the blast.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M38
 
 **GUESS** `M38_S1_03_GUESS`
-Hauler clear of the quarry! Demolition charges locked down.
-Delivery: 
-Trigger: Quarry escape
+Clear of the quarry. We lose anyone still following before we take these home.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M38
 
 ### Aftermath
 
@@ -1889,7 +1889,7 @@ Its undersea cable is next. One system at a time, with a reason for each one.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M39 - THE PALETO CABLE (future gameplay)
+## M39 - THE PALETO CABLE (scripted)
 
 ### Intro
 
@@ -1906,19 +1906,19 @@ Trigger: intro
 ### Gameplay
 
 **GOHAN** `M39_S1_01_GOHAN`
-Thermite clamp ignited under thirty fathoms. Rig is cut off from mainland.
-Delivery: 
-Trigger: Cable severed
+Cutter cycle verified. The mainland cable is down. Their radio still works, so watch our return shore.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M39
 
 **GUESS** `M39_S1_02_GUESS`
-Radar confirms rig's external communications flatlined. It's time.
-Delivery: 
-Trigger: Surface beacon
+Shore is clear. Gohan, bring the sub back to our cove pickup. I have the surface boat waiting.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M39
 
 **ICE** `M39_S1_03_ICE`
-Final countdown initiated. Moving all strike teams to the sea cave.
-Delivery: 
-Trigger: Sea cave muster
+We kept our return line open. Next we make sure those extraction boats can carry the plan.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M39
 
 ### Aftermath
 
@@ -1928,16 +1928,16 @@ Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `M39_SCENE_OUTRO_02_GUESS`
-Bring your drawings to the sea cave. We'll put the armor where your exit actually reaches the water.
+Bring your drawings to the open cove. We'll put the armor where your exit actually reaches the water.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M40 - THE PHANTOM RIGGING (future gameplay)
+## M40 - THE PHANTOM RIGGING (scripted)
 
 ### Intro
 
 **GUESS** `M40_SCENE_INTRO_01_GUESS`
-These boats are the last part we touch after the rig. Plates, glass, engines. Test them loaded, not empty.
+These boats are the last part we touch after the rig. Hull kits, equipment, engines. Test them loaded, not empty.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -1949,19 +1949,19 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M40_S1_01_GUESS`
-Reinforced steel prows locked. These boats can ram straight through pontoons.
-Delivery: 
-Trigger: Boat armoring
+Both hull kits are fitted. Ice, check the carried weapons on those two practice barrels.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M40
 
 **ICE** `M40_S1_02_ICE`
-Mounted machine gun brackets fitted on both sterns.
-Delivery: 
-Trigger: Gun mounts fitted
+Both targets hit. These are passenger guns, not a turret. Leave room to aim without crossing the crew.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M40
 
 **GOHAN** `M40_S1_03_GOHAN`
-Armor fitted and both boats water-tested. Keep the engines covered; this isn't a guarantee.
-Delivery: 
-Trigger: Fleet ready
+Both loaded boats tested and back. Armor buys a margin; it does not make either hull invincible.
+Delivery: Radio from current position; nearby speakers use the same crew channel.
+Trigger: Matching physical objective completion in M40
 
 ### Aftermath
 
@@ -1975,7 +1975,7 @@ I'll go to the lodge. You'll get the route and the return time before I leave.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M41 - THE GENERAL'S WIRE (future gameplay)
+## M41 - THE GENERAL'S WIRE (scripted)
 
 ### Intro
 
@@ -1992,19 +1992,19 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M41_S1_01_ICE`
-General Bradley neutralized. Recovered his biometric security card.
+Bradley is down. I have his card. Coming to you now.
 Delivery: 
-Trigger: Silenced hit
+Trigger: Ice physically recovers the card
 
 **GOHAN** `M41_S1_02_GOHAN`
-Card grants root access to rig vault. Get off the mountain.
+Credential checks out. That gets us past the command access reader.
 Delivery: 
-Trigger: Lodge escape
+Trigger: Card secured inside extraction vehicle
 
 **GUESS** `M41_S1_03_GUESS`
-Snowmobile pickup waiting at the trail head. We are clear.
+Everyone is in. We have the card and we are clear of the lodge.
 Delivery: 
-Trigger: Snowmobile egress
+Trigger: Crew and card reach the trail exit
 
 ### Aftermath
 
@@ -2018,12 +2018,12 @@ We deploy the sub next. Thanks for saying you're coming back instead of just goi
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M42 - SKYFALL DELIVERY (future gameplay)
+## M42 - SKYFALL DELIVERY (scripted)
 
 ### Intro
 
 **GUESS** `M42_SCENE_INTRO_01_GUESS`
-The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I open the cargo ramp.
+The Titan gets the Kraken beyond the watched coast. Gohan, talk through each latch before I release the cradle.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -2035,19 +2035,19 @@ Trigger: intro
 ### Gameplay
 
 **GUESS** `M42_S1_01_GUESS`
-Cargo ramp open! Sub is airborne! Parachutes deployed!
+Cradle released. Both canopies are open. Talk to me, Gohan.
 Delivery: 
-Trigger: Aerial airdrop
+Trigger: Two physical parachutes attached and actual sub detached
 
 **GOHAN** `M42_S1_02_GOHAN`
-Splashdown confirmed! Ballast tanks flooding-diving for the rig.
+In the water. Hull holding. I have the controls from here.
 Delivery: 
-Trigger: Ocean splashdown
+Trigger: Stable physical splashdown verified
 
 **ICE** `M42_S1_03_ICE`
-Gohan is in the water. Moving into flight position with the chopper.
+I see you in the cove. We can put the rest in position.
 Delivery: 
-Trigger: Chopper ready
+Trigger: Same floated sub reaches coastal delivery
 
 ### Aftermath
 
@@ -2061,7 +2061,7 @@ Put it in. Then somebody reading the plan knows what it asks of a person. We reg
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M43 - STAGING PALETO (future gameplay)
+## M43 - STAGING PALETO (scripted)
 
 ### Intro
 
@@ -2078,19 +2078,19 @@ Trigger: intro
 ### Gameplay
 
 **ICE** `M43_S1_01_ICE`
-Tonight we break their fortress and take our five hundred million.
+The entrance, the support, the way home. All accounted for. We move when the whole plan is ready.
 Delivery: 
-Trigger: Final muster
+Trigger: Staging laptop verifies ledger and actual assets
 
 **GUESS** `M43_S1_02_GUESS`
-Annihilator ready. When that rig burns, I'll be over the derrick.
+Annihilator down at the coast. Keeping it grounded until extraction.
 Delivery: 
-Trigger: Chopper spool
+Trigger: Actual helicopter landed
 
 **GOHAN** `M43_S1_03_GOHAN`
-Submersible holding at forty fathoms. Awaiting green light.
+Kraken and surface launch are holding off the coast. We still have room to turn back.
 Delivery: 
-Trigger: Sub ready
+Trigger: Both marine assets positioned
 
 ### Aftermath
 
@@ -3451,51 +3451,51 @@ Trigger: outro
 ### Intro
 
 **KJ** `SM03_SCENE_INTRO_01_KJ`
-Guess, I checked the prize. Transmission and clutch are real. Marabunta's promise to race clean? I wouldn't put money on that.
+Bring your own car. I booked a northbound sprint: city streets, the freeway, then the Chiliad trail to the summit. Two rivals are waiting.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `SM03_SCENE_INTRO_02_GUESS`
-You got me a place on the grid, KJ. That's enough. Stay clear when it starts; I need my friend around after the finish.
+My car, my setup. Keep the finish honest, KJ. I want the twenty-five grand and that transmission deal earned clean.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
 ### Gameplay
 
 **GUESS** `SM03_S1_01_GUESS`
-Marabunta thinks their tuned Elegy has the top end. They don't know who is behind this wheel.
+My car, my setup. KJ, keep the finish honest.
 Delivery: Twin-turbo revving at 7,000 RPM, two-step popping
-Trigger: Gameplay stage 1 entry
+Trigger: Sprint radio / debrief; revised SM03 northbound race
 
 **GUESS** `SM03_S1_02_GUESS`
-Three laps. KJ, keep an eye on their line.
+One sprint. Freeway north, then the Chiliad trail to the mountain finish.
 Delivery: Slipstream Reflex activated, slow-mo engine roar
-Trigger: Gameplay stage 2 entry
+Trigger: Sprint radio / debrief; revised SM03 northbound race
 
 **RIVAL RACER** `SM03_S2_03_ENEMY`
-We lost the race! Shoot his tires before he leaves!
+He reached the summit first. That is his race.
 Delivery: 
-Trigger: Gameplay stage 3 entry
+Trigger: Sprint radio / debrief; revised SM03 northbound race
 
 **GUESS** `SM03_S2_04_GUESS`
-They pulled guns after losing. I can stop them or get the coupe back to the finish.
-Delivery: Laughing wildly, ducking below dashboard
-Trigger: Gameplay stage 3 entry
+Clean win. KJ, send the purse and line up the transmission.
+Delivery: Relieved laugh after the finish
+Trigger: Sprint radio / debrief; revised SM03 northbound race
 
 **GUESS** `SM03_S2_05_GUESS`
-Checkered flag! Title is in my pocket and the racing transmission is loaded on the truck.
+Keeping my car. The transmission goes to the crew; the road was the work.
 Delivery: 
-Trigger: Gameplay stage 3 completion
+Trigger: Sprint radio / debrief; revised SM03 northbound race
 
 ### Aftermath
 
 **KJ** `SM03_SCENE_OUTRO_01_KJ`
-I saw the guns. Prize is secured, but don't come back here tonight. Winning doesn't make those people good losers.
+Clean win. You made that climb look easy. I'm sending the purse and reserving the transmission for the crew.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `SM03_SCENE_OUTRO_02_GUESS`
-Thanks, KJ. For checking the deal, and for telling me when it's bad. I'll call when the parts get back to the crew.
+That's why I call you. Keep the deal straight and I'll keep the car straight. Mostly.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3504,12 +3504,12 @@ Trigger: outro
 ### Intro
 
 **ICE** `SM04_SCENE_INTRO_01_ICE`
-The quarry snipers are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
+The quarry marksmen are watching our desert routes. I'll work the ridge alone so they don't see a convoy coming.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GOHAN** `SM04_SCENE_INTRO_02_GOHAN`
-I can monitor your check-ins. Being quiet around them doesn't mean being silent with us.
+Two radio sets, two frequencies. Bring both back intact. Quiet around them doesn't mean silent with us.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -3521,9 +3521,9 @@ Delivery: Wind howling through scope, breathing slow
 Trigger: Mission begins
 
 **ICE** `SM04_S1_02_ICE`
-One down. The other still has a sightline on the road. Can't leave him there.
+Both posts clear. Going down for the two radio sets. Keep listening for me.
 Delivery: Suppressed crack
-Trigger: First marksman eliminated
+Trigger: Both quarry marksmen eliminated
 
 **ICE** `SM04_S2_03_ICE`
 Both down. Radios recovered. Gohan can listen for patrol calls; we'll still have to watch the road.
@@ -3533,12 +3533,12 @@ Trigger: Both marksmen eliminated and both radios collected
 ### Aftermath
 
 **ICE** `SM04_SCENE_OUTRO_01_ICE`
-Both nests cleared. Their radios give us a warning channel. I sent the frequencies to both of you.
+Both radios recovered and copied. We can listen to those channels; that doesn't mean every patrol uses them.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GUESS** `SM04_SCENE_OUTRO_02_GUESS`
-Good. No single point of failure, including the man carrying the rifle.
+And you checked in before I had to call. That's a good habit to bring home.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3547,12 +3547,12 @@ Trigger: outro
 ### Intro
 
 **GOHAN** `SM05_SCENE_INTRO_01_GOHAN`
-The swamp buoy can feed us military flight telemetry. I'll make the splice alone while its patrol passes.
+The estuary monitoring buoy can feed us flight telemetry. One interceptor, one person in the water.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
 **GUESS** `SM05_SCENE_INTRO_02_GUESS`
-I'll keep a return window open. You don't have to use it to prove it was worth setting up.
+Leave yourself a way back. Moor that dinghy before you swim out.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 
@@ -3576,12 +3576,12 @@ Trigger: Interceptor installed
 ### Aftermath
 
 **GOHAN** `SM05_SCENE_OUTRO_01_GOHAN`
-Telemetry received. It supplements our recon; it doesn't tell us every pilot's next thought. I'm heading back.
+Telemetry received. It supplements recon; it doesn't tell us every pilot's next thought.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **ICE** `SM05_SCENE_OUTRO_02_ICE`
-Job's done. Come eat before Ron starts calling your phone again.
+Then come eat. The boat got you there; let it bring you back too.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
@@ -3607,9 +3607,9 @@ Delivery: V8 diesel roaring, chassis shuddering
 Trigger: Guess boards the tanker
 
 **GUESS** `SM06_S1_02_GUESS`
-Cartel bikes behind me! Gohan, keep the airfield gate clear.
+Cartel bikes behind me. Staying with the fuel. Let McKenzie know I am bringing company.
 Delivery: 
-Trigger: Armed bike pursuit starts
+Trigger: At least one armed pursuit bike actually spawned
 
 **GUESS** `SM06_S2_03_GUESS`
 Through the canyon. Still got the load. I'm taking the next bend slow, whether they like it or not.
@@ -3624,22 +3624,12 @@ Trigger: Specified tanker delivered and unloaded
 ### Aftermath
 
 **GUESS** `SM06_SCENE_OUTRO_01_GUESS`
-Tanker delivered. Blind corner past Raton. I backed off instead of sending it.
+Fuel delivered to the receiving bay. I brought the tanker, not just the tractor.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
 **GOHAN** `SM06_SCENE_OUTRO_02_GOHAN`
-You actually slowed down.
-Delivery: Reflective; allow the response to land
-Trigger: outro
-
-**GUESS** `SM06_SCENE_OUTRO_03_GUESS`
-Don't sound so surprised.
-Delivery: Reflective; allow the response to land
-Trigger: outro
-
-**GOHAN** `SM06_SCENE_OUTRO_04_GOHAN`
-I am.
+And you slowed down for the blind bends. That's the part I want repeated.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 

@@ -63,6 +63,9 @@ namespace Bloodlines.Core
         };
         public static readonly WeaponProgression.DlcWeapon[] Stock = {
             new WeaponProgression.DlcWeapon("Pistol","WEAPON_PISTOL","Stock"),
+            new WeaponProgression.DlcWeapon("SNS Pistol (Mk I)","WEAPON_SNSPISTOL","Stock"),
+            new WeaponProgression.DlcWeapon("Heavy Revolver (Mk I)","WEAPON_REVOLVER","Stock"),
+            new WeaponProgression.DlcWeapon("Marksman Rifle (Mk I)","WEAPON_MARKSMANRIFLE","Stock"),
             new WeaponProgression.DlcWeapon("Pump Shotgun","WEAPON_PUMPSHOTGUN","Stock"),
             new WeaponProgression.DlcWeapon("SMG","WEAPON_SMG","Stock"),
             new WeaponProgression.DlcWeapon("Assault Rifle","WEAPON_ASSAULTRIFLE","Stock"),
@@ -123,43 +126,48 @@ namespace Bloodlines.Core
             GameUtils.Subtitle("~b~"+near.Name+"~s~ | E / D-pad Right: shop | Crew cash $"+_state.CashOnHand,500);
             if(Game.IsControlJustPressed(Control.Context))OpenMenu?.Invoke(near);
         }
+        public Action<string, int> Purchased;
         private bool Purchase(ShopSite site,int price,Func<bool> apply)
         {
             if(!CanUse(site)){GameUtils.Notify("Shop unavailable: return to the marker outside a mission, with no wanted level.");return false;}
+            if(_previewing){ PreviewPrice=price; return apply(); }
             if(_state.CashOnHand<price){GameUtils.Notify("Not enough crew cash. Need $"+price+".");return false;}
             if(!ShopPurchase.Try(_state,price,apply)){GameUtils.Notify("Nothing changed. No money charged.");return false;}
+            var purchasedCar=Car(site);if(purchasedCar!=null)Remember(purchasedCar);
             _weapons.Capture(_crew.ActiveSlot,Game.Player.Character);_memory.Capture(_crew);_state.Save();
+            try { Purchased?.Invoke(site.Name, price); } catch (Exception ex) { Logger.Warn("Phone receipt: " + ex.Message); }
             GameUtils.Notify("Purchase complete: $"+price+". Crew cash $"+_state.CashOnHand+".");return true;
         }
         public int Price(ShopSite site,int standard) => site.Kind==ShopKind.Guess ? standard/2 : standard;
         public bool BuyWeapon(ShopSite site,WeaponProgression.DlcWeapon weapon)
         {
-            if (weapon==null) return false;
-            string locked=WeaponMarket.LockedUntil(_state,_crew.ActiveSlot,weapon.Hash);
+            if (weapon==null || !CustomerReady) return false;
+            string locked=WeaponMarket.LockedUntil(_state,CustomerSlot,weapon.Hash);
             if(locked!=null){GameUtils.Notify("Story locked: complete "+locked+". Crew cash unchanged.");return false;}
             int price=WeaponMarket.Price(weapon);
             return Purchase(site,price,()=> {
-                var ped=Game.Player.Character;
+                var ped=CustomerPed;
                 if(site.Kind!=ShopKind.Weapons||!WeaponProgression.Available(weapon)||Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON,ped,weapon.Hash,false))return false;
                 ped.Weapons.Give((WeaponHash)weapon.Hash,WeaponMarket.AmmoCount(weapon.Hash),false,true);
-                return Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON,ped,weapon.Hash,false);
+                bool given=Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON,ped,weapon.Hash,false);if(given)RememberCustomer();return given;
             });
         }
         public bool BuyAmmo(ShopSite site)
         {
-            uint selected=Function.Call<uint>(Hash.GET_SELECTED_PED_WEAPON,Game.Player.Character);
-            return Purchase(site,WeaponMarket.AmmoPrice(selected),()=> {
-                var ped=Game.Player.Character; uint weapon=Function.Call<uint>(Hash.GET_SELECTED_PED_WEAPON,ped);
+            if(!CustomerReady)return false;
+            uint selected=Function.Call<uint>(Hash.GET_SELECTED_PED_WEAPON,CustomerPed);
+            return Purchase(site,AmmoPackPrice(selected),()=> {
+                var ped=CustomerPed; uint weapon=Function.Call<uint>(Hash.GET_SELECTED_PED_WEAPON,ped);
                 if(site.Kind!=ShopKind.Weapons||weapon==(uint)WeaponHash.Unarmed||!Function.Call<bool>(Hash.IS_WEAPON_VALID,weapon))return false;
                 int before=Function.Call<int>(Hash.GET_AMMO_IN_PED_WEAPON,ped,weapon);
-                int count=WeaponMarket.AmmoCount(weapon);
+                int count=Math.Min(MissingAmmo(weapon),WeaponMarket.AmmoCount(weapon));
                 Function.Call(Hash.ADD_AMMO_TO_PED,ped,weapon,count);
-                return Function.Call<int>(Hash.GET_AMMO_IN_PED_WEAPON,ped,weapon)>before;
+                bool added=Function.Call<int>(Hash.GET_AMMO_IN_PED_WEAPON,ped,weapon)>before;if(added)RememberCustomer();return added;
             });
         }
-        public bool BuyArmor(ShopSite site) => Purchase(site,250,()=> {
-            if(site.Kind!=ShopKind.Weapons||Game.Player.Character.Armor>=CrewDurability.Armor)return false;
-            Game.Player.Character.Armor=CrewDurability.Armor;return true;
+        public bool BuyArmor(ShopSite site) => CustomerReady && Purchase(site,250,()=> {
+            if(site.Kind!=ShopKind.Weapons||CustomerPed.Armor>=CrewDurability.Armor)return false;
+            CustomerPed.Armor=CrewDurability.Armor;return true;
         });
         public static bool IsGarage(ShopSite site) => site!=null && (site.Kind==ShopKind.Customs || site.Kind==ShopKind.Guess);
         public Vehicle Car(ShopSite site)
@@ -175,7 +183,7 @@ namespace Bloodlines.Core
         {var car=Car(site);if(car==null)return 0;car.Mods.InstallModKit();return car.Mods[type].Count;}
         /// <summary>Set by the host: work done to the crew's Granger is saved with the campaign.</summary>
         public CrewVan Vans { get; set; }
-        private void Remember(Vehicle car) { if (Vans != null && Vans.IsVan(car)) Vans.Capture(car); }
+        private void Remember(Vehicle car) { if (!_previewing && Vans != null && Vans.IsVan(car)) Vans.Capture(car); }
         public bool Fit(ShopSite site,VehicleModType type,int index) => Purchase(site,Price(site,1000),()=> {
             var car=Car(site);if(car==null)return false;car.Mods.InstallModKit();var mod=car.Mods[type];
             if(index < -1||index>=mod.Count||mod.Index==index)return false;mod.Index=index;bool ok=mod.Index==index;if(ok)Remember(car);return ok;
@@ -227,6 +235,7 @@ namespace Bloodlines.Core
         }
         public void Clear()
         {
+            CancelVehiclePreview();
             foreach(var b in _blips)if(b.Exists())b.Delete();_blips.Clear();
             foreach(var door in _doors.Values)try{RestoreDoor(door);}catch(Exception ex){Logger.Error("Restore shop door",ex);}
             _doors.Clear();

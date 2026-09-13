@@ -91,11 +91,11 @@ public static partial class StoryTests
         var state = CampaignState.Load(file);
         state.Reset(); state.Completed.Add("M19"); state.Completed.Add("M20");
         state.CompletePortHeist(catalog, new Dictionary<string, string> { { "bullion", "M22.AlamoDrop" } });
-        Check(PortHeistOperation.PhaseIds.All(state.IsComplete) && state.CashOnHand == 150000 && state.NextStory(catalog).Id == "M23",
+        Check(PortHeistOperation.PhaseIds.All(state.IsComplete) && state.CashOnHand == 250000 && state.NextStory(catalog).Id == "M23",
             "Final success alone commits remaining legacy ids and one payout, then offers M23");
         state.AlamoGoldDredgedTons = 7; state.SetCargo("bullion", "M24.Dredge");
         state.CompletePortHeist(catalog, new Dictionary<string, string> { { "bullion", "M22.AlamoDrop" } });
-        Check(state.CashOnHand == 150000 && state.AlamoGoldDredgedTons == 7 && state.CargoAt("bullion") == "M24.Dredge",
+        Check(state.CashOnHand == 250000 && state.AlamoGoldDredgedTons == 7 && state.CargoAt("bullion") == "M24.Dredge",
             "Replaying the whole heist cannot reset later salvage or duplicate the payout");
         var completed = CampaignState.Load(file);
         Check(completed.NextStory(catalog).Id == "M23", "An already completed heist is not forced on an existing save");
@@ -279,7 +279,7 @@ public static partial class StoryTests
         c.Cutscenes.Skip();
         for (int i = 0; i < 12 && manager.ActivePortHeist != null; i++) { c.Dialogue.Clear(); manager.Update(); }
         Check(operation.Status == MissionStatus.Passed && manager.ActivePortHeist == null && PortHeistOperation.PhaseIds.All(state.IsComplete), "The parent completes all internal ids at one final result");
-        Check(state.CashOnHand == 150000 && state.CargoAt("bullion") == "M22.AlamoDrop" && !crew.Arsenal.LoanActive, "One final payout, final cargo ledger, and one closed loan session");
+        Check(state.CashOnHand == 250000 && state.CargoAt("bullion") == "M22.AlamoDrop" && !crew.Arsenal.LoanActive, "One final payout, final cargo ledger, and one closed loan session");
         Check(bullion.Exists() && bullion.Position == drop && !PortHeistWorld.Attached(bullion, helicopter) && helicopter.Exists() && roadCar.Exists(), "The delivered cargo and extraction vehicles survive the final cleanup");
         Check(actors.All(p => crew.PedFor(p.Key) == p.Value), "All three original character objects survived the complete live operation");
         c.Cutscenes.Stop();

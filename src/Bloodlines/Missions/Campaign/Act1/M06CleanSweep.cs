@@ -32,10 +32,10 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Ped> _swat = new List<Ped>();
         private readonly List<HeliInsertion> _insertions = new List<HeliInsertion>();
-        /// <summary>A SWAT Granger driven in from one end of the alley, its troopers out at the alley (Ron, September 12).</summary>
-        private sealed class Convoy { public Vehicle Car; public List<Ped> Crew = new List<Ped>(); public int Ordered; public bool Unloaded; }
+        /// <summary>A SWAT foot squad entering through one alley mouth.</summary>
+        private sealed class Convoy { public Vector3 Destination; public List<Ped> Crew = new List<Ped>(); public int NextOrders, UnloadedAt;  }
         private readonly List<Convoy> _convoys = new List<Convoy>();
-        public IReadOnlyList<Vehicle> Convoys => _convoys.Select(v => v.Car).ToList();
+        public IReadOnlyList<Vehicle> Convoys => new Vehicle[0];
         private bool _airMomentPlayed, _pickupCalled;
         private int _fire = -1;
 
@@ -82,8 +82,8 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Crew.Deploy(CrewSlot.Gohan, new Dictionary<CrewSlot, PedPlacement>
             {
                 [CrewSlot.Gohan] = new PedPlacement(_culvert, 0f),
-                // Ice starts with Gohan at the box, a few steps off him (Ron, September 12), and walks to the entrance from there.
-                [CrewSlot.Ice] = new PedPlacement(_feeder + new Vector3(3f, -2.5f, 0f), Ctx.Locations.Heading("M06.Feeder")),
+                // Both approach from the culvert; the feeder is Gohan's destination.
+                [CrewSlot.Ice] = new PedPlacement(_culvert + new Vector3(3f, -2.5f, 0f), Ctx.Locations.Heading("M06.Culvert")),
                 [CrewSlot.Guess] = new PedPlacement(Ctx.Locations.Position("M06.GrangerSpawn"), Ctx.Locations.Heading("M06.GrangerSpawn"))
             })) return false;
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
@@ -137,8 +137,8 @@ namespace Bloodlines.Missions.Campaign
                 });
 
             yield return new MissionStage("Everyone aboard",
-                    new EnterVehicleObjective("Guess: hold at the alley mouth until Ice and Gohan are in the Granger.", () => _granger, VehicleSeat.Driver, requireCrew: true))
-                .OwnedBy(CrewSlot.Guess)
+                    new ConditionObjective("Hold at the alley mouth until all three are in the Granger. Once aboard, any brother can continue.", AllAboard))
+                .AnyBrother()
                 .OnEnter(context =>
                 {
                     // The truck is the crew's from here: it can be lost again.
@@ -152,7 +152,22 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Out of Vespucci",
                     new LoseWantedObjective("Lose the police."),
+                    new ConditionObjective("Keep all three aboard the Granger for the escape.", () =>
+                        Protagonist.All.All(hero =>
+                        {
+                            var ped = Ctx.Crew.PedFor(hero.Slot);
+                            return ped != null && ped.Exists() && ped.IsAlive && ped.IsInVehicle(_granger);
+                        })),
                     new ProtectObjective("", () => _granger, "The Granger was destroyed."))
+                .AnyBrother()
+                .OnEnter(context =>
+                {
+                    RequiredSwitch = null;
+                    context.Switching.SetUnlocked();
+                    // Boarding already released scripted roles. The shared driver
+                    // takes over Guess's existing seat when a passenger is selected.
+                    GameUtils.Subtitle("~y~Everyone is aboard. Switch to any brother; lose the police together.", 5000);
+                })
                 .OnExit(context => GameUtils.Subtitle("~g~Depot clean. Nothing left to match a face to.", 5000));
         }
 
@@ -203,16 +218,16 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 StreetPost(Vector3 wanted)
         {
             var safe = World.GetSafeCoordForPed(wanted, false, 0);
-            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 20f)) return safe;
+            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 20f) && Math.Abs(safe.Z - wanted.Z) < 4f) return safe;
             safe = World.GetSafeCoordForPed(wanted, true, 16);
-            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 25f)) return safe;
+            if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, wanted, 25f) && Math.Abs(safe.Z - wanted.Z) < 4f) return safe;
             var toward = _alley - wanted; toward.Z = 0f;
             float run = (float)Math.Sqrt(toward.X * toward.X + toward.Y * toward.Y);
             if (run > 1f)
             {
                 var closer = wanted + toward * (10f / run);
                 safe = World.GetSafeCoordForPed(closer, false, 0);
-                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, closer, 20f)) return safe;
+                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, closer, 20f) && Math.Abs(safe.Z - closer.Z) < 4f) return safe;
             }
             Logger.Warn("M06: no walkable point near a SWAT spawn at " + wanted + "; using it as is.");
             return wanted;
@@ -261,11 +276,14 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             base.OnUpdate();
+            if(CurrentStage>=4&&AllAboard()){RequiredSwitch=null;Ctx.Switching.SetUnlocked();}
             _roles?.Update();
             foreach (var insertion in _insertions) insertion.Update();
             _insertions.RemoveAll(insertion => insertion.Current == HeliInsertion.Phase.Done);
             MaintainConvoys();
         }
+        private bool AllAboard() => _granger!=null&&_granger.Exists()&&Protagonist.All.All(h=>
+        {var p=Ctx.Crew.PedFor(h.Slot);return p!=null&&p.Exists()&&p.IsAlive&&p.IsInVehicle(_granger);});
 
         /// <summary>The aftermath: the Granger with the three aboard, away from the smoke.</summary>
         public override SceneBlocking OutroBlocking()
@@ -289,9 +307,8 @@ namespace Bloodlines.Missions.Campaign
             var airborne = new List<Ped>();
             var byRoad = new List<Ped>();
             // The first wave is already on the street. The later waves come by air
-            // and by road: two on the ropes of each Maverick, the rest in SWAT
-            // Grangers driven in from both ends of the alley (Ron, September 12:
-            // nobody appears at the first wave's spots again).
+            // and on foot: two on each Maverick's ropes, the rest approaching
+            // from the two alley mouths without road-navigation detours.
             int count = wave >= 2 ? 4 + 2 * wave : 3 + wave;
             int byAir = wave >= 2 ? Math.Min(count, 2 * HeliInsertion.Capacity) : 0;
             int roadCount = wave >= 2 ? count - byAir : 0;
@@ -339,65 +356,57 @@ namespace Bloodlines.Missions.Campaign
             return spawned;
         }
 
-        /// <summary>Two SWAT Grangers, one from each end of the alley, the road troopers split between them; each drives to the alley and empties.</summary>
+        /// <summary>Two foot approaches, one from each alley mouth, using the existing survey entry pairs.</summary>
         private void LaunchConvoys(List<Ped> troopers)
         {
+            // Reuse the editor's two entry/stop pairs as foot approaches. A distant
+            // road-node detour must never strand a required wave on another block.
             var axis = _pickup - _alley; axis.Z = 0f;
-            float run = (float)Math.Sqrt(axis.X * axis.X + axis.Y * axis.Y);
-            axis = run < 0.5f ? new Vector3(1f, 0f, 0f) : axis * (1f / run);
-            var seats = new[] { VehicleSeat.Driver, VehicleSeat.RightFront, VehicleSeat.LeftRear, VehicleSeat.RightRear };
+            float length = (float)Math.Sqrt(axis.X * axis.X + axis.Y * axis.Y);
+            axis = length > .5f ? axis * (1f / length) : new Vector3(1f, 0f, 0f);
             for (int side = 0; side < 2; side++)
             {
-                var load = troopers.Where((t, index) => index % 2 == side).ToList();
-                if (load.Count == 0) continue;
                 float sign = side == 0 ? 1f : -1f;
-                var wanted = _alley + axis * (sign * 85f);
-                var spawn = World.GetNextPositionOnStreet(wanted);
-                if (spawn == Vector3.Zero) spawn = wanted;
-                Vehicle car = null;
-                foreach (string name in new[] { "fbi2", "granger" })
+                var fallback = _alley + axis * (sign * 30f);
+                var spawn = MissionPlacement.Position(Ctx.Locations, "M06.ConvoySpawn" + (side + 1), fallback);
+                if (!GameUtils.IsWithinFlat(spawn, _alley, 75f) || Math.Abs(spawn.Z - _alley.Z) > 5f) spawn = fallback;
+                var stop = MissionPlacement.Position(Ctx.Locations, "M06.ConvoyStop" + (side + 1), _alley + axis * (sign * 12f));
+                if (!GameUtils.IsWithinFlat(stop, _alley, 30f) || Math.Abs(stop.Z - _alley.Z) > 5f) stop = _alley + axis * (sign * 12f);
+                var approach = new Convoy { Destination = StreetPost(stop), UnloadedAt = Game.GameTime };
+                int row = 0;
+                foreach (var trooper in troopers.Where((t, index) => index % 2 == side))
                 {
-                    var model = new Model(name);
-                    if (!GameUtils.RequestModel(model)) continue;
-                    car = World.CreateVehicle(model, spawn, DriveUpStep.HeadingBetween(spawn, _alley));
-                    model.MarkAsNoLongerNeeded();
-                    if (car != null && car.Exists()) break;
+                    if (trooper == null || !trooper.Exists()) continue;
+                    trooper.Position = StreetPost(spawn + new Vector3(row++ * 2f, 0f, 0f));
+                    trooper.AlwaysKeepTask = true;
+                    trooper.Task.RunTo(approach.Destination, false, 20000);
+                    approach.Crew.Add(trooper);
                 }
-                if (car == null || !car.Exists()) { foreach (var t in load) t.Task.FightAgainstHatedTargets(90f); continue; }
-                car.IsPersistent = true; car.IsEngineRunning = true;
-                GameUtils.HoldUntilGrounded(car);
-                var convoy = new Convoy { Car = Track(car), Ordered = Game.GameTime };
-                for (int i = 0; i < load.Count && i < seats.Length; i++)
-                {
-                    load[i].SetIntoVehicle(car, seats[i]);
-                    convoy.Crew.Add(load[i]);
-                    if (i == 0)
-                    {
-                        Function.Call(Hash.SET_DRIVER_ABILITY, load[i], 1f);
-                        Function.Call(Hash.SET_DRIVER_AGGRESSIVENESS, load[i], 1f);
-                        load[i].Task.DriveTo(car, _alley + axis * (sign * 14f), 6f, 20f, DrivingStyle.Rushed);
-                    }
-                }
-                _convoys.Add(convoy);
+                _convoys.Add(approach);
             }
-            Logger.Info("M06 SWAT convoys: " + _convoys.Count + " Grangers on the alley, " + troopers.Count + " troopers by road.");
+            Logger.Info("M06: SWAT approaching both alley mouths on foot.");
         }
 
-        /// <summary>A Granger at the alley, or fifteen seconds in, empties into the fight.</summary>
         private void MaintainConvoys()
         {
-            foreach (var convoy in _convoys)
+            foreach (var approach in _convoys)
             {
-                if (convoy.Unloaded) continue;
-                bool there = convoy.Car == null || !convoy.Car.Exists() || convoy.Car.IsDead ||
-                    (convoy.Car.Speed < 1.5f && convoy.Car.Position.DistanceTo(_alley) < 30f) || Game.GameTime - convoy.Ordered > 15000;
-                if (!there) continue;
-                convoy.Unloaded = true;
-                foreach (var trooper in convoy.Crew)
+                if (Game.GameTime < approach.NextOrders) continue;
+                approach.NextOrders = Game.GameTime + 3000;
+                foreach (var trooper in approach.Crew)
                 {
                     if (trooper == null || !trooper.Exists() || trooper.IsDead) continue;
-                    if (trooper.IsInVehicle()) trooper.Task.LeaveVehicle();
-                    trooper.Task.FightAgainstHatedTargets(90f);
+                    var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                    if (ice == null || !ice.Exists() || ice.IsDead) continue;
+                    if (GameUtils.IsWithinFlat(trooper.Position, _alley, 24f))
+                        trooper.Task.FightAgainst(ice);
+                    else
+                    {
+                        var entry = approach.Destination;
+                        if (Game.GameTime - approach.UnloadedAt > 25000 && !trooper.IsOnScreen &&
+                            !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, entry.X, entry.Y, entry.Z, 3f)) trooper.Position = entry;
+                        trooper.Task.RunTo(entry, false, 20000);
+                    }
                 }
             }
         }

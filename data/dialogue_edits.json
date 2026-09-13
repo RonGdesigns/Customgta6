@@ -1,7 +1,7 @@
 {
   "M04_S2_03_GUESS": {
-    "line": "He's running with the case. I've got the wheel, and I've got him.",
-    "trigger": "The player takes Guess during the switch window, or the window closes"
+    "line": "Escort's down. I've got the car. Once we're ready, we go after Miller on the surface streets.",
+    "trigger": "Matching playable objective event in M04"
   },
   "M28_S1_01_GOHAN": {
     "line": "Surge unit connected. Hold them off while I bring the relay down.",
@@ -44,8 +44,8 @@
     "trigger": "Mission begins"
   },
   "SM04_S1_02_ICE": {
-    "line": "One down. The other still has a sightline on the road. Can't leave him there.",
-    "trigger": "First marksman eliminated"
+    "line": "Both posts clear. Going down for the two radio sets. Keep listening for me.",
+    "trigger": "Both quarry marksmen eliminated"
   },
   "SM04_S2_03_ICE": {
     "line": "Both down. Radios recovered. Gohan can listen for patrol calls; we'll still have to watch the road.",
@@ -68,8 +68,8 @@
     "trigger": "Guess boards the tanker"
   },
   "SM06_S1_02_GUESS": {
-    "line": "Cartel bikes behind me! Gohan, keep the airfield gate clear.",
-    "trigger": "Armed bike pursuit starts"
+    "line": "Cartel bikes behind me. Staying with the fuel. Let McKenzie know I am bringing company.",
+    "trigger": "At least one armed pursuit bike actually spawned"
   },
   "SM06_S2_03_GUESS": {
     "line": "Through the canyon. Still got the load. I'm taking the next bend slow, whether they like it or not.",
@@ -80,16 +80,22 @@
     "trigger": "Specified tanker delivered and unloaded"
   },
   "M31_S1_03_ICE": {
-    "line": "Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open."
+    "line": "Ambush stopped. Perimeter held this time. Restock it, and keep the withdrawal route open.",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
   },
   "M33_S1_03_GOHAN": {
-    "line": "Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait."
+    "line": "Ramos is breathing, but he's hurt. Get him through the wind farm. The codes can wait.",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
   },
   "M37_S1_03_GOHAN": {
-    "line": "Smoke tanks are ready. They'll break visual contact, but radar and thermal crews can still find us."
+    "line": "Both releases tested. Smoke breaks the view; radar, wind and thermal crews are still problems.",
+    "trigger": "Matching physical objective completion in M37",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
   },
   "M40_S1_03_GOHAN": {
-    "line": "Armor fitted and both boats water-tested. Keep the engines covered; this isn't a guarantee."
+    "line": "Both loaded boats tested and back. Armor buys a margin; it does not make either hull invincible.",
+    "trigger": "Matching physical objective completion in M40",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
   },
   "M48_S1_03_GOHAN": {
     "line": "The ledgers name their people in Los Santos. We go home with evidence this time."
@@ -189,10 +195,6 @@
   },
   "M04_S1_02_ICE": {
     "line": "Breaker cut. Escort's mine. Guess is waiting in the chase car.",
-    "trigger": "Matching playable objective event in M04"
-  },
-  "M04_S2_03_GUESS": {
-    "line": "Escort's down. I've got the car. Once we're ready, we go after Miller on the surface streets.",
     "trigger": "Matching playable objective event in M04"
   },
   "M04_S2_04_ICE": {
@@ -592,24 +594,25 @@
     "trigger": "Gameplay stage 1 entry"
   },
   "SM03_S2_03_ENEMY": {
-    "line": "We lost the race! Shoot his tires before he leaves!",
-    "trigger": "Gameplay stage 3 entry"
+    "line": "He reached the summit first. That is his race.",
+    "trigger": "Sprint radio / debrief; revised SM03 northbound race"
   },
   "SM03_S2_04_GUESS": {
-    "line": "They pulled guns after losing. I can stop them or get the coupe back to the finish.",
-    "trigger": "Gameplay stage 3 entry"
+    "line": "Clean win. KJ, send the purse and line up the transmission.",
+    "trigger": "Sprint radio / debrief; revised SM03 northbound race",
+    "direction": "Relieved laugh after the finish"
   },
   "SM03_S2_05_GUESS": {
-    "line": "Checkered flag! Title is in my pocket and the racing transmission is loaded on the truck.",
-    "trigger": "Gameplay stage 3 completion"
+    "line": "Keeping my car. The transmission goes to the crew; the road was the work.",
+    "trigger": "Sprint radio / debrief; revised SM03 northbound race"
   },
   "SM03_S1_02_GUESS": {
-    "line": "Three laps. KJ, keep an eye on their line.",
-    "trigger": "Gameplay stage 2 entry"
+    "line": "One sprint. Freeway north, then the Chiliad trail to the mountain finish.",
+    "trigger": "Sprint radio / debrief; revised SM03 northbound race"
   },
   "SM03_S1_01_GUESS": {
-    "line": "Marabunta thinks their tuned Elegy has the top end. They don't know who is behind this wheel.",
-    "trigger": "Gameplay stage 1 entry"
+    "line": "My car, my setup. KJ, keep the finish honest.",
+    "trigger": "Sprint radio / debrief; revised SM03 northbound race"
   },
   "M01_S1_03_GUESS": {
     "line": "Bay two. Keys are in the prototype. Someone expected a driver tonight. I am in.",
@@ -632,5 +635,181 @@
   },
   "M70_S1_06_GUESS": {
     "line": "Told y'all it still had engines."
+  },
+  "M31_S1_01_ICE": {
+    "line": "Three charges armed beside the barriers. Keep our people clear of those lanes.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M31_S1_02_GOHAN": {
+    "line": "Two probe vehicles coming in. No automatic guns here: we hold the approaches ourselves.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M32_S1_01_GOHAN": {
+    "line": "Coast access control is open. Ice, the cases are outside the service post. No underground route.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M32_S1_02_ICE": {
+    "line": "Both EMP cases are in the car. Guess, take us out by road.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M32_S1_03_GUESS": {
+    "line": "Two cases on the bunker table. Hardware secured; we still need to know what it protects.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M33_S1_01_ICE": {
+    "line": "Four guards on Ramos. Stop their firing line. Gohan frees him; Guess brings the car.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M33_S1_02_GUESS": {
+    "line": "Ramos is in the front seat and everybody is aboard. Armored transport is our next stop.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M34_S1_01_GUESS": {
+    "line": "Ramos has the front seat. Ice, cover us from the turret. Gohan, keep that escort car close through the wind farm.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M34_S1_02_ICE": {
+    "line": "Rear is covered. Keep the half-track on the service road, Guess.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M34_S1_03_GOHAN": {
+    "line": "Second response coming up the gully. I have the next road barrier ready. Get both cars past it first.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M34_S1_04_GOHAN": {
+    "line": "Both road barriers are down behind us. They can go around, but we have bought some space.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M34_S1_05_GUESS": {
+    "line": "Ramos made it to the medical station. Get him settled. We ask for codes when he can answer.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M35_S1_01_ICE": {
+    "line": "Lead escort is stopped in the trap. Take the occupants; leave the gun truck intact.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M35_S1_02_GUESS": {
+    "line": "I have the technical. Gohan, front passenger. Ice, rear gun. We take the same truck home.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M35_S1_03_GOHAN": {
+    "line": "Gun mount checked. This is machine-gun cover, not a missile system. It gives our extraction a chance.",
+    "trigger": "Matching implemented M31-M35 objective result",
+    "direction": "Radio from the current position; preserve actual transport and crew placement"
+  },
+  "M36_S1_01_GOHAN": {
+    "line": "Three approach sensors recorded. That gives us a coastal route, not permission to rush the rig.",
+    "trigger": "Matching physical objective completion in M36",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M36_S1_02_ICE": {
+    "line": "Surface patrol heading for the first pickup. Guess, move the boat. Gohan, stay under until the new pickup.",
+    "trigger": "Matching physical objective completion in M36",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M36_S1_03_GOHAN": {
+    "line": "Survey is back with us. Now we can fit the smoke aircraft around a route we measured.",
+    "trigger": "Matching physical objective completion in M36",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M37_S1_01_GUESS": {
+    "line": "First release works. Check the second one too; I am not signing off a pair from one cloud.",
+    "trigger": "Matching physical objective completion in M37",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M37_S1_02_ICE": {
+    "line": "Second strip is clear. I will fly the other bird to its own space on the apron at Sandy Shores.",
+    "trigger": "Matching physical objective completion in M37",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M38_S1_01_ICE": {
+    "line": "Four charge packages in this loading yard. Keep them intact and leave Guess a lane for the truck.",
+    "trigger": "Matching physical objective completion in M38",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M38_S1_02_GOHAN": {
+    "line": "Four loaded and secured. Get us out without turning this truck into the blast.",
+    "trigger": "Matching physical objective completion in M38",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M38_S1_03_GUESS": {
+    "line": "Clear of the quarry. We lose anyone still following before we take these home.",
+    "trigger": "Matching physical objective completion in M38",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M39_S1_01_GOHAN": {
+    "line": "Cutter cycle verified. The mainland cable is down. Their radio still works, so watch our return shore.",
+    "trigger": "Matching physical objective completion in M39",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M39_S1_02_GUESS": {
+    "line": "Shore is clear. Gohan, bring the sub back to our cove pickup. I have the surface boat waiting.",
+    "trigger": "Matching physical objective completion in M39",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M39_S1_03_ICE": {
+    "line": "We kept our return line open. Next we make sure those extraction boats can carry the plan.",
+    "trigger": "Matching physical objective completion in M39",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M40_S1_01_GUESS": {
+    "line": "Both hull kits are fitted. Ice, check the carried weapons on those two practice barrels.",
+    "trigger": "Matching physical objective completion in M40",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M40_S1_02_ICE": {
+    "line": "Both targets hit. These are passenger guns, not a turret. Leave room to aim without crossing the crew.",
+    "trigger": "Matching physical objective completion in M40",
+    "direction": "Radio from current position; nearby speakers use the same crew channel."
+  },
+  "M41_S1_01_ICE": {
+    "line": "Bradley is down. I have his card. Coming to you now.",
+    "trigger": "Ice physically recovers the card"
+  },
+  "M41_S1_02_GOHAN": {
+    "line": "Credential checks out. That gets us past the command access reader.",
+    "trigger": "Card secured inside extraction vehicle"
+  },
+  "M41_S1_03_GUESS": {
+    "line": "Everyone is in. We have the card and we are clear of the lodge.",
+    "trigger": "Crew and card reach the trail exit"
+  },
+  "M42_S1_01_GUESS": {
+    "line": "Cradle released. Both canopies are open. Talk to me, Gohan.",
+    "trigger": "Two physical parachutes attached and actual sub detached"
+  },
+  "M42_S1_02_GOHAN": {
+    "line": "In the water. Hull holding. I have the controls from here.",
+    "trigger": "Stable physical splashdown verified"
+  },
+  "M42_S1_03_ICE": {
+    "line": "I see you in the cove. We can put the rest in position.",
+    "trigger": "Same floated sub reaches coastal delivery"
+  },
+  "M43_S1_01_ICE": {
+    "line": "The entrance, the support, the way home. All accounted for. We move when the whole plan is ready.",
+    "trigger": "Staging laptop verifies ledger and actual assets"
+  },
+  "M43_S1_02_GUESS": {
+    "line": "Annihilator down at the coast. Keeping it grounded until extraction.",
+    "trigger": "Actual helicopter landed"
+  },
+  "M43_S1_03_GOHAN": {
+    "line": "Kraken and surface launch are holding off the coast. We still have room to turn back.",
+    "trigger": "Both marine assets positioned"
   }
 }

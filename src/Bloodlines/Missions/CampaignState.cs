@@ -34,6 +34,40 @@ namespace Bloodlines.Missions
     public sealed class CampaignState
     {
         private readonly string _path;
+        private string _attemptId;
+        private bool _attemptReplay;
+        private Dictionary<string, string> _savedEvidence, _savedCargo;
+        private Dictionary<string, bool> _savedUpgrades, _savedSafehouses;
+        public bool AttemptActive => _attemptId != null;
+
+        // Runtime dictionaries show the current attempt. Serialization continues
+        // to use the last committed story until the manager verifies success.
+        public void BeginAttempt(string id)
+        {
+            if (AttemptActive) throw new InvalidOperationException("A mission attempt already owns story state.");
+            _attemptId = id ?? throw new ArgumentNullException(nameof(id));
+            _attemptReplay = IsComplete(PortHeistOperation.Contains(id) ? "M22" : id);
+            _savedEvidence = new Dictionary<string, string>(Evidence, StringComparer.OrdinalIgnoreCase);
+            _savedCargo = new Dictionary<string, string>(Cargo, StringComparer.OrdinalIgnoreCase);
+            _savedUpgrades = new Dictionary<string, bool>(FleetUpgrades, StringComparer.OrdinalIgnoreCase);
+            _savedSafehouses = new Dictionary<string, bool>(Safehouses, StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static void Restore<T>(Dictionary<string, T> target, Dictionary<string, T> saved)
+        { if (saved == null) return; target.Clear(); foreach (var pair in saved) target[pair.Key] = pair.Value; }
+
+        public void DiscardAttempt() { EndAttempt(false); }
+        private void EndAttempt(bool success)
+        {
+            if (!AttemptActive) return;
+            if (!success || _attemptReplay)
+            {
+                Restore(Evidence, _savedEvidence); Restore(Cargo, _savedCargo);
+                Restore(FleetUpgrades, _savedUpgrades); Restore(Safehouses, _savedSafehouses);
+            }
+            _attemptId = null; _savedEvidence = _savedCargo = null;
+            _savedUpgrades = _savedSafehouses = null;
+        }
 
         private CampaignState(string path)
         {
@@ -57,6 +91,7 @@ namespace Bloodlines.Missions
         public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo)
         {
             bool firstPass = !IsComplete("M22");
+            if (AttemptActive && PortHeistOperation.Contains(_attemptId)) EndAttempt(firstPass);
             _saveBatch++;
             try
             {
@@ -107,6 +142,8 @@ namespace Bloodlines.Missions
         /// <summary>The crew's owned vehicles and their builds.</summary>
         public List<Core.OwnedVehicle> Vehicles { get; } = new List<Core.OwnedVehicle>();
         public int NextVehicleId { get; set; } = 1;
+        public string VehicleSalesDay { get; set; } = "";
+        public int VehicleSalesCount { get; set; }
         public Dictionary<string, bool> FleetUpgrades { get; } = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
         {
             { "grangerTurbineInstalled", false },
@@ -116,10 +153,14 @@ namespace Bloodlines.Missions
             { "armorPiercingSupply", false }
         };
 
+        public Dictionary<string, HashSet<uint>> WeaponPartsOwned { get; } = new Dictionary<string, HashSet<uint>>();
+        public Dictionary<string, HashSet<uint>> WeaponPartsFitted { get; } = new Dictionary<string, HashSet<uint>>();
         public Dictionary<string, HashSet<uint>> Weapons { get; } = new Dictionary<string, HashSet<uint>>(StringComparer.OrdinalIgnoreCase);
 
         public Dictionary<string, object> CharacterMemory { get; } = new Dictionary<string, object>();
 
+        public List<Core.PhoneNotice> PhoneHistory { get; } = new List<Core.PhoneNotice>();
+        public List<string> PhoneAppOrder { get; } = new List<string>();
         public HashSet<string> ReadDispatches { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public int CompletedCount => Completed.Count;
@@ -190,8 +231,10 @@ namespace Bloodlines.Missions
                 Merge(state.FleetUpgrades, Json.Object(root.TryGetValue("fleetUpgrades", out var f) ? f : null));
                 state.CrewVan.FromJson(Json.Object(root.TryGetValue("crewVan", out var van) ? van : null));
                 foreach (var entry in Json.Array(root, "garages")) if (entry != null) state.Garages.Add(entry.ToString());
-                foreach (var entry in Json.Array(root, "vehicles")) { var car = Core.OwnedVehicle.FromJson(Json.Object(entry)); if (car != null) state.Vehicles.Add(car); }
-                state.NextVehicleId = Math.Max(1, Json.Int(root, "nextVehicleId", 1));
+                foreach (var entry in Json.Array(root, "vehicles")) { var car = Core.OwnedVehicle.FromJson(Json.Object(entry)); if (car != null && car.Id > 0 && !state.Vehicles.Any(v => v.Id == car.Id)) state.Vehicles.Add(car); }
+                state.VehicleSalesDay = Json.String(root, "vehicleSalesDay");
+                state.VehicleSalesCount = Math.Max(0, Math.Min(10, Json.Int(root, "vehicleSalesCount")));
+                state.NextVehicleId = Math.Max(state.Vehicles.Count == 0 ? 1 : state.Vehicles.Max(v => v.Id) + 1, Json.Int(root, "nextVehicleId", 1));
                 foreach (var pair in Json.Object(root.TryGetValue("evidence", out var ev) ? ev : null)) if (pair.Value != null) state.Evidence[pair.Key] = pair.Value.ToString();
                 foreach (var pair in Json.Object(root.TryGetValue("cargo", out var cg) ? cg : null)) if (pair.Value != null) state.Cargo[pair.Key] = pair.Value.ToString();
 
@@ -205,6 +248,21 @@ namespace Bloodlines.Missions
                     foreach (var value in Json.Array(lockers, hero.Slot.ToString()))
                         if (uint.TryParse(value?.ToString(), out uint hash)) owned.Add(hash);
                     state.Weapons[hero.Slot.ToString()] = owned;
+                }
+                foreach(var field in new[]{"weaponPartsOwned","weaponPartsFitted"})
+                {
+                    var target=field=="weaponPartsOwned"?state.WeaponPartsOwned:state.WeaponPartsFitted;
+                    foreach(var pair in Json.Object(root.TryGetValue(field,out var parts)?parts:null))
+                    {
+                        var set=new HashSet<uint>();foreach(var value in (pair.Value as System.Collections.Generic.List<object> ?? new System.Collections.Generic.List<object>()))if(uint.TryParse(value?.ToString(),out uint hash))set.Add(hash);
+                        target[pair.Key]=set;
+                    }
+                }
+                foreach (var entry in Json.Array(root, "phoneAppOrder").Take(64)) if (entry is string app) state.PhoneAppOrder.Add(app);
+                foreach (var entry in Json.Array(root, "phoneHistory").AsEnumerable().Reverse().Take(60).Reverse())
+                {
+                    var notice = Core.PhoneNotice.FromJson(Json.Object(entry));
+                    if (!string.IsNullOrWhiteSpace(notice.Id) && !string.IsNullOrWhiteSpace(notice.Title)) state.PhoneHistory.Add(notice);
                 }
                 foreach (var entry in Json.Array(root, "readDispatches")) if (entry != null) state.ReadDispatches.Add(entry.ToString());
                 Logger.Info("Save loaded: " + state.CompletedCount + " missions complete, act " + state.ActiveAct + ".");
@@ -244,6 +302,7 @@ namespace Bloodlines.Missions
         {
             if (string.IsNullOrEmpty(missionId)) return;
 
+            if (string.Equals(_attemptId, missionId, StringComparison.OrdinalIgnoreCase)) EndAttempt(!IsComplete(missionId));
             if (!Completed.Add(missionId)) return;
             AwardCompletion(missionId);
 
@@ -303,9 +362,18 @@ namespace Bloodlines.Missions
         {
             if (string.IsNullOrEmpty(id)) return 0;
             if (PortHeistOperation.Contains(id) && !string.Equals(id, "M22", StringComparison.OrdinalIgnoreCase)) return 0;
-            if (id.StartsWith("SM", StringComparison.OrdinalIgnoreCase)) return 12000;
+            if (id.StartsWith("SM", StringComparison.OrdinalIgnoreCase)) return 20000;
             int number;
-            return id.Length > 1 && int.TryParse(id.Substring(1), out number) ? 4000 + 1500 * number : 0;
+            if (id.Length <= 1 || !int.TryParse(id.Substring(1), out number)) return 0;
+            // First three jobs fund a starter garage/car choice plus basic parts.
+            if (number == 1) return 12000;
+            if (number == 2) return 18000;
+            if (number == 3) return 25000;
+            if (number == 4) return 30000;
+            if (number <= 10) return 32000 + 4000 * (number - 6);
+            if (number <= 18) return 50000 + 4000 * (number - 11);
+            if (number <= 30) return 80000 + 5000 * (number - 23);
+            return 4000 + 1500 * number;
         }
 
         private void AwardCompletion(string id)
@@ -320,25 +388,38 @@ namespace Bloodlines.Missions
             switch (id)
             {
                 case "M03": Safehouses["cypressFoundry"] = true; break;
-                case "M05": CashOnHand += 50000; break;
+                case "M05": CashOnHand += 60000; break;
                 case "M11": FleetUpgrades["grangerTurbineInstalled"] = true; Safehouses["burroHeightsChopShop"] = true; break;
                 case "M14": Safehouses["mckenzieAirfieldHangar"] = true; break;
-                case "M15": CashOnHand += 15000; break;
+                case "M15": CashOnHand += 66000; break;
                 case "M17": FleetUpgrades["krakenSubmarineReinforced"] = true; break;
-                case "M22": Safehouses["cypressFoundry"] = false; AlamoGoldDredgedTons = 0; CashOnHand += 150000; break;
+                case "M22": Safehouses["cypressFoundry"] = false; AlamoGoldDredgedTons = 0; CashOnHand += 250000; break;
                 case "M23": Safehouses["grandSenoraRadarBunker"] = true; break;
-                case "M24": AlamoGoldDredgedTons += 5; CashOnHand += 200000; break;
-                case "M25": CashOnHand += 40000; break;
-                case "M27": CashOnHand += 75000; break;
-                case "M28": CashOnHand += 20000; FleetUpgrades["northernRelayDisabled"] = true; break;
-                case "M29": CashOnHand += 35000; FleetUpgrades["bunkerFuelReserves"] = true; break;
-                case "M30": CashOnHand += 45000; FleetUpgrades["satellitePartsSecured"] = true; break;
-                case "SM04": CashOnHand += 15000; FleetUpgrades["quarryRadiosRecovered"] = true; break;
-                case "SM05": CashOnHand += 15000; FleetUpgrades["estuaryTelemetry"] = true; break;
-                case "SM06": CashOnHand += 25000; FleetUpgrades["airfieldFuelReserves"] = true; break;
+                case "M24": AlamoGoldDredgedTons += 5; CashOnHand += 250000; break;
+                case "M25": CashOnHand += 85000; break;
+                case "M27": CashOnHand += 100000; break;
+                case "M28": CashOnHand += 90000; FleetUpgrades["northernRelayDisabled"] = true; break;
+                case "M29": CashOnHand += 100000; FleetUpgrades["bunkerFuelReserves"] = true; break;
+                case "M30": CashOnHand += 110000; FleetUpgrades["satellitePartsSecured"] = true; break;
+                case "M31": CashOnHand += 70000; FleetUpgrades["bunkerPerimeterReady"] = true; break;
+                case "M32": CashOnHand += 125000; FleetUpgrades["empCasesSecured"] = true; break;
+                case "M33": CashOnHand += 75000; FleetUpgrades["ramosRescued"] = true; break;
+                case "M34": CashOnHand += 125000; FleetUpgrades["armoredEscortReady"] = true; break;
+                case "M35": CashOnHand += 140000; FleetUpgrades["technicalSupportReady"] = true; break;
+                case "M36": CashOnHand += 85000; FleetUpgrades["offshoreSurveyReady"] = true; break;
+                case "M37": CashOnHand += 140000; FleetUpgrades["aircraftSmokeReady"] = true; break;
+                case "M38": CashOnHand += 160000; FleetUpgrades["seismicStockReady"] = true; break;
+                case "M39": CashOnHand += 100000; FleetUpgrades["rigMainlandCableCut"] = true; break;
+                case "M40": CashOnHand += 125000; FleetUpgrades["extractionLaunchesReady"] = true; break;
+                case "M41": CashOnHand += 110000; FleetUpgrades["bradleyAccessReady"] = true; break;
+                case "M42": CashOnHand += 175000; FleetUpgrades["subAirdropReady"] = true; break;
+                case "M43": CashOnHand += 90000; FleetUpgrades["offshoreStagingReady"] = true; break;
+                case "SM04": CashOnHand += 35000; FleetUpgrades["quarryRadiosRecovered"] = true; break;
+                case "SM05": CashOnHand += 35000; FleetUpgrades["estuaryTelemetry"] = true; break;
+                case "SM06": CashOnHand += 45000; FleetUpgrades["airfieldFuelReserves"] = true; break;
                 case "SM01": FleetUpgrades["armorPiercingSupply"] = true; break;
                 case "SM02": FleetUpgrades["surveillanceWormInstalled"] = true; break;
-                case "SM03": CashOnHand += 25000; FleetUpgrades["racingTransmissionInstalled"] = true; break;
+                case "SM03": CashOnHand += 30000; FleetUpgrades["racingTransmissionInstalled"] = true; break;
             }
         }
 
@@ -462,9 +543,11 @@ namespace Bloodlines.Missions
 
         public void Reset()
         {
+            DiscardAttempt();
+            Evidence.Clear(); Cargo.Clear(); CrewVan.Reset();
             Completed.Clear();
-            ReadDispatches.Clear();
-            Weapons.Clear();
+            ReadDispatches.Clear(); PhoneHistory.Clear();
+            Weapons.Clear(); WeaponPartsOwned.Clear(); WeaponPartsFitted.Clear();
             CharacterMemory.Clear();
             CurrentMissionId = "";
             ActiveAct = 1;
@@ -478,7 +561,7 @@ namespace Bloodlines.Missions
             FleetUpgrades.Clear();
             Garages.Clear();
             Vehicles.Clear();
-            NextVehicleId = 1;
+            NextVehicleId = 1; VehicleSalesDay = ""; VehicleSalesCount = 0;
             foreach (var pair in defaults.FleetUpgrades) FleetUpgrades[pair.Key] = pair.Value;
             LastHero = Protagonist.StartingSlot;
             LastLocation = Vector3.Zero;
@@ -516,16 +599,21 @@ namespace Bloodlines.Missions
                         { "offshoreEscrowBalance", OffshoreEscrowBalance }
                     }
                 },
-                { "unlockedSafehouses", Safehouses.ToDictionary(p => p.Key, p => (object)p.Value) },
-                { "fleetUpgrades", FleetUpgrades.ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "unlockedSafehouses", (_savedSafehouses ?? Safehouses).ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "fleetUpgrades", (_savedUpgrades ?? FleetUpgrades).ToDictionary(p => p.Key, p => (object)p.Value) },
                 { "crewVan", CrewVan.ToJson() },
                 { "garages", Garages.OrderBy(g => g, StringComparer.Ordinal).Select(g => (object)g).ToList() },
                 { "vehicles", Vehicles.Select(v => (object)v.ToJson()).ToList() },
                 { "nextVehicleId", NextVehicleId },
-                { "evidence", Evidence.ToDictionary(p => p.Key, p => (object)p.Value) },
-                { "cargo", Cargo.ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "vehicleSalesDay", VehicleSalesDay }, { "vehicleSalesCount", VehicleSalesCount },
+                { "evidence", (_savedEvidence ?? Evidence).ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "cargo", (_savedCargo ?? Cargo).ToDictionary(p => p.Key, p => (object)p.Value) },
+                { "phoneHistory", PhoneHistory.Select(n => (object)n.ToJson()).ToList() },
+                { "phoneAppOrder", PhoneAppOrder.ToList() },
                 { "readDispatches", ReadDispatches.OrderBy(id => id).ToList() },
                 { "characterMemory", CharacterMemory },
+                { "weaponPartsOwned", WeaponPartsOwned.ToDictionary(p=>p.Key,p=>(object)p.Value.Select(h=>h.ToString()).ToList()) },
+                { "weaponPartsFitted", WeaponPartsFitted.ToDictionary(p=>p.Key,p=>(object)p.Value.Select(h=>h.ToString()).ToList()) },
                 { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }
             };
 

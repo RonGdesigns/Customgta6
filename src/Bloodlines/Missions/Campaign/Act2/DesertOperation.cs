@@ -12,7 +12,40 @@ namespace Bloodlines.Missions.Campaign
     public abstract class DesertOperation : ComposedMission
     {
         protected Vector3 At(string key) => Ctx.Locations.Position(key);
-        protected Vehicle Car(string modelName, Vector3 point, float heading = 0)
+        protected void ProtectCrew()
+        {
+            foreach (var hero in Protagonist.All)
+                RequireSurvivor(Ctx.Crew.PedFor(hero.Slot), hero.Handle + " is down. Restart the mission to rebuild the crew and objectives.");
+        }
+        protected Prop WorkProp(string name, Vector3 point, bool ground = true, bool reuse = false)
+        {
+            var model = new Model(name);
+            try
+            {
+                if (!GameUtils.RequestModel(model)) return null;
+                if (reuse)
+                {
+                    var previous = World.GetNearbyProps(point, 2f).FirstOrDefault(p => p != null && p.Exists()
+                        && p.Model == model && GameUtils.IsWithinFlat(p.Position, point, .5f));
+                    if (previous != null) { Track(previous); Preserve(previous); return previous; }
+                }
+                var prop = Track(World.CreateProp(model, point, false, ground));
+                if (prop == null || !prop.Exists()) return null;
+                prop.IsPersistent = true; prop.IsPositionFrozen = true;
+                return prop;
+            }
+            finally { model.MarkAsNoLongerNeeded(); }
+        }
+        protected void RequiredScene(string phase, string title, string reason, SceneBlocking blocking)
+        {
+            var spec = new SceneSpec { MissionId = Id, Phase = phase, Title = title,
+                Reason = reason, RequiresCompletion = true, Blocking = blocking };
+            if (Ctx.Cutscenes.Play(spec)) return;
+            // A missing camera can use the same physical result as a deliberate skip.
+            blocking.Complete();
+            if (!blocking.Succeeded) throw new System.InvalidOperationException(title + " could not complete.");
+        }
+        protected Vehicle Car(string modelName, Vector3 point, float heading = 0, bool markTransport = true)
         {
             var model = new Model(modelName);
             try
@@ -22,7 +55,7 @@ namespace Bloodlines.Missions.Campaign
                 if (vehicle == null || !vehicle.Exists()) return null;
                 vehicle.IsPersistent = true;
                 if (model.IsCar) vehicle.PlaceOnGround();
-                var blip = Track(vehicle.AddBlip());
+                var blip = markTransport ? Track(vehicle.AddBlip()) : null;
                 if (blip != null) { blip.Color = BlipColor.Orange; blip.Name = "Required mission transport"; }
                 return vehicle;
             }

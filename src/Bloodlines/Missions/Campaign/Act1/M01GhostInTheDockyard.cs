@@ -54,6 +54,32 @@ namespace Bloodlines.Missions.Campaign
         private CrewSlot? _workingSlot;
 
         private int _ripStartedAt;
+        private Ped _terminalUser;
+        private const string TerminalAnim = "anim@heists@humane_labs@emp@hack_door";
+        private bool _terminalTyping;
+        private Vector3 TerminalStance => _bilge - (_terminal?.ForwardVector ?? new Vector3(0,1,0)) * .8f;
+        private void StopTerminalUse()
+        {
+            if (_terminalUser != null && _terminalUser.Exists() && _terminalTyping)
+                Function.Call(Hash.STOP_ANIM_TASK, _terminalUser, TerminalAnim, "hack_loop", 2f);
+            _terminalUser = null; _terminalTyping = false; _ripStartedAt = 0;
+            Function.Call(Hash.REMOVE_ANIM_DICT, TerminalAnim);
+        }
+        private void MaintainTerminalUse()
+        {
+            if (_terminalUser == null) return;
+            if (!_terminalUser.Exists() || _terminalUser.IsDead || Ctx.Crew.ActiveSlot != CrewSlot.Gohan ||
+                _terminalUser.IsShooting || _terminalUser.IsInVehicle() || !GameUtils.IsWithin(_terminalUser.Position, _bilge, 2.5f) ||
+                System.Math.Abs(ControllerInput.Axis(Control.MoveLeftRight)) > .2f || System.Math.Abs(ControllerInput.Axis(Control.MoveUpDown)) > .2f)
+            { StopTerminalUse(); return; }
+            if (!_terminalTyping && GameUtils.IsWithinFlat(_terminalUser.Position, TerminalStance, 1f) && Function.Call<bool>(Hash.HAS_ANIM_DICT_LOADED, TerminalAnim))
+            {
+                _terminalUser.Heading = DriveUpStep.HeadingBetween(_terminalUser.Position, _terminal.Position);
+                Function.Call(Hash.TASK_PLAY_ANIM, _terminalUser, TerminalAnim, "hack_loop", 3f, -3f, -1, 49, 0f, false, false, false);
+                _terminalTyping = true;
+                _ripStartedAt = Game.GameTime;
+            }
+        }
         private readonly Dictionary<int, Blip> _guardBlips = new Dictionary<int, Blip>();
 
         public override string Id => "M01";
@@ -99,6 +125,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+            MaintainTerminalUse();
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
 
@@ -179,7 +206,7 @@ namespace Bloodlines.Missions.Campaign
 
             if (player.IsInVehicle() || !GameUtils.IsWithin(player.Position, _bilge, 2.5f))
             {
-                _ripStartedAt = 0;
+                StopTerminalUse();
                 return;
             }
 
@@ -187,11 +214,17 @@ namespace Bloodlines.Missions.Campaign
             {
                 if (!Game.IsControlJustPressed(GTA.Control.Context))
                 { GameUtils.Subtitle("Gohan: press E / D-pad Right to copy the shipping terminal.", 500); return; }
+                if (_terminal == null || !_terminal.Exists()) { Fail("The shipping terminal is missing. Retry the mission."); return; }
                 _ripStartedAt = Game.GameTime;
+                _terminalUser = player;
+                player.Task.GoTo(TerminalStance);
+                Function.Call(Hash.REQUEST_ANIM_DICT, TerminalAnim);
                 Say("M01_S1_02_GOHAN");
                 return;
             }
 
+            if (!_terminalTyping && Game.GameTime - _ripStartedAt < 2500)
+            { GameUtils.Subtitle("Gohan is lining up with the shipping terminal...", 500); return; }
             int elapsed = (Game.GameTime - _ripStartedAt) / 1000;
             if (elapsed < LedgerRipSeconds)
             {
@@ -200,6 +233,7 @@ namespace Bloodlines.Missions.Campaign
             }
 
             Logger.Info("M01 approach complete: Gohan copied the ledger.");
+            StopTerminalUse();
             _ledgerRipped = true;
             NextApproachObjective();
             // The player stays on Gohan (Ron's September 10 correction: no automatic
@@ -526,7 +560,7 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
 
             _prototype = Track(World.CreateVehicle(model, _bayFloor,
-                Ctx.Locations.Heading("M01.PrototypeCar")));
+                ((Ctx.Locations.Heading("M01.PrototypeCar") + 90f) % 360f)));
             model.MarkAsNoLongerNeeded();
             if (_prototype == null || !_prototype.Exists()) return;
 
@@ -703,6 +737,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            StopTerminalUse();
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
             Ctx.Crew.CompanionsHoldPosition = false;
             Ctx.Crew.CompanionAI.RequireSharedVehicle = false;

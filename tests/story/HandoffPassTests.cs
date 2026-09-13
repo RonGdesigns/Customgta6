@@ -94,7 +94,7 @@ public static partial class StoryTests
 
   // ---- 6. Scene blocking: watched and skipped scenes reach the same state.
   Reset();crew=Roster();c=Context(crew);var ron=Game.Player.Character;var car=new Vehicle{Position=new Vector3(10,0,0)};
-  SceneBlocking Build(Ped actor,Vehicle ride)=>new SceneBlocking().Then(new UsePhoneStep(actor,1000)).Then(new WalkToStep(actor,ride.Position,1f)).Then(new EnterVehicleStep(actor,ride,VehicleSeat.Driver));
+  SceneBlocking Build(Ped actor,Vehicle ride)=>new SceneBlocking().Then(new UsePhoneStep(actor,1000,holdForDialogue:false)).Then(new WalkToStep(actor,ride.Position,1f)).Then(new EnterVehicleStep(actor,ride,VehicleSeat.Driver));
   var watched=Build(ron,car);ron.IsPositionFrozen=true;
   watched.Update();Check(ron.Task.Phones==1&&watched.Current is UsePhoneStep,"First step starts the phone");
   Game.GameTime+=1100;watched.Update();watched.Update();Check(watched.Current is WalkToStep&&ron.Task.Gotos==1&&!ron.IsPositionFrozen,"Phone done, the walk starts and the actor is unfrozen");

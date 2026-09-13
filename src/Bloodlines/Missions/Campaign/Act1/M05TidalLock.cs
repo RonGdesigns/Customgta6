@@ -36,11 +36,25 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _dinghy;
         private RoleTracks _roles;
         private Vector3 _perch;
-        private Vector3 _cove;
         private Vector3 _grotto;
         private Vector3 _sandbar;
         private Vector3 _shore;
         private bool _iceDown;
+        private Vector3[] _chaseRoute;
+        private int _leg, _chaseStarted=-1, _nextBoatOrders, _lastProgress, _weatherAt;
+        private Vector3 _lastBoatPosition;
+        private bool _weatherOwned;
+        private BoatDisableObjective _boatDisable;
+        public bool BoatDisabled => _boatDisable != null && _boatDisable.Disabled;
+        public float DisableProgress => _boatDisable?.Progress ?? 0f;
+        private float _previousSwell;
+        private Weather _previousWeather;
+        public IReadOnlyList<Vector3> ChaseRoute => _chaseRoute;
+        public int ChaseLeg => _leg;
+        private readonly List<string> _unverifiedLocations = new List<string>();
+        private readonly Dictionary<MissionLocation, Vector3> _originalLocations = new Dictionary<MissionLocation, Vector3>();
+        private bool _locationNoticeShown;
+        public IReadOnlyList<string> UnverifiedLocations => _unverifiedLocations;
 
         public override string Id => "M05";
         public override string Title => "Tidal Lock";
@@ -52,26 +66,48 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Ground(Ctx.Locations, "M05.CliffPerch", "M05.LightCrew")) return false;
-            if (!MissionSites.Water(Ctx.Locations, "M05.CoveAir", "M05.GrottoMouth", "M05.Sandbar", "M05.DinghySpawn")) return false;
+            _unverifiedLocations.Clear();
+            _locationNoticeShown = false;
+            foreach (string key in new[] { "M05.CliffPerch", "M05.LightCrew", "M05.GrottoMouth", "M05.Sandbar", "M05.DinghySpawn" })
+            {
+                var location = Ctx.Locations.Get(key);
+                if (location == null) { GameUtils.Notify("M05 cannot start: missing location " + key); return false; }
+                _originalLocations[location] = location.Position;
+                if (!PrepareLocation(location)) return false;
+            }
             _perch = Ctx.Locations.Position("M05.CliffPerch");
-            _cove = Ctx.Locations.Position("M05.CoveAir");
             _grotto = Ctx.Locations.Position("M05.GrottoMouth");
             _sandbar = Ctx.Locations.Position("M05.Sandbar");
+            _chaseRoute = new[]{
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase1",new Vector3(2600,-1300,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase2",new Vector3(2700,-1300,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase3",new Vector3(2750,-1200,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase4",new Vector3(3000,-1200,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase5",new Vector3(3250,-1600,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase6",new Vector3(3250,-1050,0)),
+                MissionPlacement.Position(Ctx.Locations,"M05.Chase7",new Vector3(2750,-1150,0)),
+                _sandbar};
             // Where Ice comes down to: the nearest ground the navmesh accepts on the
             // cliff side of the sandbar, or the perch itself if the shore refuses.
-            _shore = World.GetSafeCoordForPed(_sandbar + new Vector3(-30f, 30f, 2f), false, 0);
+            _shore = World.GetSafeCoordForPed(_grotto + new Vector3(-20f, 20f, 2f), false, 0);
             if (_shore == Vector3.Zero) _shore = _perch;
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _perch, Ctx.Locations.Heading("M05.CliffPerch"))) return false;
+            if (!Ctx.Crew.Deploy(CrewSlot.Ice, _perch, Ctx.Locations.Heading("M05.CliffPerch")))
+            { GameUtils.Notify("M05 cannot start: the playable crew could not load."); return false; }
 
+            _previousWeather=World.Weather;
             ApplyBibleSetting();
+            _previousSwell=Function.Call<float>(Hash.GET_DEEP_OCEAN_SCALER);_weatherOwned=true;
+            GameUtils.SetWeather("Thunderstorm / heavy rain");
+            Function.Call(Hash.SET_DEEP_OCEAN_SCALER,1.65f);
             Game.Player.Character.Weapons.Give(WeaponHash.SniperRifle, 60, true, true);
 
             SpawnLightCrew();
             SpawnMateo();
             SpawnDinghy();
-            if (_dinghy == null || !_dinghy.Exists() || _mateo == null || !_mateo.Exists() || _mateoBoat == null || !_mateoBoat.Exists() || _lightCrew.Count != 4) return false;
+            if (_dinghy == null || !_dinghy.Exists() || _mateo == null || !_mateo.Exists() || _mateoBoat == null || !_mateoBoat.Exists() || _lightCrew.Count != MissionPlacement.Count(Ctx.Locations, "M05.LightCrew", 4))
+            { Logger.Error("M05 startup assets: dinghy=" + (_dinghy != null && _dinghy.Exists()) + ", Mateo=" + (_mateo != null && _mateo.Exists()) + ", target boat=" + (_mateoBoat != null && _mateoBoat.Exists()) + ", guards=" + _lightCrew.Count);
+              GameUtils.Notify("M05 cannot start: an essential boat or actor could not load. See Bloodlines.log."); return false; }
             foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
             // Ron and Gohan in the dinghy, checked: a seat that did not take left Ron
             // standing by the cliff (Ron, September 11).
@@ -82,6 +118,48 @@ namespace Bloodlines.Missions.Campaign
             _roles = new RoleTracks(Ctx.Crew, () => _lightCrew);
             PlayShore();
             return true;
+        }
+
+        private bool PrepareLocation(MissionLocation location)
+        {
+            bool water = location.Kind == "water";
+            bool verified = water ? MissionSites.Water(Ctx.Locations, location.Key) : MissionSites.Ground(Ctx.Locations, location.Key);
+            if (verified)
+            {
+                Logger.Info("M05 location verified: " + location.Key + " at " + location.Position + "; configured " + _originalLocations[location]);
+                return true;
+            }
+            if (Ctx.Config == null || !Ctx.Config.M05LocationTestMode) return false;
+
+            // Keep the configured X/Y so Ron can inspect and resurvey the problem.
+            // Use a measured water height when available; otherwise retain authored Z.
+            var point = _originalLocations[location];
+            if (water)
+            {
+                var height = new OutputArgument();
+                if (Function.Call<bool>(Hash.GET_WATER_HEIGHT, point.X, point.Y, 100f, height))
+                {
+                    float surface = height.GetResult<float>();
+                    if (!float.IsNaN(surface) && !float.IsInfinity(surface)) point.Z = surface + .2f;
+                }
+            }
+            location.Position = point;
+            _unverifiedLocations.Add(location.Key);
+            var blip = Track(World.CreateBlip(point));
+            blip.Color = BlipColor.Orange;
+            blip.Name = "TEST: " + location.Key;
+            Logger.Warn("M05 LOCATION TEST: " + location.Key + " failed " + (water ? "water/depth" : "walkable ground") +
+                " validation; continuing at " + point + "; configured " + _originalLocations[location] + ". Survey this key; no file was overwritten.");
+            return true;
+        }
+
+        private void ShowLocationNotice()
+        {
+            if (_locationNoticeShown || Ctx.Cutscenes.IsActive) return;
+            _locationNoticeShown = true;
+            if (_unverifiedLocations.Count > 0)
+                GameUtils.Notify("~y~M05 LOCATION TEST: unverified spots have orange TEST map markers. " +
+                    string.Join(", ", _unverifiedLocations) + ". Record corrections with the surveyor; abort/retry if needed.");
         }
 
         private void Board(CrewSlot slot, VehicleSeat seat)
@@ -104,43 +182,40 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(context => Say("M05_S1_01_ICE"));
 
             yield return new MissionStage("Light the cove",
-                    new MissionInteraction("Guess: launch the signal flare from the dinghy", () => _cove, 1, 45f, () => _dinghy))
+                    new BoatSignalFlare(() => _dinghy))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => context.Crew.CompanionAI.ReleaseControl(CrewSlot.Guess))
+                // Keep the remote driver out of generic follow/leash recovery while
+                // Ice is still on the cliff, including on a full mission retry.
+                .OnEnter(context => context.Crew.CompanionAI.TakeControl(CrewSlot.Guess))
                 .OnExit(context =>
                 {
-                    // Launch a visible flare after the explicit interaction.
-                    var point = _dinghy.Position;
-                    Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, point.X, point.Y, point.Z + 2f, point.X, point.Y, point.Z + 70f, 0, true, (uint)WeaponHash.FlareGun, context.Crew.PedFor(CrewSlot.Guess), true, false, 35f);
                     Say("M05_S1_02_GUESS");
-                    GameUtils.Subtitle("~y~Flare away. Follow the yellow cove marker.", 4000);
+                    GameUtils.Subtitle("~y~Flare away. Approach Mateo's boat; he will run when we get close.", 4000);
                 });
 
             yield return new MissionStage("Breach the grotto",
-                    new OccupiedVehicleDestination("Gohan: stay in the dinghy. Let Guess drive to the yellow cove marker, or switch back to drive, then return to Gohan.", () => _dinghy, () => _grotto, 25f))
-                .OwnedBy(CrewSlot.Gohan)
+                    new OccupiedVehicleDestination("Approach Mateo's boat in the dinghy; close within 85m to flush him out.", () => _dinghy, () => _mateoBoat.Position, 85f))
+                .PlayedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
                     Say("M05_S1_03_GOHAN");
-                    if (_mateo != null && _mateo.Exists() && _mateoBoat != null && _mateoBoat.Exists())
-                    {
-                        _mateo.Task.StartBoatMission(_mateoBoat, _sandbar, VehicleMissionType.GoTo, 12f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
-                    }
+                    StartChase();
                 });
 
-            yield return new MissionStage("Run him to the sandbar",
-                    new CaptureBoatObjective(() => _mateo, () => _mateoBoat, () => _dinghy))
-                .OwnedBy(CrewSlot.Gohan)
+            _boatDisable = new BoatDisableObjective(() => _mateo, () => _mateoBoat, () => _dinghy);
+            yield return new MissionStage("Disable Mateo's boat", _boatDisable)
+                .PlayedBy(CrewSlot.Guess)
                 .OnExit(context => MateoStopped());
 
             // The questioning happens in the dinghy, not shouted across water: bring
             // it alongside and take him aboard. That is the stage's whole objective.
             yield return new MissionStage("Take him aboard",
-                    new MissionInteraction("Gohan: bring the dinghy alongside and take Mateo aboard", () => MateoPosition(), 2, 20f, () => _dinghy))
+                    new MissionInteraction("Gohan: take Mateo aboard the stopped dinghy. Press E / D-pad Right", () => MateoPosition(), 2, 20f, () => _dinghy, stopVehicle: true))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => PlayAccount());
 
             yield return new MissionStage("Mateo's account", new DialogueFinishedObjective("Hold the dinghy. Mateo is aboard."))
+                .AnyBrother()
                 .OnExit(context =>
                 {
                     // Act I ends on information, not a kill: an allegation the crew
@@ -175,6 +250,7 @@ namespace Bloodlines.Missions.Campaign
         {
             if (_mateo != null && _mateo.Exists()) _mateo.Task.ClearAll();
             if (_mateoBoat != null && _mateoBoat.Exists()) { _mateoBoat.IsEngineRunning = false; Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _mateoBoat, 0f); }
+            if (_dinghy != null && _dinghy.Exists()) Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _dinghy, 0f);
             _iceDown = true;
             _roles.For(CrewSlot.Ice).Extract(_shore);
             Radio("ICE", "He's stopped. I'm coming down to the water. Keep him breathing until I'm there.", "M05_RADIO_01_ICE");
@@ -214,10 +290,42 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+
+            if(_weatherOwned&&Game.GameTime>=_weatherAt){Function.Call(Hash.SET_DEEP_OCEAN_SCALER,1.65f);_weatherAt=Game.GameTime+2000;}
+            if(!Ctx.Cutscenes.IsActive) MaintainChase();
             base.OnUpdate();
             _roles?.Update();
+            ShowLocationNotice();
         }
-
+        private void StartChase()
+        {
+            _leg=0;_chaseStarted=Game.GameTime;_lastProgress=Game.GameTime;_lastBoatPosition=_mateoBoat.Position;
+            _mateoBoat.IsEngineRunning=true;_dinghy.IsEngineRunning=true;
+            _nextBoatOrders=0;OrderMateo();
+            Radio("GOHAN","He's running. Guess, keep us within 45 meters. I'll cut his engine remotely. Keep driving until he's disabled, then stop alongside him.","M05_CHASE_START");
+        }
+        private void OrderMateo()
+        {
+            if(_leg>=_chaseRoute.Length)return;
+            float gap=_dinghy.Position.DistanceTo(_mateoBoat.Position);
+            float speed=gap>150f?15f:24f;
+            _mateo.Task.StartBoatMission(_mateoBoat,_chaseRoute[_leg],VehicleMissionType.GoTo,speed,(VehicleDrivingFlags)786603,18f,(BoatMissionFlags)7);
+            _nextBoatOrders=Game.GameTime+6000;
+        }
+        private void MaintainChase()
+        {
+            if(CurrentStage!=3||_chaseStarted<0||_mateoBoat==null||!_mateoBoat.Exists())return;
+            if (BoatDisabled) return;
+            if(_leg<_chaseRoute.Length&&GameUtils.IsWithinFlat(_mateoBoat.Position,_chaseRoute[_leg],20f))
+            {_leg++;_nextBoatOrders=0;_lastProgress=Game.GameTime;}
+            if(_mateoBoat.Position.DistanceTo(_lastBoatPosition)>8f){_lastProgress=Game.GameTime;_lastBoatPosition=_mateoBoat.Position;}
+            // Hack progress, not finishing a route or a fixed one-minute wait,
+            // determines the capture. Keep an escape route if the hack is delayed.
+            if(_leg>=_chaseRoute.Length) { _leg=0; _nextBoatOrders=0; }
+            if(Game.GameTime>=_nextBoatOrders)OrderMateo();
+            if(Game.GameTime-_lastProgress>30000)
+            {Fail("Mateo's boat cannot follow this water route. Survey the next M05.Chase point and retry.");}
+        }
         /// <summary>The aftermath: the dinghy with the four of them in it, leaving. Custody is seen.</summary>
         public override SceneBlocking OutroBlocking()
         {
@@ -238,6 +346,13 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 LightCrewPost(int index)
         {
             var beach = Ctx.Locations.Position("M05.LightCrew");
+            var formation = Ctx.Locations.Get("M05.LightCrew");
+            if (MissionPlacement.HasFormation(formation))
+            {
+                var point=MissionPlacement.GroupPoint(formation,index);
+                var ground=World.GetSafeCoordForPed(point,false,0);
+                return ground!=Vector3.Zero&&GameUtils.IsWithinFlat(ground,point,5f)?ground:point;
+            }
             var wanted = beach + new Vector3(index * 3.5f - 5.25f, (index % 2) * 2.5f, 0f);
             var safe = World.GetSafeCoordForPed(wanted, false, 0);
             if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, beach, 20f)) return safe;
@@ -251,7 +366,7 @@ namespace Bloodlines.Missions.Campaign
 
             var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < MissionPlacement.Count(Ctx.Locations, "M05.LightCrew", 4); i++)
             {
                 var post = LightCrewPost(i);
                 var guard = World.CreatePed(model, post, DriveUpStep.HeadingBetween(post, _grotto));
@@ -324,6 +439,9 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            if(_weatherOwned){Function.Call(Hash.SET_DEEP_OCEAN_SCALER,_previousSwell);World.Weather=_previousWeather;_weatherOwned=false;}
+            foreach (var pair in _originalLocations) pair.Key.Position = pair.Value;
+            _originalLocations.Clear();
             _roles?.Release();
             if (_mateo != null && _mateo.Exists()) { _mateo.IsInvincible=false; Release(_mateo); }
             if (_mateoBoat != null && _mateoBoat.Exists()) Release(_mateoBoat);

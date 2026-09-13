@@ -11,6 +11,7 @@ namespace Bloodlines.Core
     public sealed class WorldTuning
     {
         public ModConfig Config { get; set; }
+        public Nitrous Nitrous { get; } = new Nitrous();
         private readonly HashSet<int> _protected = new HashSet<int>();
         private bool _playerProtected;
         /// <summary>Vehicles currently carrying the crew's damage protection, for tests and the log.</summary>
@@ -38,6 +39,7 @@ namespace Bloodlines.Core
         private readonly Dictionary<int, int> _models = new Dictionary<int, int>();
         private int _nextScan, _lastPowerTime;
         private bool _running;
+        private readonly VehiclePanelDamage _panels = new VehiclePanelDamage();
         public void Update(CrewRoster crew)
         {
             if (!crew.IsDeployed) { if (_running) Reset(); return; }
@@ -49,7 +51,10 @@ namespace Bloodlines.Core
                 if (ped != null && ped.Exists() && ped.IsAlive && ped != Game.Player.Character)
                     Function.Call(Hash.SET_PED_MOVE_RATE_OVERRIDE, ped, 1.3f);
             }
+            var driven = Game.Player.Character?.CurrentVehicle;
+            if (Nitrous.Boosting && driven != null && driven.Exists() && !_cars.ContainsKey(driven.Handle)) Register(driven, crew);
             UpdatePower(crew);
+            _panels.Update(_cars.Values, Config);
             if (Game.GameTime < _nextScan) return;
             _nextScan = Game.GameTime + 1000;
             foreach (var key in _cars.Where(p => !p.Value.Exists() || p.Value.Model.Hash!=_models[p.Key]).Select(p => p.Key).ToArray())
@@ -162,7 +167,7 @@ namespace Bloodlines.Core
                 }
                 float power = RampPower(_power[pair.Key], target, Game.LastFrameTime);
                 _power[pair.Key] = power;
-                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car, power);
+                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car, power * Nitrous.MultiplierFor(car));
             }
         }
         /// <summary>
@@ -201,6 +206,8 @@ namespace Bloodlines.Core
 
         public void Reset()
         {
+            Nitrous.Reset();
+            _panels.Reset();
             Function.Call(Hash.SET_RUN_SPRINT_MULTIPLIER_FOR_PLAYER, Game.Player, 1f);
             if (_playerProtected) { Function.Call(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER, Game.Player, 1f); _playerProtected = false; }
             foreach (var car in _cars.Values)

@@ -1,5 +1,13 @@
 # From Story to Play: implementation plan
 
+> Current September 13 follow-through: **M41–M43 implemented after the user requested the next steps**, bringing the runtime to 49 jobs. See [final preparation](FINAL-PREPARATION-M41-M43.md). M44 onward and SM07–SM09 remain plans. Prior dated snapshots below describe their earlier scope.
+
+> September 13 current package: **M31–M35 implemented on explicit user approval**, bringing the runtime to 41 jobs. See [offshore preparation](OFFSHORE-PREPARATION-M31-M35.md). The historical snapshots below retain their original scope; they are not the current mission count. M13 startup still needs the user’s live retest of the preceding fix26 repair.
+
+> September 12 placement follow-up: see [placement and mission repairs](PLACEMENT-AND-MISSION-REPAIR-2026-09-12.md). M23 now has physical yard equipment and an opening gate; M11 controller calibration and M29 pursuit are repaired. Package implementation is not live acceptance. P5b implementation has advanced in the [relay and fuel package](RELAY-AND-FUEL-P5B-2026-09-12.md); live acceptance is still pending. P5c implementation is now complete in the [second-window solo package](SECOND-WINDOW-SOLOS-P5C-2026-09-12.md), with live acceptance pending. The user subsequently authorized M31–M35 together; that block is now implemented with live acceptance pending. M36 onward and SM07-SM09 remain implementation plans.
+
+> Status, September 12 repair: this is a historical review/planning document. See [the repair register](SHARED-SYSTEMS-REPAIR-2026-09-12.md) and [the playable mission map](PLAYABLE-MISSION-MAP.md) for current behavior. M07/M08's newer scene work supersedes the earlier findings about missing staging. The Port Heist has no saved phase bookmark; failure restarts M19–M22 together.
+
 **Source:** `Bloodlines_From_Story_to_Play_Full_Proposal.html` (review draft v1, September 10, 2026).
 **Reconciled against:** main at `d31b1b0` (the proposal pinned `24a23e9`; since then: round two, the reviewed visuals and deformation, and the M01 exit fix).
 **Status (September 10):** P1 decisions recorded in `CHANGE-REGISTER.md` (Miller's fate is the player's; the rest are the marked defaults). P2a building blocks and the P2b M04 reference are merged. P2c (the interior call, M01's run, M02's stash beat, route, custody and endpoint) is built on branch `claude/s2p-open`, with Ron's September 10 corrections to M01 folded in: no clock, the run is seen, the yard must be clear. P2d (M03) is merged. P3 is in progress: P3a (M05, M06) is merged; P3b (M07, M08) is merged; P3c (M09, M10, M11) is merged; P3d (SM01, SM02, SM03) is built on branch `claude/s2p-solos`. P4a (M12–M15) is built on branch `claude/s2p-harbor`; P4b (M16–M18) on `claude/s2p-lift`; P4c (M19–M22, the Port Heist as one operation) on `claude/s2p-heist`; P5a (M23–M27, the desert) on `claude/s2p-sage`. The Port Heist then became one continuous mission (`PortHeistOperation`, from ChatGPT's `codex/continuous-port-heist`): one briefing, one pass, the same entities carried through the four phases, a phase-start bookmark for retries; see `CONTINUOUS-PORT-HEIST.md`. Ron's September 11 review: the proposal covers M12–M30 and SM04–SM06 as well (Packages 4 and 5), which the first draft of this plan never scheduled; the P4 and P5 rows below do. M31–M70 have no runtime scripts and are not adaptations: they stay out of this plan until Ron says otherwise.
@@ -203,3 +211,15 @@ From the proposal's own limits and the project's rules:
 1. Answer the eight rows in §2, or say "defaults" and they are recorded as assumptions.
 2. Play the current install through M04 once with the visuals defaults, so P1 starts from a fresh set of notes rather than the September 9 ones.
 3. Say which package to start. The recommendation is P1 and P2a together, because P2a's blocks are needed by every later mission and P1 is documentation that can be written while the blocks are built.
+
+## P6a — offshore preparation, M31–M35 (September 13)
+
+Authorized together by the user. Implemented with bounded interactions, physical props/cargo, independent crew roles, real vehicle seats, full-retry failures and first-completion rewards. M32 uses an exterior coastal service post instead of an unbuilt underground interior. M34 uses a separate escort car and visible road barriers. M33 and M34 are separate chapter starts at the same transfer site; no seamless entity handoff is claimed. Remaining sequence starts with M36; do not present plans as playable missions.
+
+## P6b — marine and air preparation, M36–M40
+
+Implemented after the user requested the next steps following the installed M31–M35 block. Three physical seabed sensors, two separately landed/tested crop dusters, four carried charge packages, a clamped/verified cable cut and two loaded sea trials. First pass uses accessible coastal geometry and carried boat weapons. No invisible rig, walkable sea cave, radar-invisibility effect or nonexistent turret is claimed. Full mission retry remains the boundary. Live acceptance is pending; the next chapter is M41.
+
+## P6c — access, delivery and final staging, M41–M43
+
+Implemented exterior Bradley identification, alarm/escape and physical card custody; an externally cradled Kraken with two verified canopies and physical water-contact handover; and separate sub, launch and helicopter staging with a real ledger check. M43 will name missing preparations in a debug skip instead of claiming the heist is ready. Full restart remains the retry boundary. The next block, M44–M48, needs a real collision-tested offshore structure and vault/escape set before scripts can tell the player to interact with it. Live acceptance of this block remains pending.

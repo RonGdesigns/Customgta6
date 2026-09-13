@@ -97,13 +97,13 @@ namespace Bloodlines.Missions.Objectives
                 // The frame the player arrives is never an input frame: whatever
                 // press brought them here is consumed and nothing is committed.
                 Game.IsControlJustPressed(GTA.Control.Context);
-                Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate);
+                if (!CampaignPhone.BlocksGameplayInput) Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate);
                 _wasNear = true;
                 Label = _action + " — reading the panel.";
                 return;
             }
             if (Game.IsControlJustPressed(GTA.Control.Context)) { Commit(context, _options[_selected]); return; }
-            if (Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate)) _selected = (_selected + 1) % _options.Count;
+            if ((!CampaignPhone.BlocksGameplayInput && Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)GTA.Control.Detonate))) _selected = (_selected + 1) % _options.Count;
             var option = _options[_selected];
             Label = _action + " — [" + (_selected + 1) + "/" + _options.Count + "] " + option.Title + ": " + option.Consequence +
                     "  (G / D-pad Left: next, E / D-pad Right: commit)";

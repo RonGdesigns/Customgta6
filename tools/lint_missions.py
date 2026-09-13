@@ -136,6 +136,8 @@ def main():
 
     cues = read_tsv('dialogue.tsv')
     cue_ids = {row['cue_id'] for row in cues}
+    # CampaignData also loads authored scene cues; gameplay may queue these as radio.
+    cue_ids.update(row['cue_id'] for row in read_tsv('scenes.tsv'))
 
     cues_by_mission = {}
     for cue in cues:

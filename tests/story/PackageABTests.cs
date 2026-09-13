@@ -41,7 +41,7 @@ public static partial class StoryTests
   Reset();crew=Roster();var guess=crew.PedFor(CrewSlot.Guess);var coupe=Car(VehicleClass.Coupes,"schafter3");coupe.Velocity=new Vector3(0,40,0);coupe.ForwardVector=new Vector3(0,1,0);guess.SetIntoVehicle(coupe,VehicleSeat.Driver);
   var reflex=new SlipstreamReflex();float lat0=coupe.HandlingData.TractionCurveLateral,max0=coupe.HandlingData.TractionCurveMax;
   reflex.Activate(guess);Check(GTA.Native.Function.Values[GTA.Native.Hash.SET_TIME_SCALE].Equals(0.45f),"Activation slows time to the recognizable 0.45");
-  reflex.Update(guess);Check(reflex.Vehicle==coupe&&Math.Abs(coupe.HandlingData.TractionCurveMax-max0*SlipstreamReflex.GripLift)<1e-4&&Math.Abs(coupe.HandlingData.TractionCurveLateral-lat0*SlipstreamReflex.GripLift)<1e-4&&Math.Abs(coupe.HandlingData.SteeringLock-35f*SlipstreamReflex.SteeringLift)<1e-4,"On the first frame the grip lift and the steering-lock lift are on the car's shared handling");
+  reflex.Update(guess);Check(reflex.Vehicle==coupe&&Math.Abs(coupe.HandlingData.TractionCurveMax-max0*SlipstreamReflex.GripLift)<1e-4&&Math.Abs(coupe.HandlingData.TractionCurveLateral-lat0*SlipstreamReflex.SlipAngleScale)<1e-4&&Math.Abs(coupe.HandlingData.SteeringLock-35f*SlipstreamReflex.SteeringLift)<1e-4,"On the first frame the grip lift and the steering-lock lift are on the car's shared handling");
   for(int i=0;i<10;i++){Game.GameTime+=100;reflex.Update(guess);}
   Check(reflex.Blend>0.99f&&coupe.Forces>0&&coupe.LastForce.Z<0&&Math.Abs(coupe.LastForce.Z+SlipstreamReflex.Press(40f))<1e-3&&coupe.LastForce.X==0&&coupe.LastForce.Y==0,"Half a second later the full press is on the instance: weight plus speed-squared downforce, straight down");
   Check(Math.Abs(SlipstreamReflex.Press(0f)-2.45f)<1e-4&&Math.Abs(SlipstreamReflex.Press(50f)-(2.45f+5.9f))<1e-4,"At rest the press is the quarter-g weight alone; it never exceeds 0.85 g");
@@ -81,11 +81,10 @@ public static partial class StoryTests
   // ---- A1. Briefing cast: no crew deployed -> temporary heroes, story ped hidden, no radio framing.
   Reset();crew=Roster();var c=Context(crew);crew.IsDeployed=false;crew.Peds.Clear();crew.ActivePed=null;var story=Game.Player.Character;World.Created.Clear();story.ForwardVector=new Vector3(0,1,0);story.Position=new Vector3(120,80,12);World.Vehicles.Clear();
   Check(c.Cutscenes.Play("M03","intro","Cypress"),"M03's briefing plays with no crew deployed");
-  Check(World.Created.Count==2&&!story.IsVisible&&World.Created.Any(p=>p.Position.DistanceTo(story.Position)<3f)&&World.Created.Any(p=>p.CurrentVehicle!=null),"Guess is staged at the start point in place of the hidden story character and Gohan is in the arriving car");
-  var arriving=World.Vehicles.Last();arriving.Position=story.Position;arriving.Speed=0f;c.Cutscenes.Update();c.Cutscenes.Update();c.Cutscenes.Update();
-  Check(GTA.UI.Screen.Subtitle.Contains("GUESS"),"The first line is framed on a real actor once the car has pulled up");
+  Check(World.Created.Count==1&&!story.IsVisible&&World.Created[0].Position.DistanceTo(story.Position)<3f&&World.Vehicles.Count==0,"An undeployed briefing uses a local Guess actor and remote Gohan, without a gray Granger");
+  c.Cutscenes.Update();Check(GTA.UI.Screen.Subtitle.Contains("GUESS"),"The first scene tick speaks without waiting for an arrival car");
   var radio=typeof(CutsceneDirector).GetField("_radioScene",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
-  Check(!(bool)radio.GetValue(c.Cutscenes),"The scene is not a radio call");
+  Check((bool)radio.GetValue(c.Cutscenes),"Undeployed distant speakers are a radio call");
   c.Cutscenes.Stop();Check(story.IsVisible&&World.Created.All(p=>!p.Present),"The story character is visible again and the temporary cast is gone");
   Reset();crew=Roster();c=Context(crew);World.Created.Clear();c.Cutscenes.Play("M03","intro","Cypress");
   Check(World.Created.Count==0&&Game.Player.Character.IsVisible,"With the crew deployed the real peds act and nothing is staged");c.Cutscenes.Stop();

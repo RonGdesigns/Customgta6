@@ -20,8 +20,10 @@ public static partial class StoryTests
   m12.Rov.Position=c.Locations.Position("M12.SonarBuoy");Game.Player.Character.Position=m12.Rov.Position;m12.Tick();Check(m12.CurrentStage==2,"Under the sonar, the hull is the job");
   GTA.UI.Screen.Subtitle=null;Interact(m12,c,CrewSlot.Gohan,c.Locations.Position("M12.FreighterHull"),14,true);
   Check(m12.CurrentStage==3&&m12.Surveyed&&c.Cutscenes.IsActive,"The scan plays as work at the hull from Gohan's own line");
-  c.Cutscenes.Skip();m12.Tick();Check(m12.PatrolsShown&&c.Cutscenes.IsActive,"The launches are shown once as the next problem");
-  c.Cutscenes.Skip();m12.Rov.Position=c.Locations.Position("M12.SouthJetty")+new Vector3(0,-8,-4);Game.Player.Character.Position=m12.Rov.Position;m12.Tick();c.Dialogue.Clear();m12.Tick();
+  c.Cutscenes.Skip();m12.Tick();Check(m12.PatrolsShown&&!c.Cutscenes.IsActive,"The launch warning stays on radio so the player can evade their pursuit");
+  c.Cutscenes.Skip();m12.Rov.Position=c.Locations.Position("M12.KrakenReturn");Game.Player.Character.Position=m12.Rov.Position;m12.Tick();c.Dialogue.Clear();m12.Tick();
+  Check(m12.Status==MissionStatus.Running&&m12.CurrentStage==4,"The survey cannot finish while the boat crews are alive");
+  Use(crew,CrewSlot.Ice);foreach(var enemy in World.Created.Where(p=>p.Model.Name=="s_m_y_blackops_01"))enemy.IsDead=true;m12.Tick();c.Dialogue.Clear();m12.Tick();
   Check(m12.Status==MissionStatus.Passed&&c.State.EvidenceOf("hullSurvey")==EvidenceState.CopyHeld&&m12.OutroBlocking()!=null,"Back at the jetty the survey is recorded: reachable hull, not ready heist");
 
   // ---- M13: the basin seen, workers not Aegis, the alarm as the reason to leave, charges dark until aboard, patrols reduced.
@@ -29,11 +31,11 @@ public static partial class StoryTests
   Check(m13.Begin(c)&&c.Cutscenes.IsActive&&m13.Kayak!=null&&m13.Granger!=null&&m13.EndpointKind==MissionEndpoint.EscapeCheckpoint,"M13 opens on the barges, the slipway and the crew's own Granger; an escape checkpoint");
   var workers=World.Created.Where(p=>p.Model.Name=="s_m_m_dockwork_01").ToList();string m13src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M13SmugglersCut.cs"));Check(workers.Count==3&&m13src.Contains("var workers = World.AddRelationshipGroup(\"BLOODLINES_TRAFFIC\");"),"The slipway men are dock workers, not a cartel fight");
   c.Cutscenes.Skip();m13.Tick();Use(crew,CrewSlot.Ice);Game.Player.Character.SetIntoVehicle(m13.Kayak,VehicleSeat.Driver);m13.Tick();Check(m13.CurrentStage==1,"On the water, the barges are the job");
-  GameUtils.LastProgress=-1f;foreach(var key in new[]{"M13.BargeOne","M13.BargeTwo","M13.BargeThree"}){Interact(m13,c,CrewSlot.Ice,c.Locations.Position(key),6,true);}m13.Tick();
+  GameUtils.LastProgress=-1f;foreach(var boat in World.Vehicles.Where(v=>v.Model.Name=="tug").ToArray()){Interact(m13,c,CrewSlot.Ice,boat.Position+new Vector3(boat.ForwardVector.Y,-boat.ForwardVector.X,0f)*7.141756f,6,true);}m13.Tick();
   Check(m13.CurrentStage==2&&m13.AlarmBoat!=null&&!m13.AlarmShown,"Three charges planted with the meter; a launch turns into the basin behind them");
   m13.Tick();Check(m13.AlarmShown&&c.Cutscenes.IsActive,"The alarm is shown once as the reason to leave");
   c.Cutscenes.Skip();Game.Player.Character.Position=c.Locations.Position("M13.CanalSlipway");m13.Tick();Check(m13.CurrentStage==3&&!m13.Blown,"At the slipway the charges are still dark");
-  GTA.UI.Screen.Subtitle=null;Game.Player.Character.SetIntoVehicle(m13.Granger,VehicleSeat.RightRear);Interact(m13,c,CrewSlot.Ice,m13.Granger.Position,1,true);
+  GTA.UI.Screen.Subtitle=null;Game.Player.Character.SetIntoVehicle(m13.Granger,VehicleSeat.RightRear);m13.Tick();Interact(m13,c,CrewSlot.Ice,m13.Granger.Position,1,true);
   Check(m13.Blown&&c.Cutscenes.IsActive&&c.State.FleetUpgrades["harborPatrolsReduced"],"Aboard, the charges blow and the basin burns as a result view; reduced patrols are recorded for M21");
   c.Cutscenes.Skip();m13.Tick();c.Dialogue.Clear();m13.Tick();Check(m13.Status==MissionStatus.Passed,"M13 passes with the crew in the Granger");
 
@@ -51,12 +53,12 @@ public static partial class StoryTests
   // ---- M15: the access and the rounds seen, the splice as work, one gate answering, gate access recorded.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"harbor15.json"));c.Vans=new CrewVan(c.State,c.Locations);Function.ClearLos=false;var m15=new M15Crawlspace();
   Check(m15.Begin(c)&&c.Cutscenes.IsActive&&m15.Panel!=null&&m15.Granger!=null&&crew.PedFor(CrewSlot.Guess).IsInVehicle(m15.Granger)&&m15.EndpointKind==MissionEndpoint.EscapeCheckpoint,"M15 opens on the access, a watchman, a real cable point and Ron in the Granger at the exit");
-  c.Cutscenes.Skip();m15.Tick();Use(crew,CrewSlot.Gohan);Game.Player.Character.Position=c.Locations.Position("M15.MaintenanceVault");m15.Tick();Check(m15.CurrentStage==1,"At the maintenance access the rounds are Ice's");
-  Use(crew,CrewSlot.Ice);var rounds=World.Created.Where(p=>p.Model.Name=="s_m_m_security_01").ToList();foreach(var w in rounds)w.IsBeingStunned=true;m15.Tick();Check(m15.CurrentStage==2&&rounds.All(w=>w.IsAlive),"Three watchmen down and alive, the splice is Gohan's");
+  c.Cutscenes.Skip();m15.Tick();Use(crew,CrewSlot.Gohan);Game.Player.Character.Task.LeaveVehicle();m15.Tick();Game.Player.Character.Position=c.Locations.Position("M15.MaintenanceVault");m15.Tick();Check(m15.CurrentStage==2,"At the maintenance access the rounds are Ice's");
+  Use(crew,CrewSlot.Ice);var rounds=World.Created.Where(p=>p.Model.Name=="s_m_m_security_01").ToList();foreach(var w in rounds)w.IsBeingStunned=true;m15.Tick();Check(m15.CurrentStage==3&&rounds.All(w=>w.IsAlive),"Three watchmen down and alive, the splice is Gohan's");
   GTA.UI.Screen.Subtitle=null;Interact(m15,c,CrewSlot.Gohan,c.Locations.Position("M15.FiberSplice"),12);
-  Check(m15.CurrentStage==3&&m15.Tapped&&c.Cutscenes.IsActive,"The splice plays as work at the cable point from Gohan's own line");
+  Check(m15.CurrentStage==4&&m15.Tapped&&c.Cutscenes.IsActive,"The splice plays as work at the cable point from Gohan's own line");
   c.Cutscenes.Skip();m15.Tick();Check(m15.Acknowledged&&c.Dialogue.HasPending,"One gate answers: the acknowledgment, not a harbor gone dark");
-  Game.Player.Character.Position=c.Locations.Position("M15.Exit");m15.Tick();c.Dialogue.Clear();m15.Tick();
+  Game.Player.Character.Position=c.Locations.Position("M15.Exit");crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m15.Granger,VehicleSeat.LeftRear);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m15.Granger,VehicleSeat.RightRear);m15.Tick();c.Dialogue.Clear();m15.Tick();
   Check(m15.Status==MissionStatus.Passed&&c.State.FleetUpgrades["harborGateAccess"],"Out clean, the lock-gate access is recorded for M21");
   Function.ClearLos=true;
   var scenes=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv"));

@@ -30,6 +30,9 @@ namespace Bloodlines.Core
         public string Kind { get; set; }
         public LocationStatus Status { get; set; }
         public string DistrictHint { get; set; }
+        public bool IsEditorSlot { get; set; }
+        public float SpawnRadius { get; set; } = -1f;
+        public int SpawnCount { get; set; } = -1;
     }
 
     /// <summary>
@@ -105,6 +108,7 @@ namespace Bloodlines.Core
                 };
             }
 
+            MissionPlacement.AddEditorLocations(book);
             // Per-install overrides win: someone who has surveyed a position should not
             // lose it to a data-file update.
             book.ApplyOverrides(overridesPath, false);
@@ -122,6 +126,12 @@ namespace Bloodlines.Core
             var settings = ScriptSettings.Load(overridesPath);
             foreach (var location in _locations.Values)
             {
+                if (MissionPlacement.HasGroup(location.Key))
+                {
+                    int count = settings.GetValue<int>("SpawnGroups", location.Key + ".Count", location.SpawnCount);
+                    float radius = settings.GetValue<float>("SpawnGroups", location.Key + ".Radius", location.SpawnRadius);
+                    if (count > 0) { location.SpawnCount = MissionPlacement.ClampCount(count); location.SpawnRadius = MissionPlacement.ClampRadius(radius); }
+                }
                 float x = settings.GetValue<float>("Positions", location.Key + ".X", location.Position.X);
                 float y = settings.GetValue<float>("Positions", location.Key + ".Y", location.Position.Y);
                 float z = settings.GetValue<float>("Positions", location.Key + ".Z", location.Position.Z);
@@ -179,6 +189,14 @@ namespace Bloodlines.Core
         public MissionLocation Get(string key)
         {
             return _locations.TryGetValue(key, out var location) ? location : null;
+        }
+
+        internal void AddEditable(string key, string anchorKey, Vector3 offset, string label)
+        {
+            var anchor = Get(anchorKey);
+            if (anchor == null || _locations.ContainsKey(key)) return;
+            _locations[key] = new MissionLocation { Key = key, Position = anchor.Position + offset, Heading = anchor.Heading,
+                Kind = "land", Status = LocationStatus.Estimate, DistrictHint = label, IsEditorSlot = true };
         }
 
         public Vector3 Position(string key)

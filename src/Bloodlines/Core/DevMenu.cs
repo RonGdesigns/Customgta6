@@ -69,11 +69,14 @@ namespace Bloodlines.Core
 
         /// <summary>The marker a job starts from; set by the host from the mission markers.</summary>
         public Func<MissionDefinition, MissionLocation> StartPoint { get; set; }
+        public Action ResetCampaign { get; set; }
 
         public void Close()
         {
-            _shopping = null;
+            Shops?.CancelVehiclePreview();
+            _shopping = null; GameUtils.MenuNotice = null;
             IsOpen = false;
+            if(_cameraHeld)Function.Call(Hash.SET_FOLLOW_VEHICLE_CAM_VIEW_MODE,_vehicleView);
             _cameraHeld = false;
             _waitForOpeningDownRelease = false;
             _stack.Clear();
@@ -82,12 +85,14 @@ namespace Bloodlines.Core
 
         public void Toggle()
         {
-            _shopping = null;
+            Shops?.CancelVehiclePreview();
+            _shopping = null; GameUtils.MenuNotice = null;
             _stick.Reset();
             IsOpen = !IsOpen;
             if (!IsOpen)
             {
-                _cameraHeld = false;
+                if(_cameraHeld)Function.Call(Hash.SET_FOLLOW_VEHICLE_CAM_VIEW_MODE,_vehicleView);
+            _cameraHeld = false;
                 _stack.Clear();
                 return;
             }
@@ -100,6 +105,13 @@ namespace Bloodlines.Core
         public bool HandleKey(Keys key)
         {
             if (!IsOpen || _stack.Count == 0) return false;
+            if (_survey.IsActive)
+            {
+                if (key == _config.SurveyTeleportKey) { _survey.TeleportToCurrent(); return true; }
+                if (key == _config.DevCaptureKey) { _survey.Capture(); return true; }
+                if (key == Keys.End) { _survey.Next(); return true; }
+                if (key == Keys.Home) { _survey.Previous(); return true; }
+            }
 
             var page = _stack.Peek();
 
@@ -127,6 +139,8 @@ namespace Bloodlines.Core
                     Activate(page.Selected);
                     return true;
                 case Keys.Back:
+                    Shops?.CancelVehiclePreview();
+                    if (_survey.IsEditing) { _survey.Stop(); if (_stack.Count > 1) _stack.Pop(); return true; }
                     if (_stack.Count > 1) _stack.Pop();
                     else Toggle();
                     return true;
@@ -152,6 +166,7 @@ namespace Bloodlines.Core
 
         public void HandleControllerToggle()
         {
+            if (_survey.IsEditing) return;
             if (!_config.DevToolsEnabled || IsOpen || _homes.Apartment.Busy) return;
             if (ControllerInput.Pressed(GTA.Control.CharacterWheel) && ControllerInput.JustPressed(GTA.Control.FrontendCancel))
             {
@@ -183,11 +198,14 @@ namespace Bloodlines.Core
                 Function.Call(Hash.DISABLE_CONTROL_ACTION, group, (int)GTA.Control.NextCamera, true);
             if (Function.Call<int>(Hash.GET_FOLLOW_PED_CAM_VIEW_MODE) != _pedView)
                 Function.Call(Hash.SET_FOLLOW_PED_CAM_VIEW_MODE, _pedView);
-            if (Function.Call<int>(Hash.GET_FOLLOW_VEHICLE_CAM_VIEW_MODE) != _vehicleView)
-                Function.Call(Hash.SET_FOLLOW_VEHICLE_CAM_VIEW_MODE, _vehicleView);
+            int vehicleView=Shops?.HasVehiclePreview==true?1:_vehicleView;
+            if (Function.Call<int>(Hash.GET_FOLLOW_VEHICLE_CAM_VIEW_MODE) != vehicleView)
+                Function.Call(Hash.SET_FOLLOW_VEHICLE_CAM_VIEW_MODE, vehicleView);
         }
         public void Update()
         {
+            _survey.PlacementMenuOpen = IsOpen;
+            UpdatePlacementControls();
             if (!IsOpen || _stack.Count == 0) return;
             if (_shopping != null && !Shops.CanUse(_shopping)) { Close(); return; }
             HoldGameplayCamera();
@@ -228,6 +246,7 @@ namespace Bloodlines.Core
 
         private Page BuildRoot()
         {
+            if (_survey.IsEditing) return BuildPlacementSession();
             if (_homes.Apartment.Inside) return BuildHomePage();
             var page = new Page("Bloodlines — dev menu");
 
@@ -243,6 +262,7 @@ namespace Bloodlines.Core
                 () => _stack.Push(BuildCrew()));
             page.Add("Crew messages / news", () => _dispatches.Inbox.Count() + " messages", () => _stack.Push(BuildInbox()));
             page.Add("Home workbench", () => _homes.WorkbenchName, () => { Close(); if (!_missions.IsRunning) _homes.UseWorkbench(); });
+            page.Add("Route to Foundry HQ", () => _homes.FoundryUnlocked ? "planning / rest / weapon locker" : "secure it in M03", () => { _homes.RouteFoundry(); Close(); });
             page.Add("Route to my home", () => _crew.IsDeployed ? _crew.Active.DisplayName : "deploy crew first", () => { if (_crew.IsDeployed) { _homes.RouteHome(); Close(); } });
             page.Add("Call KJ (car drop)", () => Garages != null && Garages.DeliveryActive ? "on his way" : "bring a car from a garage", () => _stack.Push(BuildKJPage()));
             page.Add("DLC weapons", () => "personal locker additions", () => _stack.Push(BuildDlcWeapons()));
@@ -383,7 +403,7 @@ namespace Bloodlines.Core
                 });
             }
 
-            page.Add("Free roam crew", () => _crew.CompanionAI.IndependentFreeRoam ? "independent" : _crew.CompanionAI.RideAlong ? "ride along" : "drive alongside", () =>
+            page.Add("Free roam crew", () => _crew.CompanionAI.HasIndividualOrders ? "individual hangouts" : _crew.CompanionAI.IndependentFreeRoam ? "independent" : _crew.CompanionAI.RideAlong ? "ride along" : "drive alongside", () =>
             {
                 if (_missions.IsRunning) { GameUtils.Subtitle("~y~Mission assignments control the crew during a job.", 3000); return; }
                 if (_crew.CompanionAI.IndependentFreeRoam) { _crew.CompanionAI.RideAlong = true; _crew.CompanionAI.IndependentFreeRoam = false; }
@@ -466,7 +486,7 @@ namespace Bloodlines.Core
         {
             var page = new Page(_homes.ResidenceName);
             if (_homes.Apartment.Inside)
-                page.Add("Exit apartment", () => "return outside", () => { Close(); _homes.ExitApartment(); });
+                page.Add(_homes.FoundryVisit ? "Exit Foundry HQ" : "Exit apartment", () => "return outside", () => { Close(); _homes.ExitApartment(); });
             else
             {
                 page.Add("Enter apartment", () => _homes.Progression, () => { Close(); _homes.EnterApartment(); });
@@ -478,7 +498,10 @@ namespace Bloodlines.Core
                 page.Add("Survey the room's spots", () => _survey.IsActive ? "running" : "stand on each, " + _config.DevCaptureKey, () => { Close(); _survey.Start(_homes.RoomSurveyKeys); });
                 page.Add("Map this room", () => "writes Bloodlines.Room.txt", () => { Close(); MapRoom(); });
             }
-            if (Garages != null)
+            if (_homes.FoundryVisit && Shops?.Vans!=null)page.Add("Crew car fleet",()=>"buy / select four-door vehicles",()=>_stack.Push(BuildCrewFleet()));
+            if (_homes.FoundryVisit)
+                page.Add("Planning table", () => "preparation, equipment and next lead", () => { Close(); _homes.ReviewFoundryPlan(); });
+            if (Garages != null && !_homes.FoundryVisit)
             {
                 page.Add("Garage", () => Garages.Summary(Garages.HomeSite(_crew.ActiveSlot)), () => _stack.Push(BuildGaragePage(Garages.HomeSite(_crew.ActiveSlot))));
                 page.Add("Call KJ (car drop)", () => "bring a car from a garage", () => _stack.Push(BuildKJPage()));
@@ -645,8 +668,7 @@ namespace Bloodlines.Core
             });
             page.Add("Reset campaign", () => "", () =>
             {
-                _state.Reset();
-                GameUtils.Subtitle("~r~Campaign progress reset.", 3000);
+                ResetCampaign?.Invoke();
             });
             page.Add("Save now", () => "", () => _state.Save());
             return page;
@@ -655,10 +677,10 @@ namespace Bloodlines.Core
         private Page BuildSurvey()
         {
             var page = new Page("Survey - GPS routes and optional teleport");
+            page.Add("Mission placement editor", () => "positions / groups / vehicle routes", () => _stack.Push(BuildPlacementMissions()));
             page.Add("Teleport to current survey spot", () => _config.SurveyTeleportKey.ToString(), () =>
             {
                 _survey.TeleportToCurrent();
-                Toggle();
             });
             page.Add("Capture current survey spot", () => _config.DevCaptureKey.ToString(), () => _survey.Capture());
             page.Add("Next survey spot", () => "End", () => _survey.Skip());
@@ -688,7 +710,7 @@ namespace Bloodlines.Core
             foreach (var hero in Protagonist.All)
             {
                 var slot = hero.Slot;
-                page.Add(hero.DisplayName, () => "clothes / face / facial hair", () => _stack.Push(BuildWardrobe(slot)));
+                page.Add(hero.DisplayName, () => "hair / clothes / face / facial hair", () => _stack.Push(BuildWardrobe(slot, debugHair:true)));
             }
             return page;
         }
@@ -700,13 +722,13 @@ namespace Bloodlines.Core
             if (ped == null || !ped.Exists()) { GameUtils.Notify("~y~Deploy this character first."); return false; }
             return true;
         }
-        private Page BuildWardrobe(CrewSlot slot, bool clothingOnly = false)
+        private Page BuildWardrobe(CrewSlot slot, bool clothingOnly = false, bool debugHair = false)
         {
             var page = new Page(Protagonist.Of(slot).DisplayName + " - wardrobe");
             page.Add("Save looks", () => "kept across restarts", () => { CrewAppearance.Save(); GameUtils.Notify("~g~Crew appearance saved."); });
             page.Add("Automatic outfit changes", () => CrewAppearance.For(slot).AutoOutfits ? "on" : "off", () =>
             { CrewAppearance.For(slot).AutoOutfits = !CrewAppearance.For(slot).AutoOutfits; });
-            foreach (string field in clothingOnly ? new[] { "Outfit" } : new[] { "Beard", "BeardColor", "Face", "Skin", "Outfit" })
+            foreach (string field in clothingOnly ? new[] { "Outfit" } : debugHair && _config.DevToolsEnabled ? new[] { "Hair", "HairColor", "Beard", "BeardColor", "Face", "Skin", "Outfit" } : new[] { "Beard", "BeardColor", "Face", "Skin", "Outfit" })
             {
                 string selected = field;
                 page.Add(field == "Outfit" ? "Reset clothing preset" : field == "Beard" ? "Facial hair" : field, () =>
@@ -715,7 +737,7 @@ namespace Bloodlines.Core
                     int n = selected == "Hair" ? l.Hair : selected == "HairColor" ? l.HairColor : selected == "Beard" ? l.Beard :
                         selected == "BeardColor" ? l.BeardColor : selected == "Face" ? l.Face : selected == "Skin" ? l.Skin : l.Outfit;
                     return n < 0 ? "none" : n.ToString();
-                }, adjust: direction => { if (CanChangeLook(slot)) CrewAppearance.Adjust(_crew.PedFor(slot), slot, selected, direction); });
+                }, adjust: direction => { if (CanChangeLook(slot)) CrewAppearance.Adjust(_crew.PedFor(slot), slot, selected, direction, allowHair:debugHair && _config.DevToolsEnabled && _shopping==null); });
             }
             foreach (var fields in new[] { CrewAppearance.Clothing, CrewAppearance.Props }) foreach (string field in fields)
             {
@@ -746,7 +768,6 @@ namespace Bloodlines.Core
             _switching.Cancel();
             if (_crew.IsDeployed) _crew.Dismiss();
             _survey.Start(missionId);
-            Toggle();
         }
 
         // ---------- actions ----------
@@ -807,6 +828,7 @@ namespace Bloodlines.Core
 
         private void Draw(Page page)
         {
+            if (_shopping != null) DrawShopDetails(page);
             const float x = 40f;
             const float width = 420f;
             float y = 60f;
@@ -897,6 +919,7 @@ namespace Bloodlines.Core
             public Func<string> Value;
             public Action Action;
             public Action<int> Adjust;
+            public uint StatWeapon, StatComponent;
         }
     }
 }

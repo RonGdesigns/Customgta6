@@ -82,6 +82,7 @@ def render():
                 name=re.match(r'"([^"]+)"',block)[1]
                 role=re.search(r'(?:OwnedBy|PlayedBy)\(CrewSlot\.(\w+)\)',block) or re.search(r'RequiredCharacter\s*=\s*CrewSlot\.(\w+)',block)
                 if role:owner=role[1]
+                if ".AnyBrother()" in block: owner="any brother"
                 labels=re.findall(r'new (\w+(?:Objective|Interaction))\(\s*"([^"]+)"',block)
                 labels=[f'{kind}: {text}' for kind,text in labels if text]
                 # An objective handed in by field name was declared before the stage.
@@ -96,7 +97,7 @@ def render():
         if keys:out += ['Survey references: '+', '.join(keys)+'.','']
     assert seen==implemented,seen^implemented
     out+=['## Boundaries of this audit','',
-    'The harness exercises objective progression, role ownership, fail/retry cleanup, scene release and persistence with GTA stand-ins. It does not establish road driveability, roof access, helicopter aim, swimming/streaming, trailer physics or camera framing. New desert positions remain estimates; safe-ground/water checks reject unavailable sites instead of deploying in the sky. Use the survey when you return. M31–M70 and SM07–SM09 are detailed in CAMPAIGN-REMAINDER.md and remain unimplemented gameplay.','']
+    'The harness exercises objective progression, role ownership, fail/retry cleanup, scene release and persistence with GTA stand-ins. It does not establish road driveability, roof access, helicopter aim, swimming/streaming, trailer physics or camera framing. New desert positions remain estimates; safe-ground/water checks reject unavailable sites instead of deploying in the sky. Use the survey when you return. M44–M70 and SM07–SM09 are detailed in CAMPAIGN-REMAINDER.md and remain unimplemented gameplay.','']
     return '\n'.join(out)
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--check',action='store_true');args=parser.parse_args()

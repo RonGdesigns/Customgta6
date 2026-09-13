@@ -44,13 +44,13 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
-            if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            if (!MissionSites.Ground(Ctx.Locations, "SM02.StairEntry", "SM02.Exit")) return false;
             _roof = Ctx.Locations.Position("SM02.RoofAccess");
             _serverBay = Ctx.Locations.Position("SM02.ServerBay");
             _terminal = Ctx.Locations.Position("SM02.Terminal");
             _exit = Ctx.Locations.Position("SM02.Exit");
 
-            if (!Ctx.Crew.DeploySolo(CrewSlot.Gohan, _roof + new Vector3(0f, -14f, 0f),
+            if (!Ctx.Crew.DeploySolo(CrewSlot.Gohan, Ctx.Locations.Position("SM02.StairEntry"),
                     Ctx.Locations.Heading("SM02.RoofAccess")))
             {
                 return false;
@@ -74,9 +74,10 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Rooftop",
-                    new ReachZoneObjective("Get onto the annex roof.", () => _roof, 4f))
+                    new MissionInteraction("Gohan: use the marked service entrance to take the maintenance stairs to the roof.", () => Ctx.Locations.Position("SM02.StairEntry"), 2, 2.5f))
                 .PlayedBy(CrewSlot.Gohan)
-                .WithCues("SM02_S1_01_GOHAN");
+                .WithCues("SM02_S1_01_GOHAN")
+                .OnExit(context => TakeStairs(_roof));
 
             yield return new MissionStage("Server bay",
                     new SubdueTargetsObjective("Gohan: use the stun gun on both marked guards. Keep them alive.", () => _guards))
@@ -92,11 +93,12 @@ namespace Bloodlines.Missions.Campaign
 
             // IT's trace is the reason to leave: a clock, and the fire escape.
             yield return new MissionStage("Fire escape",
-                    new ReachZoneObjective("Down the fire escape before IT traces the connection.", () => _exit, 6f),
+                    new MissionInteraction("Gohan: return to the roof access and take the maintenance stairs down before IT traces you.", () => _roof, 2, 2.5f),
                     new TimerObjective(TraceSeconds, "IT traced the connection before Gohan was clear of the annex."))
                 .PlayedBy(CrewSlot.Gohan)
                 .OnExit(context =>
                 {
+                    TakeStairs(_exit);
                     Radio("GOHAN", "Clear of the annex. Returning. The archive is open; nothing else is.", "SM02_RADIO_01_GOHAN");
                     // Awarded once by CampaignState.MarkComplete after the mission passes:
                     // the Marksman Rifle in Gohan's locker.
@@ -157,6 +159,28 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- world building ----------
 
+        private void TakeStairs(Vector3 destination)
+        {
+            var ped=Game.Player.Character;var origin=ped.Position;bool frozen=ped.IsPositionFrozen;
+            bool moved=false;
+            try
+            {
+                GameUtils.FadeOut(200);Script.Wait(250);ped.IsPositionFrozen=true;
+                Function.Call(Hash.SET_FOCUS_POS_AND_VEL,destination.X,destination.Y,destination.Z,0f,0f,0f);
+                ped.Position=destination;moved=true;
+                for(int i=0;i<40;i++)
+                {
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD,destination.X,destination.Y,destination.Z);
+                    if(Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY,ped))
+                    {Logger.Info("SM02: service stairs reached "+destination);return;}
+                    Script.Wait(50);
+                }
+                throw new System.InvalidOperationException("The maintenance stair exit has not streamed. Retry the annex.");
+            }
+            catch { if(moved)ped.Position=origin;throw; }
+            finally { ped.IsPositionFrozen=frozen;Function.Call(Hash.CLEAR_FOCUS);GameUtils.FadeIn(250); }
+        }
+
         private void SpawnGuards()
         {
             var model = new Model("s_m_m_security_01");
@@ -166,7 +190,7 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 2; i++)
             {
-                var guard = World.CreatePed(model, _serverBay + new Vector3(i * 3f - 1.5f, 0f, 0f), 90f);
+                var guard = World.CreatePed(model, Ctx.Locations.Position("SM02.Guard" + (i+1)), 90f);
                 if (guard == null || !guard.Exists()) continue;
 
                 guard.RelationshipGroup = aegis;

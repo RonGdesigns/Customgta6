@@ -46,6 +46,9 @@ namespace Bloodlines.Missions
         public void TakeCover(Vector3 cover) { _cover = cover; Enter(RoleState.Covering); }
         public void Extract(Vector3 point) { _point = point; Enter(RoleState.Extracting); }
         public void Stop() { Enter(RoleState.Idle); }
+        // Player control clears the native task. Handback must issue the current
+        // role again, even though its logical state did not change.
+        public void PlayerTookControl() { _orderIssued = false; }
 
         private void Enter(RoleState state)
         {
@@ -131,7 +134,8 @@ namespace Bloodlines.Missions
         public void Update()
         {
             foreach (var track in _tracks.Values)
-                if (track.Slot != _crew.ActiveSlot) track.Update();
+                if (track.Slot == _crew.ActiveSlot) track.PlayerTookControl();
+                else track.Update();
         }
 
         public void Release()

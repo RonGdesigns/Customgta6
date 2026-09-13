@@ -11,7 +11,7 @@ namespace Bloodlines.Core
         private static readonly Dictionary<MissionLocation, float> Depths = new Dictionary<MissionLocation, float>();
         public static bool Prepare(LocationBook book, string mission)
         {
-            var sites = book.All.Where(l => l.Key.StartsWith(mission + ".", StringComparison.OrdinalIgnoreCase)).ToArray();
+            var sites = book.All.Where(l => !l.IsEditorSlot && l.Key.StartsWith(mission + ".", StringComparison.OrdinalIgnoreCase)).ToArray();
             if (!Ground(book, sites.Where(l => l.Kind == "land").Select(l => l.Key).ToArray())) return false;
             foreach (var location in sites.Where(l => l.Kind == "water"))
             {
@@ -66,6 +66,31 @@ namespace Bloodlines.Core
             }
             finally { Function.Call(Hash.CLEAR_FOCUS); }
         }
+        /// <summary>Reject solid map/prop space even when a nearby navmesh point exists.</summary>
+        public static Vector3 Actor(LocationBook book, string key, Vector3 fallback)
+        {
+            var anchor = MissionPlacement.Position(book, key, fallback);
+            for (int ring = 0; ring <= 3; ring++)
+                for (int i = 0; i < (ring == 0 ? 1 : 8); i++)
+                {
+                    double angle = i * Math.PI / 4;
+                    var p = anchor + new Vector3((float)Math.Cos(angle) * ring * 2f, (float)Math.Sin(angle) * ring * 2f, 0f);
+                    Function.Call(Hash.REQUEST_COLLISION_AT_COORD, p.X, p.Y, p.Z);
+                    var safe = World.GetSafeCoordForPed(p, false, 0);
+                    if (safe == Vector3.Zero || !GameUtils.IsWithinFlat(safe, anchor, 8f) || Math.Abs(safe.Z-anchor.Z)>2f) continue;
+                    bool blocked = false;
+                    for (int direction=0; direction<8; direction++)
+                    {
+                        double a=direction*Math.PI/4;
+                        var middle=safe+new Vector3(0f,0f,.7f);
+                        var hit=World.Raycast(middle,middle+new Vector3((float)Math.Cos(a)*.65f,(float)Math.Sin(a)*.65f,0f),IntersectFlags.Map|IntersectFlags.Objects);
+                        if(hit.DidHit){blocked=true;break;}
+                    }
+                    if (!blocked) { Logger.Info("Actor placement " + key + ": " + anchor + " -> " + safe); return safe; }
+                }
+            throw new InvalidOperationException("No clear actor space at " + key + ". Survey this spawn and retry.");
+        }
+
         private static bool Walkable(Vector3 safe, Vector3 point) =>
             safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, point, 35f) && Math.Abs(safe.Z - point.Z) < 25f;
 
@@ -136,7 +161,9 @@ namespace Bloodlines.Core
         public static bool DeepEnough(float x, float y, float surface)
         {
             var ground=new OutputArgument();
-            if(!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, x, y, surface+30f, ground, true, false)) return true;
+            // A depth probe needs the seabed. Including water returns the surface
+            // as ground and makes an otherwise valid boat spawn look too shallow.
+            if(!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, x, y, surface+30f, ground, false, false)) return true;
             return ground.GetResult<float>() <= surface-MinWaterDepth;
         }
     }

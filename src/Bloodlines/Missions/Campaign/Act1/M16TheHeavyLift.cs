@@ -38,7 +38,12 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _helipad;
         private Vector3 _canyon;
         private Vector3 _terminal;
-        private int _boardingSince;
+        private int _boardingSince, _departureSince = -1, _previousWantedMaximum = 5;
+        private bool _boardingOrdered, _roadOrdered, _departureOver;
+        private bool _blackout;
+        private int _tankResponseAt = -1, _tankCount, _nextTankOrder;
+        private readonly List<Vehicle> _tanks = new List<Vehicle>();
+        private readonly List<Ped> _tankDrivers = new List<Ped>();
         private bool _challenged, _crewMoved, _landed;
 
         public override string Id => "M16";
@@ -69,6 +74,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The transponder from M09, spent: Zancudo reads them as friendly until
             // they start shooting.
+            _previousWantedMaximum = Function.Call<int>(Hash.GET_MAX_WANTED_LEVEL);
             Function.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
             Game.Player.WantedLevel = 0;
             if (Ctx.State?.CargoAt("iffTransponder") == null)
@@ -77,9 +83,14 @@ namespace Bloodlines.Missions.Campaign
             SpawnMilitaryPolice();
             SpawnCargobob();
             SpawnGranger();
-            if (!RequireAssets(_cargobob)) return false;
-            Station(CrewSlot.Guess, _fence + new Vector3(12f, -10f, 0f));
-            Station(CrewSlot.Gohan, _fence + new Vector3(-12f, -10f, 0f));
+            if (!RequireAssets(_cargobob, _granger)) return false;
+            Station(CrewSlot.Ice, _granger, VehicleSeat.Driver);
+            Station(CrewSlot.Guess, _granger, VehicleSeat.RightFront);
+            Station(CrewSlot.Gohan, _granger, VehicleSeat.RightRear);
+            _blackout=true;
+            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,true);
+            Radio("GUESS","Gohan, kill the base grid before we reach that gate. We need time to take the hangar.","M16_BLACKOUT_GUESS");
+            Radio("GOHAN","Grid down. Anti-air targeting is blind. Their tank crews have to mobilize manually; keep moving once the hangar is clear.","M16_BLACKOUT_GOHAN");
             PlayApproach();
             return true;
         }
@@ -87,7 +98,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Walk in",
-                    new ReachZoneObjective("Ice — cross the outer depot on the transponder.",
+                    new ReachZoneObjective("Ice: drive from the freeway approach to the hangar, then clear its guards.",
                         () => _helipad, 30f, flat: true))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(context =>
@@ -105,7 +116,7 @@ namespace Bloodlines.Missions.Campaign
                     new EnterVehicleObjective("Guess — take the Cargobob.", () => _cargobob,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(context => MoveCrew());
+                .OnEnter(context => MoveCrew());
 
             // Ice boards the lift; Gohan takes the Granger out by road. The aircraft
             // has the seats it has, and nobody is imagined into one it lacks.
@@ -116,13 +127,13 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Raton Canyon",
                     new AltitudeCeilingObjective("Hug the canyon — stay under 60 meters above terrain.", 60f,
-                        "A Lazer got a lock in open sky."),
+                        "You exposed the heavy lift above the canyon route."),
                     new DeliverVehicleObjective("Guess: fly the Cargobob through the marked canyon route.", () => _cargobob, () => _canyon, 120f))
                 .WithCues("M16_S1_02_GUESS");
 
             // The base's heat is lost on the way, not at the flats.
-            yield return new MissionStage("Lose the Lazers",
-                    new LoseWantedObjective("Lose the pursuit before Terminal Island."),
+            yield return new MissionStage("Clear the canyon",
+                    new ReachZoneObjective("Guess: clear the canyon exit. Gohan keeps base anti-air offline until the lift is delivered.", () => _canyon, 150f),
                     new ProtectObjective("", () => _cargobob, "The Cargobob is gone."));
 
             yield return new MissionStage("Terminal Island",
@@ -156,8 +167,9 @@ namespace Bloodlines.Missions.Campaign
         private void Challenge()
         {
             _challenged = true;
-            Function.Call(Hash.SET_MAX_WANTED_LEVEL, 5);
-            Game.Player.WantedLevel = 4;
+            // Scripted guards fight immediately; the blackout holds ambient dispatch.
+            Function.Call(Hash.SET_MAX_WANTED_LEVEL, 0);
+            Game.Player.WantedLevel = 0;
             foreach (var police in _militaryPolice)
             {
                 if (police != null && police.Exists()) { police.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS"); police.Task.FightAgainstHatedTargets(90f); }
@@ -169,34 +181,24 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Ron in the lift: Ice comes to board it; Gohan takes the Granger out by the road to Terminal.</summary>
         private void MoveCrew()
         {
-            _crewMoved = true;
+            _crewMoved = true; _tankResponseAt = Game.GameTime + 14000;
             _boardingSince = Game.GameTime;
-            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
-            if (ice != null && ice.Exists() && _cargobob != null && _cargobob.Exists())
-            {
-                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
-                ice.Task.EnterVehicle(_cargobob, VehicleSeat.RightFront, 20000, 2f, EnterVehicleFlags.None);
-            }
-            if (gohan != null && gohan.Exists() && _granger != null && _granger.Exists())
-            {
-                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
-                gohan.Task.EnterVehicle(_granger, VehicleSeat.Driver, 20000, 2f, EnterVehicleFlags.None);
-            }
-            Radio("ICE", "Ron's got the lift. I'm boarding; Gohan takes the Granger out the gate and meets us at Terminal by road.", "M16_RADIO_02_ICE");
+            // Ice is still the player on this frame. Order boarding after the switch,
+            // while Guess is approaching, never clear the current player's task here.
+            Radio("ICE", "The hangar's clear. I'll board while Ron comes over. Gohan takes the Granger to Terminal by road.", "M16_RADIO_02_ICE");
         }
 
         private bool IceAboard()
         {
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice == null || !ice.Exists() || _cargobob == null || !_cargobob.Exists()) return true;
+            if (ice == null || !ice.Exists() || ice.IsDead || _cargobob == null || !_cargobob.Exists()) return false;
             if (ice.IsInVehicle(_cargobob)) return true;
             // A pad the navmesh refuses: after a bounded wait he is put in the seat, logged.
-            if (Game.GameTime - _boardingSince > 20000)
+            if (_boardingOrdered && Game.GameTime - _boardingSince > 8000 && _cargobob.Speed < 1f && _cargobob.GetPedOnSeat(VehicleSeat.RightFront) == null)
             {
-                Logger.Warn("M16: Ice did not board the Cargobob on foot within 20 s; seated for the run.");
+                Logger.Warn("M16: Ice could not finish the door entry in 8 s; recovering into the empty, stopped passenger seat.");
                 ice.SetIntoVehicle(_cargobob, VehicleSeat.RightFront);
-                return true;
+                return ice.IsInVehicle(_cargobob);
             }
             return false;
         }
@@ -237,7 +239,7 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < 6; i++)
             {
-                var trooper = World.CreatePed(model, _helipad + new Vector3(-12f + i * 5f, 8f, 0f), 200f);
+                var trooper = World.CreatePed(model, MissionSites.Actor(Ctx.Locations, "M16.Marine" + (i + 1), _helipad), Ctx.Locations.Heading("M16.Marine" + (i + 1)));
                 if (trooper == null || !trooper.Exists()) continue;
 
                 trooper.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
@@ -265,6 +267,7 @@ namespace Bloodlines.Missions.Campaign
             if (_cargobob == null || !_cargobob.Exists()) return;
 
             _cargobob.IsPersistent = true;
+            _cargobob.PlaceOnGround();
 
             var blip = Track(_cargobob.AddBlip());
             blip.Sprite = BlipSprite.Helicopter;
@@ -275,7 +278,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The crew's Granger at the fence with the IFF unit on its dash: the approach, seen.</summary>
         private void SpawnGranger()
         {
-            var spot = _fence + new Vector3(0f, -16f, 0f);
+            var spot = Ctx.Locations.Position("M16.GrangerSpawn");
             Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M16.DepotFence")) : null;
             if (granger == null)
             {
@@ -296,6 +299,89 @@ namespace Bloodlines.Missions.Campaign
             StowPropStep.Stow(_unit, _granger, new Vector3(0.45f, 0.9f, 0.55f));
         }
 
+        protected override void OnUpdate()
+        {
+            if(_blackout)
+            {
+                Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,true);
+                Function.Call(Hash.SET_MAX_WANTED_LEVEL,0);
+                if(Game.Player.WantedLevel>0)Game.Player.WantedLevel=0;
+                if(_cargobob!=null&&_cargobob.Exists())Function.Call(Hash.SET_VEHICLE_CAN_BE_TARGETTED,_cargobob,false);
+            }
+            if (_crewMoved && !Ctx.Cutscenes.IsActive)
+            {
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+                if (Ctx.Crew.ActiveSlot == CrewSlot.Ice) _boardingOrdered = false;
+                if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan) _roadOrdered = false;
+                if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && ice != null && ice.Exists())
+                {
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+                    if (!_boardingOrdered)
+                    {
+                        _boardingOrdered = true; _boardingSince = Game.GameTime;
+                        ice.Task.EnterVehicle(_cargobob, VehicleSeat.RightFront, 8000, 2f, EnterVehicleFlags.None);
+                    }
+                }
+                if (Ctx.Crew.ActiveSlot != CrewSlot.Gohan && gohan != null && gohan.Exists())
+                {
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+                    if (!_roadOrdered)
+                    {
+                        if (_granger.GetPedOnSeat(VehicleSeat.Driver) == gohan)
+                        { gohan.Task.DriveTo(_granger, _terminal, 15f, 30f, DrivingStyle.Normal); _roadOrdered = true; }
+                        else if (!Function.Call<bool>(Hash.IS_PED_GETTING_INTO_A_VEHICLE, gohan))
+                            gohan.Task.EnterVehicle(_granger, VehicleSeat.Driver, 8000, 2f, EnterVehicleFlags.None);
+                    }
+                }
+                UpdateDepartureCorridor(); UpdateTankResponse();
+            }
+            base.OnUpdate();
+        }
+
+        // Mission-local countermeasures. The vanilla armybase script independently
+        // fires Stingers even with wanted suppression; never terminate it or patch
+        // version-dependent script memory. Clear incoming projectiles near this lift
+        // only, for a bounded departure, then leave normal pursuit untouched.
+        private void UpdateDepartureCorridor()
+        {
+            if (!_blackout || _departureOver || _cargobob == null || !_cargobob.Exists()) return;
+            var pilot = Ctx.Crew.PedFor(CrewSlot.Guess);
+            if (pilot == null || !pilot.Exists() || !pilot.IsInVehicle(_cargobob)) return;
+            if (_departureSince < 0) _departureSince = Game.GameTime;
+            if (_cargobob.Position.DistanceTo(_helipad) > 1800f)
+            { _departureOver = true; return; }
+            var p = _cargobob.Position;
+            Function.Call(Hash.CLEAR_AREA_OF_PROJECTILES, p.X, p.Y, p.Z, 180f, false);
+        }
+
+        private void UpdateTankResponse()
+        {
+            if(_cargobob==null||!_cargobob.Exists()||_cargobob.Position.DistanceTo(_helipad)>1200f)return;
+            if(_tankCount<2&&_tankResponseAt>=0&&Game.GameTime>=_tankResponseAt)
+            {
+                _tankResponseAt=Game.GameTime+16000;
+                var wanted=Ctx.Locations.Position("M16.TankEntry"+(_tankCount+1));
+                Vector3 spot;float heading;
+                if(!GameUtils.NearestRoadNode(wanted,35f,out spot,out heading))return;
+                if(Function.Call<bool>(Hash.IS_POSITION_OCCUPIED,spot.X,spot.Y,spot.Z,5f,false,true,true,false,false,0,false))return;
+                var model=new Model("rhino");var marine=new Model("s_m_y_marine_03");
+                if(!GameUtils.RequestModel(model)||!GameUtils.RequestModel(marine))return;
+                var tank=Track(World.CreateVehicle(model,spot,heading));
+                var driver=Track(World.CreatePed(marine,spot,heading));
+                model.MarkAsNoLongerNeeded();marine.MarkAsNoLongerNeeded();
+                if(tank==null||!tank.Exists()||driver==null||!driver.Exists())return;
+                tank.IsPersistent=true;tank.PlaceOnGround();driver.IsPersistent=true;driver.BlockPermanentEvents=true;
+                driver.RelationshipGroup=World.AddRelationshipGroup("BLOODLINES_AEGIS");driver.SetIntoVehicle(tank,VehicleSeat.Driver);
+                _tanks.Add(tank);_tankDrivers.Add(driver);_tankCount++;
+                var blip=Track(tank.AddBlip());blip.Color=BlipColor.Red;blip.Name="Delayed armor response";
+                Radio("GOHAN","Armor's rolling manually. Grid is still down. Get the lift out of there.","M16_TANK_"+_tankCount);
+            }
+            if(Game.GameTime<_nextTankOrder)return;_nextTankOrder=Game.GameTime+4000;
+            for(int i=0;i<_tanks.Count;i++)if(_tanks[i].Exists()&&!_tanks[i].IsDead&&_tankDrivers[i].Exists()&&!_tankDrivers[i].IsDead)
+                _tankDrivers[i].Task.StartVehicleMission(_tanks[i],Game.Player.Character,VehicleMissionType.Attack,20f,(VehicleDrivingFlags)786603,25f,35f,true);
+        }
+
         protected override void OnPassed()
         {
             if (_granger != null && _granger.Exists()) Release(_granger);
@@ -303,8 +389,14 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            _blackout=false;
+            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,false);
+            if(_cargobob!=null&&_cargobob.Exists())Function.Call(Hash.SET_VEHICLE_CAN_BE_TARGETTED,_cargobob,true);
+            _tanks.Clear();_tankDrivers.Clear();
             // Never leave the player's wanted ceiling where a mission put it.
-            Function.Call(Hash.SET_MAX_WANTED_LEVEL, 5);
+            Function.Call(Hash.SET_MAX_WANTED_LEVEL, _previousWantedMaximum);
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);
+            _departureOver = true;
             _militaryPolice.Clear();
         }
     }

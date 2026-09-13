@@ -30,6 +30,11 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M07WiretapWaltz : ComposedMission
     {
         protected override void OnCleanup() { Ctx.Crew.CompanionsHoldPosition = false; }
+        private Prop _dish, _chute;
+        public Prop Dish => _dish;
+        public Prop ParachuteBag => _chute;
+        public bool ChuteCollected => _chuteGiven;
+        public const string RelayAnimation = "anim@heists@humane_labs@emp@hack_door|hack_loop";
 
         private Vehicle _drone;
         private Vehicle _sedan;
@@ -127,8 +132,9 @@ namespace Bloodlines.Missions.Campaign
             Function.Call(Hash.GIVE_WEAPON_TO_PED, Game.Player.Character,
                 Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
 
+            SpawnDish();
             SpawnSedan();
-            if (!RequireAssets(_sedan)) return false;
+            if (!RequireAssets(_sedan, _dish)) return false;
             Ctx.Crew.CompanionsHoldPosition = true;
             // Ron and Gohan wait in the sedan they leave in (Ron, September 12): Gohan reads the feed from the passenger seat.
             Station(CrewSlot.Guess, _sedan, VehicleSeat.Driver);
@@ -155,7 +161,7 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("M07_S1_01_GOHAN");
 
             yield return new MissionStage("Clamp the receiver",
-                    new MissionInteraction("Clamp the packet sniffer to the dish.", () => _mast, 7, 4f))
+                    new MissionInteraction("Ice: fit the sniffer to the satellite dish. Press E / D-pad Right.", () => _mast, 7, 2f, animation: RelayAnimation))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context =>
                 {
@@ -172,13 +178,15 @@ namespace Bloodlines.Missions.Campaign
                         flat: false),
                     new ReactionTrigger(() => !_heliShown && !Ctx.Cutscenes.IsActive, ShowHelicopter),
                     new ReactionTrigger(() => _heliShown && !_pickupCalled && !Ctx.Cutscenes.IsActive, CallPickup),
-                    new ReactionTrigger(() => !_chuteGiven && Game.Player.Character != null && Game.Player.Character.Position.DistanceTo(_chuteSpot) < 3f, GiveSecondChute))
+                    new ReactionTrigger(() => !_chuteGiven && Game.Player.Character != null && Game.Player.Character.Position.DistanceTo(_chuteSpot) < 2f, GiveSecondChute))
                 .OnEnter(context => { DropSecondChute(); GameUtils.Subtitle("~r~Aegis helicopter approaching. The chute is by the platform; the pickup is below.", 5000); });
 
             yield return new MissionStage("Moving pickup",
-                    new EnterVehicleObjective("Get in behind Guess.", () => _sedan))
+                    new EnterVehicleObjective("Ice: board a rear seat behind Guess. F / Y, or E / D-pad Right beside the car.", () => _sedan) { ContextBoarding = true })
                 .OnExit(context =>
                 {
+                    Ctx.Crew.CompanionsHoldPosition = false;
+                    foreach (var hero in Protagonist.All) Ctx.Crew.CompanionAI.ReleaseControl(hero.Slot);
                     // The manifests are the payout, and they set up M08.
                     GameUtils.Subtitle("~g~Manifests decrypted. Elysian warehouse, tomorrow.", 5000);
                 });
@@ -282,18 +290,38 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>A parachute by the platform for the jump down. The pickup is the game's; reaching its spot hands the chute over directly as well, so the jump never depends on the pickup streaming in.</summary>
         private void DropSecondChute()
         {
-            _chuteSpot = _mast + new Vector3(2.5f, 0f, 0f);
-            int pickup = 0;
-            try { pickup = Function.Call<int>(Hash.CREATE_PICKUP_ROTATE, 1735599485u, _chuteSpot.X, _chuteSpot.Y, _chuteSpot.Z + 0.4f, 0f, 0f, 0f, 512, 1, 0, true, 0); }
-            catch (System.Exception e) { Logger.Error("M07: the parachute pickup call failed; the chute is handed over at its spot instead.", e); }
-            if (pickup == 0) Logger.Warn("M07: the parachute pickup was not created; the chute is handed over at its spot instead.");
-            else Logger.Info("M07: a second chute lies at " + _chuteSpot + ".");
+            _chuteSpot = _mast + new Vector3(-3.5f, 0f, 0f);
+            var model = new Model("p_parachute_s");
+            if (!GameUtils.RequestModel(model)) return;
+            _chute = Track(World.CreateProp(model, _chuteSpot + new Vector3(0, 0, 0.3f), false, false));
+            model.MarkAsNoLongerNeeded();
+            if (_chute != null && _chute.Exists()) { _chute.IsPositionFrozen = true; _chute.IsPersistent = true; }
+            Logger.Info("M07: walk-over parachute at " + _chuteSpot + ".");
         }
 
         private void GiveSecondChute()
         {
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice || ice == null || !ice.Exists() || ice.IsDead || ice.IsInVehicle()) return;
+            uint hash = unchecked((uint)Game.GenerateHash("GADGET_PARACHUTE"));
+            Function.Call(Hash.GIVE_WEAPON_TO_PED, ice, hash, 1, false, false);
+            if (!Function.Call<bool>(Hash.HAS_PED_GOT_WEAPON, ice, hash, false)) return;
             _chuteGiven = true;
-            Function.Call(Hash.GIVE_WEAPON_TO_PED, Game.Player.Character, Game.GenerateHash("GADGET_PARACHUTE"), 1, false, false);
+            if (_chute != null && _chute.Exists()) _chute.Delete();
+            GameUtils.Subtitle("~g~Parachute collected. Jump and open it; Guess is waiting below.", 4000);
+            Logger.Info("M07: Ice collected the exit parachute.");
+        }
+
+        protected override void OnUpdate()
+        {
+            base.OnUpdate();
+            if (Stage == 2 && !_chuteGiven && !Ctx.Cutscenes.IsActive)
+            {
+                GameUtils.DrawObjectiveMarker(_chuteSpot, System.Drawing.Color.Yellow, 0.7f);
+                // Draw the pickup and keep its location in the HUD without replacing
+                // the car's route. Collection needs no context press or native pickup.
+                if (Ctx.Crew.PedFor(CrewSlot.Ice)?.Position.DistanceTo(_chuteSpot) < 2f) GiveSecondChute();
+            }
         }
 
         /// <summary>The helicopter, shown coming, once; then Ice's roof and Ron's radio.</summary>
@@ -301,8 +329,16 @@ namespace Bloodlines.Missions.Campaign
         {
             _heliShown = true;
             string line = Ctx.Data?.Cue("M07_S2_04_ICE")?.Line ?? "Aegis helicopter incoming. I need a way off this roof.";
-            if (_dronePilot != null && _dronePilot.Exists() && _drone != null && _drone.Exists())
-                Ctx.Cutscenes.PlayMoment(Id, "Aegis helicopter", "ICE", line, _dronePilot);
+            if (_dronePilot != null && _dronePilot.Exists() && !_dronePilot.IsDead && _drone != null && _drone.Exists() && !_drone.IsDead)
+            {
+                _drone.IsPositionFrozen = false; _drone.IsInvincible = false;
+                _dronePilot.IsInvincible = false;
+                _dronePilot.Task.StartHeliMission(_drone, Ctx.Crew.PedFor(CrewSlot.Ice), VehicleMissionType.Attack, 30f, 40f, 30, 20, -1f, 30f, (HeliMissionFlags)0);
+                var shot = new SceneSpec { MissionId = Id, Phase = "helicopter", Title = "Aegis helicopter",
+                    Reason = "The live aircraft approaches the relay roof.",
+                    Blocking = new SceneBlocking().Then(new ShotStep(2500, _drone, new Vector3(-12f, -18f, 6f), _drone, Vector3.Zero, 0f)) };
+                Ctx.Cutscenes.PlayStaged(shot, new[] { new DialogueCue { MissionId = Id, Speaker = "ICE", Line = line } });
+            }
             else Say("M07_S2_04_ICE");
         }
 
@@ -321,6 +357,18 @@ namespace Bloodlines.Missions.Campaign
         }
 
         // ---------- cast and props ----------
+
+        private void SpawnDish()
+        {
+            var model = new Model("prop_satdish_2_a");
+            if (!GameUtils.RequestModel(model)) return;
+            // Keep the interaction point open in front of the cabinet-sized dish.
+            _dish = Track(World.CreateProp(model, _mast + new Vector3(0f, 0.9f, 0.15f), false, false));
+            model.MarkAsNoLongerNeeded();
+            if (_dish == null || !_dish.Exists()) return;
+            _dish.IsPersistent = true; _dish.IsPositionFrozen = true;
+            _dish.Heading = Ctx.Locations.Heading("M07.MastTop");
+        }
 
         private void SpawnSniffer()
         {
@@ -343,17 +391,27 @@ namespace Bloodlines.Missions.Campaign
             _drone = Track(World.CreateVehicle(model, _roof + new Vector3(0f, 140f, 45f), 180f));
             if (_drone == null || !_drone.Exists()) return;
 
-            _dronePilot = Track(World.CreatePed(pilotModel, _drone.Position, 0f));
+            _drone.IsPersistent = true;
+            // Wait for the reveal instead of flying into the skyline while the
+            // player is still locked in the receiver scene.
+            _drone.IsPositionFrozen = true; _drone.IsInvincible = true;
+            _drone.IsEngineRunning = true;
+            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, _drone);
+            // Spawn clear of the rotor/cabin and seat synchronously before flight.
+            _dronePilot = Track(World.CreatePed(pilotModel, _drone.Position + new Vector3(0f, 0f, 4f), 0f));
             model.MarkAsNoLongerNeeded();
             pilotModel.MarkAsNoLongerNeeded();
             if (_dronePilot == null || !_dronePilot.Exists()) return;
 
             _dronePilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             _dronePilot.IsPersistent = true;
+            _dronePilot.IsInvincible = true;
             _dronePilot.BlockPermanentEvents = true;
-            _dronePilot.Task.WarpIntoVehicle(_drone, VehicleSeat.Driver);
-            // An attack, not a shadow: the Buzzard works the roof with its guns (Ron, September 11).
-            _dronePilot.Task.StartHeliMission(_drone, Game.Player.Character, VehicleMissionType.Attack, 30f, 40f, 30, 20, -1f, 30f, (HeliMissionFlags)0);
+            _dronePilot.SetIntoVehicle(_drone, VehicleSeat.Driver);
+            _dronePilot.Health = 300; _dronePilot.Armor = 100;
+            if (!_dronePilot.IsInVehicle(_drone)) { Logger.Error("M07: pilot seating failed; helicopter response unavailable."); return; }
+            _dronePilot.AlwaysKeepTask = true;
+            // The attack task starts when ShowHelicopter reveals the live aircraft.
 
             var blip = Track(_drone.AddBlip());
             blip.Sprite = BlipSprite.Helicopter;
@@ -389,6 +447,7 @@ namespace Bloodlines.Missions.Campaign
 
             _sedan.IsPersistent = true;
             _sedan.IsEngineRunning = true;
+            _sedan.LockStatus = VehicleLockStatus.Unlocked;
 
             var blip = Track(_sedan.AddBlip());
             blip.Sprite = BlipSprite.PersonalVehicleCar;

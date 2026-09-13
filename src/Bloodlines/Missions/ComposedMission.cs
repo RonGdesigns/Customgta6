@@ -38,7 +38,8 @@ namespace Bloodlines.Missions
             if (ped == null || !ped.Exists()) return;
             Ctx.Crew.CompanionAI.TakeControl(slot);
             ped.Task.ClearAllImmediately(); ped.Position = position;
-            ped.Task.GuardCurrentPosition(); _stationed.Add(slot);
+            if (Ctx.Crew.ActiveSlot != slot) ped.Task.GuardCurrentPosition();
+            _stationed.Add(slot);
         }
         protected void Station(Crew.CrewSlot slot, GTA.Vehicle vehicle, GTA.VehicleSeat seat)
         {
@@ -124,7 +125,12 @@ namespace Bloodlines.Missions
             if (stage == null) return;
 
             // A player-controlled station becomes normal crew AI, including driver handover.
-            if (_stationed.Remove(Ctx.Crew.ActiveSlot)) Ctx.Crew.CompanionAI.ReleaseControl(Ctx.Crew.ActiveSlot);
+            if (_stationed.Remove(Ctx.Crew.ActiveSlot))
+            {
+                Ctx.Crew.CompanionAI.ReleaseControl(Ctx.Crew.ActiveSlot);
+                var player = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+                if (player != null && player.Exists() && !player.IsInVehicle()) player.Task.ClearAllImmediately();
+            }
             foreach (var slot in _stages.SelectMany(s => s.Objectives).Where(o => o.RequiredCharacter.HasValue)
                 .Select(o => o.RequiredCharacter.Value).Distinct())
             {
@@ -191,12 +197,12 @@ namespace Bloodlines.Missions
                     var assigned = stage.Objectives.FirstOrDefault(o => !o.IsPassive && o.RequiredCharacter.HasValue);
                     if (assigned != null) owner = assigned.RequiredCharacter.Value;
                     foreach (var objective in stage.Objectives)
-                        if (!objective.RequiredCharacter.HasValue && !objective.IsPassive && !objective.KeepsOwnerOpen) objective.RequiredCharacter = owner;
+                        if (!stage.AllowsAnyBrother && !objective.RequiredCharacter.HasValue && !objective.IsPassive && !objective.KeepsOwnerOpen) objective.RequiredCharacter = owner;
                 }
                 // An inner part of the continuous Port Heist ends on its last real
                 // objective; the next part starts while the radio line plays.
                 bool innerPart = OperationOwned && Id != "M22";
-                if (!innerPart && (Id.StartsWith("SM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7))) stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")));
+                if (!innerPart && (Id.StartsWith("SM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7))) stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")).AnyBrother());
             }
             return stages;
         }

@@ -8,7 +8,7 @@ using GTA.Math;
 namespace Bloodlines.Missions.Campaign
 {
     /// <summary>
-    /// M11 — "Ironclad Dyno". Burro Heights chop shop, 15:00.
+    /// M11 — "Ironclad Dyno". Foundry service-apron workshop, 15:00.
     ///
     /// The quiet one. Nobody shoots at anybody: Guess and Ice drop the turbine into
     /// the Granger, argue about a stripped alternator fifteen years ago, and Gohan
@@ -26,12 +26,13 @@ namespace Bloodlines.Missions.Campaign
     /// </summary>
     public sealed class M11IroncladDyno : ComposedMission
     {
-        private const float TargetBoostLow = 22f;
-        private const float TargetBoostHigh = 28f;
+        private const float TargetBoostLow = 20f;
+        private const float TargetBoostHigh = 30f;
 
         private Vehicle _granger;
         private Vehicle _flatbed;
         private Prop _crate;
+        private Prop _bench, _mount;
         private Vector3 _shop;
         private Vector3 _dyno;
         private bool _berthPlayed;
@@ -51,7 +52,7 @@ namespace Bloodlines.Missions.Campaign
             _shop = Ctx.Locations.Position("M11.ChopShop");
             _dyno = Ctx.Locations.Position("M11.DynoPad");
 
-            if (!Ctx.Crew.Deploy(CrewSlot.Guess, _dyno + new Vector3(-3f, 0f, 0f), Ctx.Locations.Heading("M11.ChopShop")))
+            if (!Ctx.Crew.Deploy(CrewSlot.Guess, Ctx.Locations.Position("M11.GuessStart"), Ctx.Locations.Heading("M11.ChopShop")))
             {
                 return false;
             }
@@ -60,9 +61,10 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.CompanionsHoldPosition = true;
             SpawnGranger();
             SpawnFlatbed();
-            if (!RequireAssets(_granger)) return false;
-            Station(CrewSlot.Ice, _dyno + new Vector3(4f, 0f, 0f));
-            Station(CrewSlot.Gohan, _shop + new Vector3(0f, 22f, 0f));
+            SpawnTools();
+            if (!RequireAssets(_granger, _bench, _mount)) return false;
+            Station(CrewSlot.Ice, Ctx.Locations.Position("M11.IceStart"));
+            Station(CrewSlot.Gohan, Ctx.Locations.Position("M11.GohanStart"));
             PlayShop();
             return true;
         }
@@ -70,7 +72,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Mount the turbine",
-                    new MissionInteraction("Guess — fabricate the motor mounts.", () => _dyno, 10, 4f))
+                    new MissionInteraction("Guess — fabricate the motor mounts.", () => _bench.Position + new Vector3(1.5f, 0f, 0f), 6, 1.7f, animation: MissionInteraction.ReachInside, face: () => _bench.Position))
                 .OwnedBy(CrewSlot.Guess)
                 .AfterCues("M11_S1_01_GUESS");
 
@@ -80,8 +82,8 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Manifold pressure",
-                    new DynoObjective("Ice: use partial RT or tap W to hold 22-28 PSI. Stay in the driver seat.",
-                        () => _granger, TargetBoostLow, TargetBoostHigh, 12))
+                    new DynoObjective("Ice: RT / W raises pressure; LT / S lowers it. Release both to HOLD 20-30 PSI. Stay in the driver seat.",
+                        () => _granger, TargetBoostLow, TargetBoostHigh, 8))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context =>
                 {
@@ -110,7 +112,9 @@ namespace Bloodlines.Missions.Campaign
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             var blocking = new SceneBlocking();
-            if (guess != null && guess.Exists()) blocking.Then(new InspectStep(guess, _dyno, 3200, "WORLD_HUMAN_WELDING"));
+            if (guess != null && guess.Exists())
+                blocking.Then(new WalkToStep(guess, _bench.Position + new Vector3(1.5f, 0f, 0f), 1.2f) { TimeoutMs = 4000 })
+                    .Then(new InspectStep(guess, _bench.Position, 2600, "WORLD_HUMAN_WELDING"));
             if (ice != null && ice.Exists()) blocking.Then(new InspectStep(ice, _dyno + new Vector3(2f, 0f, 0f), 2600, "WORLD_HUMAN_CLIPBOARD"));
             if (gohan != null && gohan.Exists()) blocking.Then(new WalkToStep(gohan, _shop + new Vector3(0f, 8f, 0f), 1.2f));
             if (_granger != null && _granger.Exists()) blocking.Then(new ShotStep(3000, _granger, new Vector3(-5f, 3f, 1.6f), _granger, new Vector3(0f, 1.5f, 0.9f), 0.6f));
@@ -186,7 +190,7 @@ namespace Bloodlines.Missions.Campaign
         {
             var model = new Model("flatbed");
             if (!GameUtils.RequestModel(model)) return;
-            _flatbed = Track(World.CreateVehicle(model, _shop + new Vector3(9f, -6f, 0f), Ctx.Locations.Heading("M11.ChopShop")));
+            _flatbed = Track(World.CreateVehicle(model, Ctx.Locations.Position("M11.FlatbedSpawn"), Ctx.Locations.Heading("M11.ChopShop")));
             model.MarkAsNoLongerNeeded();
             if (_flatbed == null || !_flatbed.Exists()) return;
             _flatbed.IsPersistent = true;
@@ -198,6 +202,28 @@ namespace Bloodlines.Missions.Campaign
             if (_crate == null || !_crate.Exists()) { _crate = null; return; }
             _crate.IsPersistent = true;
             StowPropStep.Stow(_crate, _flatbed, new Vector3(0f, -3.1f, 1.05f));
+        }
+
+        private void SpawnTools()
+        {
+            var model=new Model("prop_tool_bench02");
+            if (!GameUtils.RequestModel(model)) return;
+            try
+            {
+                _bench=Track(World.CreateProp(model,MissionPlacement.Position(Ctx.Locations, "M11.Workbench", _dyno+new Vector3(0f,3f,0f)),false,true));
+                if (_bench!=null&&_bench.Exists())
+                {
+                    _bench.IsPersistent=true;_bench.IsPositionFrozen=true;_bench.Heading=MissionPlacement.Heading(Ctx.Locations, "M11.Workbench", 0f);
+                    var partModel = new Model("prop_car_engine_01");
+                    if (GameUtils.RequestModel(partModel))
+                    {
+                        _mount = Track(World.CreateProp(partModel, PropPlacement.OnTop(_bench, model, partModel), false, false));
+                        partModel.MarkAsNoLongerNeeded();
+                        if (_mount != null && _mount.Exists()) _mount.IsPositionFrozen = true;
+                    }
+                }
+            }
+            finally { model.MarkAsNoLongerNeeded(); }
         }
 
         protected override void OnPassed()
@@ -227,6 +253,7 @@ namespace Bloodlines.Missions.Campaign
         private readonly int _holdSeconds;
 
         private float _held;
+        private float _pressure;
         private int _lastTick;
 
         public DynoObjective(string label, System.Func<Vehicle> vehicle, float low, float high, int holdSeconds)
@@ -240,7 +267,7 @@ namespace Bloodlines.Missions.Campaign
 
         public override void Enter(MissionContext context)
         {
-            _held = 0f; _lastTick = Game.GameTime;
+            _held = 0f; _pressure = 0f; _lastTick = Game.GameTime;
         }
 
         public override void Update(MissionContext context)
@@ -258,16 +285,21 @@ namespace Bloodlines.Missions.Campaign
 
             if (!IsOwnerActive(context) || vehicle.GetPedOnSeat(VehicleSeat.Driver) != Game.Player.Character) return;
 
-            // Engine revs stand in for manifold pressure: the game models no boost, but
-            // CurrentRPM is exactly the value the player is modulating with the trigger.
-            float psi = vehicle.CurrentRPM * 40f;
+            // The stock RPM jumps with controller throttle and the car is frozen on
+            // the rollers. Calibrate a pressure setpoint instead: hold to adjust,
+            // release to keep it. This also works with a digital keyboard throttle.
+            float input = (Game.IsControlPressed((Control)71) ? 1f : 0f) -
+                (Game.IsControlPressed((Control)72) ? 1f : 0f);
+            _pressure = System.Math.Max(0f, System.Math.Min(40f, _pressure + input * 8f * delta));
+            float psi = _pressure;
             bool inBand = psi >= _low && psi <= _high;
 
             if (inBand) _held += delta;
-            else _held = System.Math.Max(0f, _held - delta * 0.5f);
+            // Completed calibration time is retained while correcting an overshoot.
 
             string color = inBand ? "~g~" : psi < _low ? "~y~" : "~r~";
-            GameUtils.Subtitle(color + psi.ToString("0") + " PSI~s~   target " + _low + "–" + _high, 400);
+            Label = "Ice: RT/W raises, LT/S lowers; release both to hold " + _low + "-" + _high + " PSI.";
+            GameUtils.Subtitle(color + psi.ToString("0") + " PSI~s~   target " + _low + "-" + _high + "   " + _held.ToString("0.0") + "/" + _holdSeconds + "s", 400);
             GameUtils.DrawProgressBar(_held / _holdSeconds);
 
             if (_held >= _holdSeconds) Complete();

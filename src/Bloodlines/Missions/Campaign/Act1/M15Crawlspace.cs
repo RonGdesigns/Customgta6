@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using GTA.Native;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -28,6 +29,8 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Ped> _watchmen = new List<Ped>();
 
+        private readonly HashSet<int> _stunned = new HashSet<int>();
+        private Prop _office;
         private Prop _panel;
         private Vehicle _granger;
         private Vector3 _entry;
@@ -35,6 +38,8 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _splice;
         private Vector3 _exit;
         private bool _tapped, _acknowledged;
+        private bool _withdrawing;
+        private int _nextWithdrawalOrder;
 
         public override string Id => "M15";
         public override string Title => "Crawlspace";
@@ -67,9 +72,11 @@ namespace Bloodlines.Missions.Campaign
             SpawnWatchmen();
             SpawnPanel();
             SpawnGranger();
+            if (!RequireAssets(_panel, _office, _granger) || _watchmen.Count != 3) return false;
             foreach (var guard in _watchmen) RequireSurvivor(guard, "The dock watchmen must survive. Use the stun gun and leave them alive.");
             Ctx.Crew.CompanionsHoldPosition = true;
-            Station(CrewSlot.Ice, _entry + new Vector3(-12f, 0f, 0f));
+            Station(CrewSlot.Ice, _granger, VehicleSeat.LeftRear);
+            Station(CrewSlot.Gohan, _granger, VehicleSeat.RightRear);
             if (_granger != null && _granger.Exists()) Station(CrewSlot.Guess, _granger, VehicleSeat.Driver);
             else Station(CrewSlot.Guess, _exit + new Vector3(10f, 0f, 0f));
             Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.StunGun, 100, true, true);
@@ -79,6 +86,11 @@ namespace Bloodlines.Missions.Campaign
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            yield return new MissionStage("Leave the arrival car",
+                    new ConditionObjective("Gohan: get out of Guess's car. Ice exits with you; Guess waits here for extraction.", () => !Game.Player.Character.IsInVehicle()))
+                .OwnedBy(CrewSlot.Gohan)
+                .OnEnter(context => { var ice=Ctx.Crew.PedFor(CrewSlot.Ice); if(ice!=null&&ice.Exists())ice.Task.LeaveVehicle(); });
+
             yield return new MissionStage("Maintenance level",
                     new ReachZoneObjective("Gohan: reach the marked maintenance access outside the administration building.", () => _vault, 5f),
                     new AvoidDetectionObjective(() => _watchmen,
@@ -93,15 +105,19 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M15_S1_02_ICE");
 
             yield return new MissionStage("Splice the trunk",
-                    new MissionInteraction("Gohan — splice the optical bypass.", () => _splice, 12, 3f))
+                    new MissionInteraction("Gohan — splice the optical bypass.", () => _splice, 12, 1.7f, animation: MissionInteraction.ReachInside, face: () => _panel.Position))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => PlaySplice())
                 .WithCues("M15_S1_01_GOHAN");
 
             // One gate answers: that is the acknowledgment, and the reason to go.
             yield return new MissionStage("Out clean",
-                    new ReachZoneObjective("Leave the way you came in; Ron is at the exit.", () => _exit, 8f),
+                    new ReachZoneObjective("Gohan: return to Guess at the original arrival car. Ice: cover the withdrawal.", () => _exit, 8f),
+                    new EnterVehicleObjective("Board Guess's car. Use F / Y or the interact button at an empty passenger door.", () => _granger, VehicleSeat.Any),
+                    new ConditionObjective("Get Ice and Gohan aboard. Switch freely to help either brother return to Guess.", () => Ctx.Crew.PedFor(CrewSlot.Ice).IsInVehicle(_granger) && Ctx.Crew.PedFor(CrewSlot.Gohan).IsInVehicle(_granger)),
                     new ReactionTrigger(() => _tapped && !_acknowledged && !Ctx.Cutscenes.IsActive, Acknowledge))
+                .AnyBrother()
+                .OnEnter(context => _withdrawing = true)
                 .OnExit(context =>
                 {
                     Ctx.State?.SetUpgrade("harborGateAccess", true);
@@ -137,7 +153,7 @@ namespace Bloodlines.Missions.Campaign
             var blocking = new SceneBlocking();
             if (gohan != null && gohan.Exists())
             {
-                blocking.Then(new InspectStep(gohan, _splice, 3200, "WORLD_HUMAN_WELDING"));
+                blocking.Then(new InspectStep(gohan, _panel.Position, 1800));
                 blocking.Then(ShotStep.OverShoulder(3400, gohan, _panel != null && _panel.Exists() ? (Entity)_panel : gohan, 0.2f));
             }
             var spec = new SceneSpec
@@ -177,22 +193,26 @@ namespace Bloodlines.Missions.Campaign
             var group = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             var posts = new[]
             {
-                _entry + new Vector3(8f, 10f, 0f),
-                _vault + new Vector3(-6f, 4f, 0f),
-                _splice + new Vector3(7f, -5f, 0f)
+                Ctx.Locations.Position("M15.Watchman1"),
+                Ctx.Locations.Position("M15.Watchman2"),
+                Ctx.Locations.Position("M15.Watchman3")
             };
 
+            int postIndex = 0;
             foreach (var post in posts)
             {
-                var watchman = World.CreatePed(model, post, 180f);
+                var watchman = World.CreatePed(model, MissionSites.Actor(Ctx.Locations, "M15.Watchman" + (postIndex + 1), post), Ctx.Locations.Heading("M15.Watchman" + (++postIndex)));
                 if (watchman == null || !watchman.Exists()) continue;
 
                 watchman.RelationshipGroup = group;
                 watchman.IsPersistent = true;
                 watchman.BlockPermanentEvents = true;
+                // Stun damage must not kill a stock 100-health civilian before our tick.
+                watchman.MaxHealth = 500; watchman.Health = 500;
+                Function.Call(Hash.SET_PED_SUFFERS_CRITICAL_HITS, watchman, false);
                 watchman.Accuracy = 20;
                 watchman.Weapons.Give(WeaponHash.Nightstick, 1, true, true);
-                watchman.Task.StartScenario("WORLD_HUMAN_GUARD_PATROL", watchman.Position, 180f);
+                watchman.Task.StartScenario("WORLD_HUMAN_GUARD_PATROL", watchman.Position, watchman.Heading);
 
                 _watchmen.Add(Track(watchman));
             }
@@ -203,29 +223,69 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>A cable point that exists: a case at the splice key.</summary>
         private void SpawnPanel()
         {
-            var model = new Model("prop_ld_case_01");
+            var officeModel = new Model("prop_portacabin01");
+            if (!GameUtils.RequestModel(officeModel)) return;
+            _office = Track(World.CreateProp(officeModel, Ctx.Locations.Position("M15.ServiceOffice"), false, true));
+            officeModel.MarkAsNoLongerNeeded();
+            if (_office != null && _office.Exists()) { _office.IsPositionFrozen = true; _office.Heading = Ctx.Locations.Heading("M15.ServiceOffice"); }
+            var model = new Model("prop_elecbox_12");
             if (!GameUtils.RequestModel(model)) return;
-            _panel = Track(World.CreateProp(model, _splice + new Vector3(0.6f, 0.6f, 0f), false, true));
+            _panel = Track(World.CreateProp(model, Ctx.Locations.Position("M15.Cabinet"), false, true));
             model.MarkAsNoLongerNeeded();
-            if (_panel != null && _panel.Exists()) _panel.IsPositionFrozen = true;
+            if (_panel != null && _panel.Exists()) { _panel.IsPositionFrozen = true; _panel.Heading = Ctx.Locations.Heading("M15.Cabinet"); }
         }
 
         /// <summary>Ron's Granger at the exit, placed before the infiltration.</summary>
         private void SpawnGranger()
         {
-            var spot = _exit + new Vector3(10f, 0f, 0f);
-            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, 0f) : null;
+            var spot = Ctx.Locations.Position("M15.GrangerSpawn");
+            Vehicle granger = Ctx.Vans != null ? Ctx.Vans.Spawn(spot, Ctx.Locations.Heading("M15.GrangerSpawn")) : null;
             if (granger == null)
             {
                 var model = new Model("granger");
                 if (!GameUtils.RequestModel(model)) return;
-                granger = World.CreateVehicle(model, spot, 0f);
+                granger = World.CreateVehicle(model, spot, Ctx.Locations.Heading("M15.GrangerSpawn"));
                 model.MarkAsNoLongerNeeded();
             }
             _granger = Track(granger);
             if (_granger == null || !_granger.Exists()) return;
-            _granger.IsPersistent = true;
+            _granger.IsPersistent = true; _granger.PlaceOnGround();
             _granger.IsEngineRunning = false;
+        }
+
+        protected override void OnUpdate()
+        {
+            foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan })
+                if (slot != Ctx.Crew.ActiveSlot) Ctx.Crew.CompanionAI.TakeControl(slot);
+            if (_withdrawing && !Ctx.Cutscenes.IsActive && Game.GameTime >= _nextWithdrawalOrder)
+            {
+                _nextWithdrawalOrder = Game.GameTime + 4000;
+                foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan })
+                {
+                    var brother = Ctx.Crew.PedFor(slot);
+                    if (slot == Ctx.Crew.ActiveSlot || brother == null || !brother.Exists() || brother.IsDead || brother.IsInVehicle(_granger)) continue;
+                    if (brother.Position.DistanceTo(_granger.Position) > 8f) brother.Task.RunTo(_granger.Position, false, 15000);
+                    else
+                    {
+                        var seat = slot == CrewSlot.Ice ? VehicleSeat.LeftRear : VehicleSeat.RightRear;
+                        if (_granger.IsSeatFree(seat)) brother.Task.EnterVehicle(_granger, seat, 8000, 2f);
+                    }
+                }
+            }
+            foreach (var guard in _watchmen)
+            {
+                if (!guard.Exists() || guard.IsDead) continue;
+                bool hit = guard.IsBeingStunned || Function.Call<bool>(Hash.HAS_PED_BEEN_DAMAGED_BY_WEAPON, guard, (uint)WeaponHash.StunGun, 0);
+                if (hit && _stunned.Add(guard.Handle))
+                {
+                    guard.IsInvincible = true;
+                    Function.Call(Hash.SET_ENABLE_HANDCUFFS, guard, true);
+                    guard.Task.ClearAll();
+                }
+                if (_stunned.Contains(guard.Handle))
+                    Function.Call(Hash.SET_PED_TO_RAGDOLL, guard, 2000, 2000, 0, false, false, false);
+            }
+            base.OnUpdate();
         }
 
         protected override void OnPassed()
@@ -236,6 +296,8 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             Ctx.Crew.CompanionsHoldPosition = false;
+            foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);
+            _stunned.Clear();
             _watchmen.Clear();
         }
     }

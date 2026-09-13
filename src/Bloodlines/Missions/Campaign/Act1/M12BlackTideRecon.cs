@@ -36,7 +36,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _jetty;
         private Vector3 _hull;
         private Vector3 _buoy;
-        private bool _surveyed, _patrolsShown;
+        private bool _surveyed, _patrolsShown, _hunting;
+        private int _nextHunt;
+        private readonly List<Ped> _gunners = new List<Ped>();
 
         public override string Id => "M12";
         public override string Title => "Black Tide Recon";
@@ -65,7 +67,9 @@ namespace Bloodlines.Missions.Campaign
             SpawnPatrols();
             if (!RequireAssets(_rov)) return false;
             Station(CrewSlot.Ice, Ctx.Locations.Position("M12.PierWatch"));
-            Station(CrewSlot.Guess, _jetty + new Vector3(12f, 0f, 0f));
+            Station(CrewSlot.Guess, Ctx.Locations.Position("M12.GuessStart"));
+            // A high quay has no dependable boarding ladder: start the diver aboard.
+            Station(CrewSlot.Gohan, _rov, VehicleSeat.Driver);
             PlayApproach();
             return true;
         }
@@ -93,14 +97,22 @@ namespace Bloodlines.Missions.Campaign
                     new AvoidDetectionObjective(() => _patrols,
                         "A patrol launch caught the ROV on the surface.", 45f, 4))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(context => PlaySurvey());
+                .OnExit(context => { PlaySurvey(); _hunting = true; });
 
             // The launches are the next problem, seen once; then the sub goes home.
             yield return new MissionStage("Back to the jetty",
-                    new DeliverVehicleObjective("Gohan: surface in the sub beside the jetty.", () => _rov, () => _jetty + new Vector3(0f, -8f, -4f), 10f),
+                    new DeliverVehicleObjective("Gohan: surface in the sub beside the jetty.", () => _rov, () => Ctx.Locations.Position("M12.KrakenReturn"), 10f),
                     new ReactionTrigger(() => _surveyed && !_patrolsShown && !Ctx.Cutscenes.IsActive, ShowPatrols))
+                .OwnedBy(CrewSlot.Gohan);
+
+            yield return new MissionStage("Clear the hunting launches",
+                    new KillTargetsObjective("Ice / Gohan: stop the armed crews on both pursuit boats. Switch freely now the sub is back at the jetty.", () => _patrols),
+                    new ProtectObjective("", () => _rov, "The survey sub was destroyed."))
+                .AnyBrother()
+                .OnEnter(context => { _rov.IsEngineRunning=false; GameUtils.Subtitle("The launches followed the sonar trace. Ice covers from the pier; Gohan can leave the sub and fight. Clear both boat crews before the debrief.",6500); })
                 .OnExit(context =>
                 {
+                    _hunting=false;
                     // What this mission actually produces is the breach point for M19,
                     // and the knowledge that the launches will box the extraction in.
                     Ctx.State?.SetEvidence("hullSurvey", EvidenceState.CopyHeld);
@@ -149,10 +161,7 @@ namespace Bloodlines.Missions.Campaign
         private void ShowPatrols()
         {
             _patrolsShown = true;
-            Ped crew = null;
-            foreach (var p in _patrols) if (p != null && p.Exists() && !p.IsDead) { crew = p; break; }
-            if (crew != null) Ctx.Cutscenes.PlayMoment(Id, "The launches", "GOHAN", "Two launches with full tanks at the moorings. Whatever comes up through that hull, they box it in. Their fuel is the next problem.", crew);
-            else Radio("GOHAN", "Two launches with full tanks at the moorings. Whatever comes up through that hull, they box it in. Their fuel is the next problem.", "M12_RADIO_01_GOHAN");
+            Radio("GOHAN", "Two armed launches picked up the scan. I'm bringing the sub to the jetty. Ice, cover the surface; we have to clear their crews before we leave.", "M12_RADIO_01_GOHAN");
         }
 
         /// <summary>The aftermath: the sub back at the jetty, the three of them in one place.</summary>
@@ -169,7 +178,7 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model("submersible2");
             if (!GameUtils.RequestModel(model)) return;
 
-            _rov = Track(World.CreateVehicle(model, _jetty + new Vector3(0f, -8f, -2f), 0f));
+            _rov = Track(World.CreateVehicle(model, MarineSites.ResolveOrThrow(Ctx.Locations, "M12.KrakenSpawn", 4f, 3f, 5f), Ctx.Locations.Heading("M12.KrakenSpawn")));
             model.MarkAsNoLongerNeeded();
             if (_rov == null || !_rov.Exists()) return;
 
@@ -193,7 +202,7 @@ namespace Bloodlines.Missions.Campaign
             for (int i = 0; i < 2; i++)
             {
                 var boat = Track(World.CreateVehicle(boatModel,
-                    _hull + new Vector3(-30f + i * 60f, 25f, 8f), 90f));
+                    MarineSites.ResolveOrThrow(Ctx.Locations, "M12.PatrolSpawn" + (i + 1), 3f, 3f, 6f), Ctx.Locations.Heading("M12.PatrolSpawn" + (i + 1))));
                 if (boat == null || !boat.Exists()) continue;
                 boat.IsPersistent = true;
                 _launches.Add(boat);
@@ -205,10 +214,14 @@ namespace Bloodlines.Missions.Campaign
                 crew.IsPersistent = true;
                 crew.BlockPermanentEvents = true;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 150, true, true);
-                crew.Task.WarpIntoVehicle(boat, VehicleSeat.Driver);
-                crew.Task.StartBoatMission(boat, _buoy + new Vector3(-30f + i * 60f, 0f, 4f), VehicleMissionType.GoTo, 8f, (VehicleDrivingFlags)786603, 15f, (BoatMissionFlags)7);
+                crew.SetIntoVehicle(boat, VehicleSeat.Driver);
+                boat.IsEngineRunning = true;
+                crew.Task.StartBoatMission(boat, Ctx.Locations.Position("M12.PatrolRoute" + (i + 1)), VehicleMissionType.GoTo, 8f, (VehicleDrivingFlags)786603, 15f, (BoatMissionFlags)7);
 
                 _patrols.Add(crew);
+                var gunner=Track(World.CreatePed(crewModel,boat.Position,0f));
+                if(gunner!=null&&gunner.Exists())
+                {gunner.IsPersistent=true;gunner.BlockPermanentEvents=true;gunner.RelationshipGroup=aegis;gunner.Accuracy=20;gunner.Weapons.Give(WeaponHash.CarbineRifle,250,true,true);gunner.SetIntoVehicle(boat,VehicleSeat.Passenger);_patrols.Add(gunner);_gunners.Add(gunner);}
 
                 var blip = Track(boat.AddBlip());
                 blip.Sprite = BlipSprite.Boat;
@@ -221,9 +234,35 @@ namespace Bloodlines.Missions.Campaign
             crewModel.MarkAsNoLongerNeeded();
         }
 
+        protected override void OnUpdate()
+        {
+            if(_hunting&&!Ctx.Cutscenes.IsActive&&Game.GameTime>=_nextHunt)
+            {
+                _nextHunt=Game.GameTime+2000;
+                var gohan=Ctx.Crew.PedFor(CrewSlot.Gohan);
+                foreach(var boat in _launches)
+                {
+                    if(boat==null||!boat.Exists()||boat.IsDead)continue;
+                    var driver=boat.GetPedOnSeat(VehicleSeat.Driver);
+                    if(driver!=null&&driver.Exists()&&!driver.IsDead&&_rov!=null&&_rov.Exists())
+                        driver.Task.StartBoatMission(boat,new Vector3(_rov.Position.X,_rov.Position.Y,0f),VehicleMissionType.GoTo,18f,(VehicleDrivingFlags)786603,18f,(BoatMissionFlags)7);
+                }
+                foreach(var gunner in _gunners)if(gunner.Exists()&&!gunner.IsDead)gunner.Task.VehicleShootAtPed(Game.Player.Character);
+                var ice=Ctx.Crew.PedFor(CrewSlot.Ice);
+                if(Ctx.Crew.ActiveSlot!=CrewSlot.Ice&&ice!=null&&ice.Exists())
+                {
+                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+                    foreach(var enemy in _patrols)if(enemy.Exists()&&!enemy.IsDead){ice.Task.FightAgainst(enemy);break;}
+                }
+                if(Ctx.Crew.ActiveSlot!=CrewSlot.Gohan&&gohan!=null&&gohan.Exists()&&gohan.IsInVehicle(_rov))Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            }
+            base.OnUpdate();
+        }
+
         protected override void OnCleanup()
         {
-            _patrols.Clear();
+            Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Ice); Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Gohan);
+            _gunners.Clear(); _patrols.Clear();
             _launches.Clear();
         }
     }
