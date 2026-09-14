@@ -1,0 +1,146 @@
+# One-time, branch-only source verification/publisher. Self-removes after success.
+name: atmosphere-pass-build
+on:
+  push:
+    branches: [codex/private-visuals-foundation]
+    paths: [tools/visuals/apply_atmosphere_pass.py, .github/workflows/atmosphere-pass-build.yml, src/Bloodlines/Core/TimecycleGrade.cs, tests/story/AtmosphereTransitionTests.cs]
+permissions:
+  contents: read
+env:
+  PYTHONUTF8: '1'
+concurrency:
+  group: atmosphere-pass-build
+  cancel-in-progress: true
+jobs:
+  verify-and-publish:
+    if: github.repository == 'RonGdesigns/Customgta6' && github.ref == 'refs/heads/codex/private-visuals-foundation'
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore committed bytes and apply the bounded edits
+        shell: python
+        run: |
+          import pathlib, subprocess
+          subprocess.run(['git','config','core.autocrlf','false'],check=True)
+          for name in filter(None,subprocess.check_output(['git','ls-files','-z','--','src']).decode().split('\0')):
+              pathlib.Path(name).write_bytes(subprocess.check_output(['git','show','HEAD:'+name]))
+          subprocess.run(['python','tools/visuals/apply_atmosphere_pass.py'],check=True)
+      - name: Production compilation
+        run: dotnet build src/Bloodlines/Bloodlines.csproj -c Release --warnaserror
+      - name: Actual story and regression suites
+        shell: pwsh
+        run: |
+          python tools/run_story_tests.py *> build/story-atmosphere.log
+          $result = $LASTEXITCODE
+          Get-Content build/story-atmosphere.log -Tail 35
+          if ($result -ne 0) { exit $result }
+          python tools/run_regression_tests.py *> build/regression-atmosphere.log
+          $result = $LASTEXITCODE
+          Get-Content build/regression-atmosphere.log -Tail 6
+          if ($result -ne 0) { exit $result }
+      - name: Tool, parser, data and freshness checks
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tools/visuals -p 'test_*.py' -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/test_dialogue_parser.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/lint_missions.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/validate_locations.py *> build/locations-atmosphere.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-Content build/locations-atmosphere.log -Tail 5
+          python tools/build_story.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/audit_campaign.py --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/render_campaign_doc.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/render_feasibility_doc.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git diff --exit-code -- data docs/CAMPAIGN.md docs/FEASIBILITY.md
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Rebuild the deterministic prebuilt and check preservation
+        shell: python
+        run: |
+          import hashlib,json,pathlib,re,subprocess
+          subprocess.run(['python','tools/build_roslyn.py'],check=True)
+          p=pathlib.Path
+          changes=json.loads(p('build/atmosphere-changes.json').read_text())
+          actual=set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
+          if not actual.issubset(set(changes)): raise SystemExit('Unexpected tracked changes: '+str(actual-set(changes)))
+          subprocess.run(['git','diff','--exit-code','--','src/Bloodlines/Missions','data','src/Bloodlines/Core/PrologueSequence.cs','src/Bloodlines/Core/ApartmentTiers.cs','src/Bloodlines/Abilities','config'],check=True)
+          locations=p('build/locations-atmosphere.log').read_text(errors='replace')
+          if not re.search(r'\b0 flagged\b',locations): raise SystemExit('Coordinate audit did not report zero flagged')
+          raw=p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
+          p('prebuilt/Bloodlines.dll').write_bytes(raw)
+          report=p('docs/VISUAL-ATMOSPHERE-VERIFICATION.md')
+          report.write_text('# Atmosphere pass verification\n\n'
+              +'Tests/build completed against the bounded edited source on the visuals branch. No GTA playthrough was available.\n\n'
+              +'## Story\n```text\n'+'\n'.join(p('build/story-atmosphere.log').read_text(errors='replace').splitlines()[-4:])+'\n```\n'
+              +'## Regression\n```text\n'+'\n'.join(p('build/regression-atmosphere.log').read_text(errors='replace').splitlines()[-2:])+'\n```\n'
+              +'\nTooling, parser, mission lint, zero-flagged coordinate audit and freshness checks also passed.\n'
+              +'\nMission source, runtime data, configuration, abilities, home/prologue files and placements were unchanged relative to the input commit. Only visual controller, menu/host wiring, related tests, test runner and documentation changed.\n'
+              +'\nDLL SHA-256: `'+hashlib.sha256(raw).hexdigest()+'`.\n',encoding='utf-8')
+      - name: Publish to the visuals branch only
+        shell: python
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          import json,os,pathlib,subprocess
+          branch='codex/private-visuals-foundation'
+          remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/'+branch],text=True).split()[0]
+          if remote!=os.environ['EXPECTED_HEAD']: raise SystemExit('Branch advanced; refuse to overwrite newer work')
+          changes=json.loads(pathlib.Path('build/atmosphere-changes.json').read_text())
+          temporary=['tools/visuals/apply_atmosphere_pass.py','.github/workflows/atmosphere-pass-build.yml']
+          for name in temporary:pathlib.Path(name).unlink()
+          changes+=temporary+['prebuilt/Bloodlines.dll','docs/VISUAL-ATMOSPHERE-VERIFICATION.md']
+          subprocess.run(['git','config','user.name','github-actions[bot]'],check=True)
+          subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+          subprocess.run(['git','add','--']+changes,check=True)
+          subprocess.run(['git','-c','core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol','diff','--cached','--check'],check=True)
+          subprocess.run(['git','commit','-m','feat: publish verified atmosphere ownership, fades and grade-only comparison'],check=True)
+          subprocess.run(['git','push','origin','HEAD:refs/heads/'+branch],check=True)
+          print('Published',subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
+      - name: Package matching source, DLL and provenance
+        shell: python
+        run: |
+          import hashlib,json,os,pathlib,shutil,subprocess
+          p=pathlib.Path
+          subprocess.run(['python','tools/package.py','--clean'],check=True)
+          fresh=p('src/Bloodlines/bin/Release/Bloodlines.dll').read_bytes()
+          assert fresh==p('prebuilt/Bloodlines.dll').read_bytes()==p('build/deploy/scripts/Bloodlines.dll').read_bytes()
+          deploy=p('build/deploy')
+          assert not list(deploy.rglob('savegame.json')) and not list(deploy.rglob('Bloodlines.Surveyed.ini'))
+          assert not (deploy/'scripts/Bloodlines/Bloodlines.ini').exists()
+          sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          provenance={'commit':sha,'branch':'codex/private-visuals-foundation','base':'6867c858d45e0a7d11369d33ac117f3f044a9b8a','actions_run':os.environ['GITHUB_RUN_ID'],'dll_sha256':hashlib.sha256(fresh).hexdigest(),'live_verified':False,'forest_assets_included':False}
+          (deploy/'BUILD-PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
+          for name in ['VISUAL-ATMOSPHERE-PASS.md','VISUAL-ATMOSPHERE-VERIFICATION.md']:shutil.copy2(p('docs')/name,deploy/name)
+          (deploy/'READ-ME-FIRST.txt').write_text('Bloodlines atmosphere comparison - not live verified.\nFinish the same-DLL Forests baseline BEFORE installing this new comparison. Back up the old Bloodlines DLL and full data folder outside scripts, close GTA, then copy only the packaged scripts contents. Keep runtime dependencies, audio, real INI, appearance and surveyed files. Use a copied campaign in Story Mode only. Do not import _openiv_import or install a second Bloodlines DLL.\nWorld > Grading comparison in the existing developer menu changes only our grade; it does not uninstall Forests, change weather/time/water or disable other visual options. Read VISUAL-ATMOSPHERE-PASS.md for scope, one-second fades and limitations.\nCommit: '+sha+'\n',encoding='utf-8')
+          shutil.make_archive('build/Bloodlines-Atmosphere-Comparison-Preview','zip',deploy)
+          subprocess.run(['git','archive','-o','build/Bloodlines-Atmosphere-Comparison-Source.zip','HEAD'],check=True)
+          print(json.dumps(provenance,indent=2))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bloodlines-atmosphere-comparison
+          retention-days: 14
+          path: |
+            build/Bloodlines-Atmosphere-Comparison-Preview.zip
+            build/Bloodlines-Atmosphere-Comparison-Source.zip
+            build/deploy/BUILD-PROVENANCE.json
+            build/*atmosphere.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: atmosphere-failure-logs
+          retention-days: 7
+          path: build/*atmosphere.log
