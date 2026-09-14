@@ -82,12 +82,12 @@ namespace Bloodlines.Core
                     blip = World.CreateBlip(point.Position);
                     if (blip == null) continue;
                     _blips[mission.Id] = blip;
-                    blip.Sprite = MissionPresentation.StartSprite(mission.IsSolo, PortHeistOperation.Contains(mission.Id));
+                    blip.Sprite = MissionPresentation.StartSprite(mission.IsSolo, operation);
                     blip.Color = !solo ? BlipColor.Yellow : mission.Info.Owner == "ICE" ? BlipColor.Blue :
                         mission.Info.Owner == "GOHAN" ? BlipColor.Green : BlipColor.Orange;
                     blip.IsShortRange = false;
                     blip.ShowRoute = false;
-                    blip.Name = operation ? PortHeistOperation.OperationTitle :
+                    blip.Name = operation ? run.Title :
                         mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
                 }
                 blip.Position = point.Position;
@@ -100,7 +100,7 @@ namespace Bloodlines.Core
             foreach (var id in new List<string>(_blips.Keys))
                 if (!eligible.Contains(id)) { GameUtils.SafeDelete(_blips[id]); _blips.Remove(id); }
             if (Nearby != null)
-                GameUtils.Subtitle("~y~" + (PortHeistOperation.Contains(Nearby.Id) ? PortHeistOperation.OperationTitle : Nearby.Title) + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
+                GameUtils.Subtitle("~y~" + (MissionOperations.Owning(Nearby.Id)?.Title ?? Nearby.Title) + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
         }
 
         public void Clear()

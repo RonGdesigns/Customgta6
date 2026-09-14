@@ -43,7 +43,10 @@ namespace Bloodlines.Missions
             PhaseIds.ToList().FindIndex(p => string.Equals(p, id, StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>The operations the campaign knows about. One row per continuous mission.</summary>
+    /// <summary>
+    /// The operations the campaign knows about. One row per continuous mission,
+    /// and one row in <see cref="CreateFor"/> for the parent that plays it.
+    /// </summary>
     public static class MissionOperations
     {
         public static readonly OperationSpec PortHeist =
@@ -58,6 +61,22 @@ namespace Bloodlines.Missions
 
         /// <summary>True when the id is a chapter of an operation but not the one that ends it.</summary>
         public static bool IsInnerPhase(string missionId) => Owning(missionId)?.IsInner(missionId) ?? false;
+
+        /// <summary>
+        /// The parent that plays this chapter as part of one sitting, or null for an
+        /// ordinary mission. The manager asks for this instead of naming a heist:
+        /// that is what keeps a second operation from needing its own dispatch code.
+        /// </summary>
+        public static ContinuousOperation CreateFor(string missionId, CampaignState state)
+        {
+            var operation = Owning(missionId);
+            if (operation == null) return null;
+            if (operation == PortHeist) return new PortHeistOperation(missionId, state);
+            // Registered as continuous but with no parent script: play the chapter
+            // alone rather than silently dropping the mission the player started.
+            Core.Logger.Error(operation.Title + " has no operation parent; " + missionId + " runs on its own.");
+            return null;
+        }
 
         /// <summary>
         /// The id whose completion represents this mission. An operation chapter maps

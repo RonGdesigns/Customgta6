@@ -18,6 +18,35 @@ public sealed class FailedStartSceneStep : SceneStep
     public override void Finish() { }
 }
 
+
+/// <summary>
+/// A second continuous operation, built from nothing but the shared base. It has
+/// no site, no props and no story: it exists so the base is proven reusable before
+/// Paleto settles where it happens. If this needs a Port Heist type to compile or
+/// to run, the extraction did not actually separate the two.
+/// </summary>
+public sealed class ProbeWorld : OperationWorld
+{
+    public ProbeWorld(MissionContext context) : base(context) { }
+    public override string Label => "Probe Run";
+    public string ActiveFailure;
+    public string EndFailure;
+    public override bool ValidateActive(Mission phase, out string reason) { reason = ActiveFailure; return reason == null; }
+    public override bool ValidatePhaseEnd(Mission phase, out string reason) { reason = EndFailure; return reason == null; }
+}
+
+public sealed class ProbeOperation : ContinuousOperation
+{
+    public static readonly OperationSpec Run = new OperationSpec("Probe Run", "P1", "P2", "P3");
+    public readonly List<string> Built = new List<string>();
+    public ProbeWorld Probe;
+    public int Commits;
+    public override OperationSpec Operation => Run;
+    protected override OperationWorld CreateWorld() => Probe = new ProbeWorld(Ctx);
+    protected override Mission CreatePhase(string phaseId) { Built.Add(phaseId); return new ChapterProbe(phaseId); }
+    protected override void OnCommit(MissionCatalog catalog, OperationWorld world) { Commits++; }
+}
+
 public static partial class StoryTests
 {
     static MissionCatalog PortCatalog()
@@ -48,6 +77,90 @@ public static partial class StoryTests
         }
         Check(manager.ActivePortHeist != null && manager.ActivePortHeist.PhaseId == next,
             "The parent advances internally to " + next + " without an ordinary mission restart [" + manager.CurrentObjective + "; " + manager.LastFailureReason + "]");
+    }
+
+
+    /// <summary>
+    /// The base carries a whole operation on its own. Everything here runs on ids
+    /// the campaign has never heard of, so a pass means the sitting mechanics are
+    /// genuinely shared rather than the Port Heist wearing a different name.
+    /// </summary>
+    static void SecondOperationChecks()
+    {
+        Reset();
+        var crew = Roster();
+        var context = Context(crew);
+        context.State = CampaignState.Load(Path.Combine(root, "probe-operation.json"));
+        var catalog = PortCatalog();
+
+        var operation = new ProbeOperation();
+        Check(operation.Begin(context), "An operation with no Port Heist parts of its own starts");
+        Check(operation.Id == "P1" && operation.Title == "Probe Run" && operation.PhaseId == "P1" &&
+              operation.Built.SequenceEqual(new[] { "P1" }),
+            "It enters at its own first chapter and builds only that one");
+        Check(ReferenceEquals(context.Operation, operation.Probe) && operation.Probe.Label == "Probe Run" &&
+              operation.Probe.RestartNotice == "Restart the entire Probe Run.",
+            "Its own world holds the shared slot and names itself in the restart text");
+        Check(!operation.AllowsCheckpointCapture && !operation.SupportsCheckpointRestore,
+            "One sitting: no operation records a checkpoint");
+
+        // A second one cannot start on top of a live one, and being refused must not
+        // tear down the run it bounced off.
+        var intruder = new ProbeOperation();
+        Check(!intruder.Begin(context) && ReferenceEquals(context.Operation, operation.Probe) &&
+              operation.Status == MissionStatus.Running,
+            "A second operation is refused while one is live, and the live one survives the refusal");
+
+        var world = operation.Probe;
+        operation.Phase.Pass();
+        context.Dialogue.Clear();
+        operation.Tick();
+        Check(operation.PhaseId == "P2" && operation.Status == MissionStatus.Running && operation.Commits == 0 &&
+              ReferenceEquals(operation.Probe, world) && operation.Built.SequenceEqual(new[] { "P1", "P2" }),
+            "An inner chapter joins the next one in the same live world, with nothing awarded");
+
+        // A requirement lost mid-chapter fails the whole attempt, not the chapter.
+        world.ActiveFailure = "The probe lost its cargo. " + world.RestartNotice;
+        operation.Tick();
+        Check(operation.Status == MissionStatus.Failed && operation.FailReason == world.ActiveFailure &&
+              operation.Commits == 0,
+            "A lost requirement fails the whole operation with the world's own reason");
+        int refusedEarly = 0;
+        try { operation.CommitResult(catalog); } catch (InvalidOperationException) { refusedEarly++; }
+        Check(refusedEarly == 1, "A failed operation cannot award progress");
+        operation.Cleanup();
+        Check(context.Operation == null, "Teardown hands the slot back");
+
+        // Run one all the way through: three chapters, one result, awarded once.
+        Reset();
+        crew = Roster();
+        context = Context(crew);
+        context.State = CampaignState.Load(Path.Combine(root, "probe-operation-b.json"));
+        var run = new ProbeOperation();
+        Check(run.Begin(context), "The next attempt starts clean");
+        for (int i = 0; i < 3 && run.Status == MissionStatus.Running; i++)
+        {
+            run.Phase.Pass();
+            context.Dialogue.Clear();
+            run.Tick();
+        }
+        Check(run.Status == MissionStatus.Passed && run.PhaseId == "P3" &&
+              run.Built.SequenceEqual(new[] { "P1", "P2", "P3" }),
+            "The last chapter is the one that passes the operation");
+        run.CommitResult(catalog);
+        run.CommitResult(catalog);
+        Check(run.Commits == 1, "The award commits once however many times the manager asks");
+        run.Cleanup();
+        Check(context.Operation == null && ProbeOperation.Run.FinalId == "P3",
+            "A finished operation releases the slot for the next one");
+
+        // None of this reached the campaign's own registry.
+        Check(MissionOperations.Owning("P1") == null && MissionOperations.CreateFor("P1", context.State) == null,
+            "A test operation is not a registered one: the campaign still knows only the Port Heist");
+        Check(MissionOperations.CreateFor("M20", context.State) is PortHeistOperation parent && parent.Id == "M19",
+            "Any Port Heist chapter still resolves to the parent, entered at M19");
+        Check(MissionOperations.CreateFor("M07", context.State) == null,
+            "An ordinary mission gets no parent");
     }
 
     static void ContinuousPortHeistChecks()

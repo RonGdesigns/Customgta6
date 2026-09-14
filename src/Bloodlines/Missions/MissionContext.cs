@@ -24,7 +24,10 @@ namespace Bloodlines.Missions
 
         public ApartmentAccess Interior { get; set; }
         public CutsceneDirector Cutscenes { get; set; }
-        public PortHeistWorld PortHeist { get; set; }
+        /// <summary>The live world of the operation being played, or null. One at a time.</summary>
+        public OperationWorld Operation { get; set; }
+        /// <summary>The same slot, typed, for the heist scripts that name their own world.</summary>
+        public PortHeistWorld PortHeist { get => Operation as PortHeistWorld; set => Operation = value; }
 
         /// <summary>Chapter-to-chapter state for continuous operations (Port Heist first).</summary>
         public HandoffLedger Handoffs { get; } = new HandoffLedger();
