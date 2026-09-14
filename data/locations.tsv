@@ -453,14 +453,14 @@ M40.Kit1	-1603	5238	3.059	0	land	estimate	Offline collision/water checked; live 
 M40.Kit2	-1595	5220	3.048	0	land	estimate	Offline collision/water checked; live survey pending
 M40.Nav	-1600	5230	3.167	0	land	estimate	Offline collision/water checked; live survey pending
 M40.NavWork	-1600	5232	3.059	0	land	estimate	Offline collision/water checked; live survey pending
-M40.Boat1	-1640	5240	0	0	water	estimate	Offline collision/water checked; live survey pending
-M40.Boat2	-1640	5280	0	0	water	estimate	Offline collision/water checked; live survey pending
+M40.Boat1	-1611	5269	0	0	water	estimate	Alongside verified dock moorings; live survey pending
+M40.Boat2	-1621	5266	0	0	water	estimate	Alongside verified dock moorings; live survey pending
 M40.Target1	-1660	5240	0	0	water	estimate	Offline collision/water checked; live survey pending
 M40.Target2	-1660	5280	0	0	water	estimate	Offline collision/water checked; live survey pending
 M40.Trial1	-1740	5190	0	0	water	estimate	Offline collision/water checked; live survey pending
 M40.Trial2	-1740	5260	0	0	water	estimate	Offline collision/water checked; live survey pending
-M40.Return1	-1640	5240	0	0	water	estimate	Offline collision/water checked; live survey pending
-M40.Return2	-1640	5280	0	0	water	estimate	Offline collision/water checked; live survey pending
+M40.Return1	-1611	5269	0	0	water	estimate	Alongside verified dock moorings; live survey pending
+M40.Return2	-1621	5266	0	0	water	estimate	Alongside verified dock moorings; live survey pending
 M41.Start	-740	5740	18.308	0	land	estimate	Offline map checked; live survey pending
 M41.IceStart	-740	5740	18.308	0	land	estimate	Offline map checked; live survey pending
 M41.Observe	-740	5800	16.68	0	land	estimate	Offline map checked; live survey pending

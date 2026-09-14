@@ -98,6 +98,10 @@ public static partial class StoryTests
   // ---- M26: the spotters, the parked Lazer with its history, Gohan at the laptop; the lead held by listening; the Lazer parked beside the Duster.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage26.json"));c.Vans=new CrewVan(c.State,c.Locations);var m26=new M26AlamoScramble();
   Check(m26.Begin(c)&&c.Cutscenes.IsActive&&m26.Lazer!=null&&!m26.Lazer.IsEngineRunning&&m26.ApproachPlane!=null&&m26.ApproachPlane.Model.Name=="duster"&&m26.Granger!=null,"M26 opens on the parked Lazer, the Duster beside it and Gohan's Granger");
+  // The spotters were spawned in the air and then asked to board by a task the next
+  // line replaced, so pilot and plane both fell. They are seated outright now.
+  Check(m26.Spotters.Count==2&&m26.Pilots.Count==2&&m26.Pilots.All(p=>p.IsInVehicle())&&
+        m26.Spotters.All(v=>v.GetPedOnSeat(VehicleSeat.Driver)!=null),"Both spotter planes actually have a pilot in the driver seat");
   c.Cutscenes.Skip();m26.Tick();Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m26.Lazer,VehicleSeat.Driver);m26.Tick();Check(m26.CurrentStage==1,"Airborne, the first spotter is the job");
   m26.Spotters[0].IsDriveable=false;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&m26.Listening&&c.Dialogue.HasPending,"The first spotter down, Gohan asks for the second one held while he listens");
   c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&!m26.LeadHeld,"Too early: the call sign is not in yet");

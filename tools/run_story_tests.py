@@ -16,7 +16,7 @@ def main():
     sources += ['Missions/Objectives/ForkliftDeliveryObjective.cs','Core/Nitrous.cs', 'Core/Garages.cs', 'Core/OwnedVehicle.cs', 'Core/VehicleFinish.cs', 'Core/TogetherStep.cs', 'Core/CombatReticle.cs']
     sources += ['Core/CampaignPhone.cs', 'Core/CampaignHub.cs', 'Core/PhoneOverlay.cs', 'Core/PhoneOverlay.Metrics.cs', 'Core/ShopPerformance.cs']
     sources += ['Core/BunkerSite.cs', 'Core/CrewHomes.Bunker.cs', 'Missions/Objectives/BunkerAccessObjective.cs']
-    sources += ['Core/BoundedPlacement.cs', 'Core/NonlethalGuards.cs', 'Core/MissionDoctor.cs', 'Core/PlacementContract.cs']
+    sources += ['Core/BoundedPlacement.cs', 'Core/NonlethalGuards.cs', 'Core/MissionDoctor.cs', 'Core/PlacementContract.cs', 'Core/CargoRide.cs']
     sources += ['Missions/MissionOperations.cs','Missions/OperationWorld.cs','Missions/ContinuousOperation.cs']
     sources += ['Core/ScriptedMap.cs','Missions/PaletoWorld.cs','Missions/PaletoOperation.cs']
     sources = list(dict.fromkeys(sources))

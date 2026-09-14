@@ -31,7 +31,19 @@ public static partial class StoryTests
   for(int i=0;i<2;i++){Interact(m37,c,CrewSlot.Gohan,m37.Aircraft[i].Position+m37.Aircraft[i].RightVector*3f,4);DrainPreparation(m37,c);}
   Check(World.Props.Count(p=>p.Model.Name=="prop_barrel_02a"&&p.AttachedTo!=null)==4,"Four physical smoke canisters attach to the two aircraft");
   for(int i=0;i<2;i++){Interact(m37,c,CrewSlot.Gohan,m37.Aircraft[i].Position+m37.Aircraft[i].RightVector*3f,3);DrainPreparation(m37,c);}
-  Check(m37.Status==MissionStatus.Passed&&m37.Tested==2&&World.SmokeBursts==2,"Both visible smoke emissions are required before M37 can pass");
+  Check(m37.Status==MissionStatus.Passed&&m37.Tested==2&&World.SmokeBursts==2&&m37.Visible==2,"Both releases are operated and both plumes are seen when the particle assets load");
+  // A cosmetic particle call that comes back false used to throw the mission away.
+  // The physical facts still have to hold; the unseen plume is reported, not fatal.
+  Reset();crew=Roster();c=Context(crew);World.FailSmoke=true;var smokeless=new M37TheGrapeseedHarvest();
+  Check(smokeless.Begin(c),"M37 starts for the unverified-plume run");DrainPreparation(smokeless,c);
+  MarineDrive(smokeless,c,smokeless.Aircraft[0],"M37.Duster1",CrewSlot.Guess);MarineDrive(smokeless,c,smokeless.Aircraft[0],"M37.Land1",CrewSlot.Guess);
+  Use(crew,CrewSlot.Ice);ClearPreparationEnemies();DrainPreparation(smokeless,c);
+  MarineDrive(smokeless,c,smokeless.Aircraft[1],"M37.Duster2",CrewSlot.Ice);MarineDrive(smokeless,c,smokeless.Aircraft[1],"M37.Land2",CrewSlot.Ice);
+  for(int i=0;i<2;i++){Interact(smokeless,c,CrewSlot.Gohan,smokeless.Aircraft[i].Position+smokeless.Aircraft[i].RightVector*3f,4);DrainPreparation(smokeless,c);}
+  for(int i=0;i<2;i++){Interact(smokeless,c,CrewSlot.Gohan,smokeless.Aircraft[i].Position+smokeless.Aircraft[i].RightVector*3f,3);DrainPreparation(smokeless,c);}
+  Check(smokeless.Status==MissionStatus.Passed&&smokeless.Tested==2&&smokeless.Visible==0,"A plume that will not render is recorded, not a failed mission");
+  Check(c.Doctor.Entries.Any(e=>e.Category=="payload"&&e.Severity==DiagnosticSeverity.Warning),"The unverified optical screen is named per aircraft in the doctor");
+  World.FailSmoke=false;
   Check(World.Props.Where(p=>p.Model.Name=="prop_barrel_02a").All(p=>p.Exists()&&p.AttachedTo!=null),"Mission cleanup keeps the fitted aircraft canisters with the retained planes");
 
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"marine38.json"));var m38=new M38BloodInTheQuarry();Check(m38.Begin(c),"M38 starts with four physical packages and an intact carrier");DrainPreparation(m38,c);
@@ -43,7 +55,13 @@ public static partial class StoryTests
    Interact(m38,c,CrewSlot.Gohan,m38.Hauler.Position-m38.Hauler.ForwardVector*5.5f,3);DrainPreparation(m38,c);
   }
   Check(m38.Loaded==4&&crates.All(p=>p.AttachedTo==m38.Hauler),"All four packages stay attached to the required truck");
-  Use(crew,CrewSlot.Guess);crew.PedFor(CrewSlot.Guess).SetIntoVehicle(m38.Hauler,VehicleSeat.Driver);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m38.Hauler,VehicleSeat.Passenger);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m38.Hauler,VehicleSeat.LeftRear);DrainPreparation(m38,c);
+  // The Benson has two seats. Gohan rides in the box; asking for a third seat is
+  // what failed this mission in play, so the walkthrough must not hand him one.
+  Check(GTA.Native.Function.Seats(new Model("benson").Hash)==2,"The stand-in reports the Benson's real two seats");
+  Use(crew,CrewSlot.Guess);crew.PedFor(CrewSlot.Guess).SetIntoVehicle(m38.Hauler,VehicleSeat.Driver);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m38.Hauler,VehicleSeat.Passenger);
+  crew.PedFor(CrewSlot.Gohan).Task.LeaveVehicle();crew.PedFor(CrewSlot.Gohan).Position=m38.Hauler.Position-m38.Hauler.ForwardVector*4f;
+  DrainPreparation(m38,c);
+  Check(m38.GohanInTheBack&&crew.PedFor(CrewSlot.Gohan).AttachedTo==m38.Hauler,"Gohan rides in the back of the Benson instead of a seat it does not have");
   MarineDrive(m38,c,m38.Hauler,"M38.Exit",CrewSlot.Guess);MarineDrive(m38,c,m38.Hauler,"M38.Senora.Delivery",CrewSlot.Guess);
   Interact(m38,c,CrewSlot.Gohan,m38.Hauler.Position-m38.Hauler.ForwardVector*5.5f,4);DrainPreparation(m38,c);
   Check(m38.Status==MissionStatus.Passed&&c.State.CargoAt("seismicCharges")=="M38.Senora.Delivery","M38 delivers the same carrier and verifies its attached load");

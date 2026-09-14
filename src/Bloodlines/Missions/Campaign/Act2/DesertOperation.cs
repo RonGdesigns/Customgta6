@@ -89,6 +89,39 @@ namespace Bloodlines.Missions.Campaign
             }
             finally { model.MarkAsNoLongerNeeded(); }
         }
+        /// <summary>
+        /// Someone who is going straight into a seat. A convoy driver needs no
+        /// walkable ground, no safe coordinate and no guard post: he needs a seat.
+        /// Routing him through <see cref="Guard"/> asks the world for standing space
+        /// he will never use, and two of them requested at one point could return the
+        /// same spot and fail the second create — which is how M35 reported "the pass
+        /// convoy failed to load" and refused to run at all.
+        /// </summary>
+        protected Ped Occupant(Vehicle vehicle, VehicleSeat seat, WeaponHash weapon = WeaponHash.CarbineRifle)
+        {
+            if (vehicle == null || !vehicle.Exists()) return null;
+            var model = new Model("s_m_y_blackops_01");
+            try
+            {
+                if (!GameUtils.RequestModel(model)) return null;
+                var ped = Track(World.CreatePed(model, vehicle.Position, vehicle.Heading));
+                if (ped == null || !ped.Exists()) return null;
+                ped.IsPersistent = true; ped.BlockPermanentEvents = true;
+                ped.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+                ped.Health = 220; ped.Armor = 40; ped.Accuracy = 28;
+                ped.Weapons.Give(weapon, 180, true, true);
+                ped.SetIntoVehicle(vehicle, seat);
+                if (vehicle.GetPedOnSeat(seat) != ped)
+                {
+                    Logger.Error("A convoy occupant could not take seat " + seat + " of " + vehicle.Model.Hash + ".");
+                    GameUtils.SafeDelete(ped);
+                    return null;
+                }
+                return ped;
+            }
+            finally { model.MarkAsNoLongerNeeded(); }
+        }
+
         protected List<Ped> Squad(Vector3 point, int count)
         {
             var result = new List<Ped>();

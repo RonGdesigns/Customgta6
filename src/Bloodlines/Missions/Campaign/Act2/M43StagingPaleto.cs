@@ -21,12 +21,27 @@ namespace Bloodlines.Missions.Campaign
         private bool _subReady, _boatReady, _airReady, _committed;
         public string MissingPreparation { get; private set; }
         private static readonly string[] RequiredUpgrades = { "bunkerPerimeterReady", "empCasesSecured", "ramosRescued", "armoredEscortReady", "technicalSupportReady", "offshoreSurveyReady", "aircraftSmokeReady", "seismicStockReady", "rigMainlandCableCut", "extractionLaunchesReady" };
+        /// <summary>Departure room an Annihilator needs in front of its landing point.</summary>
+        public const float AircraftClearance = 30f;
         protected override bool Setup()
         {
-            var landing = At("M43.Land"); var departure = At("M43.Helicopter");
             if (!BeginCrew(CrewSlot.Gohan)) return false;
-            if (!GameUtils.IsWithinFlat(At("M43.Land"), landing, 2f) || !GameUtils.IsWithinFlat(At("M43.Helicopter"), departure, 2f))
-                throw new InvalidOperationException("M43 aircraft site moved outside its checked footprint. Survey the landing/departure key on clear level ground.");
+            // This used to capture both aircraft keys, deploy the crew, then read the
+            // same keys again and refuse the mission if either had moved more than
+            // two meters. It always refused for the wrong reason: the generic ground
+            // preparation calls GetSafeCoordForPed, which is meant to shift a point
+            // sideways onto walkable ground, and writes the result back. A legitimate
+            // snap therefore read as "the aircraft site moved outside its footprint",
+            // and that is what stopped this mission starting in Ron's September 13 run.
+            //
+            // Ground that is walkable for a person is also not rotor clearance, which
+            // is what the old message claimed to be checking. The real footprint check
+            // runs here instead, against the actual model, and reports by key. It
+            // warns rather than refuses: these are estimates, the helicopter still
+            // spawns and lands, and the named verdict is what a survey pass acts on.
+            var annihilator = new Model("annihilator");
+            foreach (var key in new[] { "M43.Land", "M43.Helicopter" })
+                PlacementContract.Aircraft(key, annihilator, AircraftClearance).Inspect(Ctx.Locations, Ctx.Doctor);
             Sub = Boat("submersible2", "M43.Sub", 3f, 3.5f, 5f);
             Launch = Boat("tropic", "M43.Boat", 2f, 1.5f, 4.5f);
             Helicopter = Car("annihilator", At("M43.Helicopter"), Ctx.Locations.Heading("M43.Helicopter"));

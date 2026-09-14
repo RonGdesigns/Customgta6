@@ -51,6 +51,8 @@ namespace Bloodlines.Missions.Campaign
         public Vehicle ApproachPlane => _approachPlane;
         public Vehicle Granger => _granger;
         public IReadOnlyList<Vehicle> Spotters => _spotters;
+        /// <summary>The spotter pilots, so a test can prove they are actually flying their planes.</summary>
+        public IReadOnlyList<Ped> Pilots => _pilots;
         public bool Listening => _listening;
         public bool LeadHeld => _leadHeld;
         public bool Parked => _parked;
@@ -267,7 +269,21 @@ namespace Bloodlines.Missions.Campaign
                 pilot.RelationshipGroup = cartel;
                 pilot.IsPersistent = true;
                 pilot.BlockPermanentEvents = true;
-                pilot.Task.WarpIntoVehicle(plane, VehicleSeat.Driver);
+                // Seat him, do not ask him to board. WarpIntoVehicle is a queued task
+                // and the plane mission below replaces whatever is queued, so the board
+                // never happened: the pilot was left loose in the air at the patrol
+                // altitude and both he and the unmanned plane fell out of the sky within
+                // seconds. That is why these spotters were never there in Ron's run.
+                pilot.SetIntoVehicle(plane, VehicleSeat.Driver);
+                if (plane.GetPedOnSeat(VehicleSeat.Driver) != pilot)
+                {
+                    // No seat, no spotter. Two falling bodies is worse than one absence.
+                    Logger.Error("M26: a spotter pilot could not be seated; removing that aircraft.");
+                    GameUtils.SafeDelete(pilot);
+                    GameUtils.SafeDelete(plane);
+                    _spotters.Remove(plane);
+                    continue;
+                }
                 // Quartering the lake, not hunting the player: they are looking for gold.
                 pilot.Task.StartPlaneMission(plane, _patrolBox, VehicleMissionType.Circle,
                     40f, 60f, 220, 40, 0f, false);

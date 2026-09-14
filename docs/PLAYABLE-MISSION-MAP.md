@@ -648,7 +648,7 @@ Prerequisite: M36. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M37.Duster, M37.Guard, M37.Land1, M37.Land2.
+Survey references: M37.Duster, M37.Guard, M37.Land1, M37.Land2, M37.Plane.
 
 ## M38 — BLOOD IN THE QUARRY
 
@@ -661,7 +661,7 @@ Prerequisite: M37. Retry: full mission restart.
 | 3 | Gohan | **Release blasting stock** — MissionInteraction: Gohan: unlock the marked stock-control cabinet beside the crates |
 | 4 | Gohan | **Collect package ** — MissionInteraction: Gohan: pick up marked charge package  |
 | 5 | Gohan | **Load package ** — MissionInteraction: Gohan: carry the package to the back of the stopped Benson |
-| 6 | Guess | **All cargo aboard** — EnterVehicleObjective: Guess: take the Benson driver seat<br>ConditionObjective: Stop and wait for Ice in front and Gohan in the rear cargo seat |
+| 6 | Guess | **All cargo aboard** — EnterVehicleObjective: Guess: take the Benson driver seat<br>ConditionObjective: Stop and wait for Ice in the cab and Gohan in the back of the Benson |
 | 7 | Guess | **Escape the quarry** — TravelObjective: Drive the loaded Benson out through the yellow quarry escape marker |
 | 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the police before returning with explosives |
 | 9 | Guess | **Deliver seismic stock** — TravelObjective: Stop the same loaded Benson at the bunker delivery marker |
@@ -698,7 +698,7 @@ Prerequisite: M39. Retry: full mission restart.
 | 3 | Gohan | **Verify navigation** — MissionInteraction: Gohan: use the laptop on the shore table to verify both sea-trial routes |
 | 4 | Gohan | **Trial boat ** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 5 | Gohan | **Run sea trial ** — DeliverVehicleObjective: Drive the assigned Tropic through its offshore yellow test marker |
-| 6 | Gohan | **Return boat ** — TravelObjective: Return the same boat to its yellow cove marker and stop |
+| 6 | Gohan | **Return boat ** — TravelObjective: Return the same boat to its yellow mooring beside the pier and stop |
 | 7 | Gohan | **Sign off the fleet** — ConditionObjective: Both tested boats and reinforcement kits must be back at the cove |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
