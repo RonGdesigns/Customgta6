@@ -64,7 +64,9 @@ namespace Bloodlines.Missions.Campaign
         protected Ped Enemy(string key)
         {
             var ped = Guard(At(key));
-            if (ped == null) throw new InvalidOperationException("Cannot place guard " + key);
+            // One guard that will not spawn is a thinner fight, not a dead mission.
+            // M32 and M39 both refused to start over a single post (Ron, September 13).
+            if (ped == null) { Logger.Error("Could not place guard " + key + "; the encounter continues without him. Survey that key."); return null; }
             Opposition.Add(ped);
             var blip = Track(ped.AddBlip()); blip.Color = BlipColor.Red; blip.Name = "Armed guard";
             return ped;
