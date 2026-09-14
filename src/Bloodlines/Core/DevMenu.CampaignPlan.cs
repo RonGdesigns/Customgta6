@@ -42,7 +42,7 @@ namespace Bloodlines.Core
             var item = CampaignPlan?.Invoke().FirstOrDefault(e => e.Id == id);
             if (item == null) return;
             var page = new Page(item.Title);
-            foreach (var line in CampaignPhone.Wrap(item.Body, 52)) page.Add(line, () => "");
+            foreach (var line in CampaignPhone.Wrap(item.Text, 52)) page.Add(line, () => "");
             if (item.Action != null) page.Add(item.Button, () => "Available leads only", () => {
                 var current = CampaignPlan?.Invoke().FirstOrDefault(e => e.Id == id);
                 if (current?.Action != null) GameUtils.Notify(current.Action());

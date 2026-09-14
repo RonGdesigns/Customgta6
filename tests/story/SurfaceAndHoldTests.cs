@@ -46,7 +46,9 @@ public static partial class StoryTests
         // ---- A brother's aircraft keeps flying while the player is somebody else.
         Reset();
         var crew = Roster();
-        var chopper = new Vehicle { Model = new Model("annihilator"), Position = new Vector3(0f, 0f, 40f) };
+        // In the air, because that is the case the hold exists for: an aircraft already
+        // sitting on something is deliberately left alone.
+        var chopper = new Vehicle { Model = new Model("annihilator"), Position = new Vector3(0f, 0f, 40f), IsInAir = true };
         var guess = crew.PedFor(CrewSlot.Guess);
         guess.SetIntoVehicle(chopper, VehicleSeat.Driver);
         var hold = new AircraftHold();

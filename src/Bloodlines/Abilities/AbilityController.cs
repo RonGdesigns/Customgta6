@@ -163,7 +163,7 @@ namespace Bloodlines.Abilities
                 _settling = _running;
                 _running = null;
                 _owner = null;
-                Function.Call(Hash.SET_TIME_SCALE, 1.0f);
+                SlowMotion.Reset();
             }
         }
 

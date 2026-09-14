@@ -469,7 +469,9 @@ namespace Bloodlines.Missions.Campaign
                 crew.BlockPermanentEvents = true;
                 crew.Accuracy = 35;
                 crew.Weapons.Give(WeaponHash.CarbineRifle, 250, true, true);
-                crew.Task.WarpIntoVehicle(boat, VehicleSeat.Driver);
+                // The gunner below was already seated outright; the driver was not, and the
+                // boat mission order replaced his queued warp, so these boats pursued nobody.
+                crew.SetIntoVehicle(boat, VehicleSeat.Driver);
                 crew.Task.StartBoatMission(boat, _launch, VehicleMissionType.GoTo, 14f, (VehicleDrivingFlags)786603, 20f, (BoatMissionFlags)7);
                 var gunner = Track(World.CreatePed(crewModel, boat.Position, 0f));
                 if (gunner != null && gunner.Exists())

@@ -27,6 +27,7 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How far from the structure counts as out of the demolition area.</summary>
         public const float ClearRange = 120f;
 
+        private readonly CrewBoarding _pickup = new CrewBoarding();
         private Vehicle _boat;
         private Vehicle _chopper;
         private bool _triggered;
@@ -136,12 +137,29 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Pick them up",
                 new ConditionObjective("Guess: bring the boat onto both swimmers until all three are aboard", () => Recovered))
                 .OwnedBy(CrewSlot.Guess)
+                .OnEnter(c => _pickup.Reset())
                 .AfterCues("M47_S1_03_GUESS");
 
             yield return new MissionStage("Clear the demolition area",
                 new TravelObjective("Guess: take the boat clear of the burning vessel", () => At("M47.Clear"), 20f, () => _boat))
                 .OwnedBy(CrewSlot.Guess);
         }
+
+        /// <summary>
+        /// Two men in the water do not climb into a passing boat by themselves, and the
+        /// stage that waits for them only ever asked whether they had. Guess still has to
+        /// bring the boat onto them — the swim to it is a few meters, not a few hundred —
+        /// but somebody has to tell them to make it.
+        /// </summary>
+        protected override void OnUpdate()
+        {
+            if (_jumped && !Recovered) _pickup.Update(Ctx.Crew, _boat, Swimmers, Id);
+            base.OnUpdate();
+        }
+
+        /// <summary>Guess is driving, so the two who went off the side take the other seats.</summary>
+        private static readonly System.Collections.Generic.KeyValuePair<CrewSlot, VehicleSeat>[] Swimmers =
+            CrewBoarding.Passengers(CrewSlot.Guess);
 
         protected override void OnPassed()
         {

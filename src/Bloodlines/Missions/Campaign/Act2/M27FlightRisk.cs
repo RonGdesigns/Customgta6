@@ -27,6 +27,23 @@ namespace Bloodlines.Missions.Campaign
     public sealed class M27FlightRisk : ComposedMission
     {
         private const float BailAltitude = 80f;
+        /// <summary>
+        /// What the Shamal actually flies at. Both of these were 42 and 45, which is
+        /// below what a Shamal will stay in the air on: the AI porpoised out of its own
+        /// cruise and went into the ground within seconds of the mission opening, most
+        /// times it was started. A jet has a stall speed and being told to fly under it
+        /// is not a difficulty setting.
+        /// </summary>
+        public const float ShamalCruise = 62f;
+        /// <summary>Airspeed it is created with, so the AI inherits a flying aircraft.</summary>
+        public const float ShamalLaunchSpeed = 85f;
+        /// <summary>How steeply the dive is held. A man has to be able to get out of it.</summary>
+        public const float DivePitch = -12f;
+        /// <summary>And how fast. At this pitch and speed the fall to the floor is about fifty seconds.</summary>
+        public const float DiveSpeed = 55f;
+        /// <summary>Who holds the clock down for the bail-out, and how far.</summary>
+        public const string TimeOwner = "M27.Bailout";
+        public const float BailTimeScale = 0.45f;
 
         private Vehicle _stuntPlane;
         private Vehicle _lazer;
@@ -39,7 +56,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _formUp;
         private Vector3 _jetTrack;
         private Vector3 _seaPickup;
-        private bool _transferred, _ledgerTaken, _ronReturned, _aboard;
+        private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving;
 
         public override string Id => "M27";
         public override string Title => "Flight Risk";
@@ -232,10 +249,43 @@ namespace Bloodlines.Missions.Campaign
 
             if (_shamalPilot != null && _shamalPilot.Exists()) _shamalPilot.Kill();
 
+            _diving = true;
             _shamal.Heading = (_seaPickup - _shamal.Position).ToHeading();
-            _shamal.Rotation = new Vector3(-20f, _shamal.Rotation.Y, _shamal.Rotation.Z);
-            _shamal.Speed = 90f;
+            HoldTheDive();
             GameUtils.Subtitle("~r~She's over. Terminal dive toward the Pacific.", 5000);
+        }
+
+        /// <summary>
+        /// The dive, every frame it is running. Setting the attitude once was the bug: a
+        /// jet with a dead pilot noses over on its own and keeps accelerating, so what
+        /// began as twenty degrees became a vertical plunge and the aircraft was in the
+        /// sea before Ice could get out of his seat. Holding the pitch and capping the
+        /// speed makes it the scripted descent this always claimed to be.
+        /// </summary>
+        private void HoldTheDive()
+        {
+            if (_shamal == null || !_shamal.Exists()) return;
+            _shamal.Rotation = new Vector3(DivePitch, 0f, _shamal.Rotation.Z);
+            if (_shamal.Speed > DiveSpeed) _shamal.Speed = DiveSpeed;
+        }
+
+        /// <summary>
+        /// Holds the dive and, while Ice is still inside it, stretches the moment. Ron
+        /// asked for the slow motion by name: the jump is a single input with a real
+        /// deadline under it, and at normal speed the deadline arrived first. It is
+        /// dropped the instant he is out, so the canopy and the swim are full speed.
+        /// </summary>
+        protected override void OnUpdate()
+        {
+            if (_diving)
+            {
+                HoldTheDive();
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                bool inside = ice != null && ice.Exists() && !ice.IsDead && _shamal != null && _shamal.Exists() && ice.IsInVehicle(_shamal);
+                if (inside && Ctx.Crew.ActiveSlot == CrewSlot.Ice) SlowMotion.Hold(TimeOwner, BailTimeScale);
+                else { SlowMotion.Release(TimeOwner); if (!inside) _diving = false; }
+            }
+            base.OnUpdate();
         }
 
         /// <summary>Ron's aircraft returns by its own route: the Vestra, empty second seat, tasked home to McKenzie.</summary>
@@ -275,7 +325,7 @@ namespace Bloodlines.Missions.Campaign
             if (_shamalPilot == null || !_shamalPilot.Exists() || _shamal == null || !_shamal.Exists()) return;
 
             _shamalPilot.Task.StartPlaneMission(_shamal, _seaPickup + new Vector3(0f, 0f, 700f), VehicleMissionType.Circle,
-                42f, 180f, 700, 40, 0f, false);
+                ShamalCruise, 180f, 700, 40, 0f, false);
         }
 
         // ---------- world building ----------
@@ -350,7 +400,9 @@ namespace Bloodlines.Missions.Campaign
 
             _shamal.IsPersistent = true;
             _shamal.IsEngineRunning = true;
-            _shamal.ForwardSpeed = 45f;
+            // Created at seven hundred meters, so it has to arrive with flying speed on
+            // it. The AI cannot recover a jet handed to it already sinking.
+            _shamal.ForwardSpeed = ShamalLaunchSpeed;
 
             _shamalPilot = Track(World.CreatePed(pilotModel, _shamal.Position, 0f));
             model.MarkAsNoLongerNeeded();
@@ -405,6 +457,9 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             Ctx.Crew.CompanionsHoldPosition = false;
+            // Whatever happened — passed, failed, aborted — time goes back.
+            SlowMotion.Release(TimeOwner);
+            _diving = false;
             GameUtils.FadeIn(500);
         }
     }

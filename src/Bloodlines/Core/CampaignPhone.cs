@@ -269,7 +269,7 @@ namespace Bloodlines.Core
                 var entry = Entry;
                 string fullPreview = entry != null && (WrapMeasured(entry.Title, 188, .27f).Count > 2 || WrapMeasured(entry.Subtitle, 188, .22f).Count > 2)
                     ? entry.Title + "\n" + entry.Subtitle + "\n\n" : "";
-                return (_confirming ? "CONFIRM REQUEST\n\n" : "") + (_notice.Length > 0 ? _notice + "\n\n" : "") + fullPreview + (entry?.Body ?? "This entry is no longer available.");
+                return (_confirming ? "CONFIRM REQUEST\n\n" : "") + (_notice.Length > 0 ? _notice + "\n\n" : "") + fullPreview + (entry?.Text ?? "This entry is no longer available.");
             }
             if (Page == App.Job) return _job();
             if (Page == App.Wallet) return "CREW FUNDS\n$" + _state.CashOnHand.ToString("N0") +

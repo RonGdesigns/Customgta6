@@ -54,13 +54,16 @@ namespace Bloodlines.Abilities
         public override CrewSlot Slot => CrewSlot.Guess;
         public override string Name => "Slipstream Reflex";
 
+        /// <summary>Who this ability is as far as the shared clock is concerned.</summary>
+        public const string TimeOwner = "Guess.SlipstreamReflex";
+
         /// <summary>Current strength of the press, 0..1, for tests and the dev readout.</summary>
         public float Blend => _blend;
         public Vehicle Vehicle => _vehicle;
 
         public override void Activate(Ped player)
         {
-            Function.Call(Hash.SET_TIME_SCALE, TimeScale);
+            SlowMotion.Hold(TimeOwner, TimeScale);
             Function.Call(Hash.ANIMPOSTFX_PLAY, "RaceTurbo", 0, false);
             _settling = false;
             _lastTick = Game.GameTime;
@@ -81,7 +84,7 @@ namespace Bloodlines.Abilities
 
         public override void Deactivate(Ped player)
         {
-            Function.Call(Hash.SET_TIME_SCALE, 1.0f);
+            SlowMotion.Release(TimeOwner);
             Function.Call(Hash.ANIMPOSTFX_STOP, "RaceTurbo");
             _grip.Restore();
             if (_vehicle != null && _vehicle.Exists())
