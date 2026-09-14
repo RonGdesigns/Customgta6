@@ -61,6 +61,20 @@ public static partial class StoryTests
         World.Props.First(p=>p.Model.Name=="prop_generator_03b").IsDead=true;m31.Tick();
         Check(m31.Status==MissionStatus.Failed,"Destroying the required generator fails M31 instead of granting defenses");
 
+        // September 13: M32 and M39 both refused to start because one guard post had
+        // no pedestrian navmesh. A post without navmesh is still a post, and a guard
+        // that will not spawn is a thinner fight rather than a dead mission.
+        Reset();World.GroundHeight=14f;
+        Check(Math.Abs(GameUtils.OnGround(new Vector3(10,20,90)).Z-14f)<.01f&&GameUtils.OnGround(new Vector3(10,20,90)).X==10f,
+            "A point with no navmesh is dropped onto its own ground, keeping its X and Y");
+        World.GroundHeight=0f;
+        string prep=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act2","PreparationOperation.cs"));
+        Check(!prep.Contains("throw new InvalidOperationException(\"Cannot place guard"),
+            "One unplaceable guard no longer throws the whole mission away");
+        string desert=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act2","DesertOperation.cs"));
+        Check(desert.Contains("GameUtils.OnGround(point)"),
+            "A guard post without navmesh falls back to the authored point's ground");
+
         Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"p32.json"));var m32=new M32BlackSiteZancudo();
         Check(m32.Begin(c),"M32 starts at an actual water craft and exterior service post");DrainPreparation(m32,c);
         var dinghy=World.Vehicles.First(v=>v.Model.Name=="dinghy");Use(crew,CrewSlot.Gohan);Game.Player.Character.SetIntoVehicle(dinghy,VehicleSeat.Driver);

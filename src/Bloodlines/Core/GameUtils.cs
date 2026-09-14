@@ -79,6 +79,21 @@ namespace Bloodlines.Core
         /// it up (Ron, September 11, M03's Primo, twice): the ground is found from
         /// above first, the vehicle lifted onto it, then set on its wheels.
         /// </summary>
+        /// <summary>
+        /// The authored point, dropped onto whatever solid ground is under it. Used
+        /// where a spot is real but has no pedestrian navmesh, so an actor stands on
+        /// the deck or compound floor instead of the placement being refused. The
+        /// point is returned unchanged when no ground answers.
+        /// </summary>
+        public static Vector3 OnGround(Vector3 point, float lift = 1f)
+        {
+            var z = new OutputArgument();
+            if (!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, point.X, point.Y, point.Z + lift, z, false, false))
+                return point;
+            float ground = z.GetResult<float>();
+            return Math.Abs(ground - point.Z) > 20f ? point : new Vector3(point.X, point.Y, ground + .05f);
+        }
+
         public static void SetOnGround(Vehicle vehicle)
         {
             if (vehicle == null || !vehicle.Exists()) return;

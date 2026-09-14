@@ -67,8 +67,17 @@ namespace Bloodlines.Missions.Campaign
             try
             {
                 if (!GameUtils.RequestModel(model)) return null;
+                // A guard post is not required to have pedestrian navmesh under it:
+                // a compound floor, a jetty, a deck and a seabed platform all count,
+                // and M32 and M39 both died refusing one (Ron, September 13). Prefer
+                // navmesh where it exists, otherwise stand him on the authored point's
+                // own ground, and only give up if the ped itself cannot be created.
                 var safe = World.GetSafeCoordForPed(point, false, 0);
-                if (safe == Vector3.Zero || safe.DistanceTo(point) > 35f) return null;
+                if (safe == Vector3.Zero || safe.DistanceTo(point) > 35f)
+                {
+                    safe = GameUtils.OnGround(point);
+                    Logger.Warn("Guard post has no navmesh; standing him on the authored point at " + safe + ".");
+                }
                 var ped = Track(World.CreatePed(model, safe, 180));
                 if (ped == null || !ped.Exists()) return null;
                 ped.IsPersistent = true; ped.BlockPermanentEvents = true;
