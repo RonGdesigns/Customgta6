@@ -232,7 +232,7 @@ namespace Bloodlines.Missions
 
         protected T Track<T>(T entity) where T : Entity
         {
-            if (entity != null) { _entities.Add(entity); if (OperationOwned) Ctx?.PortHeist?.Own(entity); }
+            if (entity != null) { _entities.Add(entity); if (OperationOwned) Ctx?.Operation?.Own(entity); }
             return entity;
         }
 
@@ -249,7 +249,7 @@ namespace Bloodlines.Missions
         /// the evidence, a wreck the scene refers to): released at cleanup instead of
         /// deleted, whether or not anyone is in it.
         /// </summary>
-        protected void Preserve(Entity entity) { if (entity != null) { _preserved.Add(entity); if (OperationOwned) Ctx?.PortHeist?.KeepAfterSuccess(entity); } }
+        protected void Preserve(Entity entity) { if (entity != null) { _preserved.Add(entity); if (OperationOwned) Ctx?.Operation?.KeepAfterSuccess(entity); } }
 
         /// <summary>A line over the radio, with no camera: the speaker's name and the text, for approaches and check-ins.</summary>
         protected void Radio(string speaker, string line, string cueId)
@@ -260,7 +260,7 @@ namespace Bloodlines.Missions
         /// <summary>Hands an entity back to the world — it survives mission teardown.</summary>
         protected void Release(Entity entity)
         {
-            if (OperationOwned && Ctx?.PortHeist != null) { Ctx.PortHeist.KeepAfterSuccess(entity); return; }
+            if (OperationOwned && Ctx?.Operation != null) { Ctx.Operation.KeepAfterSuccess(entity); return; }
             _entities.Remove(entity);
             GameUtils.SafeRelease(entity);
         }
@@ -297,7 +297,7 @@ namespace Bloodlines.Missions
             foreach (var entity in _entities)
             {
                 if (entity == null || !entity.Exists()) continue;
-                if (OperationOwned && Ctx?.PortHeist?.Owns(entity) == true) continue;
+                if (OperationOwned && Ctx?.Operation?.Owns(entity) == true) continue;
                 if (playerPed != null && entity.Handle == playerPed.Handle) continue;
                 // A passed flight/boat mission must not delete the transport under
                 // the player or companions before its aftermath starts. Hand occupied
@@ -346,7 +346,7 @@ namespace Bloodlines.Missions
         /// </summary>
         protected void ApplyBibleSetting()
         {
-            if (OperationOwned && Ctx?.PortHeist?.Continuing == true) return;
+            if (OperationOwned && Ctx?.Operation?.Continuing == true) return;
             var info = Info;
             if (info == null) return;
 

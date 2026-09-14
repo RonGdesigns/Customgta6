@@ -62,8 +62,12 @@ namespace Bloodlines.Core
             float closest = 6f;
             foreach (var mission in _catalog.Playable)
             {
-                bool operation = PortHeistOperation.Contains(mission.Id);
-                if (operation && (mission.Id != "M19" || _state.IsComplete("M22"))) continue;
+                // An operation shows one start marker, at its entry, until it is done.
+                // Its inner chapters never get their own.
+                var run = MissionOperations.Owning(mission.Id);
+                bool operation = run != null;
+                if (operation && (!string.Equals(mission.Id, run.EntryId, StringComparison.OrdinalIgnoreCase)
+                    || _state.IsComplete(run.FinalId))) continue;
                 if ((!operation && _state.IsComplete(mission.Id)) || !_state.PrerequisiteMet(mission)) continue;
                 string markerId = mission.Id;
                 if (!_keys.TryGetValue(markerId, out var key)) continue;
@@ -78,12 +82,12 @@ namespace Bloodlines.Core
                     blip = World.CreateBlip(point.Position);
                     if (blip == null) continue;
                     _blips[mission.Id] = blip;
-                    blip.Sprite = MissionPresentation.StartSprite(mission.IsSolo, PortHeistOperation.Contains(mission.Id));
+                    blip.Sprite = MissionPresentation.StartSprite(mission.IsSolo, operation);
                     blip.Color = !solo ? BlipColor.Yellow : mission.Info.Owner == "ICE" ? BlipColor.Blue :
                         mission.Info.Owner == "GOHAN" ? BlipColor.Green : BlipColor.Orange;
                     blip.IsShortRange = false;
                     blip.ShowRoute = false;
-                    blip.Name = operation ? PortHeistOperation.OperationTitle :
+                    blip.Name = operation ? run.Title :
                         mission.Id + " — " + (mission.Id == "SM03" ? "KJ: " : solo ? mission.Info.Owner + ": " : "") + mission.Title;
                 }
                 blip.Position = point.Position;
@@ -96,7 +100,7 @@ namespace Bloodlines.Core
             foreach (var id in new List<string>(_blips.Keys))
                 if (!eligible.Contains(id)) { GameUtils.SafeDelete(_blips[id]); _blips.Remove(id); }
             if (Nearby != null)
-                GameUtils.Subtitle("~y~" + (PortHeistOperation.Contains(Nearby.Id) ? PortHeistOperation.OperationTitle : Nearby.Title) + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
+                GameUtils.Subtitle("~y~" + (MissionOperations.Owning(Nearby.Id)?.Title ?? Nearby.Title) + "~s~ — " + _startKey + " or controller D-pad right to start", 200);
         }
 
         public void Clear()

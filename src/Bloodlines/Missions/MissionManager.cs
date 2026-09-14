@@ -17,6 +17,8 @@ namespace Bloodlines.Missions
         private MissionDefinition _pending;
         private MissionDefinition _currentDefinition;
         private bool _standalonePhase;
+        /// <summary>The running continuous operation, or null when an ordinary mission is up.</summary>
+        public ContinuousOperation ActiveOperation => _current as ContinuousOperation;
         public PortHeistOperation ActivePortHeist => _current as PortHeistOperation;
 
         public MissionManager(MissionContext context, CampaignState state, MissionCatalog catalog)
@@ -62,9 +64,10 @@ namespace Bloodlines.Missions
         private MissionDefinition NormalEntry(MissionDefinition definition, bool bypassGates)
         {
             // Legacy ids and direct normal calls cannot bypass the entry gate or clock.
-            if (bypassGates || definition == null || !PortHeistOperation.Contains(definition.Id)) return definition;
+            var operation = definition == null ? null : MissionOperations.Owning(definition.Id);
+            if (bypassGates || operation == null) return definition;
             foreach (var candidate in _catalog.All)
-                if (string.Equals(candidate.Id, "M19", System.StringComparison.OrdinalIgnoreCase)) return candidate;
+                if (string.Equals(candidate.Id, operation.EntryId, System.StringComparison.OrdinalIgnoreCase)) return candidate;
             return null;
         }
 
@@ -148,8 +151,8 @@ namespace Bloodlines.Missions
             // the campaign says otherwise; the baseline is what they owned walking in.
             _context.Crew.Arsenal?.BeginLoan(_context.Crew);
             string briefingId = definition.Id;
-            string briefingTitle = !_standalonePhase && PortHeistOperation.Contains(definition.Id)
-                ? PortHeistOperation.OperationTitle : definition.Title;
+            var briefingOperation = _standalonePhase ? null : MissionOperations.Owning(definition.Id);
+            string briefingTitle = briefingOperation != null ? briefingOperation.Title : definition.Title;
             if (_context.Cutscenes.Play(briefingId, "intro", briefingTitle))
             {
                 _pending = definition;
@@ -174,8 +177,9 @@ namespace Bloodlines.Missions
                 return false;
             }
             if (mission == null) { _state.DiscardAttempt(); _context.Crew.Arsenal?.EndLoan(_context.Crew); GameUtils.Notify("~r~Mission script was unavailable. Retry from the mission menu."); return false; }
-            if (!_standalonePhase && PortHeistOperation.IsPhase(mission))
-                mission = new PortHeistOperation(definition.Id, _state);
+            // A chapter of an operation is never played on its own: the parent takes
+            // over and this script becomes its first phase. QA can still run one alone.
+            if (!_standalonePhase) mission = MissionOperations.CreateFor(definition.Id, _state) ?? mission;
             if (!mission.Begin(_context))
             {
                 _state.DiscardAttempt();
@@ -196,7 +200,7 @@ namespace Bloodlines.Missions
                 Logger.Warn(definition.Id + ": player control was off when gameplay began; restored.");
                 Game.Player.CanControlCharacter = true;
             }
-            GameUtils.Notify("~b~" + (mission is PortHeistOperation ? PortHeistOperation.OperationTitle : definition.Id + " — " + definition.Title));
+            GameUtils.Notify("~b~" + (mission is ContinuousOperation ? mission.Title : definition.Id + " — " + definition.Title));
             return true;
         }
 
@@ -284,10 +288,10 @@ namespace Bloodlines.Missions
                     // Finish the last gameplay line before the aftermath takes over.
                     if (_context.Dialogue.HasPending) return;
                     int cashBefore = _state.CashOnHand;
-                    if (_current is PortHeistOperation operation) operation.CommitResult(_catalog);
+                    if (_current is ContinuousOperation operation) operation.CommitResult(_catalog);
                     else _state.MarkComplete(_currentDefinition.Id, _catalog);
                     if (_rewards != null) foreach (string reward in _rewards.Describe(_state, cashBefore)) GameUtils.Notify(reward);
-                    PendingContinuation = _current is PortHeistOperation || (_standalonePhase && PortHeistOperation.Contains(_currentDefinition.Id)) ? null : ContinuationOf(_currentDefinition);
+                    PendingContinuation = _current is ContinuousOperation || (_standalonePhase && MissionOperations.Owning(_currentDefinition.Id) != null) ? null : ContinuationOf(_currentDefinition);
                     if (PendingContinuation != null)
                     {
                         GameUtils.Notify("~g~CHAPTER COMPLETE~s~ — " + _currentDefinition.Title + "~n~Continuing: " + PendingContinuation.Title);
@@ -298,7 +302,7 @@ namespace Bloodlines.Missions
                         try { Passed?.Invoke(_current.Title); }
                         catch (System.Exception e) { Logger.Error("Mission passed presentation failed; completion remains committed.", e); }
                         GameUtils.Notify("~g~MISSION PASSED~s~ — " + _current.Title);
-                        GameUtils.Subtitle("~g~" + (_current is PortHeistOperation ? PortHeistOperation.OperationTitle : _currentDefinition.Id) + " complete. " +
+                        GameUtils.Subtitle("~g~" + (_current is ContinuousOperation ? _current.Title : _currentDefinition.Id) + " complete. " +
                                            _state.CompletedCount + "/" + _catalog.All.Count + ".", 6000);
                     }
                     break;
@@ -314,7 +318,8 @@ namespace Bloodlines.Missions
             bool passed = _current.Status == MissionStatus.Passed;
             SceneBlocking outro = null;
             if (passed) { try { outro = _current.OutroBlocking(); } catch (System.Exception ex) { Logger.Error(_current.Id + " outro blocking", ex); } }
-            string outroId = _current is PortHeistOperation ? "M22" : _currentDefinition.Id;
+            // An operation's aftermath is its last chapter's, not its entry's.
+            string outroId = _current is ContinuousOperation run ? run.Operation.FinalId : _currentDefinition.Id;
             string outcomeTitle = _current.Title;
             Finish();
             if (passed) _context.Cutscenes.Play(outroId, "outro", "Aftermath: " + outcomeTitle, null, null, outro);
