@@ -75,7 +75,7 @@ public static partial class StoryTests
    state.Completed.Add("M22");state.Completed.Add("M42");state.FleetUpgrades["subAirdropReady"]=true;
    Check(hub.Planning().Single(e=>e.Id=="plan:Delivered offshore sub").Subtitle.StartsWith("Missing"),"A submarine unlock flag alone cannot replace the cargo record");
    state.Cargo["offshoreSub"]="M42.Delivery";Check(hub.Planning().Single(e=>e.Id=="plan:Delivered offshore sub").Subtitle=="Recorded","Offshore board recognizes a delivered submarine with its saved cargo location");
-   state.BeginAttempt("M42");Check(hub.Planning().Single(e=>e.Id=="plan:Delivered offshore sub").Subtitle.Contains("Verify after"),"Preparation shown during a replay is labelled provisional until the attempt ends");state.DiscardAttempt();
+   state.BeginAttempt("M42");Check(hub.Planning().Single(e=>e.Id=="plan:Delivered offshore sub").Subtitle.Contains("Verify after"),"Preparation shown during a replay is labeled provisional until the attempt ends");state.DiscardAttempt();
    Check(hub.Journal().Any(e=>e.Id=="M29")&&!hub.Journal().Any(e=>e.Id=="M43"),"Journal shows completed jobs without revealing future mission synopses");
    Check(hub.Journal().Single(e=>e.Id=="M42").Body.Contains("ROLES"),"Completed mission journal retains each brother's authored role context");
    Check(hub.Progression().Any(e=>e.Id=="reward:M02"&&e.Body.Contains("Requires M02")),"Progression shows real upcoming weapon rewards and their source missions");
@@ -95,13 +95,25 @@ public static partial class StoryTests
    PhoneApp(phone,CampaignPhone.App.Progression);PhonePreview(phone,"hub-progression");
    hub.Update(false);PhoneApp(phone,CampaignPhone.App.Alerts);PhonePreview(phone,"hub-alerts");
    int beforeClear=state.PhoneHistory.Count;phone.Select();phone.Select();phone.Back();
-   Check(state.PhoneHistory.Count==beforeClear,"Cancelling Clear all preserves every saved alert");
+   Check(state.PhoneHistory.Count==beforeClear,"Canceling Clear all preserves every saved alert");
    phone.Select();phone.Select();hub.Log("Crew","New arrival","Keep this until reviewed");phone.FinishFrame(true);
    Check(state.PhoneHistory.Any(n=>n.Title=="New arrival")&&phone.Notice.Contains("quote changed"),"An alert arriving during confirmation prevents clearing unseen messages");
    phone.Select();phone.Select();phone.FinishFrame(true);
    Check(state.PhoneHistory.Count==0&&hub.Unread==0&&phone.Notice=="All alerts cleared.","Confirmed Clear all removes read and unread alerts and resets the badge");
    hub.Update(false);Check(state.PhoneHistory.Count==0,"Completed-job alerts do not reappear immediately after clearing");
    Check(CampaignState.Load(path).PhoneHistory.Count==0,"Cleared alerts stay cleared after a save reload");
+  // The atomic swap used to be abandoned on a transient Windows lock and the save
+  // silently skipped, which is how this check came and went between runs. Hold the
+  // backup path open so File.Replace cannot succeed and confirm the save still lands.
+  state.PhoneHistory.Add(new PhoneNotice{Id="probe",Sender="Probe",Title="Held open",Text="x",Time="now"});
+  using(var held=new System.IO.FileStream(path+".bak",System.IO.FileMode.Create,System.IO.FileAccess.Write,System.IO.FileShare.None))
+  {
+   state.Save();
+   Check(!state.LastSaveFailed&&CampaignState.Load(path).PhoneHistory.Any(n=>n.Id=="probe"),
+    "A save whose atomic swap is blocked still reaches the disk instead of being dropped");
+  }
+  state.PhoneHistory.Clear();state.Save();
+  Check(CampaignState.Load(path).PhoneHistory.Count==0,"And the ordinary path still works afterwards");
    PhonePreview(phone,"cleared-alerts");
    state.Reset();Check(state.PhoneHistory.Count==0,"A deliberate campaign reset clears phone history too");hub.Update(false);
   }

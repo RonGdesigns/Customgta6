@@ -147,14 +147,52 @@ namespace Bloodlines.Missions.Campaign
         protected void ResponseCar(string key, Vector3 destination)
         {
             var car = Car("mesa", At(key), Ctx.Locations.Heading(key), false);
-            var driver = Guard(At(key)); var gunner = Guard(At(key));
-            if (!RequireAssets(car, driver, gunner)) throw new InvalidOperationException("The response convoy could not load at " + key);
-            driver.SetIntoVehicle(car, VehicleSeat.Driver); gunner.SetIntoVehicle(car, VehicleSeat.Passenger);
+            if (!RequireAssets(car)) throw new InvalidOperationException("The response vehicle could not load at " + key);
+            // Seats, not guard posts: two guards requested at one point can be handed the
+            // same standing space and the second create fails, which is what made M35
+            // report that its convoy could not load.
+            var driver = Occupant(car, VehicleSeat.Driver); var gunner = Occupant(car, VehicleSeat.Passenger);
+            if (!RequireAssets(driver, gunner)) throw new InvalidOperationException("The response crew could not be seated at " + key);
             car.IsEngineRunning = true;
             Opposition.Add(driver); Opposition.Add(gunner); _response.Add(Tuple.Create(car, driver, gunner));
             var blip = Track(car.AddBlip()); blip.Color = BlipColor.Red; blip.Name = "Response vehicle"; _responseBlips.Add(blip);
             driver.Task.DriveTo(car, destination, 14f, 26f, (DrivingStyle)CrewDriving.TrafficFlags);
         }
+        /// <summary>How long a driver may sit still before the order is treated as lost.</summary>
+        public const int DriveStallMs = 3000;
+        /// <summary>A slow refresh, so a task something else cleared is eventually reissued.</summary>
+        public const int DriveRefreshMs = 9000;
+        /// <summary>Cruise the AI aims for on a mission route.</summary>
+        public const float DriveCruiseSpeed = 34f;
+        private Vector3 _driveOrder;
+        private int _driveOrderAt;
+        private float _driveRemaining = -1f;
+
+        /// <summary>
+        /// Keep Guess going to one place. He used to be handed DriveTo on a fixed clock
+        /// whatever he was doing, which restarts the drive task and is a good way to make
+        /// a driver hesitate short of the destination. He is reissued only when the route
+        /// changes, when he has genuinely stalled, or on a slow refresh that recovers a
+        /// task another system cleared.
+        /// </summary>
+        private void KeepDriving(Ped guess, Vector3 destination)
+        {
+            var car = guess.CurrentVehicle;
+            if (car == null || !car.Exists()) return;
+            float remaining = car.Position.DistanceTo(destination);
+            bool newRoute = _driveOrderAt == 0 || _driveOrder.DistanceTo(destination) > 6f;
+            bool progressing = _driveRemaining < 0f || _driveRemaining - remaining > 4f;
+            bool stalled = !newRoute && !progressing && car.Speed < 1.5f && Game.GameTime - _driveOrderAt > DriveStallMs;
+            bool stale = Game.GameTime - _driveOrderAt > DriveRefreshMs;
+            if (progressing) _driveRemaining = remaining;
+            if (!newRoute && !stalled && !stale) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+            CrewDriving.Configure(guess, CrewSlot.Guess, Fighting);
+            guess.Task.DriveTo(car, destination, 12f, DriveCruiseSpeed, (DrivingStyle)CrewDriving.TrafficFlags);
+            _driveOrder = destination; _driveOrderAt = Game.GameTime; _driveRemaining = remaining;
+            if (stalled) Logger.Info(Id + ": the driver had stopped short of his destination; reissued the route.");
+        }
+
         protected void RetreatResponse()
         {
             Fighting = false;
@@ -207,7 +245,7 @@ namespace Bloodlines.Missions.Campaign
             {
                 var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
                 if (Ctx.Crew.ActiveSlot != CrewSlot.Guess && guess != null && guess.IsInVehicle() && guess.SeatIndex == VehicleSeat.Driver)
-                { Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess); CrewDriving.Configure(guess, CrewSlot.Guess, Fighting); guess.Task.DriveTo(guess.CurrentVehicle, DrivingDestination(), 12f, 32f, (DrivingStyle)CrewDriving.TrafficFlags); }
+                    KeepDriving(guess, DrivingDestination());
             }
             if (!Fighting) return;
             var targets = Protagonist.All.Select(h => Ctx.Crew.PedFor(h.Slot)).Where(p => p != null && p.Exists() && !p.IsDead).ToArray();
@@ -238,6 +276,6 @@ namespace Bloodlines.Missions.Campaign
             }
         }
         protected override void OnUpdate() { TickSupport(); base.OnUpdate(); }
-        protected override void OnCleanup() { Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
+        protected override void OnCleanup() { _driveOrderAt = 0; _driveRemaining = -1f; Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
     }
 }

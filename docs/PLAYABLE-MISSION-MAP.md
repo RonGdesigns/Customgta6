@@ -455,7 +455,7 @@ Prerequisite: M26. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Get on his rudder** — EnterVehicleObjective: Guess — take the Duster up with Ice in the second seat. |
+| 1 | Guess | **Get on his rudder** — EnterVehicleObjective: Guess — take the Vestra up with Ice in the second seat. |
 | 2 | Guess | **Match the Shamal** — ShadowTargetObjective: Climb to the Shamal and hold station inside 60 meters. |
 | 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
@@ -603,19 +603,19 @@ Prerequisite: M34. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Ice | **Prepare the trap** — MultiHoldObjective: Ice: plant both marked roadside charges; press E / D-pad Right |
-| 2 | Guess | **Close the far exit** — TravelObjective: Guess: park the crew car across the yellow far-exit marker and stop |
+| 2 | Guess | **Close the far exit** — TravelObjective: Guess: park the crew car across the road at the south end of the pass and stop. That closes the convoy's only way out and keeps you beside the gun truck |
 | 3 | Gohan | **Identify the target** — MissionInteraction: Gohan: use the laptop on the marked field table to identify the convoy's gun truck |
 | 4 | Gohan | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
 | 5 | Gohan | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
 | 6 | Guess | **Take the driver seat** — EnterVehicleObjective: Guess: take the captured technical's driver seat |
 | 7 | Guess | **Bring both brothers** — ConditionObjective: Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat |
-| 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the police before taking the captured technical to the bunker. |
-| 9 | Guess | **Deliver the gun truck** — TravelObjective: Deliver the same technical with both brothers to the bunker vehicle bay and stop |
+| 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the pursuit. Switch to Ice for the mounted gun or Gohan in the cab while Guess drives; the wheel is yours whenever you want it |
+| 9 | Guess | **Deliver the gun truck** — TravelObjective: Take the same technical with both brothers to the bunker vehicle bay and stop. Guess drives if you are someone else |
 | 10 | Gohan | **Inspect the capture** — MissionInteraction: Gohan: get out and inspect the gun mount at the rear of the parked technical |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M35.BlockExit, M35.Charge, M35.ChargeWork, M35.CrewCar, M35.DeviceWork, M35.IceCover, M35.LeadSpawn, M35.Senora.Delivery, M35.Table, M35.TechnicalHold, M35.TechnicalSpawn, M35.Trap.
+Survey references: M35.BlockExit, M35.Charge, M35.ChargeWork, M35.CrewCar, M35.DeviceWork, M35.IceCover, M35.LeadSpawn, M35.Response, M35.Senora.Delivery, M35.Table, M35.TechnicalHold, M35.TechnicalSpawn, M35.Trap.
 
 ## M36 — DEEP WELL RECON
 

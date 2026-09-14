@@ -16,7 +16,7 @@ namespace Bloodlines.Missions.Campaign
     /// combat cabin; the ledger is an explicit interaction instead of an impossible gunfight.
     ///
     /// Seen, not told: at the airfield, Ice checking his parachute and boarding the
-    /// Duster's second seat beside Ron (two seats, so no fourth pilot), the Lazer
+    /// Vestra's second seat beside Ron (two seats, so no fourth pilot), the Lazer
     /// parked beside them from M26, the Shamal's track and Gohan's boat at sea before
     /// takeoff; the transfer as a staged cut from the two aircraft in formation to
     /// Ice in the Shamal's cabin; the ledger as a thing in Ice's hand; the bail-out
@@ -76,7 +76,7 @@ namespace Bloodlines.Missions.Campaign
             player.Weapons.Give(WeaponHash.Parachute, 1, false, true);
             player.Weapons.Give(WeaponHash.SMG, 250, false, true);
 
-            SpawnLazer(); // clear M26's aircraft from the runway before staging the Duster
+            SpawnLazer(); // clear M26's aircraft from the runway before staging the Vestra
             SpawnStuntPlane();
             SpawnShamal();
             SpawnDinghy();
@@ -95,7 +95,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Get on his rudder",
-                    new EnterVehicleObjective("Guess — take the Duster up with Ice in the second seat.", () => _stuntPlane,
+                    new EnterVehicleObjective("Guess — take the Vestra up with Ice in the second seat.", () => _stuntPlane,
                         VehicleSeat.Driver))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => SeatIce());
@@ -103,7 +103,7 @@ namespace Bloodlines.Missions.Campaign
             // The match is real flying: hold the band and the transfer becomes possible.
             yield return new MissionStage("Match the Shamal",
                     new ShadowTargetObjective("Climb to the Shamal and hold station inside 60 meters.",
-                        () => _shamal, 60f, 12, "The Shamal outran the Duster.", 12f, acquireSeconds: 240))
+                        () => _shamal, 60f, 12, "The Shamal outran you. Stay on its wing.", 12f, acquireSeconds: 240))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context => StartJet())
                 .OnExit(context => PlayTransfer())
@@ -147,13 +147,13 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "The apron",
-                Reason = "The Lazer parked from the scramble; beside it the Duster, two seats. Ice checks his parachute and takes the second seat; Ron flies. The Shamal's track over Chiliad, and Gohan already at sea in the boat under it: the pickup exists before the jump does.",
+                Reason = "The Lazer parked from the scramble; beside it the Vestra, two seats and quicker than the jet. Ice checks his parachute and takes the second seat; Ron flies. The Shamal's track over Chiliad, and Gohan already at sea in the boat under it: the pickup exists before the jump does.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) { Logger.Warn("M27 approach scene did not play; Ice takes his seat directly."); SeatIce(); }
         }
 
-        /// <summary>Ice in the Duster's second seat, however the approach ended.</summary>
+        /// <summary>Ice in the Vestra's second seat, however the approach ended.</summary>
         private void SeatIce()
         {
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
@@ -182,7 +182,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "transfer", Title = "The wing",
-                Reason = "The Duster on the Shamal's wing, close enough; a cut; Ice in the Shamal's cabin with the locker in front of him. The illusion is only the mechanical crossing. Ron peels off with an empty second seat.",
+                Reason = "The Vestra on the Shamal's wing, close enough; a cut; Ice in the Shamal's cabin with the locker in front of him. The illusion is only the mechanical crossing. Ron peels off with an empty second seat.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M27_S1_02_ICE");
@@ -238,7 +238,7 @@ namespace Bloodlines.Missions.Campaign
             GameUtils.Subtitle("~r~She's over. Terminal dive toward the Pacific.", 5000);
         }
 
-        /// <summary>Ron's aircraft returns by its own route: the Duster, empty second seat, tasked home to McKenzie.</summary>
+        /// <summary>Ron's aircraft returns by its own route: the Vestra, empty second seat, tasked home to McKenzie.</summary>
         private void ReturnRon()
         {
             _ronReturned = true;
@@ -247,7 +247,7 @@ namespace Bloodlines.Missions.Campaign
             if (!guess.IsInVehicle(_stuntPlane)) guess.SetIntoVehicle(_stuntPlane, VehicleSeat.Driver);
             Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
             guess.Task.StartPlaneMission(_stuntPlane, _apron + new Vector3(0f, 0f, 80f), VehicleMissionType.GoTo, 40f, 60f, 80, 40, 0f, false);
-            Radio("GUESS", "Peeling off. Empty seat beside me and the Duster's going home to McKenzie on her own route. Gohan has you from here.", "M27_RADIO_01_GUESS");
+            Radio("GUESS", "Peeling off. Empty seat beside me and the Vestra's going home to McKenzie on her own route. Gohan has you from here.", "M27_RADIO_01_GUESS");
         }
 
         /// <summary>Ice in the boat with the ledger, stowed where Gohan can see it.</summary>
@@ -280,15 +280,20 @@ namespace Bloodlines.Missions.Campaign
 
         // ---------- world building ----------
 
-        /// <summary>The Duster: two seats and a radial engine, the aircraft parked beside the Lazer at the end of M26. Taken over when it is still there.</summary>
+        /// <summary>
+        /// The Vestra: two seats, and 97 against the Shamal's 91, which is the whole
+        /// point. This was a Duster at 69 — Ron was asked to catch a jet with a crop
+        /// duster and the match was not merely hard, it was arithmetically impossible.
+        /// Parked beside the Lazer at the end of M26; taken over when it is still there.
+        /// </summary>
         private void SpawnStuntPlane()
         {
-            var model = new Model("duster");
+            var model = new Model("vestra");
             if (!GameUtils.RequestModel(model)) return;
 
             var existing = PortHeist.Nearby(model, Ctx.Locations.Position("M26.SparePlane"), 30f);
             if (existing != null && existing.Occupants.Length > 0)
-                throw new System.InvalidOperationException("The preparation Duster is occupied. Clear it before starting M27.");
+                throw new System.InvalidOperationException("The preparation Vestra is occupied. Clear it before starting M27.");
             var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M27.RunwayStart", model, existing, departureMeters: 25f);
             _stuntPlane = Track(existing ?? World.CreateVehicle(model, spot, Ctx.Locations.Heading("M27.RunwayStart")));
             if (_stuntPlane != null && _stuntPlane.Exists())
@@ -308,7 +313,7 @@ namespace Bloodlines.Missions.Campaign
             var blip = Track(_stuntPlane.AddBlip());
             blip.Sprite = BlipSprite.Plane;
             blip.Color = BlipColor.Orange;
-            blip.Name = "Duster";
+            blip.Name = "Vestra";
         }
 
         /// <summary>The Lazer where M26 parked it: seen, engine off, not flown today.</summary>
@@ -355,7 +360,16 @@ namespace Bloodlines.Missions.Campaign
             _shamalPilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             _shamalPilot.IsPersistent = true;
             _shamalPilot.BlockPermanentEvents = true;
-            _shamalPilot.Task.WarpIntoVehicle(_shamal, VehicleSeat.Driver);
+            // Seat him, do not ask him to board. WarpIntoVehicle is queued and StartJet
+            // replaces whatever is queued, so this pilot never boarded: the Shamal was
+            // unmanned and came down, which is why Ron's objective marker showed the
+            // target sitting on the ground instead of tracking a jet at 700 meters.
+            _shamalPilot.SetIntoVehicle(_shamal, VehicleSeat.Driver);
+            if (_shamal.GetPedOnSeat(VehicleSeat.Driver) != _shamalPilot)
+            {
+                Logger.Error("M27: the Shamal pilot could not be seated; there is nothing to intercept.");
+                return;
+            }
 
             var blip = Track(_shamal.AddBlip());
             blip.Sprite = BlipSprite.Plane;

@@ -585,6 +585,14 @@ namespace Bloodlines.Missions
             Save();
         }
 
+        /// <summary>How many times the atomic swap is retried before writing over the target.</summary>
+        public const int SaveAttempts = 3;
+        /// <summary>
+        /// True when the last Save could not reach the disk at all. A silent failure here
+        /// is lost progress, so it is recorded rather than only logged.
+        /// </summary>
+        public bool LastSaveFailed { get; private set; }
+
         public void Save()
         {
             if (_saveBatch > 0) return;
@@ -634,20 +642,47 @@ namespace Bloodlines.Missions
                 { "weaponLockers", Weapons.ToDictionary(p => p.Key, p => (object)p.Value.OrderBy(h => h).Select(h => h.ToString()).ToList()) }
             };
 
+            string text = Json.Write(document) + Environment.NewLine;
+            LastSaveFailed = false;
+            try { Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? "."); }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            { Logger.Error("Could not create the save directory", ex); LastSaveFailed = true; return; }
+
+            // Write beside the target then move, so a crash mid-write cannot leave a
+            // half-written save where the real one was. File.Replace throws a transient
+            // IOException often enough on Windows — an antivirus or the indexer holding
+            // the file for a moment — and this used to swallow that and carry on as if
+            // the campaign had been saved. It had not, and the only trace was one log
+            // line. Retry, and if it still will not move, write straight over the target:
+            // losing atomicity is bad, losing the player's progress is worse.
+            for (int attempt = 1; attempt <= SaveAttempts; attempt++)
+            {
+                try
+                {
+                    string temporary = _path + ".tmp";
+                    File.WriteAllText(temporary, text);
+                    if (File.Exists(_path)) File.Replace(temporary, _path, _path + ".bak");
+                    else File.Move(temporary, _path);
+                    Logger.Debug("Save written to " + _path + (attempt > 1 ? " on attempt " + attempt : ""));
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+                {
+                    if (attempt < SaveAttempts) continue;
+                    Logger.Warn("The save could not be swapped into place after " + SaveAttempts +
+                        " attempts (" + ex.GetType().Name + "); writing over it directly.");
+                }
+            }
+
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path) ?? ".");
-                // Write beside the target then move, so a crash mid-write cannot leave
-                // a half-written save where the real one was.
-                string temporary = _path + ".tmp";
-                File.WriteAllText(temporary, Json.Write(document) + Environment.NewLine);
-                if (File.Exists(_path)) File.Replace(temporary, _path, _path + ".bak");
-                else File.Move(temporary, _path);
-                Logger.Debug("Save written to " + _path);
+                File.WriteAllText(_path, text);
+                Logger.Info("Save written directly to " + _path + "; the atomic swap was unavailable.");
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
-                Logger.Error("Could not write the save file", ex);
+                Logger.Error("Could not write the save file at all. Progress since the last save is not on disk.", ex);
+                LastSaveFailed = true;
             }
         }
     }

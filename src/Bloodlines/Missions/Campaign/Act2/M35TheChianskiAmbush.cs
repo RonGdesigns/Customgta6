@@ -16,6 +16,10 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Prop> _charges=new List<Prop>();private Prop _table,_device;
         private bool _convoyStarted,_trapped,_delivered;private int _convoyAt,_routeOrder;
         public Vehicle Technical=>_technical;public bool ConvoyStarted=>_convoyStarted;public bool Trapped=>_trapped;
+        /// <summary>The hostile still riding the bed gun, if he is alive on it.</summary>
+        public Ped TruckGunner=>Opposition.FirstOrDefault(p=>MountedGunner(p)&&!p.IsDead);
+        /// <summary>Whether the crew are expected to be fighting, which is what lets Ice use the gun.</summary>
+        public bool CrewFighting=>Fighting;
         protected override bool Setup()
         {
             if(!BeginCrew(CrewSlot.Ice))return false;
@@ -30,16 +34,28 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Prepare the trap",new MultiHoldObjective("Ice: plant both marked roadside charges; press E / D-pad Right",Enumerable.Range(1,2).Select(i=>At("M35.ChargeWork"+i)),4,3f,"Planting charge"){Animation=MissionInteraction.ReachInside,SiteDone=i=>_charges.Add(Equipment("prop_ld_bomb_01","M35.Charge"+(i+1)))}).OwnedBy(CrewSlot.Ice).OnExit(c=>Roles.For(CrewSlot.Ice).Approach(At("M35.IceCover"),At("M35.IceCover")));
-            yield return new MissionStage("Close the far exit",new TravelObjective("Guess: park the crew car across the yellow far-exit marker and stop",()=>At("M35.BlockExit"),8,()=>CrewCar)).OwnedBy(CrewSlot.Guess);
+            yield return new MissionStage("Close the far exit",new TravelObjective("Guess: park the crew car across the road at the south end of the pass and stop. That closes the convoy's only way out and keeps you beside the gun truck",()=>At("M35.BlockExit"),8,()=>CrewCar)).OwnedBy(CrewSlot.Guess);
             yield return new MissionStage("Identify the target",new MissionInteraction("Gohan: use the laptop on the marked field table to identify the convoy's gun truck",()=>At("M35.DeviceWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_device.Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>StartConvoy());
             yield return new MissionStage("Watch the pass",new ConditionObjective("Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact.",()=>_trapped));
             yield return new MissionStage("Capture the technical",new KillTargetsObjective("Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical.",()=>Opposition),new ProtectObjective("",()=>_technical,"The technical was destroyed before capture."))
                 .WithCues("M35_S1_01_ICE");
             yield return new MissionStage("Take the driver seat",new EnterVehicleObjective("Guess: take the captured technical's driver seat",()=>_technical,VehicleSeat.Driver)).OwnedBy(CrewSlot.Guess).AfterCues("M35_S1_02_GUESS");
             yield return new MissionStage("Bring both brothers",new ConditionObjective("Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat",()=>BoardTeam())).OwnedBy(CrewSlot.Guess)
-                .OnExit(c=>{Fighting=false;DrivingDestination=()=>At("M35.Senora.Delivery");});
-            yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before taking the captured technical to the bunker."));
-            yield return new MissionStage("Deliver the gun truck",new TravelObjective("Deliver the same technical with both brothers to the bunker vehicle bay and stop",()=>At("M35.Senora.Delivery"),15,()=>_technical));
+                .OnExit(c=>
+                {
+                    // Fighting stays on through the run home. It is what lets Ice work the
+                    // mounted gun from the bed and Gohan return fire from the cab; with it
+                    // off, Ron reported Ice sitting there while the police shot at them.
+                    Fighting=true;
+                    DrivingDestination=()=>At("M35.Senora.Delivery");
+                    ResponseCar("M35.Response",_technical.Position);
+                    // Either brother is playable for the run: Guess keeps driving on his own
+                    // while the player rides the gun, and the player can take the wheel back.
+                    Ctx.Switching.SetUnlocked();
+                    Radio("GUESS","I have the wheel all the way to the bunker. Take Ice on the gun or Gohan in the cab if you would rather shoot than drive.","M35_RUNHOME");
+                });
+            yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the pursuit. Switch to Ice for the mounted gun or Gohan in the cab while Guess drives; the wheel is yours whenever you want it"));
+            yield return new MissionStage("Deliver the gun truck",new TravelObjective("Take the same technical with both brothers to the bunker vehicle bay and stop. Guess drives if you are someone else",()=>At("M35.Senora.Delivery"),15,()=>_technical));
             yield return new MissionStage("Inspect the capture",new MissionInteraction("Gohan: get out and inspect the gun mount at the rear of the parked technical",()=>_technical.Position-_technical.ForwardVector*2f,5,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>DrivingDestination=null).OnExit(c=>{_delivered=true;Establish("delivery","Protection for the way home","The captured technical arrives intact. Gohan checks the real gun mount. It provides machine-gun cover against exposed targets and low aircraft; it is not a missile launcher or an automatic air-defense system.",_technical);}).AfterCues("M35_S1_03_GOHAN");
         }
@@ -69,9 +85,47 @@ namespace Bloodlines.Missions.Campaign
             _trapped=true;_lead.EngineHealth=0f;_lead.IsEngineRunning=false;
             World.AddExplosion(point,ExplosionType.Grenade,1f,.4f,Game.Player.Character,true,false);
             _leadDriver.Task.LeaveVehicle();_technicalDriver.Task.ClearAll();_technical.IsEngineRunning=false;
-            foreach(var enemy in Opposition)enemy.Task.LeaveVehicle();
+            // The escort's vehicle is dead, so its crew gets out. The gun truck does not:
+            // it has a mounted gun in the bed and a man on it, and standing him in the
+            // road instead of letting him use it was the reason nothing shot back.
+            foreach(var enemy in Opposition)
+            {
+                if(enemy==null||!enemy.Exists())continue;
+                if(MountedGunner(enemy))continue;
+                enemy.Task.LeaveVehicle();
+            }
             Fighting=true;
         }
+        /// <summary>How often the mounted gunner's order is refreshed while he is firing.</summary>
+        public const int GunnerOrderMs = 4000;
+        private int _gunnerOrder;
+
+        /// <summary>
+        /// A hostile riding the gun truck's bed gun rather than a seat he should abandon.
+        /// The technical's rear position is the mount, which is why he stays in it.
+        /// </summary>
+        private bool MountedGunner(Ped enemy) =>
+            _technical != null && _technical.Exists() && enemy != null && enemy.Exists() &&
+            enemy.IsInVehicle(_technical) && enemy.SeatIndex == VehicleSeat.LeftRear;
+
+        /// <summary>
+        /// Put the gun in the bed to work. Issued on a cooldown rather than every frame,
+        /// for the same reason a guard's combat order is: re-tasking restarts it.
+        /// </summary>
+        private void WorkTheMountedGun()
+        {
+            if(!Fighting||_trapped==false)return;
+            if(Game.GameTime<_gunnerOrder)return;
+            var gunner=Opposition.FirstOrDefault(MountedGunner);
+            if(gunner==null||gunner.IsDead)return;
+            var target=Protagonist.All.Select(h=>Ctx.Crew.PedFor(h.Slot))
+                .Where(p=>p!=null&&p.Exists()&&!p.IsDead)
+                .OrderBy(p=>p.Position.DistanceTo(gunner.Position)).FirstOrDefault();
+            if(target==null)return;
+            _gunnerOrder=Game.GameTime+GunnerOrderMs;
+            gunner.Task.VehicleShootAtPed(target);
+        }
+
         private bool BoardTeam()
         {
             Roles.Release();Ctx.Crew.CompanionsHoldPosition=false;
@@ -81,6 +135,7 @@ namespace Bloodlines.Missions.Campaign
         }
         protected override void OnUpdate()
         {
+            WorkTheMountedGun();
             if(_convoyStarted&&!_trapped)
             {
                 if(Game.GameTime-_convoyAt>150000){Fail("The convoy did not reach the prepared trap. Retry or survey its road approach.");return;}
