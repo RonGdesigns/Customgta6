@@ -28,6 +28,7 @@ namespace Bloodlines.Missions.Campaign
         public const int DeckGuards = 4;
 
         private readonly List<Ped> _guards = new List<Ped>();
+        private readonly AircraftHold _hold = new AircraftHold();
         private Vehicle _chopper;
         private Vehicle _kraken;
         private bool _landed;
@@ -165,6 +166,16 @@ namespace Bloodlines.Missions.Campaign
                     _aboard = true;
                 })
                 .AfterCues("M45_S1_03_GOHAN");
+        }
+
+        /// <summary>
+        /// Guess holds over the vessel for the whole of Ice's and Gohan's work. Without
+        /// this nobody is flying it while the player is someone else, and it comes down.
+        /// </summary>
+        protected override void OnUpdate()
+        {
+            _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, At("M45.Hold"), (int)At("M45.Hold").Z);
+            base.OnUpdate();
         }
 
         protected override void OnPassed()
