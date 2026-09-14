@@ -134,7 +134,7 @@ namespace Bloodlines.Core
         private string ModelName()
         {
             if (Kind != PlacementKind.Vehicle && Kind != PlacementKind.Aircraft) return null;
-            try { return _model.Name; }
+            try { return _model.Hash.ToString(); }
             catch { return "unknown"; }
         }
     }
