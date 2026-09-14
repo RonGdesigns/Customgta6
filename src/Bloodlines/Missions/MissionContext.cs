@@ -26,6 +26,16 @@ namespace Bloodlines.Missions
         public CutsceneDirector Cutscenes { get; set; }
         public PortHeistWorld PortHeist { get; set; }
 
+        /// <summary>
+        /// Shared session-only state for a generic one-sitting operation. Current
+        /// Port Heist code keeps its specialized PortHeistWorld until it is migrated;
+        /// new operation phases use this property instead of a global singleton.
+        /// </summary>
+        public ContinuousOperationState ActiveOperation { get; set; }
+
+        /// <summary>Structured QA facts for placement/startup/runtime inspection. Never saved.</summary>
+        public MissionDoctor Doctor { get; } = new MissionDoctor();
+
         /// <summary>Chapter-to-chapter state for continuous operations (Port Heist first).</summary>
         public HandoffLedger Handoffs { get; } = new HandoffLedger();
         /// <summary>The crew's own Granger; null in hosts without one (missions then spawn a stock Granger).</summary>
