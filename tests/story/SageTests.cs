@@ -97,12 +97,18 @@ public static partial class StoryTests
 
   // ---- M26: the spotters, the parked Lazer with its history, Gohan at the laptop; the lead held by listening; the Lazer parked beside the Duster.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage26.json"));c.Vans=new CrewVan(c.State,c.Locations);var m26=new M26AlamoScramble();
-  Check(m26.Begin(c)&&c.Cutscenes.IsActive&&m26.Lazer!=null&&!m26.Lazer.IsEngineRunning&&m26.ApproachPlane!=null&&m26.ApproachPlane.Model.Name=="duster"&&m26.Granger!=null,"M26 opens on the parked Lazer, the Duster beside it and Gohan's Granger");
+  Check(m26.Begin(c)&&c.Cutscenes.IsActive&&m26.Lazer!=null&&!m26.Lazer.IsEngineRunning&&m26.ApproachPlane!=null&&m26.ApproachPlane.Model.Name=="vestra"&&m26.Granger!=null,"M26 opens on the parked Lazer, the Vestra beside it and Gohan's Granger");
   // The spotters were spawned in the air and then asked to board by a task the next
   // line replaced, so pilot and plane both fell. They are seated outright now.
   Check(m26.Spotters.Count==2&&m26.Pilots.Count==2&&m26.Pilots.All(p=>p.IsInVehicle())&&
         m26.Spotters.All(v=>v.GetPedOnSeat(VehicleSeat.Driver)!=null),"Both spotter planes actually have a pilot in the driver seat");
-  c.Cutscenes.Skip();m26.Tick();Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m26.Lazer,VehicleSeat.Driver);m26.Tick();Check(m26.CurrentStage==1,"Airborne, the first spotter is the job");
+  // The interceptor is parked cold so the scramble means something, but it has to
+  // start when he is in it: Ron could fire its guns and never accelerate.
+  c.Cutscenes.Skip();m26.Tick();Use(crew,CrewSlot.Guess);
+  Check(!m26.Lazer.IsEngineRunning,"The interceptor sits cold while nobody is in it");
+  Game.Player.Character.SetIntoVehicle(m26.Lazer,VehicleSeat.Driver);m26.Tick();
+  Check(m26.Lazer.IsEngineRunning,"It starts the moment Ron is aboard");
+  m26.Tick();Check(m26.CurrentStage==1,"Airborne, the first spotter is the job");
   m26.Spotters[0].IsDriveable=false;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&m26.Listening&&c.Dialogue.HasPending,"The first spotter down, Gohan asks for the second one held while he listens");
   c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&!m26.LeadHeld,"Too early: the call sign is not in yet");
   Game.GameTime+=M26AlamoScramble.ListenMs+1;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==3&&m26.LeadHeld&&c.State.EvidenceOf("charterCallSign")==EvidenceState.CopyHeld,"Listening long enough holds the charter's call sign as evidence");
@@ -134,7 +140,10 @@ public static partial class StoryTests
   Check(m27.Aboard&&m27.Ledger.IsVisible&&m27.Ledger.AttachedTo==m27.Dinghy,"In the boat, the ledger is stowed where Gohan can see it");
   c.Dialogue.Clear();m27.Tick();c.Dialogue.Clear();m27.Tick();Check(m27.Status==MissionStatus.Passed,"M27 passes");World.NearbyVehicles=new Vehicle[0];
   string m27src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act2","M27FlightRisk.cs"));
-  Check(!m27src.Contains("new Model(\"stunt\")")&&m27src.Contains("new Model(\"duster\")")&&!m27src.Contains("Script.Wait("),"The approach aircraft has two seats and the transfer no longer blocks the script thread");
+  // A Duster tops out at 69 and the Shamal at 91, so the old approach aircraft could
+  // never hold station. The Vestra has two seats and beats the jet at 97.
+  Check(!m27src.Contains("new Model(\"stunt\")")&&!m27src.Contains("new Model(\"duster\")")&&m27src.Contains("new Model(\"vestra\")")&&!m27src.Contains("Script.Wait("),"The approach aircraft has two seats, outruns the target and does not block the script thread");
+  Check(m27src.Contains("SetIntoVehicle(_shamal, VehicleSeat.Driver)")&&!m27src.Contains("WarpIntoVehicle(_shamal"),"The Shamal pilot is seated outright, so the jet is actually flown and its marker tracks it");
   var scenes=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv"));
   Check(new[]{"M23","M24","M25","M26","M27"}.All(id=>scenes.Count(l=>l.StartsWith(id+"_SCENE_APPROACH"))==2),"Each desert chapter's approach has its authored lines");
  }

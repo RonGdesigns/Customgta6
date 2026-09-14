@@ -146,8 +146,21 @@ public static partial class StoryTests
         crew.PedFor(CrewSlot.Ice).Position=lead.Position;m35.Tick();Check(!m35.Trapped&&m35.CurrentStage==3,"The trap cannot detonate on a nearby brother or advance without the blast result");
         crew.PedFor(CrewSlot.Ice).Position=c.Locations.Position("M35.IceCover");DrainPreparation(m35,c);
         Check(m35.Trapped&&m35.CurrentStage==4,"A clear trap stops the lead escort without claiming an unstaged capture");
+        // Ron's report: nothing shot back from the truck, and the block sent Guess 195 m
+        // past everything and back again.
+        Check(c.Locations.Position("M35.BlockExit").DistanceTo(c.Locations.Position("M35.Trap"))<70f,
+            "The road is closed at the end of the kill zone, not two hundred meters past it");
+        Check(m35.TruckGunner!=null&&m35.TruckGunner.IsInVehicle(m35.Technical),
+            "The gun truck's gunner stays on the bed gun instead of standing in the road");
+        m35.Tick();
+        Check(m35.TruckGunner.Task.VehicleShots>0,
+            "And he uses it, so something actually shoots back at the ambush");
         ClearPreparationEnemies();DrainPreparation(m35,c);Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(m35.Technical,VehicleSeat.Driver);DrainPreparation(m35,c);
         crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(m35.Technical,VehicleSeat.Passenger);crew.PedFor(CrewSlot.Ice).SetIntoVehicle(m35.Technical,VehicleSeat.LeftRear);DrainPreparation(m35,c);
+        // The run home is a fight now: Ice works the gun, Gohan answers from the cab, a
+        // pursuit follows, and either brother is playable while Guess drives.
+        Check(m35.CrewFighting,"The crew keep fighting on the way to the bunker instead of riding along");
+        Check(!c.Switching.Locked,"Either brother can be taken while Guess drives");
         ParkPreparation(m35,c,m35.Technical,"M35.Senora.Delivery");Interact(m35,c,CrewSlot.Gohan,m35.Technical.Position-m35.Technical.ForwardVector*2f,5);DrainPreparation(m35,c);
         Check(m35.Status==MissionStatus.Passed&&c.State.CargoAt("antiAirTechnical")=="M35.Senora.Delivery","M35 requires the same captured technical at its destination and a real gun-mount inspection");
 

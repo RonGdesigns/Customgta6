@@ -393,3 +393,48 @@ awareness down while he taps the node.
 The mod-shop performance panel is translucent and sized to its content. It used to
 be alpha 235 over a fixed 510 pixels, sitting exactly where the vehicle preview is,
 so the part being fitted could not be seen.
+
+## September 14: M26, M27 and M35 from the playtest
+
+**A parked aircraft has to start when he gets in.** M26's Lazer was spawned with its
+engine off so the scramble means something, and nothing ever started it: Ron could
+fire its guns and never accelerate. It starts when he is aboard, checked every frame
+so a re-entry behaves the same, and stays cold while nobody is in it.
+
+**Check the numbers before asking for a chase.** M27 asked Ron to catch a Shamal
+(91) in a Duster (69). It flies a Vestra now: two seats, 97, and a small private jet
+belongs beside another one. Approach-aircraft choices come from build/vehicles.json,
+not from what sounds right.
+
+**Never seat a ped with a queued warp and then issue another task.** M27's Shamal
+pilot had the same defect as M26's spotters: `Task.WarpIntoVehicle` followed by
+`StartPlaneMission`, so nobody flew the jet, it came down, and the objective marker
+showed the target on the ground. `SetIntoVehicle`, then verify the seat.
+
+**M35's positioning.** The far-exit block sat 195 m past the kill zone, so Guess
+drove away from the ambush and then back to it, and a roadblock that far down the
+road closes nothing. It is at the south end of the zone: it actually shuts the road
+and leaves him beside the truck he is about to take.
+
+**A gun in the bed is for using.** M35 used to order every hostile out of their
+vehicles at the trap, including the man on the technical's mount. The escort's crew
+still dismount from a dead vehicle; the gunner stays and works the gun, on a
+cooldown rather than every frame.
+
+**The run home is a fight.** M35 set `Fighting = false` for the drive to the bunker,
+which is what stopped Ice engaging anything from the gun seat. It stays on, a pursuit
+follows from the convoy road, and switching is unlocked so either brother is playable
+while Guess drives.
+
+`PreparationOperation.KeepDriving` reissues a driver's route only on a changed
+destination, a real stall, or a slow refresh. Handing `DriveTo` to a driver on a
+fixed clock restarts the drive task and is a good way to make him hesitate short of
+where he was sent.
+
+**The save no longer fails silently.** `CampaignState.Save` wrote to a temporary file
+and swapped it in with `File.Replace`, and swallowed `IOException`. Windows throws
+that transiently often enough — an antivirus or the indexer holding the file for a
+moment — and the campaign simply did not save, with one log line as the only trace.
+It retries, then writes over the target directly, and records `LastSaveFailed`. This
+was also the cause of an intermittent story-check failure that came and went between
+runs.

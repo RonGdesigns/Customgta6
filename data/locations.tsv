@@ -377,13 +377,13 @@ M35.Charge1	2974	4494	46.157	0	land	estimate	Offline support checked; live surve
 M35.Charge2	2975	4500	46.5	0	land	estimate	Offline support checked; live survey pending
 M35.ChargeWork1	2970	4494	46.032	0	land	estimate	Offline support checked; live survey pending
 M35.ChargeWork2	2971	4500	46.341	0	land	estimate	Offline support checked; live survey pending
-M35.BlockExit	2979.25	4261.25	55.031	90	land	estimate	Offline support checked; live survey pending
+M35.BlockExit	2977	4452	46.4	180	land	estimate	South end of the kill zone; live survey pending
 M35.LeadSpawn	2976.25	4636.5	51.908	180	land	estimate	Offline support checked; live survey pending
 M35.TechnicalSpawn	2974.5	4710	48.749	180	land	estimate	Offline support checked; live survey pending
 M35.TechnicalHold	2982.5	4564.75	51.159	180	land	estimate	Offline support checked; live survey pending
 M35.Trap	2975	4494	46.187	0	land	estimate	Offline support checked; live survey pending
 M35.Senora.Delivery	858	2968	45.403	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
-M35.IceCover	2950	4460	45.802	0	land	estimate	Offline support checked; live survey pending
+M35.IceCover	2956	4470	46.0	70	land	estimate	Cover with a line on the trap; live survey pending
 M36.Start	-1600	5240	3.069	0	land	estimate	Offline collision/water checked; live survey pending
 M36.IceStart	-1600	5240	3.069	0	land	estimate	Offline collision/water checked; live survey pending
 M36.GohanStart	-1600	5235	3.059	0	land	estimate	Offline collision/water checked; live survey pending
@@ -850,3 +850,5 @@ M48.Technical	-1596	5228	3.05	150	land	estimate	Derived from verified hull exten
 M48.Cordon	-1560	5160	17.5	160	land	estimate	Derived from verified hull extents; live survey pending
 M48.South	-1480	5040	44	150	land	estimate	Derived from verified hull extents; live survey pending
 M47.Jump	-1700	5322	12	200	land	estimate	Derived from verified hull extents; live survey pending
+
+M35.Response	2976	4628	51.6	180	land	estimate	Pursuit follows the convoy road; live survey pending

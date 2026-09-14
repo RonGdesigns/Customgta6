@@ -133,7 +133,7 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "McKenzie",
-                Reason = "Two spotters quartering the Alamo over the water where the container sits. The Lazer on the McKenzie apron: towed out of Zancudo under the M16 clearance, fueled here, the aircraft Ron flies today. Gohan at the laptop on the Granger's hood with their traffic; Ice at the hangar door on the radio. No fourth pilot.",
+                Reason = "Two spotters quartering the Alamo over the water where the container sits. The Lazer on the McKenzie apron: towed out of Zancudo under the M16 clearance, fueled and cold until he is in it, the aircraft Ron flies today. Gohan at the laptop on the Granger's hood with their traffic; Ice at the hangar door on the radio. No fourth pilot.",
                 Blocking = blocking
             };
             if (!Ctx.Cutscenes.Play(spec)) Logger.Warn("M26 approach scene did not play; the apron stands on its own.");
@@ -168,14 +168,14 @@ namespace Bloodlines.Missions.Campaign
             var spec = new SceneSpec
             {
                 MissionId = Id, Phase = "park", Title = "The apron",
-                Reason = "The Lazer parked and shut down at McKenzie, Ron out of it. Beside it the Duster: two seats, the aircraft for the Shamal job. The Lazer stays here; nobody flies a fighter onto a jet's wing.",
+                Reason = "The Lazer parked and shut down at McKenzie, Ron out of it. Beside it the Vestra: two seats and quicker than the Shamal, the aircraft for the jet job. The Lazer stays here; nobody flies a fighter onto a jet's wing.",
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M26_S1_03_GUESS");
             if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M26 park scene did not play; the line plays as dialogue."); blocking.Complete(); Say("M26_S1_03_GUESS"); }
             if (_duster != null && _duster.Exists()) _duster.IsEngineRunning = false;
             Ctx.State?.SetCargo("lazer", "M26.DusterPad");
-            GameUtils.Subtitle("~g~Both spotters in the lake; the Alamo stash stays a ghost. The Lazer is parked at McKenzie; the Shamal job flies the Duster.", 6000);
+            GameUtils.Subtitle("~g~Both spotters in the lake; the Alamo stash stays a ghost. The Lazer is parked at McKenzie; the jet job flies the Vestra.", 6000);
         }
 
         /// <summary>The aftermath: the two aircraft on the apron.</summary>
@@ -198,6 +198,9 @@ namespace Bloodlines.Missions.Campaign
             if (_duster == null || !_duster.Exists()) return;
 
             _duster.IsPersistent = true;
+            // Parked cold on purpose, so the scramble is a scramble. KeepInterceptorReady
+            // starts it the moment Ron is aboard: a jet left with its engine off lets the
+            // player fire the guns and never accelerate, which is what Ron hit.
             _duster.IsEngineRunning = false;
 
             var blip = Track(_duster.AddBlip());
@@ -206,10 +209,14 @@ namespace Bloodlines.Missions.Campaign
             blip.Name = "Lazer interceptor";
         }
 
-        /// <summary>The Duster beside the Lazer: two seats, radial engine, the aircraft M27 flies. Parked here so the change is visible.</summary>
+        /// <summary>
+        /// The Vestra beside the Lazer: two seats and faster than the Shamal, the aircraft
+        /// M27 flies. It was a Duster, and a Duster tops out at 69 against the Shamal's 91,
+        /// so Ron could not catch the jet in M27 because nothing could.
+        /// </summary>
         private void SpawnApproachPlane()
         {
-            var model = new Model("duster");
+            var model = new Model("vestra");
             if (!GameUtils.RequestModel(model)) return;
             var spot = BoundedPlacement.Vehicle(Ctx.Locations, "M26.SparePlane", model);
             _approachPlane = Track(World.CreateVehicle(model, spot, Ctx.Locations.Heading("M26.SparePlane")));
@@ -297,6 +304,29 @@ namespace Bloodlines.Missions.Campaign
 
             planeModel.MarkAsNoLongerNeeded();
             pilotModel.MarkAsNoLongerNeeded();
+        }
+
+        /// <summary>
+        /// A jet parked cold has to start when he gets in. GTA leaves an aircraft whose
+        /// engine was explicitly switched off exactly that way: the player can fire its
+        /// guns and never accelerate, which is what Ron reported. Checked every frame so
+        /// a re-entry after any stall behaves the same, and never forced while he is out
+        /// of it, because the cold aircraft on the apron is the point of the opening.
+        /// </summary>
+        private void KeepInterceptorReady()
+        {
+            if (_duster == null || !_duster.Exists() || _duster.IsDead) return;
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || !player.IsInVehicle(_duster)) return;
+            if (_duster.IsEngineRunning) return;
+            _duster.IsEngineRunning = true;
+            Logger.Info("M26: the interceptor was cold with Ron aboard; started it.");
+        }
+
+        protected override void OnUpdate()
+        {
+            KeepInterceptorReady();
+            base.OnUpdate();
         }
 
         protected override void OnPassed()
