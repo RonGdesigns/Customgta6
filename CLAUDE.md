@@ -469,3 +469,14 @@ height, SM06's start and fuel tractor left the inside of the Ammu-Nation buildin
 they were spawning in — the archives put its geometry at z 20 to 25 against their
 authored 19 — for open ground verified empty within 16 meters, and M32's brothers
 ride across the base with Guess instead of being left where the fight was.
+
+## Aircraft created in the air
+
+`World.CreateVehicle` at an altitude gives you a helicopter with stopped rotors.
+Setting `IsEngineRunning` is not lift: the blades spin up from zero and the aircraft
+falls while they do, which from 60 meters over water means it is in the sea before
+they reach speed. That is what stopped Ron's heist at M45 on every attempt.
+
+Call `AircraftHold.LaunchAirborne` immediately after creating one above the ground.
+It runs the engine, brings the rotors to full speed and gives it approach airspeed.
+Any key whose kind is `air` is a spawn that needs it.

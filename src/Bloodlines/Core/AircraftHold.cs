@@ -30,6 +30,28 @@ namespace Bloodlines.Core
         /// <summary>The lowest the AI is allowed to take it while holding.</summary>
         public const int MinimumHeight = 25;
 
+        /// <summary>Approach speed given to a helicopter that is created already flying.</summary>
+        public const float AirborneSpeed = 25f;
+
+        /// <summary>
+        /// An aircraft created in the air begins with its rotors stopped. The engine
+        /// being on is not lift: a helicopter spawned at altitude falls while the blades
+        /// spin up, and from 60 meters over water it is in the sea before they reach
+        /// speed. Ron watched M45's Annihilator do exactly that on every attempt at the
+        /// heist. Call this immediately after creating one above the ground.
+        /// </summary>
+        public static void LaunchAirborne(Vehicle aircraft, float forwardSpeed = AirborneSpeed)
+        {
+            if (aircraft == null || !aircraft.Exists()) return;
+            aircraft.IsEngineRunning = true;
+            try { Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, aircraft); }
+            catch (Exception ex) { Logger.Error("Spinning up an aircraft created in the air", ex); }
+            // Flying, not hanging: a little airspeed is what an approach looks like and it
+            // keeps the aircraft behaving as airborne the moment the player takes it.
+            if (forwardSpeed > 0f) aircraft.ForwardSpeed = forwardSpeed;
+            Logger.Info("Aircraft created airborne at " + aircraft.Position + "; rotors at speed.");
+        }
+
         private int _next;
         private bool _ordered;
 
