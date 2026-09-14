@@ -265,3 +265,14 @@ The next-steps request now adds M41–M43, bringing the current runtime to 49 jo
 ## Campaign hub apps and Foundry board
 
 `CampaignHub` supplies the second phone app page and the Foundry planning table. See `docs/CAMPAIGN-HUB.md`. Garage actions delegate to the existing GarageService; paid requests/cancellations retain a quote token and revalidate it after mission update. Never grant a vehicle from a UI record alone or replace mission-owned companion tasks with a free-roam order. The journal reads runtime context cards and completed synopses; planning checks recorded flags plus evidence/cargo and labels active attempts provisional. The existing Foundry table/menu opens `DevMenu.CampaignPlan`; it is not a new interior model. `CampaignState.PhoneHistory` stores up to 60 alerts with read flags. Report actual successful transactions only, never previews or duplicate confirmations. Eight additional dispatches are gated by their source jobs. No placements or mission scripts changed in this package.
+
+
+## Visual atmosphere comparison pass
+
+See docs/VISUAL-ATMOSPHERE-PASS.md. TimecycleGrade acquires only an empty script
+grade slot, checks the resulting index, fades through neutral between names and
+yields to observed foreign indices/transitions. Never clear an unowned grade or
+claim index acceptance establishes visual quality. World menu grading A/B is
+session-only; it does not change weather/time/water/LOD, maps, config or saves.
+Preserve the default ungraded dusk. Higher-priority suspension is immediate, not
+a delayed fade. No-getter graphics settings still have compatibility limitations.
