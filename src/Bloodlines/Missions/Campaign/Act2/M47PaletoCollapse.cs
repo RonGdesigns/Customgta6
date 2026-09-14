@@ -55,6 +55,8 @@ namespace Bloodlines.Missions.Campaign
             // Guess is being asked to put it down on.
             if (_chopper == null || !_chopper.Exists()) _chopper = StageHelicopter();
             if (!SpawnBoat()) return false;
+            Paleto.Review(Ctx, PlacementContract.Ped("M47.Jump"), PlacementContract.Interaction("M47.Trigger"),
+                PlacementContract.Aircraft("M47.Landing", new Model(M45PaletoBreach.HelicopterModel), 30f));
             world?.Bind("boat", _boat);
             RequireAsset(_boat, "The pickup boat was lost. Nobody comes off the structure without it.");
             return true;

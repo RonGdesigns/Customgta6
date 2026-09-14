@@ -29,6 +29,9 @@ namespace Bloodlines.Missions
         /// <summary>The same slot, typed, for the heist scripts that name their own world.</summary>
         public PortHeistWorld PortHeist { get => Operation as PortHeistWorld; set => Operation = value; }
 
+        /// <summary>Structured QA facts for placement/startup/runtime inspection. Never saved.</summary>
+        public MissionDoctor Doctor { get; } = new MissionDoctor();
+
         /// <summary>Chapter-to-chapter state for continuous operations (Port Heist first).</summary>
         public HandoffLedger Handoffs { get; } = new HandoffLedger();
         /// <summary>The crew's own Granger; null in hosts without one (missions then spawn a stock Granger).</summary>

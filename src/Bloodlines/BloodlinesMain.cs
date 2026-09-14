@@ -155,6 +155,7 @@ namespace Bloodlines
             _vans.Purchased = (name, cost) => _hub.Log("Crew fleet", "Vehicle purchased", name + " - $" + cost.ToString("N0") + ".");
             _shops.Purchased = (shop, cost) => _hub.Log(shop, "Purchase receipt", "$" + cost.ToString("N0") + " paid. Crew balance: $" + _state.CashOnHand.ToString("N0") + ".");
             _menu.CampaignPlan = _hub.Planning;
+            _menu.Doctor = () => context.Doctor;
             _homes.OpenPlanningBoard = _menu.OpenCampaignPlan;
 
             Interval = 0;

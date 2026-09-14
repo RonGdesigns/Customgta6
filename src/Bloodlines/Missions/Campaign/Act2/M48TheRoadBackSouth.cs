@@ -58,6 +58,8 @@ namespace Bloodlines.Missions.Campaign
             if (!SpawnTechnical()) return false;
             world?.Bind("technical", _technical);
             RequireAsset(_technical, "The technical was destroyed. There is no way south without it.");
+            Paleto.Review(Ctx, PlacementContract.Vehicle("M48.Technical", new Model(TechnicalModel), 20f, null),
+                PlacementContract.Vehicle("M48.Cordon", new Model(BlockerModel)));
             SpawnCordon();
             return true;
         }

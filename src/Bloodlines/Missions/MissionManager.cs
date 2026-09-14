@@ -144,6 +144,8 @@ namespace Bloodlines.Missions
             _context.Checkpoints.Clear();
             _context.Dialogue.Clear();
             Game.Player.WantedLevel = 0; // Each fresh mission owns its scripted police response.
+            // Diagnostics for this attempt only. Never progress, coordinates or a save.
+            _context.Doctor.BeginMission(definition.Id, definition.Title);
 
             definition.Info.ParseClock(out int hour, out int minute);
             if (hour >= 0) GameUtils.SetClock(hour, minute);
