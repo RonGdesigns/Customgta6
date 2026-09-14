@@ -112,6 +112,7 @@ namespace Bloodlines
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
                 _state, _dialogue, _data, _survey, _death, _homes, _dispatches);
+            _menu.Visuals = _visuals;
             _shops = new ShopService(_crew, _state, _weapons, _memory);
             _shops.Vans = _vans;
             _shops.Allowed = () => !_missions.IsRunning && !_cutscenes.IsActive && !_death.IsHandling && !_survey.IsActive && !_homes.Apartment.Inside && !_homes.Apartment.Busy;
@@ -234,6 +235,8 @@ namespace Bloodlines
             Step("mission presentation", () => _presentation.Update(
                 _missions.IsRunning && _missions.CurrentStage >= 0,
                 _death.IsHandling || _homes.Apartment.Busy || _cutscenes.IsActive || _prologue.IsActive || _menu.IsOpen || CampaignPhone.BlocksGameplayInput || _characterWheel.IsOpen));
+            if (_death.IsHandling || _homes.Apartment.Busy || _cutscenes.IsActive || _abilities.IsActive)
+                Step("yield visual grade", _visuals.SuspendGrading);
             if (_death.IsHandling) { _phone.Close(); _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             if (_homes.Apartment.Busy) { _phone.Close(); Step("apartment loading", _homes.UpdateTransition); return; }
             if (_cutscenes.IsActive)
@@ -268,7 +271,7 @@ namespace Bloodlines
             Step("aircraft smoke", () => _garage.UpdateSmoke(!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
             Step("crew van", () => _vans.Update(_crew, !_homes.Apartment.Inside && !_homes.Apartment.Busy && !_missions.IsRunning && !_prologue.IsActive && !_cutscenes.IsActive && !_survey.IsActive));
             Step("world speed", () => _worldTuning.Update(_crew));
-            Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside, _missions.IsRunning || _prologue.IsActive));
+            Step("visual atmosphere", () => _visuals.Update(_cutscenes.IsActive || _homes.Apartment.Inside || _abilities.IsActive, _missions.IsRunning || _prologue.IsActive));
             Step("tactical response", () => _tactics.Update(_crew));
             Step("shops", () => _shops.Update(!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
             Step("garages", () => _garages.Update(!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && !_characterWheel.IsOpen && !_missions.IsRunning && !_survey.IsActive && !_prologue.IsActive));
@@ -282,7 +285,7 @@ namespace Bloodlines
             Step("prologue", _prologue.Update);
             Step("missions", _missions.Update);
             ObjectiveMarkers.EndFrame();
-            if (_cutscenes.IsActive) { _phone.Close(); _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_cutscenes.IsActive) { Step("yield new scene grade", _visuals.SuspendGrading); _phone.Close(); _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             Step("campaign hub", () => _hub.Update(_crew.IsDeployed && !_missions.IsRunning && !_prologue.IsActive &&
                 !_menu.IsOpen && !_phone.IsOpen && !_survey.IsActive && !_dialogue.HasPending));
             Step("dialogue", _dialogue.Update);

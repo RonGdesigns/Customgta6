@@ -12,9 +12,10 @@ namespace Bloodlines.Core
     /// player and their car, and a deeper ocean swell outside missions. Every
     /// register it touches is put back by <see cref="Reset"/>, which the host runs
     /// on abort, on stand-down and on script reload, because the engine keeps this
-    /// state across a reload and nothing else would ever clear it.
+    /// state across a reload. Registers without getters return to documented
+    /// defaults, not to an unknowable third-party value; disable overlapping features.
     ///
-    /// Costs, stated honestly: the timecycle and blur settings are free. The
+    /// Measure frame times for all options. The
     /// cascade scale, headlight shadows and the level-of-detail range are real
     /// GPU and streaming work; they are the keys to turn off first when the game
     /// stutters at speed. Grading is released during scenes and inside the
@@ -30,20 +31,33 @@ namespace Bloodlines.Core
         private Ped _lodPed;
         private Vehicle _lodVehicle, _shadowVehicle;
         private float _entityLodScale;
-        private string _activeModifier;
-        private float _activeStrength;
-        private int _lastClockCheck;
+        private readonly TimecycleGrade _grade;
+        private bool _comparisonOff;
         private bool _shadowsConfigured, _lodConfigured, _oceanApplied;
 
-        public string ActiveModifier => _activeModifier;
-        public float ActiveStrength => _activeStrength;
+        public string ActiveModifier => _grade.Name;
+        public float ActiveStrength => _grade.Strength;
         public bool OceanApplied => _oceanApplied;
         public bool LodConfigured => _lodConfigured;
 
         public VisualAtmosphere(ModConfig config)
         {
             _config = config ?? new ModConfig();
+            _grade = new TimecycleGrade(new NativeTimecyclePort(), Logger.Info);
         }
+
+        public bool GradingComparisonOff => _comparisonOff;
+        public string GradingStatus => _comparisonOff ? "baseline grading / " + _grade.Status : _grade.Status;
+
+        /// <summary>Session-only A/B. Does not alter time, weather, LOD, forests, config or saves.</summary>
+        public void ToggleGradingComparison()
+        {
+            _comparisonOff = !_comparisonOff;
+            Logger.Info("Visuals: grading comparison " + (_comparisonOff ? "baseline (only our grade fades out)" : "configured (fade back in)") + ". Other visual controls remain unchanged.");
+        }
+
+        /// <summary>Release our grade before host paths that bypass the ordinary visuals update.</summary>
+        public void SuspendGrading() { _grade.Release(); }
 
         /// <param name="suppressGrading">A scene or the apartment: release the grade, keep the rest.</param>
         /// <param name="missionRunning">Any mission or the prologue: no ocean swell, so boat objectives keep their authored water.</param>
@@ -51,7 +65,7 @@ namespace Bloodlines.Core
         {
             if (!_config.VisualsEnabled)
             {
-                if (_activeModifier != null || _shadowsConfigured || _lodConfigured || _oceanApplied) Reset();
+                if (ActiveModifier != null || _shadowsConfigured || _lodConfigured || _oceanApplied || _shadowVehicle != null || _reflecting.Count > 0) Reset();
                 return;
             }
 
@@ -89,26 +103,8 @@ namespace Bloodlines.Core
                 _oceanApplied = false;
             }
 
-            if (suppressGrading) { ClearGrade(); return; }
-
-            int now = Game.GameTime;
-            if (_activeModifier != null && now - _lastClockCheck < 250) return;
-            _lastClockCheck = now;
-
             string target = ModifierFor(World.CurrentTimeOfDay.TotalHours, out float strength);
-            if (string.IsNullOrEmpty(target)) { ClearGrade(); return; }
-            if (_activeModifier != target)
-            {
-                Function.Call(Hash.SET_TIMECYCLE_MODIFIER, target);
-                _activeModifier = target;
-                _activeStrength = -1f;
-                Logger.Info("Visuals: timecycle modifier '" + target + "' at " + strength.ToString("0.00") + " (a name the game does not know applies nothing; see docs/VISUALS.md).");
-            }
-            if (Math.Abs(_activeStrength - strength) > 0.01f)
-            {
-                Function.Call(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH, strength);
-                _activeStrength = strength;
-            }
+            _grade.Update(_comparisonOff ? null : target, strength, Game.GameTime, suppressGrading, Game.IsPaused);
         }
 
         /// <summary>
@@ -124,7 +120,15 @@ namespace Bloodlines.Core
                 strength = contrast;
                 if (!_config.DeSmogEnabled) return null;
                 if (!string.IsNullOrWhiteSpace(_config.DayModifier)) return _config.DayModifier;
-                return _config.VisualPreset == "SunnyCoast" ? "New_Chinatown_sky" : _config.VisualPreset == "ModernCrisp" ? "color_neutral" : "cinema_default";
+                // Read out of the installed archives on September 13: the game defines
+                // 1,119 timecycle modifiers and none of them is cinema_default,
+                // color_neutral or New_Chinatown_sky. Those three never applied, so
+                // the default daylight on screen has always been the game's own and
+                // stays that way. The two named presets now ask for modifiers that
+                // exist; DayModifier in the ini still overrides any of it.
+                if (_config.VisualPreset == "SunnyCoast") return "cinema_001";
+                if (_config.VisualPreset == "ModernCrisp") return "NeutralColorCode";
+                return null;
             }
             if (hours >= 17.0 && hours < 20.5)
             {
@@ -139,7 +143,8 @@ namespace Bloodlines.Core
                 return string.IsNullOrWhiteSpace(_config.NightModifier) ? "cinema" : _config.NightModifier;
             }
             strength = contrast * 0.80f;
-            return string.IsNullOrWhiteSpace(_config.DawnModifier) ? "cinema_default" : _config.DawnModifier;
+            // Same missing name as the day grade had: dawn was never graded either.
+            return string.IsNullOrWhiteSpace(_config.DawnModifier) ? null : _config.DawnModifier;
         }
 
         // These natives are per entity, not global switches. Own at most the
@@ -178,14 +183,6 @@ namespace Bloodlines.Core
             }
         }
 
-        private void ClearGrade()
-        {
-            if (_activeModifier == null) return;
-            Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
-            _activeModifier = null;
-            _activeStrength = 0f;
-        }
-
         /// <summary>The reflection-distance flag is per entity: the player and whatever they are driving, once each.</summary>
         private void UpdateWaterReflections()
         {
@@ -208,18 +205,16 @@ namespace Bloodlines.Core
 
         public void Reset()
         {
-            Function.Call(Hash.CLEAR_TIMECYCLE_MODIFIER);
-            Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, 1.0f);
+            _grade.Release();
+            if (_shadowsConfigured) Function.Call(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE, 1.0f);
             if (_shadowVehicle != null && _shadowVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS, _shadowVehicle, 0);
             if (_lodVehicle != null && _lodVehicle.Exists()) Function.Call(Hash.SET_VEHICLE_LOD_MULTIPLIER, _lodVehicle, 1f);
             if (_lodPed != null && _lodPed.Exists()) Function.Call(Hash.SET_PED_LOD_MULTIPLIER, _lodPed, 1f);
             _shadowVehicle = _lodVehicle = null; _lodPed = null; _entityLodScale = 0f;
-            Function.Call(Hash.RESET_DEEP_OCEAN_SCALER);
+            if (_oceanApplied) Function.Call(Hash.RESET_DEEP_OCEAN_SCALER);
             foreach (var entity in _reflecting.Values)
                 if (entity != null && entity.Exists()) Function.Call(Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION, entity, false);
             _reflecting.Clear();
-            _activeModifier = null;
-            _activeStrength = 0f;
             _shadowsConfigured = false;
             _lodConfigured = false;
             _oceanApplied = false;

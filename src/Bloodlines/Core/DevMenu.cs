@@ -70,6 +70,7 @@ namespace Bloodlines.Core
         /// <summary>The marker a job starts from; set by the host from the mission markers.</summary>
         public Func<MissionDefinition, MissionLocation> StartPoint { get; set; }
         public Action ResetCampaign { get; set; }
+        public VisualAtmosphere Visuals { get; set; }
 
         public void Close()
         {
@@ -575,6 +576,12 @@ namespace Bloodlines.Core
         private Page BuildWorld()
         {
             var page = new Page("World");
+            if (Visuals != null)
+            {
+                page.Add("Grading comparison", () => Visuals.GradingComparisonOff ? "baseline (grade only)" : "configured",
+                    () => Visuals.ToggleGradingComparison());
+                page.Add("Grading status", () => Visuals.GradingStatus, null);
+            }
 
             page.Add("Military response (sixth tier)", () => "free roam test", () => { if (!_missions.IsRunning && _crew.IsDeployed) _crew.CompanionAI.Military.Trigger(_crew.ActiveSlot); });
             page.Add("Wanted level", () => (_crew.IsDeployed ? _crew.CompanionAI.Military.Level(_crew.ActiveSlot) : Game.Player.WantedLevel).ToString(), null,

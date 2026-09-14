@@ -20,13 +20,20 @@ this project's 2x speeds. If Guess's chase car in M04 crabs after a front hit, l
 
 ## Visual atmosphere (`[Visuals]`)
 
+The current grading controller is described in `VISUAL-ATMOSPHERE-PASS.md`.
+It checks the script timecycle index, fades through neutral between names, and
+releases only observed ownership. The World menu exposes a session-only grading
+comparison. This does not remove installed scenery or the other visual controls.
+Preset names below are historical candidates, NOT visually accepted profiles.
+
+
 | Key | What it does | Cost |
 | --- | --- | --- |
-| `DeSmog`, `ContrastStrength`, `Preset` | A timecycle modifier per time band: day (10:00 to 17:00), dusk (17:00 to 20:30), night (20:30 to 05:30), dawn. Released during scenes and inside the apartment. | None. |
-| `DayModifier`, `DawnModifier`, `DuskModifier`, `NightModifier` | Override the modifier name for a band. Empty uses the preset's default. | None. |
-| `RemoveBlur` | Camera motion blur and distance blur off, every frame. | None. |
+| `DeSmog`, `ContrastStrength`, `Preset` | A timecycle modifier per time band: day (10:00 to 17:00), dusk (17:00 to 20:30), night (20:30 to 05:30), dawn. Released during scenes and inside the apartment. | Measure on the target installation. |
+| `DayModifier`, `DawnModifier`, `DuskModifier`, `NightModifier` | Override the modifier name for a band. Empty uses the preset's default. | Measure on the target installation. |
+| `RemoveBlur` | Camera motion blur and distance blur off, every frame. | Measure on the target installation. |
 | `WaterReflections` | Maximum water reflection distance on the player and the car they are in. | Small. |
-| `OceanSwell` | Deeper ocean swell in free roam. Off during any mission and the prologue, so boat objectives keep their authored water. | None. |
+| `OceanSwell` | Deeper ocean swell in free roam. Off during any mission and the prologue, so boat objectives keep their authored water. | Measure on the target installation. |
 | `ShadowDistanceScale` | Longer shadow cascades. | GPU. |
 | `HeadlightShadows` | Headlights cast dynamic shadows at night. | GPU. |
 | `LODBoost`, `LODScale` | Longer level-of-detail range: a per-frame scene override plus vehicle and ped multipliers, capped at 2.0. | Streaming. At 2x speeds this is the first key to lower if the game stutters or collision loads late at a mission start. |
@@ -39,9 +46,14 @@ removed rather than left doing the wrong thing.
 ## Verifying a timecycle modifier name
 
 A modifier name the game does not know applies nothing and says nothing. The four
-defaults in this build (`cinema_default`, `New_Chinatown_sky`, `color_neutral`,
-`rply_saturation`, `cinema`) came from a research note, not from the game data, and
-have not been checked. Before judging the grading:
+defaults came from a research note rather than from the game data. They were read
+out of Ron's installed archives on September 13, 2026: the game defines 1,119
+timecycle modifiers, and `cinema` is one of them while `cinema_default`,
+`color_neutral` and `New_Chinatown_sky` are not. Those three applied nothing, so the
+daytime and dawn grades never ran; the shipped build now forces neither, which is
+what has actually been on screen. The two named presets use `cinema_001` and
+`NeutralColorCode`, which do exist. Runtime index acceptance
+is now checked, but that is not an artistic or collision test. Before judging the grading:
 
 1. In OpenIV, open `update\update.rpf\common\data\timecycle\` and the
    `timecycle_mods_*.xml` files (also `common.rpf\data\timecycle\` on older data).
