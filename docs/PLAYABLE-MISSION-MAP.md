@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-49 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+54 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -752,6 +752,83 @@ Prerequisite: M42. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M43.Board, M43.BoardWork, M43.Boat, M43.BoatReady, M43.Helicopter, M43.Land, M43.ShoreCar, M43.Sub, M43.SubReady.
+
+## M44 — PALETO DEEP-SEA: SUB-SURFACE
+
+Prerequisite: M43. Story gate: SM04, SM05, SM06 must be complete first (QA may bypass). Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Take the Kraken under the hull** — TravelObjective: Gohan: dive the Kraken to the marker under the hull |
+| 2 | Gohan | **Clamp the seismic charges** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Gohan | **Cut the sensor line** — MultiHoldObjective: Gohan: hold at the sensor junction until the line is cut |
+| 4 | Gohan | **Surface clear of the hull** — SurfaceSubObjective: Gohan: surface the Kraken at the support marker. |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M44.Clamp1, M44.Clamp2, M44.Clamp3, M44.Sensor, M44.Start, M44.Sub, M44.Surface.
+
+## M45 — PALETO DEEP-SEA: HELIPAD BREACH
+
+Prerequisite: M44. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Bring the helicopter over the rail** — TravelObjective: Guess: fly the Annihilator to the hold marker above the vessel |
+| 2 | Ice | **Put Ice on the upper deck** — ReachZoneObjective: Ice: get out onto the upper deck |
+| 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail |
+| 4 | Gohan | **Bring the Kraken to the stern** — TravelObjective: Gohan: take the Kraken alongside the stern platform |
+| 5 | Gohan | **Get Gohan aboard** — ReachZoneObjective: Gohan: climb the stern platform onto the vessel |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M44.Surface, M45.Approach, M45.Board, M45.Helipad, M45.Hold, M45.Stern.
+
+## M46 — PALETO DEEP-SEA: VAULT CRACK
+
+Prerequisite: M45. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Reach the command deck** — ReachZoneObjective: Gohan: take the stairs to the command deck |
+| 2 | Gohan | **Use Bradley's card on the vault** — MissionInteraction: Gohan: hold Bradley's card against the vault reader |
+| 3 | Gohan | **Take the ledger and the bonds** — MultiHoldObjective: Ice and Gohan: clear the vault shelves |
+| 4 | Gohan | **Arm the charges** — MissionInteraction: Gohan: arm the seismic charges from the command console |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M46.Bonds, M46.Bridge, M46.Console, M46.Ledger, M46.Stairs, M46.Vault.
+
+## M47 — PALETO DEEP-SEA: COLLAPSE
+
+Prerequisite: M46. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Put the helicopter down and take the boat** — DeliverVehicleObjective: Guess: land the Annihilator on the cove strip<br>EnterVehicleObjective: Guess: take the Tropic out to the pickup marker |
+| 2 | Gohan | **Trigger the charges** — MissionInteraction: Gohan: trigger the charges from the rail |
+| 3 | Gohan | **Go off the side** — ConditionObjective: Ice and Gohan: get to the edge and go into the water |
+| 4 | Guess | **Pick them up** — ConditionObjective: Guess: bring the boat onto both swimmers until all three are aboard |
+| 5 | Guess | **Clear the demolition area** — TravelObjective: Guess: take the boat clear of the burning vessel |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M44.Clamp1, M44.Clamp2, M44.Clamp3, M45.Hold, M47.BoatStart, M47.Clear, M47.Jump, M47.Landing, M47.Trigger.
+
+## M48 — THE ROAD BACK SOUTH
+
+Prerequisite: M47. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Bring the boat ashore** — TravelObjective: Guess: run the boat onto the cove beach |
+| 2 | Guess | **Move the crew and the evidence into the technical** — EnterVehicleObjective: All three: get into the technical with the ledger<br>ConditionObjective: Nobody stays at the beach |
+| 3 | Guess | **Break the outer cordon** — KillTargetsObjective: Clear the roadblock at the cove exit |
+| 4 | Guess | **Run south** — TravelObjective: Drive south past the county line |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M47.Clear, M48.Cordon, M48.Shore, M48.South, M48.Technical.
 
 ## SM01 — LEAD & KEVLAR
 

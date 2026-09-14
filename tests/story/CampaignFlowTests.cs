@@ -26,7 +26,7 @@ public static partial class StoryTests
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
    .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==43,"All 43 later and solo production mission classes are covered by the flow harnesses");
+  Check(types.Length==48,"All 48 later and solo production mission classes are covered by the flow harnesses");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
@@ -71,6 +71,18 @@ public static partial class StoryTests
      if(name=="ConvoyOverwatchObjective")
      {var v=Field<Func<Vehicle>>(objective,"_aircraft")();var escort=Field<Func<Vehicle>>(objective,"_escort")();PositionActor(c,objective,escort.Position+new Vector3(0,120,50),v);v.HeightAboveGround=50;v.IsInAir=true;}
      if(name=="ConditionObjective"&&m.Id=="M22")PositionActor(c,objective,Field<Vector3>(m,"_regroup"));
+     if(name=="ConditionObjective"&&m.Id=="M47")
+     {
+      var collapse=(Bloodlines.Missions.Campaign.M47PaletoCollapse)m;
+      if(!collapse.Jumped)
+       foreach(var slot in new[]{CrewSlot.Ice,CrewSlot.Gohan})
+       {var swimmer=crew.PedFor(slot);swimmer.Task.LeaveVehicle();swimmer.Position=new Vector3(collapse.Boat.Position.X,collapse.Boat.Position.Y,0f);}
+      else
+       foreach(var hero in Protagonist.All)
+        crew.PedFor(hero.Slot).SetIntoVehicle(collapse.Boat,hero.Slot==CrewSlot.Guess?VehicleSeat.Driver:hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);
+     }
+     // A travel leg is finished by actually being there, in the named vehicle, stopped.
+     if(name=="TravelObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
      else if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());
      else if(name=="MissionInteraction") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
      // SurfaceSubObjective is a real 3D/driver check. Move the simulated craft

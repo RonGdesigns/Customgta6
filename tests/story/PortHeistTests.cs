@@ -43,18 +43,20 @@ public static partial class StoryTests
   Check(World.Vehicles.Count(v=>v.Model.Name=="submersible2")==subs&&crew.PedFor(CrewSlot.Gohan).CurrentVehicle==floating,"Gohan is put back into the same Kraken, not a second one");m20.Abort();
   World.NearbyVehicles=new Vehicle[0];
 
-  // ---- Other campaign chains keep their existing behavior; the Port Heist is a parent operation.
-  Reset();crew=Roster();c=Context(crew);var state=CampaignState.Load(Path.Combine(root,"heist-chain.json"));state.Completed.Add("SM04");state.Completed.Add("SM05");state.Completed.Add("SM06");var cat=new MissionCatalog();
-  var m44def=new MissionDefinition{Info=new MissionInfo{Id="M44",Title="Breach"},Factory=()=>new ChapterProbe("M44")};
-  var m45def=new MissionDefinition{Info=new MissionInfo{Id="M45",Title="Sky Hook",Prerequisite="M44"},Factory=()=>new ChapterProbe("M45")};
-  var m46def=new MissionDefinition{Info=new MissionInfo{Id="M46",Title="Open Water",Prerequisite="M45"},Factory=()=>new ChapterProbe("M46")};
+  // ---- Other campaign chains keep their existing behavior; an operation is a parent.
+  // These stand-ins have to be ids no operation owns: M44-M48 are Paleto now.
+  Reset();crew=Roster();c=Context(crew);var state=CampaignState.Load(Path.Combine(root,"heist-chain.json"));state.Completed.Add("SM07");state.Completed.Add("SM08");var cat=new MissionCatalog();
+  var m44def=new MissionDefinition{Info=new MissionInfo{Id="M63",Title="Chain one"},Factory=()=>new ChapterProbe("M63")};
+  var m45def=new MissionDefinition{Info=new MissionInfo{Id="M64",Title="Chain two",Prerequisite="M63"},Factory=()=>new ChapterProbe("M64")};
+  var m46def=new MissionDefinition{Info=new MissionInfo{Id="M65",Title="Chain three",Prerequisite="M64"},Factory=()=>new ChapterProbe("M65")};
   cat.All.Add(m44def);cat.All.Add(m45def);cat.All.Add(m46def);
   var manager=new MissionManager(c,state,cat);
   Check(!MissionManager.Continuations.ContainsKey("M19")&&!MissionManager.Continuations.ContainsKey("M20")&&!MissionManager.Continuations.ContainsKey("M21")&&!MissionManager.Continuations.ContainsKey("M22"),"The Port Heist is not implemented as four automatically restarted missions");
+  Check(MissionOperations.Paleto.PhaseIds.All(id=>!MissionManager.Continuations.ContainsKey(id)),"Paleto is not implemented as five automatically restarted missions either");
   Check(manager.Start(m44def)&&manager.IsRunning,"Chapter one starts");
   c.Cutscenes.Skip();manager.Update();Check(manager.CurrentStage==0,"Chapter one's briefing hands over to its gameplay");
   manager.ForcePass();manager.Update();
-  Check(state.IsComplete("M44")&&manager.PendingContinuation==m45def&&GameUtils.Message.Contains("operation continues")&&manager.IsRunning,"Passing chapter one commits it and queues chapter two instead of ending the operation");
+  Check(state.IsComplete("M63")&&manager.PendingContinuation==m45def&&GameUtils.Message.Contains("operation continues")&&manager.IsRunning,"Passing chapter one commits it and queues chapter two instead of ending the operation");
   c.Cutscenes.Stop();manager.Update();
   Check(manager.PendingContinuation==null&&manager.IsRunning&&manager.LastAttempted==m45def,"Chapter two starts on its own once the aftermath is over");
   c.Cutscenes.Skip();manager.Update();Check(manager.CurrentStage==0,"Chapter two's briefing hands over to its gameplay");

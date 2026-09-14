@@ -88,14 +88,23 @@ namespace Bloodlines.Missions
         public bool PrologueComplete { get; set; }
         private int _saveBatch;
         // There is deliberately no heist resume field: only final success is saved.
-        public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo)
+        public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo) =>
+            CompleteOperation(MissionOperations.PortHeist, catalog, cargo);
+
+        /// <summary>
+        /// The single result of one continuous operation: every chapter recorded
+        /// together, the open attempt closed once, and the cargo the run actually
+        /// moved committed only on a first pass. A replay records nothing new.
+        /// </summary>
+        public void CompleteOperation(OperationSpec operation, MissionCatalog catalog, IDictionary<string, string> cargo)
         {
-            bool firstPass = !IsComplete(MissionOperations.PortHeist.FinalId);
-            if (AttemptActive && PortHeistOperation.Contains(_attemptId)) EndAttempt(firstPass);
+            if (operation == null) throw new ArgumentNullException(nameof(operation));
+            bool firstPass = !IsComplete(operation.FinalId);
+            if (AttemptActive && operation.Contains(_attemptId)) EndAttempt(firstPass);
             _saveBatch++;
             try
             {
-                foreach (var phase in PortHeistOperation.PhaseIds) MarkComplete(phase, catalog);
+                foreach (var phase in operation.PhaseIds) MarkComplete(phase, catalog);
                 if (firstPass && cargo != null)
                     foreach (var pair in cargo) { if (string.IsNullOrEmpty(pair.Value)) Cargo.Remove(pair.Key); else Cargo[pair.Key] = pair.Value; }
             }
