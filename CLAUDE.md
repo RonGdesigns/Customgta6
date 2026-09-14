@@ -358,3 +358,38 @@ for a reported position.
 `Suppressed` makes suspicion decay instead of climb and stops radio propagation,
 while taking fire still lands. That is the hook Gohan's Blackout uses, and it is why
 the framework had to exist before that ability could be built.
+
+## September 14: the ability rework
+
+Ron reassigned two abilities. **Ice** holds Thermal Pulse, the see-through sight:
+he is the shooter and does the long-range work, so it is a marksman's instrument.
+It replaced "Overwatch Focus", which described itself as a steadier gun and was in
+fact a flat damage multiplier with slow motion, steadying nothing. **Gohan** holds
+**Blackout** in exchange, and Guess keeps Slipstream Reflex.
+
+Blackout's rule, which Ron specified: heat earned during a blackout is **deferred,
+not canceled**. Enter with no wanted level and the dark conceals him; what he does
+in it is held rather than charged. Leave nobody able to report it and, after
+`ConcealmentGraceMs` unseen, the held heat is dropped. Be recognized in that window
+and it lands in full. Entering already wanted means the lights still go out and
+nothing is concealed. `GuardAwareness.SuppressAll` is how it reaches mission
+hostiles it has no reference to, and a bullet still gets through.
+
+An ability must be usable in free roam, not only inside a mission. Ron rejected
+three mission-bound proposals for that reason; check free-roam usefulness before
+proposing one.
+
+`Core/WorldLights.cs` owns the artificial-lights switch by holder name, because the
+engine has one switch and no getter: M04, M16 and Blackout can all want darkness at
+once, and the lights now return only when the last holder lets go. Never call
+`SET_ARTIFICIAL_LIGHTS_STATE` directly.
+
+Two authored bible synopses, M04 and the solo SM02, still say Gohan uses Thermal
+Pulse. The bible extraction is never edited to follow gameplay, so the adaptation is
+recorded in `data/mission_gameplay.tsv`: in M04 his Blackout is the same breaker
+beat from his own side, and in SM02 it kills the biometrics and holds the guards'
+awareness down while he taps the node.
+
+The mod-shop performance panel is translucent and sized to its content. It used to
+be alpha 235 over a fixed 510 pixels, sitting exactly where the vehicle preview is,
+so the part being fitted could not be seen.

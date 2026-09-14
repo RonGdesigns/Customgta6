@@ -46,6 +46,8 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _tankDrivers = new List<Ped>();
         private bool _challenged, _crewMoved, _landed;
 
+        /// <summary>This mission's claim on the city lights; see Core/WorldLights.</summary>
+        private const string LightOwner = "M16.Blackout";
         public override string Id => "M16";
         public override string Title => "The Heavy Lift";
         protected override MissionEndpoint Endpoint => MissionEndpoint.SecuredDelivery;
@@ -88,7 +90,7 @@ namespace Bloodlines.Missions.Campaign
             Station(CrewSlot.Guess, _granger, VehicleSeat.RightFront);
             Station(CrewSlot.Gohan, _granger, VehicleSeat.RightRear);
             _blackout=true;
-            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,true);
+            WorldLights.Darken(LightOwner);
             Radio("GUESS","Gohan, kill the base grid before we reach that gate. We need time to take the hangar.","M16_BLACKOUT_GUESS");
             Radio("GOHAN","Grid down. Anti-air targeting is blind. Their tank crews have to mobilize manually; keep moving once the hangar is clear.","M16_BLACKOUT_GOHAN");
             PlayApproach();
@@ -303,7 +305,7 @@ namespace Bloodlines.Missions.Campaign
         {
             if(_blackout)
             {
-                Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,true);
+                WorldLights.Darken(LightOwner);
                 Function.Call(Hash.SET_MAX_WANTED_LEVEL,0);
                 if(Game.Player.WantedLevel>0)Game.Player.WantedLevel=0;
                 if(_cargobob!=null&&_cargobob.Exists())Function.Call(Hash.SET_VEHICLE_CAN_BE_TARGETTED,_cargobob,false);
@@ -390,7 +392,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _blackout=false;
-            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE,false);
+            WorldLights.Restore(LightOwner);
             if(_cargobob!=null&&_cargobob.Exists())Function.Call(Hash.SET_VEHICLE_CAN_BE_TARGETTED,_cargobob,true);
             _tanks.Clear();_tankDrivers.Clear();
             // Never leave the player's wanted ceiling where a mission put it.

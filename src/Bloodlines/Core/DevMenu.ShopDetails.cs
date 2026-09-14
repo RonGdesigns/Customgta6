@@ -32,11 +32,25 @@ namespace Bloodlines.Core
             }
             y+=19f;
         }
+        /// <summary>
+        /// How far down the panel content reached last frame, so the backdrop is the
+        /// size of what is in it. One frame behind, which nobody can see, and it means
+        /// the panel stops covering the car the moment the content is short.
+        /// </summary>
+        private float _shopPanelBottom;
+        /// <summary>
+        /// Readable over a car rather than instead of it. This panel used to be alpha
+        /// 235 over a fixed 510 pixels, which is effectively opaque and sat exactly
+        /// where the vehicle preview is: Ron could not see the part he was fitting.
+        /// </summary>
+        private const int ShopPanelAlpha = 148;
+
         private void DrawShopDetails(Page page)
         {
             Function.Call(Hash.THEFEED_HIDE_THIS_FRAME);
             const float x=490f;float y=60f;
-            new ContainerElement(new PointF(x,y),new SizeF(365f,510f),Color.FromArgb(235,18,20,24)).Draw();
+            float height=Math.Min(510f,Math.Max(120f,_shopPanelBottom-y+12f));
+            new ContainerElement(new PointF(x,y),new SizeF(365f,height),Color.FromArgb(ShopPanelAlpha,18,20,24)).Draw();
             ShopText("PERFORMANCE / PURCHASES",x+10,y+10,.33f,Color.Orange);y+=48f;
             if(ShopService.IsGarage(_shopping))
             {
@@ -68,9 +82,10 @@ namespace Bloodlines.Core
             ShopText("RECENT RECEIPTS",500,y,.28f,Color.Orange);y+=23f;
             foreach(var message in _shopReceipts)
             {
-                foreach(var line in WrapReceipt(message,52)) {if(y>545f)return;ShopText(line,500,y,.24f,Color.White);y+=18f;}
+                foreach(var line in WrapReceipt(message,52)) {if(y>545f){_shopPanelBottom=y;return;}ShopText(line,500,y,.24f,Color.White);y+=18f;}
                 y+=5f;
             }
+            _shopPanelBottom=y;
         }
         private static IEnumerable<string> WrapReceipt(string message,int width)
         {

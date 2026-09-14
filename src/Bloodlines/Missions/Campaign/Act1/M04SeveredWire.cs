@@ -47,6 +47,8 @@ namespace Bloodlines.Missions.Campaign
         public float CarHackProgress => _carHack.Progress;
         public bool LotDark => _lightsOut;
 
+        /// <summary>This mission's claim on the city lights; see Core/WorldLights.</summary>
+        private const string LightOwner = "M04.Blackout";
         public override string Id => "M04";
         public override string Title => "Severed Wire";
         protected override MissionEndpoint Endpoint => MissionEndpoint.EscapeCheckpoint;
@@ -200,7 +202,7 @@ namespace Bloodlines.Missions.Campaign
             // The lot's lights die with the breaker (Ron, September 12). The engine
             // has one switch for artificial light, so the blackout is lifted again
             // once the chase has left the lot behind, and on any exit.
-            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE, true);
+            WorldLights.Darken(LightOwner);
             _lightsOut = true;
             var iceShooter = Ctx.Crew.PedFor(CrewSlot.Ice);
             if (iceShooter != null && iceShooter.Exists()) Function.Call(Hash.SET_PED_COMBAT_MOVEMENT, iceShooter, 1);
@@ -222,7 +224,7 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!_lightsOut) return;
             _lightsOut = false;
-            Function.Call(Hash.SET_ARTIFICIAL_LIGHTS_STATE, false);
+            WorldLights.Restore(LightOwner);
         }
 
         private bool GohanRidingAlong()

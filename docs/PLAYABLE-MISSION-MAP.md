@@ -81,7 +81,7 @@ Prerequisite: M03. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: Base.CypressFlats, M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.IceWatch, M04.RampGuards.
+Survey references: Base.CypressFlats, M04.Blackout, M04.Breaker, M04.ChaseCar, M04.GarageEntry, M04.IceWatch, M04.RampGuards.
 
 ## M05 — TIDAL LOCK
 
@@ -280,7 +280,7 @@ Prerequisite: M15. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.GrangerSpawn, M16.Helipad, M16.Marine, M16.TankEntry, M16.TerminalDrop.
+Survey references: M16.Blackout, M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.GrangerSpawn, M16.Helipad, M16.Marine, M16.TankEntry, M16.TerminalDrop.
 
 ## M17 — SUB-ZERO PAYLOAD
 

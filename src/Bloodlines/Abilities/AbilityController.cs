@@ -32,8 +32,11 @@ namespace Bloodlines.Abilities
             _crew = crew;
             _abilities = new Dictionary<CrewSlot, Ability>
             {
-                { CrewSlot.Ice, new OverwatchFocus() },
-                { CrewSlot.Gohan, new ThermalPulse() },
+                // Ron moved the thermal sight to Ice on September 14, 2026: he is the
+                // shooter and does the long-range work, so it is his instrument. Gohan
+                // took Blackout in exchange. See both classes for the reasoning.
+                { CrewSlot.Ice, new ThermalPulse() },
+                { CrewSlot.Gohan, new Blackout() },
                 { CrewSlot.Guess, new SlipstreamReflex() }
             };
             _lastTick = Game.GameTime;
