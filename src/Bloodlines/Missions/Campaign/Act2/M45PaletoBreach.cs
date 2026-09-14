@@ -37,6 +37,12 @@ namespace Bloodlines.Missions.Campaign
 
         private readonly List<Ped> _guards = new List<Ped>();
         private readonly AircraftHold _hold = new AircraftHold();
+        /// <summary>
+        /// The upper deck where it really is. Probed once at setup, because a raycast is
+        /// not something to do every frame, and because everything on this chapter hangs
+        /// off it: the marker, the zone, the hover above it and the guards standing on it.
+        /// </summary>
+        private Vector3 _deck;
         private Vehicle _chopper;
         private Vehicle _kraken;
         private bool _landed;
@@ -60,19 +66,19 @@ namespace Bloodlines.Missions.Campaign
         /// not over the circuit marker 50 meters away from it. Derived rather than
         /// keyed, so surveying M45.Helipad moves the hover with it.
         /// </summary>
-        private Vector3 Insertion
-        {
-            get { var pad = At("M45.Helipad"); return new Vector3(pad.X, pad.Y, pad.Z + InsertionHeight); }
-        }
+        private Vector3 Insertion => new Vector3(_deck.X, _deck.Y, _deck.Z + InsertionHeight);
         /// <summary>Ice is on the structure on his own feet rather than in a seat.</summary>
         private bool IceOnDeck
         {
             get
             {
                 var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                // Deliberately a flat distance plus a floor, not a sphere. A sphere on an
+                // authored height is exactly what failed: he was on the ship and the check
+                // was measuring to a point above his head.
                 return ice != null && ice.Exists() && !ice.IsDead && !ice.IsInVehicle() &&
                     ice.Position.Z > PaletoSite.WaterlineDeck &&
-                    ice.Position.DistanceTo2D(At("M45.Helipad")) < 25f;
+                    ice.Position.DistanceTo2D(_deck) < 25f;
             }
         }
 
@@ -85,6 +91,11 @@ namespace Bloodlines.Missions.Campaign
             // Continuing: the sub and the men are where the dive left them.
             if (!Paleto.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Ice, At("M45.Board"), Ctx.Locations.Heading("M45.Board"))) return false;
             ApplyBibleSetting();
+
+            // Before anything is put on the deck, find out where the deck is. The
+            // authored height was above the real surface, which floated the marker and
+            // meant the zone under it never registered however Ron stood on the ship.
+            _deck = PaletoSite.OnDeck(At("M45.Helipad"), Id + " upper deck");
 
             _kraken = world?.Get<Vehicle>("kraken");
             if (Paleto.IsContinuing(Ctx)) _kraken = Track(world.Require<Vehicle>("kraken"));
@@ -140,7 +151,7 @@ namespace Bloodlines.Missions.Campaign
             var model = new Model(GuardModel);
             if (!GameUtils.RequestModel(model)) return;
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
-            var pad = At("M45.Helipad");
+            var pad = _deck;
             for (int i = 0; i < DeckGuards; i++)
             {
                 // Along the deck away from the pad, and at the pad's own height.
@@ -175,7 +186,7 @@ namespace Bloodlines.Missions.Campaign
             // the helicopter is over it. What this stage is actually waiting for is
             // Ice standing on the deck, so that is what it asks.
             yield return new MissionStage("Put Ice on the upper deck",
-                new ConditionObjective("Ice: step off onto the upper deck", () => IceOnDeck))
+                new ConditionObjective("Ice: step off onto the upper deck", () => IceOnDeck) { Marker = () => _deck })
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Clear the upper deck",

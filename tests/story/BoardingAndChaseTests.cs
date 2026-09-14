@@ -198,6 +198,44 @@ public static partial class StoryTests
         Check(SlowMotion.Rate >= SlowMotion.Floor, "Nothing is allowed to slow the game past playable");
         SlowMotion.Reset();
         Check(!SlowMotion.Slowed, "Teardown drops every claim");
+
+        // ------------------------------------------------- the deck where it really is
+        // Ron played M45 and found the objective marker floating above the surface he was
+        // standing on, so the zone under it never registered however he got aboard. Every
+        // vertical number for that vessel came out of the archives, but which level a
+        // standing point belongs to was a judgment, and that one was wrong. The geometry
+        // knows; ask it rather than pick another number.
+        Reset();
+        const float realDeck = 12.4f;
+        World.RaycastHandler = (from, to) => from.X == to.X && from.Y == to.Y && from.Z > realDeck && to.Z < realDeck
+            ? new RaycastResult { DidHit = true, HitPosition = new Vector3(from.X, from.Y, realDeck) }
+            : new RaycastResult();
+        var authored = new Vector3(-1700f, 5325f, 15.5f);
+        var corrected = PaletoSite.OnDeck(authored, "test deck");
+        Check(Math.Abs(corrected.Z - realDeck) < .01f, "An authored deck point is moved onto the deck that is there");
+        Check(Math.Abs(corrected.X - authored.X) < .01f && Math.Abs(corrected.Y - authored.Y) < .01f,
+            "And only its height moves — where to stand on the ship is still Ron's to survey");
+
+        // The probe starts just above the authored point, never at the hull top: a point
+        // under the superstructure would otherwise be corrected onto its roof.
+        Check(PaletoSite.DeckHeadroom < 4f, "It looks down from just above the point, not from over the whole vessel");
+        var roofed = MissionSites.SurfaceHeight(authored, authored.Z + PaletoSite.DeckHeadroom, PaletoSite.WaterlineDeck - 1f);
+        Check(roofed.HasValue && roofed.Value < authored.Z, "What it finds is below the authored point, which is where he was standing");
+
+        // Nothing solid at all — a chapter opened alone in QA with no vessel streamed —
+        // keeps the authored height rather than dropping the mission into the sea.
+        World.RaycastHandler = (from, to) => new RaycastResult();
+        var kept = PaletoSite.OnDeck(authored, "test deck with nothing under it");
+        Check(Math.Abs(kept.Z - authored.Z) < .01f, "With no geometry to ask, the authored height stands");
+        World.RaycastHandler = null;
+
+        // And the chapter hangs everything off the probed deck, not the authored key.
+        Check(m45.Contains("_deck = PaletoSite.OnDeck("), "M45 probes its deck before it puts anything on it");
+        Check(!m45.Contains("ice.Position.DistanceTo2D(At(\"M45.Helipad\"))"),
+            "The step-off check measures to the real deck");
+        Check(m45.Contains("Marker = () => _deck"), "And Ice is shown where to land, on the surface rather than above it");
+        Check(m47.Contains("PaletoSite.OnDeck(At(\"M47.Trigger\")"),
+            "M47's charge rail is measured the same way, since it stands on the same vessel");
     }
 
     /// <summary>A location key's authored height, straight out of the book on disk.</summary>
