@@ -26,6 +26,14 @@ namespace Bloodlines.Missions.Campaign
         public const string HelicopterModel = "annihilator";
         public const string GuardModel = "s_m_y_blackops_01";
         public const int DeckGuards = 4;
+        /// <summary>
+        /// How high above the deck Ice steps off. The hold marker is 40 meters up and
+        /// the deck is at 15.5: stepping off up there is a 24-meter fall onto steel,
+        /// which is how this chapter killed Ice every time it was opened. Five meters
+        /// is a drop a man walks away from, and it is low enough that he lands on the
+        /// deck rather than in the sea beside it.
+        /// </summary>
+        public const float InsertionHeight = 5f;
 
         private readonly List<Ped> _guards = new List<Ped>();
         private readonly AircraftHold _hold = new AircraftHold();
@@ -47,6 +55,26 @@ namespace Bloodlines.Missions.Campaign
         public IReadOnlyList<Ped> Guards => _guards;
 
         private Vector3 At(string key) => Ctx.Locations.Position(key);
+        /// <summary>
+        /// Where the helicopter holds for the step-off: directly over the deck point,
+        /// not over the circuit marker 50 meters away from it. Derived rather than
+        /// keyed, so surveying M45.Helipad moves the hover with it.
+        /// </summary>
+        private Vector3 Insertion
+        {
+            get { var pad = At("M45.Helipad"); return new Vector3(pad.X, pad.Y, pad.Z + InsertionHeight); }
+        }
+        /// <summary>Ice is on the structure on his own feet rather than in a seat.</summary>
+        private bool IceOnDeck
+        {
+            get
+            {
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                return ice != null && ice.Exists() && !ice.IsDead && !ice.IsInVehicle() &&
+                    ice.Position.Z > PaletoSite.WaterlineDeck &&
+                    ice.Position.DistanceTo2D(At("M45.Helipad")) < 25f;
+            }
+        }
 
         protected override bool Setup()
         {
@@ -115,8 +143,12 @@ namespace Bloodlines.Missions.Campaign
             var pad = At("M45.Helipad");
             for (int i = 0; i < DeckGuards; i++)
             {
-                var post = pad + new Vector3(-6f + i * 4f, i % 2 == 0 ? 4f : -4f, 0f);
-                var guard = World.CreatePed(model, GameUtils.OnGround(post), 180f);
+                // Along the deck away from the pad, and at the pad's own height.
+                // GameUtils.OnGround would have put all four of them in the water:
+                // the ground under a point 15 meters up on a vessel is the sea, and a
+                // deck detail nobody can reach is a stage that never completes.
+                var post = pad + new Vector3(-9f - i * 5f, i % 2 == 0 ? 4f : -4f, 0f);
+                var guard = World.CreatePed(model, post, 180f);
                 if (guard == null || !guard.Exists()) continue;
                 guard.RelationshipGroup = aegis;
                 guard.IsPersistent = true;
@@ -135,12 +167,15 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Bring the helicopter over the rail",
-                new TravelObjective("Guess: fly the Annihilator to the hold marker above the vessel", () => At("M45.Hold"), 22f, () => _chopper))
+                new TravelObjective("Guess: hold the Annihilator low over the vessel's upper deck", () => Insertion, 10f, () => _chopper))
                 .OwnedBy(CrewSlot.Guess)
                 .AfterCues("M45_S1_02_GUESS");
 
+            // A zone objective on the pad completes while Ice is still in his seat —
+            // the helicopter is over it. What this stage is actually waiting for is
+            // Ice standing on the deck, so that is what it asks.
             yield return new MissionStage("Put Ice on the upper deck",
-                new ReachZoneObjective("Ice: get out onto the upper deck", () => At("M45.Helipad"), 5f))
+                new ConditionObjective("Ice: step off onto the upper deck", () => IceOnDeck))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Clear the upper deck",
@@ -171,14 +206,25 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>
-        /// Guess holds over the vessel for the whole of Ice's and Gohan's work. Without
-        /// this nobody is flying it while the player is someone else, and it comes down.
+        /// Guess keeps flying for the whole of Ice's and Gohan's work. Without this
+        /// nobody is flying it while the player is someone else, and it comes down.
+        ///
+        /// Which pattern depends on what is happening. During the step-off he holds the
+        /// spot over the deck, because Ice is aiming at a landing area a few meters
+        /// wide; once Ice is down there is nothing to be precise about and the circuit
+        /// at the hold marker keeps him clear of the fighting.
         /// </summary>
         protected override void OnUpdate()
         {
-            _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, At("M45.Hold"), (int)At("M45.Hold").Z);
+            if (Stage <= InsertionStage && !IceOnDeck)
+                _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, Insertion, (int)Insertion.Z, true);
+            else
+                _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, At("M45.Hold"), (int)At("M45.Hold").Z);
             base.OnUpdate();
         }
+
+        /// <summary>The step-off stage: the last one that needs the helicopter held on a spot.</summary>
+        private const int InsertionStage = 1;
 
         protected override void OnPassed()
         {

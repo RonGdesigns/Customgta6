@@ -588,7 +588,16 @@ namespace Bloodlines.Missions.Campaign
 
             pilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             pilot.IsPersistent = true;
-            pilot.Task.WarpIntoVehicle(chopper, VehicleSeat.Driver);
+            // Seated, not asked to board: the warp is a queued task and the chase order
+            // below replaces it, which leaves the helicopter with nobody in it.
+            pilot.SetIntoVehicle(chopper, VehicleSeat.Driver);
+            if (chopper.GetPedOnSeat(VehicleSeat.Driver) != pilot)
+            {
+                Logger.Error("M02: the pursuit helicopter could not be crewed; removing it rather than dropping it.");
+                GameUtils.SafeDelete(pilot);
+                GameUtils.SafeDelete(chopper);
+                return;
+            }
             pilot.Task.ChaseWithHelicopter(Game.Player.Character, new Vector3(0f, 0f, 30f));
         }
 

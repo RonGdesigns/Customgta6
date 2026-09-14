@@ -463,7 +463,7 @@ Prerequisite: M26. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M26.DusterPad, M26.RunwayStart, M26.SparePlane, M27.CrewStart, M27.FormUp, M27.IcePost, M27.JetTrack, M27.ParkedLazer, M27.RunwayStart, M27.SeaPickup.
+Survey references: M26.DusterPad, M26.RunwayStart, M26.SparePlane, M27.Bailout, M27.CrewStart, M27.FormUp, M27.IcePost, M27.JetTrack, M27.ParkedLazer, M27.RunwayStart, M27.SeaPickup.
 
 ## M28 — OFF THE GRID
 
@@ -774,8 +774,8 @@ Prerequisite: M44. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Bring the helicopter over the rail** — TravelObjective: Guess: fly the Annihilator to the hold marker above the vessel |
-| 2 | Ice | **Put Ice on the upper deck** — ReachZoneObjective: Ice: get out onto the upper deck |
+| 1 | Guess | **Bring the helicopter over the rail** — TravelObjective: Guess: hold the Annihilator low over the vessel's upper deck |
+| 2 | Ice | **Put Ice on the upper deck** — ConditionObjective: Ice: step off onto the upper deck |
 | 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail |
 | 4 | Gohan | **Bring the Kraken to the stern** — TravelObjective: Gohan: take the Kraken alongside the stern platform |
 | 5 | Gohan | **Get Gohan aboard** — ReachZoneObjective: Gohan: climb the stern platform onto the vessel |
@@ -824,7 +824,7 @@ Prerequisite: M47. Retry: full mission restart.
 | 1 | Guess | **Bring the boat ashore** — TravelObjective: Guess: run the boat onto the cove beach |
 | 2 | Guess | **Move the crew and the evidence into the technical** — EnterVehicleObjective: All three: get into the technical with the ledger<br>ConditionObjective: Nobody stays at the beach |
 | 3 | Guess | **Break the outer cordon** — KillTargetsObjective: Clear the roadblock at the cove exit |
-| 4 | Guess | **Run south** — TravelObjective: Drive south past the county line |
+| 4 | Guess | **Run south** — TravelObjective: Drive south past the county line<br>ConditionObjective: Everyone rides south in the technical |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

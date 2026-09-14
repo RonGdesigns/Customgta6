@@ -65,8 +65,12 @@ namespace Bloodlines.Missions.Campaign
             if (!RequireAssets(_ledger, _bonds)) return false;
             RequireAsset(_ledger, "The escrow ledger was destroyed. Without it the operation proves nothing.");
 
+            // The two shelf points carry real props, so they are reviewed like every
+            // other interaction: without them in the contract Ron cannot move a case
+            // that is standing inside a bulkhead, which is what M43's laptop did.
             Paleto.Review(Ctx, PlacementContract.Ped("M46.Stairs"), PlacementContract.Ped("M46.Bridge"),
-                PlacementContract.Interaction("M46.Vault"), PlacementContract.Interaction("M46.Console"));
+                PlacementContract.Interaction("M46.Vault"), PlacementContract.Interaction("M46.Console"),
+                PlacementContract.Interaction("M46.Ledger"), PlacementContract.Interaction("M46.Bonds"));
             Station(CrewSlot.Gohan, At("M46.Stairs"));
             Station(CrewSlot.Ice, At("M46.Bridge"));
             return true;

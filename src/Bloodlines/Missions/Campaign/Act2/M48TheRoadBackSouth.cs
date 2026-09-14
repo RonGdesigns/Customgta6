@@ -26,7 +26,14 @@ namespace Bloodlines.Missions.Campaign
         public const string GuardModel = "s_m_y_blackops_01";
         public const int CordonGuards = 4;
 
+        /// <summary>The stages that need all three in the truck, and only those: the
+        /// transfer off the beach, and the run south once the roadblock is behind them.
+        /// Ordering them aboard during the cordon fight would march them into the guns.</summary>
+        private const int LoadStage = 1, SouthStage = 3;
+
         private readonly List<Ped> _cordon = new List<Ped>();
+        private readonly CrewBoarding _boarding = new CrewBoarding();
+        private int _boardingStage = -1;
         private Vehicle _boat;
         private Vehicle _technical;
         private Vehicle _blocker;
@@ -139,11 +146,38 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c => _broken = true)
                 .AfterCues("M48_S1_02_ICE");
 
+            // Everyone rides south. Without this the drive could be finished with a
+            // brother still standing at the roadblock, and then OnPassed — the one place
+            // the whole operation is recorded — would throw on the last objective of a
+            // five-chapter sitting.
             yield return new MissionStage("Run south",
-                new TravelObjective("Drive south past the county line", () => At("M48.South"), 30f, () => _technical))
+                new TravelObjective("Drive south past the county line", () => At("M48.South"), 30f, () => _technical),
+                new ConditionObjective("Everyone rides south in the technical", () => Loaded))
                 .AnyOf()
                 .AfterCues("M48_S1_03_GOHAN");
         }
+
+        /// <summary>
+        /// The two stages that want the crew in the truck order them into it. The
+        /// objectives only ever checked whether they were already aboard, which on a
+        /// beach nobody had told them to leave meant waiting for good.
+        /// </summary>
+        protected override void OnUpdate()
+        {
+            int stage = Stage;
+            if (stage == LoadStage || stage == SouthStage)
+            {
+                // Each boarding gets its own patience clock; the cordon fight in between
+                // is not part of either one.
+                if (_boardingStage != stage) { _boarding.Reset(); _boardingStage = stage; }
+                if (!Loaded) _boarding.Update(Ctx.Crew, _technical, Riders, Id);
+            }
+            base.OnUpdate();
+        }
+
+        /// <summary>Guess drives the technical out; the other two take the cab and the bed.</summary>
+        private static readonly KeyValuePair<CrewSlot, VehicleSeat>[] Riders =
+            CrewBoarding.Passengers(CrewSlot.Guess, VehicleSeat.RightFront, VehicleSeat.LeftRear);
 
         protected override void OnPassed()
         {

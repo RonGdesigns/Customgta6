@@ -27,6 +27,15 @@ namespace Bloodlines.Core
         public string Quote;
         public Func<List<PhoneEntry>> Children;
         public bool ArrangeHome;
+        /// <summary>
+        /// A body worked out when the page is drawn rather than when the list was built.
+        /// Vehicle ratings are read off a model that has to stream in first, so the page
+        /// has to be able to fill in a moment after it opens; every other entry leaves
+        /// this null and keeps its fixed <see cref="Body"/>.
+        /// </summary>
+        public Func<string> LiveBody;
+        /// <summary>What to actually show. Never null, so a missing body is still a sentence.</summary>
+        public string Text => LiveBody != null ? LiveBody() : Body;
     }
 
     /// <summary>Shared phone/Foundry views. Actions always revalidate the live service at execution.</summary>
@@ -105,11 +114,22 @@ namespace Bloodlines.Core
                 Id = "category:" + category, Title = category, Subtitle = "Browse vehicles / choose a garage",
                 Children = () => _roadChoices.Where(v => v.Category == category).OrderBy(VehiclePricing.Of).Select(choice => new PhoneEntry {
                     Id = "model:" + choice.Model, Title = choice.Name, Subtitle = "$" + VehiclePricing.Of(choice).ToString("N0"),
+                    LiveBody = () => Showroom(choice),
                     Children = () => VehicleDestinations(choice)
                 }).ToList()
             }).ToList();
             rows.Add(RecoveryFolder());return rows;
         }
+        /// <summary>
+        /// What the car is, on the page where he is choosing it. This list used to be a
+        /// name and a price with nothing else on it: the performance bars existed only in
+        /// the shop, which he cannot reach for a car he has not bought yet.
+        /// </summary>
+        private string Showroom(StoryVehicles.Choice choice) =>
+            choice.Name + "\n$" + VehiclePricing.Of(choice).ToString("N0") + "\n" + choice.Category +
+            "\n\n" + VehicleSpecs.Block(new Model(choice.Model)) +
+            "\n\nChoose a garage to store it in.";
+
         private PhoneEntry RecoveryFolder() => new PhoneEntry { Id = "recovery", Title = "Recover vehicle", Subtitle = "Return an owned car to its garage", Children = Recoveries };
         private List<PhoneEntry> Recoveries()
         {
@@ -138,8 +158,10 @@ namespace Bloodlines.Core
             int price = VehiclePricing.Of(choice);
             return _garages.OwnedSites.Select(site => new PhoneEntry {
                 Id = "buy:" + choice.Model + ":" + site.Id, Title = site.Name, Subtitle = _garages.Summary(site),
-                Body = choice.Name + "\n$" + price.ToString("N0") + "\n\nStore at: " + site.Name + "\nBays: " + _garages.Used(site) + "/" + site.Capacity +
-                    "\nCrew funds: $" + _state.CashOnHand.ToString("N0") + "\n\nPurchase stores the car here. Collect it at the garage or request KJ in the Garage app. Delivery does not spawn it beside you.",
+                LiveBody = () => choice.Name + "\n$" + price.ToString("N0") + "\n\nStore at: " + site.Name + "\nBays: " + _garages.Used(site) + "/" + site.Capacity +
+                    "\nCrew funds: $" + _state.CashOnHand.ToString("N0") +
+                    "\n\n" + VehicleSpecs.Block(new Model(choice.Model)) +
+                    "\n\nPurchase stores the car here. Collect it at the garage or request KJ in the Garage app. Delivery does not spawn it beside you.",
                 Button = "Purchase vehicle", Quote = choice.Model + ":" + price + ":" + site.Id + ":" + _garages.Used(site) + ":" + _state.NextVehicleId,
                 Action = () => {
                     if (!Free || Game.Player.WantedLevel > 0) return "Shop outside missions after losing the police.";
@@ -181,7 +203,7 @@ namespace Bloodlines.Core
                     Action = () => Track(_garages.DeliveryVehicle) });
                 rows.Add(new PhoneEntry { Id = "cancel", Title = "Cancel delivery", Subtitle = "Put the delivery car away",
                     Body = "Cancel KJ's current delivery. An occupied car stays in the world. Already completed repairs are not refunded.", Button = "Cancel delivery", Quote = "cancel:" + _garages.DeliveryToken,
-                    Action = () => { if (!Free || !_garages.DeliveryActive) return "No cancellable delivery is available outside a mission."; _garages.RecallDelivery(); return "Delivery cancelled."; } });
+                    Action = () => { if (!Free || !_garages.DeliveryActive) return "No cancellable delivery is available outside a mission."; _garages.RecallDelivery(); return "Delivery canceled."; } });
             }
             foreach (var car in _state.Vehicles.ToArray())
             {

@@ -290,7 +290,8 @@ namespace Bloodlines.Missions.Campaign
                     deputy.Weapons.Give(WeaponHash.PumpShotgun, 120, true, true);
                     if (cruiser != null)
                     {
-                        deputy.Task.WarpIntoVehicle(cruiser, seat == 0 ? VehicleSeat.Driver : VehicleSeat.Passenger);
+                        // Seated outright: the vehicle mission below replaces a queued warp.
+                        deputy.SetIntoVehicle(cruiser, seat == 0 ? VehicleSeat.Driver : VehicleSeat.Passenger);
                         if (seat == 0) deputy.Task.StartVehicleMission(cruiser, _ridge + new Vector3(0f, 14f, 0f), VehicleMissionType.GoTo, 22f, (VehicleDrivingFlags)786603, 8f, 20f, true);
                     }
                     else deputy.Task.FightAgainstHatedTargets(120f);

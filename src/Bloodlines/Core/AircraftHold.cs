@@ -27,8 +27,14 @@ namespace Bloodlines.Core
         public const float HoldRadius = 90f;
         /// <summary>Cruise for a holding pattern: unhurried, because he is waiting.</summary>
         public const float HoldSpeed = 22f;
-        /// <summary>The lowest the AI is allowed to take it while holding.</summary>
+        /// <summary>The lowest the AI is allowed to take it while holding a circle.</summary>
         public const int MinimumHeight = 25;
+        /// <summary>How tight a hover is allowed to drift from the point it is holding.</summary>
+        public const float HoverRadius = 6f;
+        /// <summary>Approach speed for a hover: slow, because he is stopping on a spot.</summary>
+        public const float HoverSpeed = 12f;
+        /// <summary>How far out he starts slowing for the hover.</summary>
+        public const float HoverSlowdown = 30f;
 
         /// <summary>Approach speed given to a helicopter that is created already flying.</summary>
         public const float AirborneSpeed = 25f;
@@ -54,16 +60,26 @@ namespace Bloodlines.Core
 
         private int _next;
         private bool _ordered;
+        private bool _hovering;
 
         /// <summary>Whether a holding pattern is currently in force.</summary>
         public bool Holding => _ordered;
+        /// <summary>Whether the pattern in force is a hover on a spot rather than a circuit.</summary>
+        public bool Hovering => _ordered && _hovering;
 
         /// <summary>
         /// Call every frame. Does nothing while the player is flying it himself, and
         /// nothing if the pilot is not in it — a mission that wants him landed keeps him
-        /// landed by not calling this.
+        /// landed by not calling this. An aircraft already sitting on something is left
+        /// sitting on it: a parked helicopter cannot fall, and ordering one into a
+        /// pattern would lift it off a deck somebody is standing on.
         /// </summary>
-        public void Update(CrewRoster crew, CrewSlot slot, Vehicle aircraft, Vector3 at, int height)
+        /// <param name="hover">
+        /// True to hold the spot instead of flying a circuit. An insertion needs the
+        /// aircraft to stay over the point the man is stepping onto; a wait while the
+        /// player is elsewhere does not care, and a circuit looks better.
+        /// </param>
+        public void Update(CrewRoster crew, CrewSlot slot, Vehicle aircraft, Vector3 at, int height, bool hover = false)
         {
             if (crew == null || aircraft == null || !aircraft.Exists() || aircraft.IsDead || !aircraft.IsDriveable)
             { _ordered = false; return; }
@@ -71,6 +87,9 @@ namespace Bloodlines.Core
             if (pilot == null || !pilot.Exists() || pilot.IsDead || !pilot.IsInVehicle(aircraft))
             { _ordered = false; return; }
             if (crew.ActiveSlot == slot) { Release(); return; }
+            if (!aircraft.IsInAir) { Release(); return; }
+            // A change of pattern takes effect now rather than at the next cadence.
+            if (_ordered && hover != _hovering) _next = 0;
             if (Game.GameTime < _next) return;
 
             _next = Game.GameTime + OrderIntervalMs;
@@ -78,10 +97,19 @@ namespace Bloodlines.Core
             aircraft.IsEngineRunning = true;
             try { Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, aircraft); }
             catch (Exception ex) { Logger.Error("Spinning up a held aircraft", ex); }
-            pilot.Task.StartHeliMission(aircraft, at, VehicleMissionType.Circle,
-                HoldSpeed, HoldRadius, height, MinimumHeight, 0f, 0f, HeliMissionFlags.None);
-            if (!_ordered) Logger.Info(slot + " is holding his aircraft over " + at + " at " + height + " m while the player is elsewhere.");
+            if (hover)
+                // GoTo holds the destination once it is reached: the AI flies to the point
+                // and stays on it. A slowdown distance stops him arriving at speed and
+                // sailing past the spot a man is trying to step onto.
+                pilot.Task.StartHeliMission(aircraft, at, VehicleMissionType.GoTo,
+                    HoverSpeed, HoverRadius, height, height, 0f, HoverSlowdown, HeliMissionFlags.None);
+            else
+                pilot.Task.StartHeliMission(aircraft, at, VehicleMissionType.Circle,
+                    HoldSpeed, HoldRadius, height, MinimumHeight, 0f, 0f, HeliMissionFlags.None);
+            if (!_ordered || hover != _hovering)
+                Logger.Info(slot + (hover ? " is hovering his aircraft over " : " is circling his aircraft over ") + at + " at " + height + " m while the player is elsewhere.");
             _ordered = true;
+            _hovering = hover;
         }
 
         /// <summary>
@@ -91,6 +119,7 @@ namespace Bloodlines.Core
         public void Release()
         {
             _ordered = false;
+            _hovering = false;
             _next = 0;
         }
     }

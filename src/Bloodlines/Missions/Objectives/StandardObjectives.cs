@@ -383,7 +383,23 @@ namespace Bloodlines.Missions.Objectives
                 if (_anyone || IsOwnerActive(context)) Complete();
                 return;
             }
-            GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), 1.5f);
+            GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), MarkerRadius(vehicle));
+        }
+
+        /// <summary>
+        /// How wide to draw the marker on a target that is moving. A fixed 1.5 meter
+        /// cylinder is a dot: Ron lost the Alamo spotters the moment he passed them,
+        /// because at 400 meters in a Lazer there was nothing on screen to turn back
+        /// toward. The marker grows with the range so a target stays findable at the
+        /// distance the chase actually happens at, and stays small up close where a
+        /// wide cylinder would cover the thing he is shooting at.
+        /// </summary>
+        internal static float MarkerRadius(Entity target)
+        {
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || target == null || !target.Exists()) return 1.5f;
+            float away = player.Position.DistanceTo(target.Position);
+            return Math.Max(1.5f, Math.Min(45f, away * .05f));
         }
     }
 

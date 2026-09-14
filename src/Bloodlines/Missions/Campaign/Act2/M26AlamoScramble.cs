@@ -33,6 +33,15 @@ namespace Bloodlines.Missions.Campaign
 
         /// <summary>How long Gohan needs on the second spotter's traffic before it can go down.</summary>
         public const int ListenMs = 12000;
+        /// <summary>
+        /// How wide the spotters quarter the lake. This was 60 meters, which is a
+        /// continuous hard bank in one spot: a Lazer cannot turn inside that, so every
+        /// pass overshot and Ron lost them behind him. Four hundred meters is a search
+        /// pattern rather than a knife fight, and it gives a jet a line to come in on.
+        /// </summary>
+        public const float PatrolRadius = 400f;
+        /// <summary>Patrol altitude. Low enough to see them against the lake.</summary>
+        public const int PatrolHeight = 170;
 
         private Vehicle _duster;
         private Vehicle _approachPlane;
@@ -293,12 +302,15 @@ namespace Bloodlines.Missions.Campaign
                 }
                 // Quartering the lake, not hunting the player: they are looking for gold.
                 pilot.Task.StartPlaneMission(plane, _patrolBox, VehicleMissionType.Circle,
-                    40f, 60f, 220, 40, 0f, false);
+                    40f, PatrolRadius, PatrolHeight, 40, 0f, false);
                 _pilots.Add(pilot);
 
                 var blip = Track(plane.AddBlip());
                 blip.Sprite = BlipSprite.Plane;
                 blip.Color = BlipColor.Red;
+                // The chase happens across the whole lake. A short-range blip drops off
+                // the minimap at exactly the distance he needs it at.
+                blip.IsShortRange = false;
                 blip.Name = "Cartel spotter";
             }
 

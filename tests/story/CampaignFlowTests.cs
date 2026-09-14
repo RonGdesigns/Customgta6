@@ -71,6 +71,20 @@ public static partial class StoryTests
      if(name=="ConvoyOverwatchObjective")
      {var v=Field<Func<Vehicle>>(objective,"_aircraft")();var escort=Field<Func<Vehicle>>(objective,"_escort")();PositionActor(c,objective,escort.Position+new Vector3(0,120,50),v);v.HeightAboveGround=50;v.IsInAir=true;}
      if(name=="ConditionObjective"&&m.Id=="M22")PositionActor(c,objective,Field<Vector3>(m,"_regroup"));
+     // M45's step-off: Ice leaves the helicopter and stands on the deck. He used to be
+     // asked to reach a zone the helicopter was already inside, which passed while he
+     // was still strapped in 24 meters above it.
+     if(name=="ConditionObjective"&&m.Id=="M45")
+     {
+      var ice=crew.PedFor(CrewSlot.Ice);ice.Task.LeaveVehicle();
+      var pad=c.Locations.Position("M45.Helipad");ice.Position=pad;
+     }
+     if(name=="ConditionObjective"&&m.Id=="M48")
+     {
+      var truck=((Bloodlines.Missions.Campaign.M48TheRoadBackSouth)m).Technical;
+      if(truck!=null)foreach(var hero in Protagonist.All)
+       crew.PedFor(hero.Slot).SetIntoVehicle(truck,hero.Slot==CrewSlot.Guess?VehicleSeat.Driver:hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);
+     }
      if(name=="ConditionObjective"&&m.Id=="M47")
      {
       var collapse=(Bloodlines.Missions.Campaign.M47PaletoCollapse)m;
