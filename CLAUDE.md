@@ -438,3 +438,34 @@ moment — and the campaign simply did not save, with one log line as the only t
 It retries, then writes over the target directly, and records `LastSaveFailed`. This
 was also the cause of an intermittent story-check failure that came and went between
 runs.
+
+## September 14: surfaces, held aircraft, and three placements
+
+**Ground preparation corrects a point; it does not relocate it.** `MissionSites`
+accepted the engine's walkable ground up to 35 meters away and 25 down. Over water
+that answer is the sea beside the structure, which is where Ron found M40's hull kits
+and navigation laptop: under the pier. The drift is 12 meters for an estimate and 3
+for a point he surveyed himself.
+
+**A built surface declares itself.** `Prepare` has always taken `fixedSurfaceKeys`
+and almost nothing passed any. `PreparationOperation.FixedSurfaces` is the override;
+M40 names its pier keys. Anything on a deck, platform or vessel belongs there,
+because asking the engine for walkable ground near it gets the water.
+
+**Nothing is stacked on nothing.** `PropPlacement.OnTop` read the surface model's
+dimensions, and the spawn helpers release their model as soon as the prop exists, so
+those dimensions can be zero: the item then sits at the surface's own origin, inside
+it. That is M43's laptop, which was created every time and never visible. A surface
+that will not report its height is assumed to be a working height, and it says so.
+
+**An aircraft a brother is flying keeps flying.** `Core/AircraftHold` puts him in a
+holding pattern while the player is somebody else, reissued on its own cadence, and
+releases the instant the player takes it back. M42 had this for its Titan alone; M45
+uses the shared one now. Switching away from a crew helicopter used to leave nobody
+flying it.
+
+Three placements moved on evidence rather than guesswork: M40's pier keys keep their
+height, SM06's start and fuel tractor left the inside of the Ammu-Nation building
+they were spawning in — the archives put its geometry at z 20 to 25 against their
+authored 19 — for open ground verified empty within 16 meters, and M32's brothers
+ride across the base with Guess instead of being left where the fight was.

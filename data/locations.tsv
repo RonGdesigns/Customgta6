@@ -178,8 +178,8 @@ SM04.NestTwo	2920.000	2850.000	55.867	0	land	estimate	Davis Quartz quarry, conne
 SM05.Shore	-2780	2540	2.015	0	land	estimate	Lago Zancudo estuary mouth; CodeWalker geometry checked, awaiting live survey
 SM05.Boat	-2780	2580	0.2	0	water	estimate	Lago Zancudo estuary mouth; CodeWalker geometry checked, awaiting live survey
 SM05.Buoy	-2900	2580	0.2	0	water	estimate	Pacific Ocean / Zancudo estuary mouth; CodeWalker depth and direct boat route checked, awaiting live survey
-SM06.Approach	-1108	2700	19	0	land	estimate	
-SM06.Truck	-1130	2692	19	90	land	estimate	
+SM06.Approach	-1085	2664	18	90	land	estimate	Open ground clear of the shop; verified empty in the archives
+SM06.Truck	-1093	2671	18	90	land	estimate	Open ground clear of the shop; verified empty in the archives
 Prologue.LSIACurb	-1034.6	-2731.9	13.76	330	land	estimate	Los Santos International Airport
 Prologue.LSIACar	-1040.79	-2718.86	13.21	240.5	land	surveyed	Los Santos International Airport, the arrival car (Ron, September 12)
 SM06.Bend	-1469.500	4474.500	18.139	0	land	estimate	Raton Canyon / Existing route, corrected road support; CodeWalker geometry checked, awaiting live survey

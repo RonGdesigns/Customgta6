@@ -32,11 +32,20 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected GuardAwareness Awareness { get; private set; }
         protected Func<Vector3> DrivingDestination;
+        /// <summary>
+        /// Keys that sit on built geometry — a pier deck, a platform, a vessel — rather
+        /// than on the terrain. The ground preparation asks the engine for walkable ground
+        /// near each point, and over water that answer is the water beside the structure:
+        /// Ron found M40's kits and laptop under the pier for exactly that reason. A key
+        /// named here keeps its authored height.
+        /// </summary>
+        protected virtual string[] FixedSurfaces => new string[0];
+
         protected bool BeginCrew(CrewSlot active)
         {
             string site = Id == "M31" ? "M31.Senora" : Id;
             if (Id == "M31") BunkerSite.LoadMaps();
-            if (!MissionSites.Prepare(Ctx.Locations, Id) ||
+            if (!MissionSites.Prepare(Ctx.Locations, Id, FixedSurfaces) ||
                 !Ctx.Crew.Deploy(active, At(site + ".Start"), Ctx.Locations.Heading(site + ".Start"))) return false;
             ProtectCrew(); ApplyBibleSetting();
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })

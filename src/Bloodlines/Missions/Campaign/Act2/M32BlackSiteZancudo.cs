@@ -35,7 +35,12 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c=>{_access=true;_gate.Heading+=90f;Establish("access","An open service route","The barrier turns aside at the exterior service access. Ice can approach the visible cases; there is no underground bunker or numbered door.",_gate,_caseOne);}).AfterCues("M32_S1_01_GOHAN");
             yield return new MissionStage("Secure the ordnance yard",new KillTargetsObjective("Ice: stop the four marked yard guards. Keep both yellow EMP cases intact.",()=>Opposition)).OwnedBy(CrewSlot.Ice)
                 .OnEnter(c=>{Fighting=true;Roles.For(CrewSlot.Gohan).Observe(At("M32.PanelWork"),At("M32.PanelWork"));});
-            yield return new MissionStage("Bring the case carrier",new TravelObjective("Guess: drive the crew car to the yellow pickup beside the cleared ordnance post and stop",()=>At("M32.Pickup"),10,()=>CrewCar)).OwnedBy(CrewSlot.Guess).OnEnter(c=>Fighting=false);
+            yield return new MissionStage("Bring the case carrier",new TravelObjective("Guess: drive the crew car to the yellow pickup beside the cleared ordnance post. Gohan and Ice ride over with you",()=>At("M32.Pickup"),10,()=>CrewCar)).OwnedBy(CrewSlot.Guess)
+                // The post is cleared and the cases are over there, so the brothers ride
+                // across with him rather than being left where the fight was. Asked for,
+                // not required: a brother who cannot reach the car must not strand the
+                // drive, so the objective still only wants Guess at the marker.
+                .OnEnter(c=>{Fighting=false;RideAlong();});
             yield return new MissionStage("First case",new MissionInteraction("Gohan: pick up the first marked EMP case",()=>_caseOne.Position,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>Fighting=false).OnExit(c=>Carry(_caseOne,CrewSlot.Gohan));
             yield return new MissionStage("Stow first case",new MissionInteraction("Gohan: carry the case to the rear of Guess's car and stow it",()=>CrewCar.Position-CrewCar.ForwardVector*3f,3,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
@@ -59,6 +64,26 @@ namespace Bloodlines.Missions.Campaign
             SaveCargo(_caseOne,bench,new Vector3(-.4f,0,height));SaveCargo(_caseTwo,bench,new Vector3(.4f,0,height));
             Establish("delivery","Hardware secured","Two physical cases are unloaded onto the bunker table. The warheads provide hardware, not rig access codes.",bench);
         }
+        /// <summary>
+        /// Put the other two in Guess's car for the run across the base. Best effort by
+        /// design: they are ordered in, and nothing waits on them.
+        /// </summary>
+        private void RideAlong()
+        {
+            if(CrewCar==null||!CrewCar.Exists())return;
+            foreach(var pair in new[]{Tuple.Create(CrewSlot.Gohan,VehicleSeat.Passenger),Tuple.Create(CrewSlot.Ice,VehicleSeat.LeftRear)})
+            {
+                var brother=Ctx.Crew.PedFor(pair.Item1);
+                if(brother==null||!brother.Exists()||brother.IsDead)continue;
+                if(Ctx.Crew.ActiveSlot==pair.Item1)continue;
+                if(CrewCar.GetPedOnSeat(pair.Item2)!=null)continue;
+                Roles.For(pair.Item1).Stop();
+                Ctx.Crew.CompanionAI.TakeControl(pair.Item1);
+                if(brother.IsInVehicle()&&!brother.IsInVehicle(CrewCar))brother.Task.LeaveVehicle();
+                brother.Task.EnterVehicle(CrewCar,pair.Item2);
+            }
+        }
+
         protected override void OnUpdate()
         {
             if(_loaded>0&&CurrentStage<12&&(!Attached(_caseOne,CrewCar)||(_loaded==2&&!Attached(_caseTwo,CrewCar)))){Fail("An EMP case came loose from the extraction car.");return;}

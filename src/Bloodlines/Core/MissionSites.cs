@@ -31,6 +31,7 @@ namespace Bloodlines.Core
                 foreach (var key in keys)
                 {
                     var location = book.Get(key); if (location == null) return false;
+                    bool surveyed = location.Status == LocationStatus.Surveyed;
                     var point = location.Position; Vector3 safe = Vector3.Zero;
                     Function.Call(Hash.SET_FOCUS_POS_AND_VEL, point.X, point.Y, point.Z, 0f,0f,0f);
                     for (int attempt=0;attempt<12;attempt++)
@@ -41,7 +42,7 @@ namespace Bloodlines.Core
                         // does an estimate ask the map for the ground, which is how a
                         // hillside perch 40 m above its guess still resolves.
                         safe=World.GetSafeCoordForPed(point,false,0);
-                        if (Walkable(safe, point)) break;
+                        if (Walkable(safe, point, surveyed)) break;
                         if (location.Status != LocationStatus.Surveyed)
                         {
                             float ground = World.GetGroundHeight(new Vector3(point.X, point.Y, location.Position.Z + 150f));
@@ -49,13 +50,17 @@ namespace Bloodlines.Core
                             {
                                 var snapped = new Vector3(point.X, point.Y, ground + 0.5f);
                                 safe = World.GetSafeCoordForPed(snapped, false, 0);
-                                if (Walkable(safe, snapped)) { point = snapped; break; }
+                                if (Walkable(safe, snapped, surveyed)) { point = snapped; break; }
                             }
                         }
                         safe=Vector3.Zero; Script.Wait(50);
                     }
                     if (safe == Vector3.Zero)
                     {
+                        // Deliberately still a failure for a surveyed key as well as an
+                        // estimate: the location test exists to surface sites that need a
+                        // look, and silently keeping a surveyed point would hide a real
+                        // problem at it. The caller decides what to do about it.
                         Logger.Error("No walkable mission surface: " + key + " at " + point + " (authored " + location.Position + ", " + location.Status + ")");
                         GameUtils.Subtitle("~r~Cannot load " + key + ": no walkable ground near its coordinates. Survey it (F11) and retry.",6000);
                         return false;
@@ -92,8 +97,23 @@ namespace Bloodlines.Core
             throw new InvalidOperationException("No clear actor space at " + key + ". Survey this spawn and retry.");
         }
 
-        private static bool Walkable(Vector3 safe, Vector3 point) =>
-            safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, point, 35f) && Math.Abs(safe.Z - point.Z) < 25f;
+        /// <summary>
+        /// How far the engine's idea of walkable ground may be from the authored point
+        /// before it stops being the same place. This was 35 meters flat and 25 down for
+        /// everything, which is not a correction, it is a different location: on a pier at
+        /// z 3 with water at z 0 the safe coord lands beside the pier and the authored
+        /// point was rewritten into the sea. That is where Ron found M40's kits.
+        /// </summary>
+        public const float EstimateDrift = 12f;
+        public const float EstimateDrop = 25f;
+        /// <summary>A point Ron surveyed himself moves only enough to settle onto its own surface.</summary>
+        public const float SurveyedDrift = 3f;
+        public const float SurveyedDrop = 2.5f;
+
+        private static bool Walkable(Vector3 safe, Vector3 point, bool surveyed) =>
+            safe != Vector3.Zero &&
+            GameUtils.IsWithinFlat(safe, point, surveyed ? SurveyedDrift : EstimateDrift) &&
+            Math.Abs(safe.Z - point.Z) < (surveyed ? SurveyedDrop : EstimateDrop);
 
         /// <summary>
         /// Where the crew's car stands at a base: the surveyed car key when there is

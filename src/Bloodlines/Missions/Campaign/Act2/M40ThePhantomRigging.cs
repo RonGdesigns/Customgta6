@@ -18,6 +18,17 @@ namespace Bloodlines.Missions.Campaign
         public IList<Vehicle> Boats => _boats;
         public IList<Prop> Targets => _targets;
         public int Trials => _trials;
+        /// <summary>
+        /// Every one of these is on the pier deck at about z 3, over water. Without this
+        /// the preparation resolves them to the sea beside the pier, which is where Ron
+        /// found the hull kits and the navigation laptop.
+        /// </summary>
+        protected override string[] FixedSurfaces => new[]
+        {
+            "M40.Start", "M40.IceStart", "M40.GohanStart", "M40.GuessStart",
+            "M40.Kit1", "M40.Kit2", "M40.Nav", "M40.NavWork",
+        };
+
         protected override bool Setup()
         {
             if(!BeginCrew(CrewSlot.Guess))return false;

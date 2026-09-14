@@ -545,7 +545,7 @@ Prerequisite: M31. Retry: full mission restart.
 | 1 | Gohan | **Reach the coastal landing** — TravelObjective: Gohan: pilot the dinghy to the yellow coastal landing and stop near shore |
 | 2 | Gohan | **Open exterior access** — MissionInteraction: Gohan: leave the dinghy, walk up the bank and use the marked exterior electrical cabinet |
 | 3 | Ice | **Secure the ordnance yard** — KillTargetsObjective: Ice: stop the four marked yard guards. Keep both yellow EMP cases intact. |
-| 4 | Guess | **Bring the case carrier** — TravelObjective: Guess: drive the crew car to the yellow pickup beside the cleared ordnance post and stop |
+| 4 | Guess | **Bring the case carrier** — TravelObjective: Guess: drive the crew car to the yellow pickup beside the cleared ordnance post. Gohan and Ice ride over with you |
 | 5 | Gohan | **First case** — MissionInteraction: Gohan: pick up the first marked EMP case |
 | 6 | Gohan | **Stow first case** — MissionInteraction: Gohan: carry the case to the rear of Guess's car and stow it |
 | 7 | Gohan | **Second case** — MissionInteraction: Gohan: return for the second marked EMP case |
@@ -703,7 +703,7 @@ Prerequisite: M39. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M40.Boat, M40.Kit, M40.Nav, M40.NavWork, M40.Return, M40.Return1, M40.Target, M40.Trial.
+Survey references: M40.Boat, M40.GohanStart, M40.GuessStart, M40.IceStart, M40.Kit, M40.Kit1, M40.Kit2, M40.Nav, M40.NavWork, M40.Return, M40.Return1, M40.Start, M40.Target, M40.Trial.
 
 ## M41 — THE GENERAL'S WIRE
 
