@@ -77,6 +77,24 @@ public static partial class StoryTests
         Check(guess.Task.HeliTasks == before && !hold.Holding,
             "A brother who is not in the aircraft is not flying it");
 
+        // ---- An aircraft created in the air has stopped rotors. The engine being on is
+        // not lift: Ron's Annihilator fell into the sea on every run at the heist because
+        // it was spawned 60 meters up and the blades were still spinning up.
+        Reset();
+        var fresh = new Vehicle { Model = new Model("annihilator"), Position = new Vector3(0f, 0f, 60f) };
+        Check(!fresh.IsEngineRunning && fresh.ForwardSpeed == 0f, "A newly created aircraft is not flying");
+        AircraftHold.LaunchAirborne(fresh);
+        Check(fresh.IsEngineRunning && fresh.ForwardSpeed == AircraftHold.AirborneSpeed,
+            "Launching it airborne runs the engine and gives it approach speed");
+        Check(Function.Calls.Any(call => call.Item1 == Hash.SET_HELI_BLADES_FULL_SPEED && ReferenceEquals(call.Item2[0], fresh)),
+            "And brings its rotors to speed, which is the part that keeps it up");
+        AircraftHold.LaunchAirborne(null);
+        Check(true, "Launching nothing is harmless rather than a crash during setup");
+
+        string m47 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M47PaletoCollapse.cs"));
+        Check(m47.Contains("AircraftHold.LaunchAirborne"),
+            "The collapse chapter stages its helicopter airborne the same way");
+
         // ---- M45 holds Guess over the vessel for the whole of the boarding.
         string m45 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M45PaletoBreach.cs"));
         Check(m45.Contains("_hold.Update(Ctx.Crew, CrewSlot.Guess"),

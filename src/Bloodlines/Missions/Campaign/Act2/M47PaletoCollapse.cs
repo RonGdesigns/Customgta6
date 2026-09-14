@@ -87,7 +87,8 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (heli == null || !heli.Exists()) return null;
             heli.IsPersistent = true;
-            heli.IsEngineRunning = true;
+            // Staged at the hold point, which is 40 meters up: same reason as M45.
+            AircraftHold.LaunchAirborne(heli);
             return heli;
         }
 

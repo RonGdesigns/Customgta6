@@ -91,7 +91,9 @@ namespace Bloodlines.Missions.Campaign
             model.MarkAsNoLongerNeeded();
             if (_chopper == null || !_chopper.Exists()) return false;
             _chopper.IsPersistent = true;
-            _chopper.IsEngineRunning = true;
+            // It is created 60 meters over open water. Rotors at speed and a little
+            // airspeed, or it is in the sea before the blades spin up.
+            AircraftHold.LaunchAirborne(_chopper);
             return true;
         }
 
