@@ -1,6 +1,6 @@
 # Campaign phone — first playable version
 
-The custom phone opens with **D-pad Up** (or the normal keyboard phone control) while the Bloodlines crew is deployed. **F6** also opens or closes it. Navigate with the D-pad or arrow keys; **A / Enter** selects and **B / Backspace** goes back. Back from the home screen closes it. Long pages scroll with Up/Down.
+The custom phone opens with **D-pad Up** (or the normal keyboard phone control) while the Bloodlines crew is deployed. **F9** also opens or closes it. Navigate with the D-pad or arrow keys; **A / Enter** selects and **B / Backspace** goes back. Back from the home screen closes it. Long pages scroll with Up/Down.
 
 ## Apps
 
@@ -31,7 +31,7 @@ Existing saves and surveyed positions need no migration. Existing user INIs are 
 Enabled = true
 
 [Keys]
-Phone = F6
+Phone = F9
 ```
 
 ## Verification and live test

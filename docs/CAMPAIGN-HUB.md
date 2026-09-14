@@ -1,6 +1,6 @@
 # Campaign phone and Foundry hub
 
-This update completes the six additions requested after the phone visual pass. Open with D-pad Up / F6. There are now two pages of six apps; continue navigating beyond the first six tiles to reach Garage, Crew orders, Journal, Progression, Alerts and Planning. A/Enter opens a row, then activates its labelled action. B/Backspace returns, cancels a confirmation, or closes the home screen.
+This update completes the six additions requested after the phone visual pass. Open with D-pad Up / F9. There are now two pages of six apps; continue navigating beyond the first six tiles to reach Garage, Crew orders, Journal, Progression, Alerts and Planning. A/Enter opens a row, then activates its labeled action. B/Backspace returns, cancels a confirmation, or closes the home screen.
 
 ## Garage and KJ
 
@@ -20,7 +20,7 @@ Orders cannot override mission-owned AI, recovery, apartment access, a character
 
 The journal reads the current mission's full objective and its authored context card: why the job matters, the crew's roles and the target. Completed jobs show their existing synopsis/context in campaign order, with solos placed at their story insertion points. Future synopses remain hidden. The next available lead uses existing prerequisite and story-gate checks.
 
-Progression shows each brother's permanent weapon entitlement, current homes and next housing requirement, owned garages/cars and the shared fleet. It lists actual workshop/base/preparation flags with their supplying missions and the runtime weapon reward table with each hero's reward. Other recorded upgrade flags remain visible. It does not grant purchases or bypass a shop lock. Preparation changed during an active attempt is labelled provisional; a supplier's completed status alone cannot invent missing equipment or access. Later housing rewards still require their supplier missions to become playable.
+Progression shows each brother's permanent weapon entitlement, current homes and next housing requirement, owned garages/cars and the shared fleet. It lists actual workshop/base/preparation flags with their supplying missions and the runtime weapon reward table with each hero's reward. Other recorded upgrade flags remain visible. It does not grant purchases or bypass a shop lock. Preparation changed during an active attempt is labeled provisional; a supplier's completed status alone cannot invent missing equipment or access. Later housing rewards still require their supplier missions to become playable.
 
 ## Alerts, receipts and crew follow-ups
 
@@ -36,7 +36,7 @@ The existing Planning table interaction and the Foundry home's Planning table me
 
 Before the port heist, the board checks the hull survey, patrol reduction, radar pod, gate access, Cargobob, Kraken and staging roll call. After M22, the portable board follows the desert/offshore preparation, including fuel, equipment flags, the Bradley credential, delivered launches and the offshore submarine. Each missing item names its supplier. Routing respects the normal mission gates.
 
-This is a readable preparation board connected to the existing table interaction, not a newly modelled interior prop. It records saved preparation; the actual mission must still verify live vehicles and their staging positions. It cannot launch an unimplemented mission or certify assets merely because a completion flag exists.
+This is a readable preparation board connected to the existing table interaction, not a newly modeled interior prop. It records saved preparation; the actual mission must still verify live vehicles and their staging positions. It cannot launch an unimplemented mission or certify assets merely because a completion flag exists.
 
 ## Validation and installation
 

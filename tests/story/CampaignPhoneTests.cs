@@ -46,6 +46,11 @@ public static partial class StoryTests
   var phone=new CampaignPhone(state,dispatches,()=>"Return to the foundry\n\n"+objective,()=>{routes++;return "Destination shown.";},slot=>slot==CrewSlot.Guess?"You":"On assignment","F6");
   try
   {
+   // A scoped sniper zooms on the same d-pad button, so that press belongs to the scope.
+   Game.Player.Character.IsAiming=true;Function.WeaponGroup=unchecked((uint)Game.GenerateHash("GROUP_SNIPER"));
+   Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
+   Check(!phone.IsOpen&&CampaignPhone.ScopeOwnsTheDpad,"A sniper scope keeps the d-pad, so the phone stays shut mid-shot");
+   Game.Player.Character.IsAiming=false;Function.WeaponGroup=0;Game.Pressed.Clear();
    Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
    Check(phone.IsOpen&&phone.Page==CampaignPhone.App.Home,"D-pad Up opens the campaign phone on its home screen");
    Check(CampaignPhone.BlocksGameplayInput&&Game.Disabled.Contains(Control.Phone),"Custom phone takes input focus and suppresses the vanilla phone");

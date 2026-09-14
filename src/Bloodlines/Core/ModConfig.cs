@@ -22,7 +22,10 @@ namespace Bloodlines.Core
         public Keys SwitchNextKey { get; private set; } = Keys.OemCloseBrackets;
         public Keys SwitchPrevKey { get; private set; } = Keys.OemOpenBrackets;
         public bool CampaignPhoneEnabled { get; private set; } = true;
-        public Keys PhoneKey { get; private set; } = Keys.F6;
+        // F6 is the neural-rendering toggle in the DLSS 5 add-on Ron is trying, and
+        // two owners of one key means neither works. F9 keeps the phone beside the
+        // rest of our function keys and is bound by nothing else here.
+        public Keys PhoneKey { get; private set; } = Keys.F9;
         public Keys AbilityKey { get; private set; } = Keys.Capital;
         public Keys MissionStartKey { get; private set; } = Keys.J;
         public Keys AbortKey { get; private set; } = Keys.Back;

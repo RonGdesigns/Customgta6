@@ -126,12 +126,31 @@ namespace Bloodlines.Core
         private static bool Held(Control control) => Function.Call<bool>(Hash.IS_DISABLED_CONTROL_PRESSED, 0, (int)control) || Game.IsControlPressed(control);
         private static bool Hit(Control control) => Function.Call<bool>(Hash.IS_DISABLED_CONTROL_JUST_PRESSED, 0, (int)control) || Game.IsControlJustPressed(control);
 
+        /// <summary>
+        /// A scoped sniper zooms on the d-pad, and the pad's up is the same button the
+        /// phone opens on. While the scope camera is up the button belongs to the scope:
+        /// opening a phone in the middle of a shot is never what the press meant. The
+        /// keyboard key still opens it, and so does the pad the moment the scope drops.
+        /// </summary>
+        public static bool ScopeOwnsTheDpad
+        {
+            get
+            {
+                var player = Game.Player.Character;
+                if (player == null || !player.Exists() || !player.IsAiming) return false;
+                uint weapon = Function.Call<uint>(Hash.GET_SELECTED_PED_WEAPON, player);
+                return Function.Call<uint>(Hash.GET_WEAPONTYPE_GROUP, weapon) ==
+                       unchecked((uint)Game.GenerateHash("GROUP_SNIPER"));
+            }
+        }
+
         // Run before mission/shop input. Drawing and route actions run after mission updates.
         public void Input(bool enabled, bool deployed, bool available, CrewSlot owner)
         {
             if (!enabled || !deployed || !available || (IsOpen && _owner != owner)) Close();
             if (enabled && deployed) Game.DisableControlThisFrame(Control.Phone);
-            if (enabled && deployed && available && !IsOpen && !BlocksGameplayInput && Hit(Control.Phone)) Open(owner);
+            if (enabled && deployed && available && !IsOpen && !BlocksGameplayInput && !ScopeOwnsTheDpad && Hit(Control.Phone))
+                Open(owner);
             if (BlocksGameplayInput)
                 foreach (var control in ReservedControls)
                 {
