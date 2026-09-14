@@ -119,6 +119,13 @@ namespace Bloodlines.Missions
         /// <summary>Whether the phase that just passed actually left the state the next one loads.</summary>
         public abstract bool ValidatePhaseEnd(Mission phase, out string reason);
 
+        /// <summary>
+        /// Anything an operation owns that is not an entity: a requested piece of
+        /// map, a global override. Called once, after the entities are handled, on
+        /// every exit including failure and abort.
+        /// </summary>
+        protected virtual void OnDisposed(bool successful) { }
+
         public void Dispose(bool successful)
         {
             if (_disposed) return;
@@ -147,6 +154,8 @@ namespace Bloodlines.Missions
                 catch (Exception ex) { Logger.Error(Label + " world cleanup", ex); }
             }
             _owned.Clear(); _named.Clear(); _keep.Clear(); _power.Clear(); _invincible.Clear();
+            try { OnDisposed(successful); }
+            catch (Exception ex) { Logger.Error(Label + " world release", ex); }
         }
     }
 }

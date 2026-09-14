@@ -136,6 +136,13 @@ namespace Bloodlines.Missions
                 { "M41", () => new M41TheGeneralsWire() },
                 { "M42", () => new M42SkyfallDelivery() },
                 { "M43", () => new M43StagingPaleto() },
+                // Chapters of the Paleto operation. Started normally they are
+                // wrapped by PaletoOperation, which enters every attempt at M44.
+                { "M44", () => new M44PaletoSubSurface() },
+                { "M45", () => new M45PaletoBreach() },
+                { "M46", () => new M46PaletoVault() },
+                { "M47", () => new M47PaletoCollapse() },
+                { "M48", () => new M48TheRoadBackSouth() },
                 { "SM04", () => new SM04DeadDropQuarry() },
                 { "SM05", () => new SM05BlackBoxEstuary() },
                 { "SM06", () => new SM06CanyonRunner() }

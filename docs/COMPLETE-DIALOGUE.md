@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 49 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 54 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2104,7 +2104,7 @@ Agreed. Gohan starts beneath the platform. The rest of us move on his call.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M44 - PALETO DEEP-SEA: SUB-SURFACE (future gameplay)
+## M44 - PALETO DEEP-SEA: SUB-SURFACE (scripted)
 
 ### Intro
 
@@ -2147,7 +2147,7 @@ Now I bring Ice to the helipad. Hold a channel open. We finally learned to wait 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M45 - PALETO DEEP-SEA: HELIPAD BREACH (future gameplay)
+## M45 - PALETO DEEP-SEA: HELIPAD BREACH (scripted)
 
 ### Intro
 
@@ -2190,7 +2190,7 @@ I'm on my way. When this door opens, we copy the evidence before we count the bo
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M46 - PALETO DEEP-SEA: VAULT CRACK (future gameplay)
+## M46 - PALETO DEEP-SEA: VAULT CRACK (scripted)
 
 ### Intro
 
@@ -2233,7 +2233,7 @@ Carry the evidence and whatever weight leaves room for a person. We have to get 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M47 - PALETO DEEP-SEA: COLLAPSE (future gameplay)
+## M47 - PALETO DEEP-SEA: COLLAPSE (scripted)
 
 ### Intro
 
@@ -2276,7 +2276,7 @@ We're taking proof back south, not just bringing the same war to another hiding 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M48 - THE ROAD BACK SOUTH (future gameplay)
+## M48 - THE ROAD BACK SOUTH (scripted)
 
 ### Intro
 

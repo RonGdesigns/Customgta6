@@ -52,7 +52,10 @@ public static partial class StoryTests
   World.GroundHeight=0f;
 
   // ---- The next operations are declared.
-  Check(MissionManager.Continuations["M44"]=="M45"&&MissionManager.Continuations["M47"]=="M48"&&!MissionManager.Continuations.ContainsKey("M48"),"Paleto Deep-Sea runs M44 through M48");
+  // Paleto used to be declared here as an ordinary chain. It is an operation now:
+  // the parent owns its joins, so none of its chapters belongs in this table.
+  Check(MissionOperations.Paleto.EntryId=="M44"&&MissionOperations.Paleto.FinalId=="M48"&&
+        MissionOperations.Paleto.PhaseIds.All(id=>!MissionManager.Continuations.ContainsKey(id)),"Paleto Deep-Sea runs M44 through M48 as one operation, not a chain");
   Check(MissionManager.Continuations["M63"]=="M64"&&MissionManager.Continuations["M66"]=="M67"&&MissionManager.Continuations["M69"]=="M70"&&!MissionManager.Continuations.ContainsKey("M70"),"Blood Brothers runs M63 through M70");
   Check(!MissionManager.Continuations.ContainsKey("M18")&&!MissionManager.Continuations.ContainsKey("M43")&&!MissionManager.Continuations.ContainsKey("M04"),"Staging links and separate jobs are not chained");
  }

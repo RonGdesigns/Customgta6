@@ -156,7 +156,7 @@ public static partial class StoryTests
 
         // None of this reached the campaign's own registry.
         Check(MissionOperations.Owning("P1") == null && MissionOperations.CreateFor("P1", context.State) == null,
-            "A test operation is not a registered one: the campaign still knows only the Port Heist");
+            "A test operation is not a registered one: the campaign never dispatches it");
         Check(MissionOperations.CreateFor("M20", context.State) is PortHeistOperation parent && parent.Id == "M19",
             "Any Port Heist chapter still resolves to the parent, entered at M19");
         Check(MissionOperations.CreateFor("M07", context.State) == null,
@@ -197,8 +197,19 @@ public static partial class StoryTests
             "Only the run's last chapter escapes inner-chapter handling");
         Check(CampaignState.DefaultPayout("M21") == 0 && CampaignState.DefaultPayout("M22") > 0,
             "An operation pays once, at its end");
-        Check(MissionOperations.Owning("M44") == null,
-            "Paleto is not registered yet: its parent is the next piece of work, not a claim");
+        // Paleto is the second registered operation. It has to answer the same
+        // contract as the first one from the same table, not from its own code.
+        Check(MissionOperations.Owning("M44") == MissionOperations.Paleto &&
+              MissionOperations.Paleto.PhaseIds.SequenceEqual(new[] { "M44", "M45", "M46", "M47", "M48" }) &&
+              MissionOperations.Paleto.Title == "Paleto Deep-Sea",
+            "Paleto is registered with its five chapters and its own title");
+        Check(MissionOperations.ResultIdFor("M44") == "M48" && MissionOperations.ResultIdFor("M48") == "M48" &&
+              MissionOperations.IsInnerPhase("M47") && !MissionOperations.IsInnerPhase("M48"),
+            "Every Paleto chapter records its result at M48, and only M48 escapes inner handling");
+        Check(CampaignState.DefaultPayout("M47") == 0 && CampaignState.DefaultPayout("M48") > 0,
+            "Paleto pays once, at its end");
+        Check(MissionOperations.Owning("M49") == null && MissionOperations.Owning("M43") == null,
+            "The chapters on either side of it are ordinary missions");
 
         // Failed physical results must stop both watched and skipped blocking.
         Reset(); int applied = 0;

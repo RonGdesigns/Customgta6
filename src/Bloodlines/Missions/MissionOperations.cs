@@ -52,7 +52,10 @@ namespace Bloodlines.Missions
         public static readonly OperationSpec PortHeist =
             new OperationSpec("The Port Heist", "M19", "M20", "M21", "M22");
 
-        private static readonly OperationSpec[] Registered = { PortHeist };
+        public static readonly OperationSpec Paleto =
+            new OperationSpec("Paleto Deep-Sea", "M44", "M45", "M46", "M47", "M48");
+
+        private static readonly OperationSpec[] Registered = { PortHeist, Paleto };
         public static IReadOnlyList<OperationSpec> All => Array.AsReadOnly(Registered);
 
         /// <summary>The operation this chapter belongs to, or null for an ordinary mission.</summary>
@@ -72,6 +75,7 @@ namespace Bloodlines.Missions
             var operation = Owning(missionId);
             if (operation == null) return null;
             if (operation == PortHeist) return new PortHeistOperation(missionId, state);
+            if (operation == Paleto) return new PaletoOperation(missionId, state);
             // Registered as continuous but with no parent script: play the chapter
             // alone rather than silently dropping the mission the player started.
             Core.Logger.Error(operation.Title + " has no operation parent; " + missionId + " runs on its own.");

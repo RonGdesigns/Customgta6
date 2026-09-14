@@ -823,3 +823,30 @@ M27.RunwayStart	2030.000	4760.000	40.140	110	land	estimate	McKenzie runway layou
 M27.ParkedLazer	2065.000	4750.000	40.638	110	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
 M27.CrewStart	2035.000	4747.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
 M27.IcePost	2038.000	4748.000	40.200	0	land	estimate	McKenzie runway layout from M37 inspected neighborhood; full model/lane checked at runtime; new offsets live pending
+M44.Start	-1604	5246	3.069	0	land	estimate	Derived from verified hull extents; live survey pending
+M44.Sub	-1850	5520	0	120	water	estimate	Derived from verified hull extents; live survey pending
+M44.Clamp1	-1795	5317	0	0	water	estimate	Derived from verified hull extents; live survey pending
+M44.Clamp2	-1760	5332	0	0	water	estimate	Derived from verified hull extents; live survey pending
+M44.Clamp3	-1722	5342	0	0	water	estimate	Derived from verified hull extents; live survey pending
+M44.Sensor	-1712	5334	0	0	water	estimate	Derived from verified hull extents; live survey pending
+M44.Surface	-1772	5306	0	0	water	estimate	Derived from verified hull extents; live survey pending
+M45.Approach	-1900	5250	60	45	air	estimate	Derived from verified hull extents; live survey pending
+M45.Hold	-1748	5300	40	0	air	estimate	Derived from verified hull extents; live survey pending
+M45.Helipad	-1700	5325	15.5	200	land	estimate	Derived from verified hull extents; live survey pending
+M45.Stern	-1694	5326	0	200	water	estimate	Derived from verified hull extents; live survey pending
+M45.Board	-1697	5328	1.2	200	land	estimate	Derived from verified hull extents; live survey pending
+M46.Stairs	-1750	5332	4.89	0	land	estimate	Derived from verified hull extents; live survey pending
+M46.Bridge	-1758	5334	9	0	land	estimate	Derived from verified hull extents; live survey pending
+M46.Vault	-1770	5334	4.89	0	land	estimate	Derived from verified hull extents; live survey pending
+M46.Ledger	-1772	5335	4.89	0	land	estimate	Derived from verified hull extents; live survey pending
+M46.Bonds	-1769	5336	4.89	0	land	estimate	Derived from verified hull extents; live survey pending
+M46.Console	-1760	5335	9	0	land	estimate	Derived from verified hull extents; live survey pending
+M47.Landing	-1610	5232	3	90	land	estimate	Derived from verified hull extents; live survey pending
+M47.BoatStart	-1740	5390	0	180	water	estimate	Derived from verified hull extents; live survey pending
+M47.Trigger	-1702	5324	12	200	land	estimate	Derived from verified hull extents; live survey pending
+M47.Clear	-1620	5210	0	180	water	estimate	Derived from verified hull extents; live survey pending
+M48.Shore	-1606	5244	2	120	water	estimate	Derived from verified hull extents; live survey pending
+M48.Technical	-1596	5228	3.05	150	land	estimate	Derived from verified hull extents; live survey pending
+M48.Cordon	-1560	5160	17.5	160	land	estimate	Derived from verified hull extents; live survey pending
+M48.South	-1480	5040	44	150	land	estimate	Derived from verified hull extents; live survey pending
+M47.Jump	-1700	5322	12	200	land	estimate	Derived from verified hull extents; live survey pending
