@@ -134,7 +134,10 @@ namespace Bloodlines.Missions
             _owned.Clear();
             _keep.Clear();
             _named.Clear();
-            _values.Clear();
+            // Mission.Pass cleans the parent before MissionManager commits campaign
+            // progress. Successful scalar result values therefore remain readable
+            // until CommitResult runs; failed/aborted attempts discard them here.
+            if (!successful) _values.Clear();
             _power.Clear();
             _invincible.Clear();
         }
