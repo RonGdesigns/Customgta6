@@ -14,8 +14,10 @@ namespace Bloodlines.Missions
     /// </summary>
     public sealed class PortHeistOperation : Mission
     {
-        public static readonly string[] PhaseIds = { "M19", "M20", "M21", "M22" };
-        public const string OperationTitle = "The Port Heist";
+        /// <summary>One source of truth for the chapters and which one ends the run.</summary>
+        public static readonly OperationSpec Spec = MissionOperations.PortHeist;
+        public static readonly string[] PhaseIds = Spec.PhaseIds.ToArray();
+        public static readonly string OperationTitle = Spec.Title;
         private readonly CampaignState _state;
         private readonly List<Mission> _phases = new List<Mission>();
         private Mission _phase;
@@ -129,7 +131,7 @@ namespace Bloodlines.Missions
 
         protected override void OnPassed()
         {
-            if (PhaseId != "M22" || _phase.Status != MissionStatus.Passed || !_world.ValidatePhaseEnd(_phase, out _))
+            if (!Spec.IsFinal(PhaseId) || _phase.Status != MissionStatus.Passed || !_world.ValidatePhaseEnd(_phase, out _))
                 throw new InvalidOperationException("The Port Heist has not reached its final verified result.");
         }
 

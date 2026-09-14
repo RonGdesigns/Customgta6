@@ -46,7 +46,7 @@ namespace Bloodlines.Missions
         {
             if (AttemptActive) throw new InvalidOperationException("A mission attempt already owns story state.");
             _attemptId = id ?? throw new ArgumentNullException(nameof(id));
-            _attemptReplay = IsComplete(PortHeistOperation.Contains(id) ? "M22" : id);
+            _attemptReplay = IsComplete(MissionOperations.ResultIdFor(id));
             _savedEvidence = new Dictionary<string, string>(Evidence, StringComparer.OrdinalIgnoreCase);
             _savedCargo = new Dictionary<string, string>(Cargo, StringComparer.OrdinalIgnoreCase);
             _savedUpgrades = new Dictionary<string, bool>(FleetUpgrades, StringComparer.OrdinalIgnoreCase);
@@ -90,7 +90,7 @@ namespace Bloodlines.Missions
         // There is deliberately no heist resume field: only final success is saved.
         public void CompletePortHeist(MissionCatalog catalog, IDictionary<string, string> cargo)
         {
-            bool firstPass = !IsComplete("M22");
+            bool firstPass = !IsComplete(MissionOperations.PortHeist.FinalId);
             if (AttemptActive && PortHeistOperation.Contains(_attemptId)) EndAttempt(firstPass);
             _saveBatch++;
             try
@@ -208,8 +208,11 @@ namespace Bloodlines.Missions
                     if (entry != null) state.Completed.Add(entry.ToString());
                 }
 
-                if (!state.IsComplete("M22") && PortHeistOperation.Contains(state.CurrentMissionId))
-                    state.CurrentMissionId = "M19";
+                // A bookmark inside an unfinished operation returns to its entry: an
+                // operation has no midpoint to resume from.
+                var interrupted = MissionOperations.Owning(state.CurrentMissionId);
+                if (interrupted != null && !state.IsComplete(interrupted.FinalId))
+                    state.CurrentMissionId = interrupted.EntryId;
 
                 var location = Json.Object(campaign.TryGetValue("lastKnownLocation", out var l) ? l : null);
                 if (location.Count > 0)
@@ -361,7 +364,8 @@ namespace Bloodlines.Missions
         public static int DefaultPayout(string id)
         {
             if (string.IsNullOrEmpty(id)) return 0;
-            if (PortHeistOperation.Contains(id) && !string.Equals(id, "M22", StringComparison.OrdinalIgnoreCase)) return 0;
+            // An operation pays once, at its end. Its inner chapters pay nothing.
+            if (MissionOperations.IsInnerPhase(id)) return 0;
             if (id.StartsWith("SM", StringComparison.OrdinalIgnoreCase)) return 20000;
             int number;
             if (id.Length <= 1 || !int.TryParse(id.Substring(1), out number)) return 0;
@@ -456,10 +460,14 @@ namespace Bloodlines.Missions
         public MissionDefinition NextStory(MissionCatalog catalog) =>
             catalog.Playable.FirstOrDefault(m => IsUnfinishedStory(m) && PrerequisiteMet(m));
 
-        private bool IsUnfinishedStory(MissionDefinition mission) => !mission.IsSolo &&
-            (PortHeistOperation.Contains(mission.Id)
-                ? string.Equals(mission.Id, "M19", StringComparison.OrdinalIgnoreCase) && !IsComplete("M22")
-                : !IsComplete(mission.Id));
+        // An operation is offered at its entry only, and only while unfinished.
+        private bool IsUnfinishedStory(MissionDefinition mission)
+        {
+            if (mission.IsSolo) return false;
+            var run = MissionOperations.Owning(mission.Id);
+            if (run == null) return !IsComplete(mission.Id);
+            return string.Equals(mission.Id, run.EntryId, StringComparison.OrdinalIgnoreCase) && !IsComplete(run.FinalId);
+        }
 
         public bool PrerequisiteMet(MissionDefinition mission)
         {

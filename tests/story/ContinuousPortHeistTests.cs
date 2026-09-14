@@ -52,6 +52,41 @@ public static partial class StoryTests
 
     static void ContinuousPortHeistChecks()
     {
+        // The second continuous mission, Paleto, cannot be the first one with a new
+        // list of ids: the Port Heist spelled its last chapter out in the campaign
+        // state, the dialogue gate and the outro. The contract below is what makes a
+        // second operation possible, so it is tested against ids that are not M19-M22.
+        var paleto = new OperationSpec("Paleto Deep-Sea", "M44", "M45", "M46", "M47", "M48");
+        Check(paleto.EntryId == "M44" && paleto.FinalId == "M48",
+            "An operation enters at its first chapter and finishes at its last");
+        Check(paleto.IsInner("M44") && paleto.IsInner("M47") && !paleto.IsInner("M48") && !paleto.IsInner("M49"),
+            "Every chapter but the last is an inner one, and an outsider is neither");
+        Check(paleto.Contains("m46") && paleto.IndexOf("M46") == 2,
+            "Chapter lookup ignores case and keeps play order");
+        int refused = 0;
+        foreach (var bad in new Func<OperationSpec>[] {
+            () => new OperationSpec("Too short", "M44"),
+            () => new OperationSpec("Repeated", "M44", "M44"),
+            () => new OperationSpec("Blank", "M44", " ") })
+            try { bad(); } catch (ArgumentException) { refused++; }
+        Check(refused == 3, "A malformed operation is refused at construction rather than half-working");
+
+        // The Port Heist now reads its own finality from the same contract.
+        Check(PortHeistOperation.Spec == MissionOperations.PortHeist &&
+              PortHeistOperation.PhaseIds.SequenceEqual(new[] { "M19", "M20", "M21", "M22" }) &&
+              PortHeistOperation.OperationTitle == "The Port Heist",
+            "The Port Heist keeps its chapters and title, now from one source");
+        Check(MissionOperations.ResultIdFor("M21") == "M22" && MissionOperations.ResultIdFor("M22") == "M22",
+            "Any chapter records its result under the chapter that ends the run");
+        Check(MissionOperations.ResultIdFor("M07") == "M07" && !MissionOperations.IsInnerPhase("M07"),
+            "An ordinary mission is its own result and is not an inner chapter");
+        Check(MissionOperations.IsInnerPhase("M19") && !MissionOperations.IsInnerPhase("M22"),
+            "Only the run's last chapter escapes inner-chapter handling");
+        Check(CampaignState.DefaultPayout("M21") == 0 && CampaignState.DefaultPayout("M22") > 0,
+            "An operation pays once, at its end");
+        Check(MissionOperations.Owning("M44") == null,
+            "Paleto is not registered yet: its parent is the next piece of work, not a claim");
+
         // Failed physical results must stop both watched and skipped blocking.
         Reset(); int applied = 0;
         var badStart = new SceneBlocking().Then(new FailedStartSceneStep()).Then(new VerifySceneStep("tail", () => true, () => applied++));

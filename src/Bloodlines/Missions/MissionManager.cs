@@ -314,7 +314,8 @@ namespace Bloodlines.Missions
             bool passed = _current.Status == MissionStatus.Passed;
             SceneBlocking outro = null;
             if (passed) { try { outro = _current.OutroBlocking(); } catch (System.Exception ex) { Logger.Error(_current.Id + " outro blocking", ex); } }
-            string outroId = _current is PortHeistOperation ? "M22" : _currentDefinition.Id;
+            // An operation's aftermath is its last chapter's, not its entry's.
+            string outroId = _current is PortHeistOperation ? PortHeistOperation.Spec.FinalId : _currentDefinition.Id;
             string outcomeTitle = _current.Title;
             Finish();
             if (passed) _context.Cutscenes.Play(outroId, "outro", "Aftermath: " + outcomeTitle, null, null, outro);

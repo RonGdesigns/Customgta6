@@ -17,6 +17,7 @@ def main():
     sources += ['Core/CampaignPhone.cs', 'Core/CampaignHub.cs', 'Core/PhoneOverlay.cs', 'Core/PhoneOverlay.Metrics.cs', 'Core/ShopPerformance.cs']
     sources += ['Core/BunkerSite.cs', 'Core/CrewHomes.Bunker.cs', 'Missions/Objectives/BunkerAccessObjective.cs']
     sources += ['Core/BoundedPlacement.cs', 'Core/NonlethalGuards.cs']
+    sources += ['Missions/MissionOperations.cs']
     sources = list(dict.fromkeys(sources))
     args += [f'"{ROOT/"src/Bloodlines"/name}"' for name in sources]
     main_source=(ROOT/'src/Bloodlines/BloodlinesMain.cs').read_text(encoding='utf-8')

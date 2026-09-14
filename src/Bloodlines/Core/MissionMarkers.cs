@@ -62,8 +62,12 @@ namespace Bloodlines.Core
             float closest = 6f;
             foreach (var mission in _catalog.Playable)
             {
-                bool operation = PortHeistOperation.Contains(mission.Id);
-                if (operation && (mission.Id != "M19" || _state.IsComplete("M22"))) continue;
+                // An operation shows one start marker, at its entry, until it is done.
+                // Its inner chapters never get their own.
+                var run = MissionOperations.Owning(mission.Id);
+                bool operation = run != null;
+                if (operation && (!string.Equals(mission.Id, run.EntryId, StringComparison.OrdinalIgnoreCase)
+                    || _state.IsComplete(run.FinalId))) continue;
                 if ((!operation && _state.IsComplete(mission.Id)) || !_state.PrerequisiteMet(mission)) continue;
                 string markerId = mission.Id;
                 if (!_keys.TryGetValue(markerId, out var key)) continue;
