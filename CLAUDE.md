@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-49 of 79 missions have gameplay scripts (M01–M43, SM01–SM06); the rest are loaded as data
+54 of 79 missions have gameplay scripts (M01–M48, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M44–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M49–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -276,3 +276,30 @@ claim index acceptance establishes visual quality. World menu grading A/B is
 session-only; it does not change weather/time/water/LOD, maps, config or saves.
 Preserve the default ungraded dusk. Higher-priority suspension is immediate, not
 a delayed fade. No-getter graphics settings still have compatibility limitations.
+
+## Continuous operations, and Paleto as the second one
+
+An operation is several authored chapters the player experiences as one sitting:
+one entry, one world, one loan, one result. `OperationSpec` names its chapters and
+which one ends it, `MissionOperations` is the one table of them, and
+`ContinuousOperation` plus `OperationWorld` carry the sitting itself — the phase
+walk, the scene guard, the two validation gates, the single award and the
+reverse-order teardown. `PortHeistOperation` (M19–M22) and `PaletoOperation`
+(M44–M48) are thin subclasses. Adding another is a row in that table and a row in
+`MissionOperations.CreateFor`, never a copy of the manager's special cases.
+
+Never chain an operation's chapters in `MissionManager.Continuations`: an ordinary
+continuation tears the world down and starts the next mission normally, which is
+the opposite of one attempt. Record an operation's result only through
+`CampaignState.CompleteOperation`. A chapter must also stage its own vehicles when
+no parent carried them in, so it can still be opened alone in QA.
+
+Paleto happens on the vessel anchored in Paleto Cove, because the authored
+offshore rig does not exist in the installed game. `PaletoSite` holds the keel,
+deck and seabed heights that were read out of the archives, and
+`docs/story-to-play/pass-02/SITE-REPORT.md` records where each came from and what
+is still unverified. Its map is script-loaded, so `ScriptedMap` owns the request
+for the length of the attempt: release only names this instance turned on, and
+release on pass, failure and abort alike. Interior standing points are estimates
+derived from verified extents and still need an F11 pass; no automated check here
+is live acceptance, and nobody has walked on that deck yet.
