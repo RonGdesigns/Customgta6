@@ -110,6 +110,10 @@ namespace Bloodlines.Core
 
         /// <summary>Water a boat can float in: the surface must stand this far above whatever ground is under it.</summary>
         public const float MinWaterDepth = 1.2f;
+        /// <summary>What a surveyed water key needs under it: real water, not the estimate's clearance.</summary>
+        public const float SurveyedWaterDepth = 0.3f;
+        /// <summary>How far a surveyed key looks for deeper water when its own point has none.</summary>
+        public const int SurveyedSearch = 40;
 
         /// <summary>
         /// A water key resolves to real water. The ocean's water plane runs under
@@ -117,7 +121,9 @@ namespace Bloodlines.Core
         /// Palomino road (Ron, September 11); a point counts only when the ground
         /// under it is below the surface by <see cref="MinWaterDepth"/>. Unloaded
         /// seabed (no ground found) counts as open water. Estimates search outward to
-        /// 250 m, nearest ring first; a surveyed key is trusted as it stands.
+        /// 250 m, nearest ring first. A surveyed key is trusted where it stands and only
+/// needs real water under it, because Ron watched boats moor in less than the
+/// estimate's depth at M05.GrottoMouth; a step away from a survey needs the full depth.
         /// </summary>
         public static bool Water(LocationBook book, params string[] keys)
         {
@@ -130,8 +136,9 @@ namespace Bloodlines.Core
                     Function.Call(Hash.SET_FOCUS_POS_AND_VEL, location.Position.X, location.Position.Y, location.Position.Z, 0f,0f,0f);
                     Function.Call(Hash.REQUEST_COLLISION_AT_COORD, location.Position.X, location.Position.Y, location.Position.Z);
                     Vector3? found=null; bool surfaceSeen=false;
-                    int radiusLimit=location.Status==LocationStatus.Surveyed?0:250;
-                    for(int radius=0;radius<=radiusLimit&&!found.HasValue;radius+=25)
+                    bool surveyed=location.Status==LocationStatus.Surveyed;
+                    int radiusLimit=surveyed?SurveyedSearch:250; int step=surveyed?10:25;
+                    for(int radius=0;radius<=radiusLimit&&!found.HasValue;radius+=step)
                         for(int angle=0;angle<8&&!found.HasValue;angle++)
                         {
                             var p=location.Position+new Vector3((float)Math.Cos(angle*Math.PI/4)*radius,(float)Math.Sin(angle*Math.PI/4)*radius,0);
@@ -139,9 +146,12 @@ namespace Bloodlines.Core
                             if(!Function.Call<bool>(Hash.GET_WATER_HEIGHT,p.X,p.Y,100f,height)) continue;
                             surfaceSeen=true;
                             float surface=height.GetResult<float>();
-                            if(!DeepEnough(p.X,p.Y,surface)) continue;
+                            // The survey's own point needs only real water under it; a step
+                            // away from it, or an estimate, needs the full depth.
+                            if(!DeepEnough(p.X,p.Y,surface,surveyed&&radius==0?SurveyedWaterDepth:MinWaterDepth)) continue;
                             found=new Vector3(p.X,p.Y,surface+.2f);
-                            if(radius>0) Logger.Info("Water key "+key+" resolved "+radius+" m from its estimate to floatable water at "+found.Value);
+                            if(radius>0) Logger.Info("Water key "+key+" resolved "+radius+" m from its "+(surveyed?"survey":"estimate")+" to floatable water at "+found.Value);
+                            if(radius==0&&surveyed) Logger.Info("Water key "+key+" trusted at its survey, "+found.Value+".");
                         }
                     if(!found.HasValue)
                     {
@@ -158,14 +168,15 @@ namespace Bloodlines.Core
             return true;
         }
 
-        /// <summary>True when no ground stands within <see cref="MinWaterDepth"/> of the surface at this column (or none is loaded).</summary>
-        public static bool DeepEnough(float x, float y, float surface)
+        /// <summary>True when no ground stands within the given depth of the surface at this column (or none is loaded).</summary>
+        public static bool DeepEnough(float x, float y, float surface) => DeepEnough(x, y, surface, MinWaterDepth);
+        public static bool DeepEnough(float x, float y, float surface, float minDepth)
         {
             var ground=new OutputArgument();
             // A depth probe needs the seabed. Including water returns the surface
             // as ground and makes an otherwise valid boat spawn look too shallow.
             if(!Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, x, y, surface+30f, ground, false, false)) return true;
-            return ground.GetResult<float>() <= surface-MinWaterDepth;
+            return ground.GetResult<float>() <= surface-minDepth;
         }
     }
 }
