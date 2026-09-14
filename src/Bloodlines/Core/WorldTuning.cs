@@ -63,6 +63,16 @@ namespace Bloodlines.Core
                 if (ped != null && ped.Exists() && ped.IsAlive && ped != Game.Player.Character)
                     Function.Call(Hash.SET_PED_MOVE_RATE_OVERRIDE, ped, 1.3f);
             }
+            // One switch that stops every write to shared handling, so a crash can be
+            // pinned to this pass in a single launch: turn it off, repeat what crashed,
+            // and the answer is unambiguous. Registration is what torque assistance,
+            // crew damage protection and panel dents all hang off, so this turns those
+            // off with it. Walking and running speed are unaffected.
+            if (Config != null && !Config.HandlingTuningEnabled)
+            {
+                if (_profiles.Count > 0 || _cars.Count > 0 || _pending.Count > 0) { Reset(); _running = true; }
+                return;
+            }
             var driven = Game.Player.Character?.CurrentVehicle;
             if (Nitrous.Boosting && driven != null && driven.Exists() && !_cars.ContainsKey(driven.Handle)) Register(driven, crew);
             UpdatePower(crew);
