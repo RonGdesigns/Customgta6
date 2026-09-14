@@ -21,7 +21,16 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Tuple<Vehicle, Ped, Ped>> _response = new List<Tuple<Vehicle, Ped, Ped>>();
         private readonly List<Blip> _responseBlips = new List<Blip>();
         private int _orders;
+        private int _tracked = -1;
+        private bool _wasFighting;
         protected bool Fighting;
+        /// <summary>
+        /// What this mission's hostiles know. Reaction used to be this one Fighting flag
+        /// and a combat task re-issued every tick; between them a guard being shot at
+        /// did nothing, which is what Ron reported in M31, M33 and M37. Awareness owns
+        /// their tasking now, and missions can report their own stimuli to it.
+        /// </summary>
+        protected GuardAwareness Awareness { get; private set; }
         protected Func<Vector3> DrivingDestination;
         protected bool BeginCrew(CrewSlot active)
         {
@@ -34,6 +43,9 @@ namespace Bloodlines.Missions.Campaign
                 Station(slot, At(site + "." + slot + "Start"));
             Ctx.Crew.CompanionsHoldPosition = true;
             Roles = new RoleTracks(Ctx.Crew, () => Opposition);
+            Awareness = new GuardAwareness(() => Protagonist.All
+                .Select(h => Ctx.Crew.PedFor(h.Slot))
+                .Where(p => p != null && p.Exists() && !p.IsDead));
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
                 Roles.For(slot).Observe(At(site + "." + slot + "Start"), At(site + "." + slot + "Start"));
             return true;
@@ -173,6 +185,22 @@ namespace Bloodlines.Missions.Campaign
                 if (slot != Ctx.Crew.ActiveSlot && Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted)
                     Ctx.Crew.CompanionAI.TakeControl(slot);
             Roles?.Update();
+            if (Awareness != null)
+            {
+                // Every frame, deliberately above the order throttle below: awareness
+                // bounds its own work with a review interval and a per-tick slice, and a
+                // hostile who is shot at cannot wait two and a half seconds to notice.
+                if (Opposition.Count != _tracked) { Awareness.TrackAll(Opposition); _tracked = Opposition.Count; }
+                // A mission declaring a fight means these men are already engaged. That
+                // reaches them as a radio call rather than bypassing the model.
+                if (Fighting && !_wasFighting)
+                {
+                    var engaged = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+                    if (engaged != null && engaged.Exists()) Awareness.ReportToAll(Stimulus.RadioCall, engaged.Position);
+                }
+                _wasFighting = Fighting;
+                Awareness.Update();
+            }
             if (Game.GameTime < _orders) return;
             _orders = Game.GameTime + 2500;
             if (DrivingDestination != null)
@@ -199,11 +227,6 @@ namespace Bloodlines.Missions.Campaign
                     else DriveBy(unit.Item3, target);
                 }
             }
-            foreach (var enemy in Opposition.Where(p => p != null && p.Exists() && !p.IsDead && !p.IsInVehicle()))
-            {
-                var target = targets.OrderBy(p => p.Position.DistanceTo(enemy.Position)).FirstOrDefault();
-                if (target != null) enemy.Task.FightAgainst(target);
-            }
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Gohan, CrewSlot.Ice })
             {
                 if (slot == Ctx.Crew.ActiveSlot) continue;
@@ -215,6 +238,6 @@ namespace Bloodlines.Missions.Campaign
             }
         }
         protected override void OnUpdate() { TickSupport(); base.OnUpdate(); }
-        protected override void OnCleanup() { Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
+        protected override void OnCleanup() { Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
     }
 }

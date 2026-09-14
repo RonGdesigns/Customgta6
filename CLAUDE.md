@@ -331,3 +331,30 @@ stopped M43. Check the real footprint with `PlacementContract` and report it.
 
 Cosmetic failure is not mission failure. Ask for a particle dictionary across
 several frames, and if a plume still will not render, record it and carry on.
+
+## September 14: guard awareness
+
+`Core/GuardAwareness.cs` models what a mission guard knows: Unaware, Suspicious,
+Investigating, Detected, Alarmed, moved by graded stimuli (sighting, heard shot,
+suppressed shot, taking fire, a body found, a radio call, trespass) and decayed
+when nothing feeds it. It owns mission hostiles only; police and military dispatch
+stay with `TacticalResponse` and `MilitaryResponse`.
+
+Two rules it exists to enforce. A hostile reacts to what happens to **him** whether
+or not a mission has set `Fighting`: taking fire escalates him with no line of sight
+required. And a combat task is issued **once**, on a state change or a genuinely
+stale order — re-issuing `Task.FightAgainst` every tick restarts the task before the
+ped can act on it, and that plus the `Fighting` gate is why the guards in M31, M33
+and M37 stood still while Ice shot at them.
+
+`PreparationOperation` owns one instance and updates it every frame, deliberately
+above that class's 2.5-second order throttle: awareness bounds its own cost with a
+review interval and a per-tick slice, so a guard cannot wait on an order clock to
+notice he is being shot. A mission that sets `Fighting` reaches its hostiles as a
+radio call rather than bypassing the model. Line of sight is an entity-to-entity
+question: use `CanSee` for a person and `InView`, which tests facing and range only,
+for a reported position.
+
+`Suppressed` makes suspicion decay instead of climb and stops radio propagation,
+while taking fire still lands. That is the hook Gohan's Blackout uses, and it is why
+the framework had to exist before that ability could be built.
