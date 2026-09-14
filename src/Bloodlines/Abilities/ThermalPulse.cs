@@ -8,15 +8,25 @@ using GTA.Native;
 namespace Bloodlines.Abilities
 {
     /// <summary>
-    /// Gohan — "Thermal Pulse". See-through vision plus a live outline on every
-    /// hostile in range, which is what makes the breaching missions playable
-    /// without the player memorising guard patrols.
+    /// Ice — "Thermal Pulse". See-through vision plus a live outline on every body in
+    /// range, so a shot can be taken at something he can actually account for.
+    ///
+    /// This was Gohan's until Ron moved it on September 14, 2026: Ice is the shooter
+    /// and does most of the long-range work, and a thermal sight is a marksman's
+    /// instrument rather than a technician's. It replaced "Overwatch Focus", which
+    /// described itself as a steadier gun for work off a crane or a rooftop and was
+    /// in fact a flat damage multiplier with slow motion — nothing in it steadied
+    /// anything. Gohan took <see cref="Blackout"/> in exchange.
+    ///
+    /// Two authored mission descriptions still say Gohan uses this: M04 and the solo
+    /// SM02. The bible extraction is not edited to follow gameplay, so the adaptation
+    /// is recorded in data/mission_gameplay.tsv instead.
     /// </summary>
     public sealed class ThermalPulse : Ability
     {
         private const float ScanRadius = 60f;
 
-        public override CrewSlot Slot => CrewSlot.Gohan;
+        public override CrewSlot Slot => CrewSlot.Ice;
         public override string Name => "Thermal Pulse";
 
         public override void Activate(Ped player)
@@ -34,7 +44,7 @@ namespace Bloodlines.Abilities
 
                 bool hostile = ped.GetRelationshipWithPed(player) == Relationship.Hate;
 
-                // Chevron over every tracked body: red for hostile, cool grey for
+                // Chevron over every tracked body: red for hostile, cool gray for
                 // civilians, so a breach can be planned without shooting the crew.
                 World.DrawMarker(
                     MarkerType.UpsideDownCone,

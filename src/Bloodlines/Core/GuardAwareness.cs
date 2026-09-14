@@ -114,6 +114,17 @@ namespace Bloodlines.Core
         /// </summary>
         public bool Suppressed { get; set; }
 
+        /// <summary>
+        /// Suppression applied to every instance at once, for something that is not a
+        /// mission: Gohan's blackout is the player's, not this mission's, and it must
+        /// reach hostiles the ability has no reference to. Always cleared by whoever
+        /// set it, on every exit path.
+        /// </summary>
+        public static bool SuppressAll { get; set; }
+
+        /// <summary>Whether this instance is currently blind, from either source.</summary>
+        private bool Blind => Suppressed || SuppressAll;
+
         /// <summary>True once any guard has called it in. An alarm does not un-ring.</summary>
         public bool Alarmed => _watches.Any(w => w.State == Alertness.Alarmed);
         public int Tracked => _watches.Count(w => Alive(w.Guard));
@@ -197,7 +208,7 @@ namespace Bloodlines.Core
             if (weight <= 0f) return;
             // Suppressed: he registers nothing new. Being shot is the exception — a
             // blackout does not make a bullet ambiguous.
-            if (Suppressed && stimulus != Stimulus.UnderFire) return;
+            if (Blind && stimulus != Stimulus.UnderFire) return;
             watch.Suspicion = Math.Min(100f, watch.Suspicion + weight);
             watch.LastStimulus = stimulus;
             watch.Interest = at;
@@ -224,7 +235,7 @@ namespace Bloodlines.Core
             {
                 if (!Alive(watch.Guard)) continue;
                 if (watch.State == Alertness.Alarmed) continue;
-                float loss = DecayPerSecond * seconds * (Suppressed ? 2.5f : 1f);
+                float loss = DecayPerSecond * seconds * (Blind ? 2.5f : 1f);
                 watch.Suspicion = Math.Max(0f, watch.Suspicion - loss);
             }
 
@@ -253,7 +264,7 @@ namespace Bloodlines.Core
                 }
 
             // One of his own on the ground, in view.
-            if (!Suppressed && watch.State < Alertness.Detected)
+            if (!Blind && watch.State < Alertness.Detected)
                 foreach (var other in _watches)
                 {
                     if (other == watch || other.Guard == null || !other.Guard.Exists() || !other.Guard.IsDead) continue;
@@ -274,7 +285,7 @@ namespace Bloodlines.Core
             if (watch.State >= Alertness.Detected && !watch.Reported)
             {
                 watch.Reported = true;
-                if (!Suppressed)
+                if (!Blind)
                 {
                     watch.State = Alertness.Alarmed;
                     foreach (var other in _watches)
