@@ -112,6 +112,16 @@ namespace GTA.Native {
   public static Func<Vector3, float> MarineFloor; public static Func<Vector3, Vector3, bool> MarineObstruction;
   private static object[] LastRay;
   public static int Sprites, TankShots, DriveBys;public static uint WeaponGroup;public static bool ClearLos=true;public static bool InteriorReady=true;public static int InteriorId=123;public static int? EntityInterior;public static bool IplReady=true;public static bool InteriorDisabled,InteriorCapped,StarsGreyed; public static bool ResetVitalsOnSwitch;public static bool EjectOnSwitch;public static Hash? ThrowOnce;public static float Seabed=-40f;public static bool SeabedKnown=true; public static Dictionary<Hash,object> Values=new Dictionary<Hash,object>();
+  // Real seat counts for the models the campaign puts people in. A stand-in that
+  // reports more seats than the game has lets a mission ask for a seat that does
+  // not exist: M38 asked a two-seat Benson for LeftRear and failed in play while
+  // this suite passed. Add a row only when the count is known, never to make a
+  // test pass; four is the ordinary car default.
+  public static readonly Dictionary<string,int> ModelSeats=new Dictionary<string,int>(StringComparer.OrdinalIgnoreCase){
+   {"benson",2},{"halftrack",3},{"technical",3}};
+  public static int Seats(int modelHash){
+   foreach(var pair in ModelSeats) if(new GTA.Model(pair.Key).Hash==modelHash) return pair.Value;
+   return 4;}
   public static readonly List<Tuple<Hash,object[]>> Calls=new List<Tuple<Hash,object[]>>();public static void Call(Hash h,params object[] args){
    if(h==Hash.SET_TIMECYCLE_MODIFIER&&!RejectedTimecycles.Contains((string)args[0])){TimecycleName=(string)args[0];TimecycleIndex=Game.GenerateHash(TimecycleName)&0x7fffffff;}
    if(h==Hash.SET_TIMECYCLE_MODIFIER_STRENGTH)TimecycleStrength=(float)args[0];
@@ -205,7 +215,7 @@ if(ThrowOnce==h){ThrowOnce=null;throw new InvalidOperationException("Injected na
    if(h==Hash.GET_PED_TYPE)return (T)(object)(((Ped)args[0]).IsCop?6:4);if(h==Hash.GET_PED_TARGET_FROM_COMBAT_PED)return (T)(object)((Ped)args[0]).CombatTarget;if(h==Hash.GET_SELECTED_PED_WEAPON)return (T)(object)(uint)WeaponHash.Pistol;if(h==Hash.GET_WEAPONTYPE_GROUP)return (T)(object)WeaponGroup;if(h==Hash.GET_VEHICLE_TRAILER_VEHICLE){var found=Trailers.TryGetValue(((Vehicle)args[0]).Handle,out var trailer);((OutputArgument)args[1]).Value=found?trailer.Handle:0;return (T)(object)found;} if(h==Hash.IS_IPL_ACTIVE)value=IplReady;if(h==Hash.GET_INTERIOR_FROM_ENTITY)return (T)(object)(EntityInterior??InteriorId);if(h==Hash.GET_INTERIOR_AT_COORDS)return (T)(object)InteriorId;if(h==Hash.START_SCRIPT_FIRE)return (T)(object)7;if(h==Hash.IS_INTERIOR_READY)value=InteriorReady;if(h==Hash.IS_INTERIOR_DISABLED)value=InteriorDisabled;if(h==Hash.ARE_PLAYER_STARS_GREYED_OUT)value=StarsGreyed;if(h==Hash.IS_INTERIOR_CAPPED)value=InteriorCapped;
    if(h==Hash.GET_PED_AMMO_TYPE_FROM_WEAPON){var w=((Ped)args[0]).Weapons;return (T)(object)(w.AmmoTypes.TryGetValue((uint)args[1],out var type)?type:(uint)args[1]);}
    if(h==Hash.GET_MAX_AMMO){((OutputArgument)args[2]).Value=((Ped)args[0]).Weapons.MaximumAmmo;return (T)(object)true;}
-   if(h==Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS)return (T)(object)((Convert.ToInt32(args[0])==new GTA.Model("halftrack").Hash||Convert.ToInt32(args[0])==new GTA.Model("technical").Hash)?3:4);
+   if(h==Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS)return (T)(object)Seats(Convert.ToInt32(args[0]));
    if(h==Hash.HAS_WEAPON_ASSET_LOADED)return (T)(object)true;
    if(h==Hash.GET_DEEP_OCEAN_SCALER)return (T)(object)1f;
    if(h==Hash.DOES_WEAPON_TAKE_WEAPON_COMPONENT)return (T)(object)true;

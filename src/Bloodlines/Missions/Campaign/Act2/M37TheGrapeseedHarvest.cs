@@ -13,9 +13,11 @@ namespace Bloodlines.Missions.Campaign
         public override string Title => "The Grapeseed Harvest";
         protected override MissionEndpoint Endpoint => MissionEndpoint.SecuredDelivery;
         private readonly List<Vehicle> _planes=new List<Vehicle>();
-        private int _fitted,_tested;private readonly List<Tuple<Prop,Vehicle>> _tanks=new List<Tuple<Prop,Vehicle>>();
+        private int _fitted,_tested,_visible;private readonly List<Tuple<Prop,Vehicle>> _tanks=new List<Tuple<Prop,Vehicle>>();
         public IList<Vehicle> Aircraft => _planes;
         public int Tested => _tested;
+        /// <summary>How many of the two releases actually produced a visible plume.</summary>
+        public int Visible => _visible;
         protected override bool Setup()
         {
             if(!BeginCrew(CrewSlot.Guess))return false;
@@ -45,7 +47,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Check both releases",new MissionInteraction("Gohan: test the smoke release at the first parked aircraft",()=>_planes[0].Position+_planes[0].RightVector*3f,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnExit(c=>Test(0)).AfterCues("M37_S1_01_GUESS");
             yield return new MissionStage("Check second release",new MissionInteraction("Gohan: test the second aircraft's smoke release",()=>_planes[1].Position+_planes[1].RightVector*3f,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
-                .OnExit(c=>{Test(1);Establish("payload","A tested screen","Both parked aircraft emit visible smoke. This is an optical screen, not a guarantee against radar or thermal detection.",_planes[0],_planes[1]);}).AfterCues("M37_S1_03_GOHAN");
+                .OnExit(c=>{Test(1);Establish("payload","A tested screen","Both releases were operated on the parked aircraft and their canisters stay attached. Where a plume was actually seen is recorded per aircraft; an optical screen is no guarantee against radar or thermal detection.",_planes[0],_planes[1]);}).AfterCues("M37_S1_03_GOHAN");
         }
         private void Fit(int n)
         {
@@ -57,7 +59,30 @@ namespace Bloodlines.Missions.Campaign
             }
             _fitted++;
         }
-        private void Test(int n){if(_fitted!=2||!AircraftSmoke.Emit(_planes[n]))throw new InvalidOperationException("The smoke payload failed its visible release test.");_tested++;}
+        /// <summary>
+        /// Operate one release. What this mission is actually about is physical: both
+        /// canisters fitted and attached, and both releases worked. The plume is the
+        /// point of the test and it is reported by aircraft, but a particle call that
+        /// comes back false is not a reason to throw the mission away — that is what
+        /// stopped M37 in Ron's September 13 run. The doctor carries the verdict so a
+        /// playtester knows whether he saw smoke or only operated the valve.
+        /// </summary>
+        private void Test(int n)
+        {
+            if(_fitted!=2)throw new InvalidOperationException("Both smoke kits have to be fitted before either release is tested.");
+            if(AircraftSmoke.Emit(_planes[n]))
+            {
+                _visible++;
+                Ctx.Doctor?.Info("payload","M37.Plane"+(n+1),"smoke release produced a visible plume");
+            }
+            else
+            {
+                Ctx.Doctor?.Warn("payload","M37.Plane"+(n+1),"the release was operated but no plume was produced; the optical screen is unverified on this run");
+                Logger.Warn("M37: release "+(n+1)+" produced no visible plume; the canister is fitted and the valve worked.");
+                GameUtils.Subtitle("~y~Release "+(n+1)+" operated, but no plume was seen. Check the mission doctor.",4000);
+            }
+            _tested++;
+        }
         protected override void OnUpdate(){foreach(var tank in _tanks)if(!Attached(tank.Item1,tank.Item2)){Fail("A smoke canister came loose before the payload test.");return;}base.OnUpdate();}
         protected override void OnPassed(){if(_tested!=2)throw new InvalidOperationException("Both releases must be tested.");Ctx.State?.SetCargo("smokeAircraft","M37.Land1");foreach(var p in _planes)Release(p);foreach(var tank in _tanks)Release(tank.Item1);}
     }

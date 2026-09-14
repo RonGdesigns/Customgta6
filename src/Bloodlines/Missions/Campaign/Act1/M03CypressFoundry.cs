@@ -324,21 +324,11 @@ namespace Bloodlines.Missions.Campaign
                 if (guard != null && guard.Exists() && !guard.IsDead) { guard.RelationshipGroup = cartel; guard.Task.ClearAll(); guard.Task.FightAgainstHatedTargets(120f); }
         }
 
-        private Vector3 RearOfHauler() => _hauler != null && _hauler.Exists() ? _hauler.Position - _hauler.ForwardVector * 4f : _base;
+        private Vector3 RearOfHauler() => CargoRide.RearOf(_hauler, _base);
 
-        private void OpenDoors()
-        {
-            if (_hauler == null || !_hauler.Exists()) return;
-            Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, _hauler, 2, false, false);
-            Function.Call(Hash.SET_VEHICLE_DOOR_OPEN, _hauler, 3, false, false);
-        }
+        private void OpenDoors() => CargoRide.OpenDoors(_hauler);
 
-        private void CloseDoors()
-        {
-            if (_hauler == null || !_hauler.Exists()) return;
-            Function.Call(Hash.SET_VEHICLE_DOOR_SHUT, _hauler, 2, false);
-            Function.Call(Hash.SET_VEHICLE_DOOR_SHUT, _hauler, 3, false);
-        }
+        private void CloseDoors() => CargoRide.CloseDoors(_hauler);
 
         /// <summary>
         /// Loading, seen: the doors open, Gohan carries each crate from the pallet
@@ -597,7 +587,8 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>Inside the box: the ped fixed to the truck at the rear doors, on the floor between the crates and the doors.</summary>
-        private static readonly Vector3 BackOfBox = new Vector3(0f, -3.2f, 1.3f);
+        // The box ride itself now lives in Core/CargoRide so M38 can use the same one.
+        private static readonly Vector3 BackOfBox = CargoRide.InsideTheBox;
 
         /// <summary>Gohan walks to the rear doors; the doors open for him. The mission keeps his AI so nothing retasks him on the way.</summary>
         private void CallGohanToTheBack()

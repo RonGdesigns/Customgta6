@@ -14,6 +14,10 @@ namespace Bloodlines.Missions.Campaign
         public override string Title => "Blood in the Quarry";
         protected override MissionEndpoint Endpoint => MissionEndpoint.SecuredDelivery;
         private readonly List<Prop> _crates=new List<Prop>();private Prop _cabinet;private int _loaded;private bool _delivered;
+        /// <summary>How long Gohan gets to walk to the rear doors before he is loaded where he stands.</summary>
+        public const int BoardWindowMs = 20000;
+        private int _boardBy;
+        public bool GohanInTheBack => CargoRide.Aboard(Ctx?.Crew?.PedFor(CrewSlot.Gohan), CrewCar);
         public Vehicle Hauler => CrewCar;
         public int Loaded => _loaded;
         protected override bool Setup()
@@ -38,15 +42,31 @@ namespace Bloodlines.Missions.Campaign
                 yield return new MissionStage("Load package "+(n+1),new MissionInteraction("Gohan: carry the package to the back of the stopped Benson",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,3,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                     .OnExit(c=>{SaveCargo(_crates[n],CrewCar,new Vector3(n%2==0?-.5f:.5f,-2.5f+n/2f,.5f));_loaded++;});
             }
-            yield return new MissionStage("All cargo aboard",new EnterVehicleObjective("Guess: take the Benson driver seat",()=>CrewCar,VehicleSeat.Driver),new ConditionObjective("Stop and wait for Ice in front and Gohan in the rear cargo seat",()=>BoardTeam())).OwnedBy(CrewSlot.Guess)
+            yield return new MissionStage("All cargo aboard",new EnterVehicleObjective("Guess: take the Benson driver seat",()=>CrewCar,VehicleSeat.Driver),new ConditionObjective("Stop and wait for Ice in the cab and Gohan in the back of the Benson",()=>BoardTeam())).OwnedBy(CrewSlot.Guess)
                 .OnExit(c=>{Fighting=true;DrivingDestination=()=>At("M38.Exit");ResponseCar("M38.Response",CrewCar.Position);}).AfterCues("M38_S1_02_GOHAN");
             yield return new MissionStage("Escape the quarry",new TravelObjective("Drive the loaded Benson out through the yellow quarry escape marker",()=>At("M38.Exit"),20,()=>CrewCar)).OnExit(c=>{RetreatResponse();DrivingDestination=null;}).AfterCues("M38_S1_03_GUESS");
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before returning with explosives"));
             yield return new MissionStage("Deliver seismic stock",new TravelObjective("Stop the same loaded Benson at the bunker delivery marker",()=>At("M38.Senora.Delivery"),12,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M38.Senora.Delivery"));
             yield return new MissionStage("Verify the load",new MissionInteraction("Gohan: inspect all four packages at the back of the stopped truck",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,4,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
-                .OnEnter(c=>DrivingDestination=null).OnExit(c=>{_delivered=_loaded==4&&_crates.All(p=>Attached(p,CrewCar));if(!_delivered)throw new InvalidOperationException("Explosives delivery is incomplete.");Establish("delivery","Four accounted for","Gohan verifies each package in the arrived truck. The crew now has measured demolition stock, but the mainland cable remains connected.",CrewCar);});
+                // Out of the box first: he cannot walk to the doors while attached inside them.
+                .OnEnter(c=>{DrivingDestination=null;CargoRide.OpenDoors(CrewCar);CargoRide.Unload(c.Crew.PedFor(CrewSlot.Gohan),CrewCar,At("M38.Senora.Delivery"));}).OnExit(c=>{_delivered=_loaded==4&&_crates.All(p=>Attached(p,CrewCar));if(!_delivered)throw new InvalidOperationException("Explosives delivery is incomplete.");Establish("delivery","Four accounted for","Gohan verifies each package in the arrived truck. The crew now has measured demolition stock, but the mainland cable remains connected.",CrewCar);});
         }
-        private bool BoardTeam(){Roles.Release();Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);bool ice=Board(Ctx.Crew.PedFor(CrewSlot.Ice),CrewCar,VehicleSeat.Passenger);bool gohan=Board(Ctx.Crew.PedFor(CrewSlot.Gohan),CrewCar,VehicleSeat.LeftRear);return ice&&gohan;}
+        /// <summary>
+        /// Ice takes the cab seat; Gohan rides in the cargo box. The Benson has two
+        /// seats, so there is no third seat to ask for: asking for one is what failed
+        /// this mission in Ron's September 13 run with "no valid crew seat".
+        /// </summary>
+        private bool BoardTeam()
+        {
+            Roles.Release();
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            bool ice = Board(Ctx.Crew.PedFor(CrewSlot.Ice), CrewCar, VehicleSeat.Passenger);
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (_boardBy == 0) { _boardBy = Game.GameTime + BoardWindowMs; CargoRide.CallToTheDoors(gohan, CrewCar, At("M38.Load")); }
+            bool aboard = CargoRide.Load(gohan, CrewCar, At("M38.Load"), Game.GameTime >= _boardBy, Id);
+            return ice && aboard;
+        }
         protected override void OnUpdate(){for(int i=0;i<_loaded;i++)if(!Attached(_crates[i],CrewCar)){Fail("A charge package came loose from the truck.");return;}base.OnUpdate();}
         protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("No delivered charge stock.");Ctx.State?.SetCargo("seismicCharges","M38.Senora.Delivery");Release(CrewCar);foreach(var crate in _crates)Release(crate);}
     }

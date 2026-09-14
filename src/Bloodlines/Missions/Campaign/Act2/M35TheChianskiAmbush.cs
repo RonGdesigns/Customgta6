@@ -48,11 +48,12 @@ namespace Bloodlines.Missions.Campaign
             if(_charges.Count!=2)throw new InvalidOperationException("The pass has not been prepared.");
             _lead=Car("mesa",At("M35.LeadSpawn"),Ctx.Locations.Heading("M35.LeadSpawn"),false);
             _technical=Car("technical",At("M35.TechnicalSpawn"),Ctx.Locations.Heading("M35.TechnicalSpawn"));
-            _leadDriver=Guard(At("M35.LeadSpawn"));_technicalDriver=Guard(At("M35.TechnicalSpawn"));
-            var gunner=Guard(At("M35.TechnicalSpawn"));var escort=Guard(At("M35.LeadSpawn"));
-            if(!RequireAssets(_lead,_technical,_leadDriver,_technicalDriver,gunner,escort))throw new InvalidOperationException("The pass convoy failed to load.");
-            _leadDriver.SetIntoVehicle(_lead,VehicleSeat.Driver);escort.SetIntoVehicle(_lead,VehicleSeat.Passenger);
-            _technicalDriver.SetIntoVehicle(_technical,VehicleSeat.Driver);gunner.SetIntoVehicle(_technical,VehicleSeat.LeftRear);
+            // These four ride; they never stand. Asking the guard spawner for standing
+            // space at two shared points is what failed this mission in Ron's run.
+            if(!RequireAssets(_lead,_technical))throw new InvalidOperationException("The pass convoy vehicles failed to load.");
+            _leadDriver=Occupant(_lead,VehicleSeat.Driver);var escort=Occupant(_lead,VehicleSeat.Passenger);
+            _technicalDriver=Occupant(_technical,VehicleSeat.Driver);var gunner=Occupant(_technical,VehicleSeat.LeftRear);
+            if(!RequireAssets(_leadDriver,_technicalDriver,gunner,escort))throw new InvalidOperationException("The pass convoy crew could not be seated.");
             Opposition.AddRange(new[]{_leadDriver,_technicalDriver,gunner,escort});
             RequireAsset(_technical,"The required technical was destroyed. Restart the ambush.");
             var blip=Track(_lead.AddBlip());blip.Color=BlipColor.Red;blip.Name="Lead escort - trap this vehicle";

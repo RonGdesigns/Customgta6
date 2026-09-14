@@ -68,7 +68,8 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return false;
             // M43 left the Tropic on its holding marker; it is taken from there, not
             // conjured beside the swimmers at the moment they need it.
-            string staged = Paleto.CargoAt(Ctx, "extractionLaunch");
+            // M40 records this under the plural key it actually writes.
+            string staged = Paleto.CargoAt(Ctx, "extractionLaunches");
             string key = !string.IsNullOrEmpty(staged) && Ctx.Locations.Get(staged)?.Kind == "water" ? staged : "M47.BoatStart";
             var point = MarineSites.ResolveOrThrow(Ctx.Locations, key, 2f);
             _boat = Track(World.CreateVehicle(model, point, Ctx.Locations.Heading(key)));

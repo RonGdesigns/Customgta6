@@ -343,3 +343,23 @@ Ron chose the Paleto Cove site after the archive read showed the authored offsho
 Two things the campaign already had were wrong for a second operation. `MissionManager.Continuations` still chained M44 to M45 to M48 as ordinary missions, which is the opposite of one attempt: those rows are gone, the way M19-M22 have none. And `CompletePortHeist` was the only way to record an operation's single result, so it is now `CompleteOperation`, with the heist calling it.
 
 The flow harness drives all five chapters to a real pass. That needed a `TravelObjective` handler it never had, and it caught three chapters that assumed the parent had already staged their vehicle and would have failed the moment anyone opened one on its own. Live: start M44 and confirm one uninterrupted run to the county line with a single Mission Passed, then survey `M45.Helipad`, `M46.Bridge`, `M46.Vault`, `M46.Console` and `M47.Jump` with F11. Three authored lines still say rig, pylon and moonpool; the text is unchanged pending Ron's word.
+
+### The six reported playtest failures, repaired
+
+Ron's September 13 reports, each traced to a cause rather than worked around.
+
+**M38, "it didn't have a valid crew seat."** Gohan was sent to `VehicleSeat.LeftRear` of a Benson. A Benson has two seats, the shared seat check refused the third, and the mission ended there. He rides in the cargo box now, through the new `Core/CargoRide` — M03 already solved this and owned the solution privately, so it moved out where M38 could use it. The reason this shipped is that the story stand-in reported four seats for every model except two: the harness was more generous than the game. It now reports real counts from a named table, and no other mission depended on the phantom seats.
+
+**M40, boat placed away from the dock, and Ice never in it.** Both boats sat 40 m offshore while the crew started on the pier, so neither could be boarded without swimming. The cove has real mooring hardware — bollards with tire bumpers at (-1611.04, 5263.42) and (-1615.16, 5261.54) on a deck at z 2.98, with seabed at -4.61 a few meters north. Both boats and both return markers now lie alongside those berths.
+
+**M43, "aircraft site moved outside its checked footprint."** The guard captured two aircraft keys, deployed the crew, read the same keys again and refused the mission if either had moved two meters. `MissionSites.Ground` calls `GetSafeCoordForPed`, whose whole job is to shift a point sideways onto walkable ground, and writes the result back — so a legitimate snap always read as a footprint failure. Ground walkable for a person is also not rotor clearance, which is what the message claimed to check. A real `PlacementContract.Aircraft` check runs instead and reports by key.
+
+**M26, spotter pilots never boarded.** `Task.WarpIntoVehicle` is queued, and `Task.StartPlaneMission` on the next line replaced it, so no pilot ever boarded: each was left loose at the 220 m patrol altitude and fell, along with the unmanned plane. They are seated with `SetIntoVehicle` and the seat is verified; an unseatable pilot removes his aircraft rather than leaving two bodies falling.
+
+**M35, "the pass convoy failed to load."** Four convoy occupants were requested from the guard spawner at only two points, two at each. That spawner looks for walkable standing space and can return the same coordinate twice, failing the second create, and one null failed the whole mission. The new `Occupant` helper creates a rider at the vehicle and seats him directly: no navmesh, no guard post, and the seat is verified.
+
+**M37, "the smoke payload failed its visible release test."** One 1-second request for the particle dictionary was the entire budget, and a dictionary that had not streamed made a cosmetic call return false, which threw the mission away. The request is retried across frames, and an unrendered plume is now recorded per aircraft in the mission doctor instead of failing the job: both canisters attached and both releases operated are the physical requirements. That is a deliberate narrowing of the old "visibly tests" contract, and CLAUDE.md says so.
+
+One slip of my own fixed alongside them: M47 read the staged pickup boat under `extractionLaunch` while M40 writes `extractionLaunches`, so the Paleto collapse would always have staged a fresh boat instead of the one the fleet mission prepared.
+
+Live: start M26, M35, M37, M38, M40 and M43 and confirm each reaches its own end. The placement verdicts M43 now records, and the plume verdicts M37 records, are readable on the dev menu's Mission doctor page.

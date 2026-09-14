@@ -252,7 +252,7 @@ The user explicitly approved building the five chapters together. See docs/OFFSH
 
 ## September 13: next planned block, M36–M40
 
-The user requested the next steps after M31–M35. M36–M40 now have scripts; see docs/MARINE-PREPARATION-M36-M40.md. CoastalOperation reuses owned crew roles and adds sub/pickup preparation. Seabed sensor/junction props and explicit depth guidance replace unseen offshore structures. M37 visibly tests both smoke releases; AircraftSmoke is a finite non-looped effect with free-roam input gated by menus/missions and a 12-second cooldown after the M37 unlock. M38 transports four attached packages. M40 uses Tropics with finite hull reinforcement and carried passenger weapons, not fictional mounted guns. All five use full restart and first-completion rewards; no seamless handoff or persistent marine hangar/berth is claimed. M41 onward remains unimplemented.
+The user requested the next steps after M31–M35. M36–M40 now have scripts; see docs/MARINE-PREPARATION-M36-M40.md. CoastalOperation reuses owned crew roles and adds sub/pickup preparation. Seabed sensor/junction props and explicit depth guidance replace unseen offshore structures. M37 requires both smoke releases to be operated with their canisters attached, and records per aircraft whether a plume was actually seen; a particle call that returns false is reported, never a failed mission. AircraftSmoke is a finite non-looped effect with free-roam input gated by menus/missions and a 12-second cooldown after the M37 unlock. M38 transports four attached packages. M40 uses Tropics with finite hull reinforcement and carried passenger weapons, not fictional mounted guns. All five use full restart and first-completion rewards; no seamless handoff or persistent marine hangar/berth is claimed. M41 onward remains unimplemented.
 
 ## September 13: final preparation, M41–M43
 
@@ -303,3 +303,31 @@ for the length of the attempt: release only names this instance turned on, and
 release on pass, failure and abort alike. Interior standing points are estimates
 derived from verified extents and still need an F11 pass; no automated check here
 is live acceptance, and nobody has walked on that deck yet.
+
+## September 14: the reported playtest failures
+
+Six missions from Ron's September 13 reports are repaired; see
+docs/CHANGE-REGISTER.md for each cause. The contracts worth keeping:
+
+A vehicle has the seats the game gives it. `VehicleSeat.LeftRear` does not exist
+on a two-seat Benson, and asking for it failed M38 outright. A third passenger
+rides in the cargo box through `Core/CargoRide`, which is M03's solution made
+shared. The story stand-in now reports real seat counts from a small table, so a
+seat the game does not have can no longer pass this suite.
+
+People who are going straight into a seat are created with `Occupant`, not the
+guard spawner: a convoy driver needs a seat, not walkable ground, and asking for
+standing space at two shared points is what made M35 refuse to load.
+
+Never seat a ped with `Task.WarpIntoVehicle` and then immediately issue another
+task. The warp is queued, the next task replaces it, and the ped is left loose —
+in M26 that was two pilots and two aircraft falling out of the sky at 220 m. Use
+`SetIntoVehicle` and verify the seat took.
+
+Ground preparation moves points sideways: `MissionSites.Ground` calls
+`GetSafeCoordForPed` and writes the result back. Never compare a location key to
+its own earlier value and treat the difference as a survey error, which is what
+stopped M43. Check the real footprint with `PlacementContract` and report it.
+
+Cosmetic failure is not mission failure. Ask for a particle dictionary across
+several frames, and if a plume still will not render, record it and carry on.
