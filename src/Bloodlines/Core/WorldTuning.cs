@@ -39,6 +39,18 @@ namespace Bloodlines.Core
         private readonly Dictionary<int, int> _models = new Dictionary<int, int>();
         private int _nextScan, _lastPowerTime;
         private bool _running;
+        /// <summary>
+        /// How many cars may take their handling pass in one tick.
+        /// Registering a car writes into its model's shared handling entry, so doing
+        /// every car in the world at once is a burst of memory writes in a single
+        /// frame. The frame the crew deploys is the worst moment for that, because the
+        /// game is streaming the new peds and their transport in at the same time.
+        /// The work is not reduced, only spread over the frames that follow.
+        /// </summary>
+        public const int RegistrationsPerTick = 6;
+        private readonly Queue<Vehicle> _pending = new Queue<Vehicle>();
+        /// <summary>Cars still waiting for their handling pass.</summary>
+        public int PendingRegistrations => _pending.Count;
         private readonly VehiclePanelDamage _panels = new VehiclePanelDamage();
         public void Update(CrewRoster crew)
         {
@@ -55,15 +67,33 @@ namespace Bloodlines.Core
             if (Nitrous.Boosting && driven != null && driven.Exists() && !_cars.ContainsKey(driven.Handle)) Register(driven, crew);
             UpdatePower(crew);
             _panels.Update(_cars.Values, Config);
-            if (Game.GameTime < _nextScan) return;
+            Drain(crew);
+            // A sweep that is still draining never queues a second copy of itself.
+            if (Game.GameTime < _nextScan || _pending.Count > 0) return;
             _nextScan = Game.GameTime + 1000;
             foreach (var key in _cars.Where(p => !p.Value.Exists() || p.Value.Model.Hash!=_models[p.Key]).Select(p => p.Key).ToArray())
             { _cars.Remove(key); _stockLimits.Remove(key); _power.Remove(key); _models.Remove(key); }
             foreach (var car in World.GetAllVehicles())
+                if (car != null && car.Exists() && !car.IsDead) _pending.Enqueue(car);
+            Drain(crew);
+        }
+
+        /// <summary>
+        /// Take the next few cars off the queue and register them. Cars that died or
+        /// despawned while queued cost nothing and do not use up the budget, but the
+        /// number of entries looked at in one tick is bounded either way.
+        /// </summary>
+        private void Drain(CrewRoster crew)
+        {
+            int registered = 0, examined = 0;
+            while (_pending.Count > 0 && registered < RegistrationsPerTick && examined < RegistrationsPerTick * 8)
             {
+                examined++;
+                var car = _pending.Dequeue();
                 if (car == null || !car.Exists() || car.IsDead) continue;
+                registered++;
                 try { Register(car, crew); }
-                catch (Exception ex) { Logger.Error("Vehicle travel tuning",ex); }
+                catch (Exception ex) { Logger.Error("Vehicle travel tuning", ex); }
             }
         }
 
@@ -245,6 +275,7 @@ namespace Bloodlines.Core
             foreach (var key in restored) _profiles.Remove(key);
             // Retain orphan baselines across stand-down. The shared handling may
             // outlive the last car, and must not be doubled again on redeployment.
+            _pending.Clear();
             _cars.Clear(); _stockLimits.Clear(); _power.Clear(); _models.Clear(); _running = false; _nextScan = 0; _lastPowerTime = 0;
         }
     }

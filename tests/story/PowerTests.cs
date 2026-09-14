@@ -28,5 +28,23 @@ public static partial class StoryTests
   car.IsInAir=false;Game.GameTime+=100;tuning.Update(crew);Game.GameTime+=2000;tuning.Update(crew);
   Check((float)Function.Calls.Last(c=>c.Item1==Hash.SET_VEHICLE_CHEAT_POWER_INCREASE).Item2[1]<=1.021f,"Resuming after a cutscene restarts the power ramp without a surge");
   tuning.Reset();Check((float)Function.Calls.Last(c=>c.Item1==Hash.SET_VEHICLE_CHEAT_POWER_INCREASE).Item2[1]==1f,"Stand-down explicitly releases torque assistance");Game.LastFrameTime=.016f;
+
+  // September 13: the game asserted one second after a crew deploy, in the middle of
+  // this pass. The pass must not write every car's shared handling inside one frame,
+  // whatever the root cause turns out to be.
+  Reset();crew=Roster();var throttled=new WorldTuning();
+  for(int i=0;i<20;i++)World.Vehicles.Add(new Vehicle{IsEngineRunning=true});
+  Function.Calls.Clear();throttled.Update(crew);
+  Check(Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED)==WorldTuning.RegistrationsPerTick&&
+        throttled.PendingRegistrations==20-WorldTuning.RegistrationsPerTick,
+    "A deploy registers a bounded number of cars in its first tick and queues the rest");
+  for(int i=0;i<12&&throttled.PendingRegistrations>0;i++){Game.GameTime+=16;throttled.Update(crew);}
+  Check(throttled.PendingRegistrations==0&&Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED)==20,
+    "Every queued car still takes its handling pass over the frames that follow");
+  int settled=Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED);
+  Game.GameTime+=1200;throttled.Update(crew);
+  Check(Function.Calls.Count(c=>c.Item1==Hash.SET_VEHICLE_MAX_SPEED)==settled,
+    "A later sweep does not re-register cars it already holds");
+  throttled.Reset();Check(throttled.PendingRegistrations==0,"Stand-down drops the queue");
  }
 }
