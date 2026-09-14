@@ -67,6 +67,8 @@ namespace Bloodlines.Missions.Campaign
             RequireAsset(_chopper, "The extraction helicopter was lost before the boarding.");
             SpawnDeckGuards();
 
+            // The deck and platform points are the least proven in the operation.
+            Paleto.Review(Ctx, PlacementContract.Ped("M45.Helipad"), PlacementContract.Ped("M45.Board"));
             Station(CrewSlot.Guess, _chopper, VehicleSeat.Driver);
             Station(CrewSlot.Ice, _chopper, VehicleSeat.Passenger);
             if (_kraken != null && _kraken.Exists()) Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);

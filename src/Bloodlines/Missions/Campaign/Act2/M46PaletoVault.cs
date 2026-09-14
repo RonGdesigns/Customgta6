@@ -65,6 +65,8 @@ namespace Bloodlines.Missions.Campaign
             if (!RequireAssets(_ledger, _bonds)) return false;
             RequireAsset(_ledger, "The escrow ledger was destroyed. Without it the operation proves nothing.");
 
+            Paleto.Review(Ctx, PlacementContract.Ped("M46.Stairs"), PlacementContract.Ped("M46.Bridge"),
+                PlacementContract.Interaction("M46.Vault"), PlacementContract.Interaction("M46.Console"));
             Station(CrewSlot.Gohan, At("M46.Stairs"));
             Station(CrewSlot.Ice, At("M46.Bridge"));
             return true;

@@ -62,6 +62,31 @@ namespace Bloodlines.Missions.Campaign
         public static bool IsContinuing(MissionContext context) => Of(context)?.Continuing == true;
         public static void StageCargo(MissionContext context, string key, string destination) =>
             Of(context)?.StageCargo(key, destination);
+        /// <summary>
+        /// Ask the geometry check what it thinks of the authored points a chapter
+        /// stands on, and record each answer under the running mission.
+        ///
+        /// These points are estimates derived from verified hull extents, not
+        /// surveys, so a refusal is a named warning rather than a refused mission: a
+        /// playtester reads the key in the mission doctor and fixes it with F11. A
+        /// diagnostic must never be the reason a mission cannot start, so a probe
+        /// that throws is reported and swallowed.
+        /// </summary>
+        public static void Review(MissionContext context, params Core.PlacementContract[] contracts)
+        {
+            if (context?.Locations == null || contracts == null) return;
+            foreach (var contract in contracts)
+            {
+                if (contract == null) continue;
+                try { contract.Inspect(context.Locations, context.Doctor); }
+                catch (System.Exception ex)
+                {
+                    context.Doctor?.Warn("placement", contract.Key, "the check itself could not run: " + ex.Message);
+                    Core.Logger.Warn("Paleto placement review failed for " + contract.Key + ": " + ex.Message);
+                }
+            }
+        }
+
         public static string CargoAt(MissionContext context, string key)
         {
             var world = Of(context);

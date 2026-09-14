@@ -259,6 +259,8 @@ namespace Bloodlines.Core
             page.Add("Last failure / retry", () => _missions.RetryAvailable ? _missions.LastAttempted?.Id : "none", () => _stack.Push(BuildMissionControl()));
             page.Add("Running mission", () => _missions.IsRunning ? _missions.LastAttempted.Id + " | " + _missions.CurrentTitle : "none",
                 () => _stack.Push(BuildMissionControl()));
+            page.Add("Mission doctor", () => Doctor?.Invoke() is MissionDoctor d ? d.ErrorCount + " error / " + d.WarningCount + " warning" : "unavailable",
+                () => _stack.Push(BuildDoctor()));
             page.Add("Crew", () => _crew.IsDeployed ? _crew.Active.DisplayName : "not deployed",
                 () => _stack.Push(BuildCrew()));
             page.Add("Crew messages / news", () => _dispatches.Inbox.Count() + " messages", () => _stack.Push(BuildInbox()));

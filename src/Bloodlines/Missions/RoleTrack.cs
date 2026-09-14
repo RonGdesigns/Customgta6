@@ -14,11 +14,10 @@ namespace Bloodlines.Missions
     /// A brother's job while the player is someone else. Not a new AI: the mission
     /// owns the ped through the companion controller and this issues its tasks and
     /// reacts to danger. Approaching walks to a point and becomes Observing there;
-    /// Observing and Working hold the point; any of those become Threatened when the
-    /// ped is in combat, loses health, or an enemy closes in, which sends him to his
-    /// cover point to fight; six clear seconds resume what he was doing. Extracting
-    /// walks to the regroup point and waits. The player switching into this brother
-    /// picks up wherever the track is; switching away hands it back.
+    /// Observing holds the point; Working can now own a resumable RoleAction rather
+    /// than always standing still. Threats suspend work, send the brother to cover,
+    /// and resume the same action after six clear seconds. Character switching
+    /// suspends AI work while the player owns the brother and resumes it on handback.
     /// </summary>
     public sealed class RoleTrack
     {
@@ -30,6 +29,7 @@ namespace Bloodlines.Missions
         private RoleState _resume = RoleState.Idle;
         private int _lastHealth = -1, _clearSince, _lastOrder;
         private bool _orderIssued;
+        private RoleAction _action;
 
         public CrewSlot Slot { get; }
         public Ped Ped { get; }
@@ -37,18 +37,43 @@ namespace Bloodlines.Missions
         public Vector3 Point => _point;
         public Vector3 Cover => _cover;
         public bool Arrived => Ped != null && Ped.Exists() && Ped.Position.DistanceTo(_point) <= 2.5f;
+        public RoleAction Action => _action;
+        public string ActionName => _action?.Name;
+        public bool ActionComplete => _action?.IsComplete == true;
+        public float ActionProgress => _action?.Progress ?? -1f;
 
         public RoleTrack(CrewSlot slot, Ped ped, Func<IEnumerable<Ped>> enemies) { Slot = slot; Ped = ped; _enemies = enemies; }
 
-        public void Approach(Vector3 point, Vector3 cover) { _point = point; _cover = cover; Enter(RoleState.Approaching); }
-        public void Observe(Vector3 point, Vector3 cover) { _point = point; _cover = cover; Enter(RoleState.Observing); }
-        public void Work(Vector3 point, Vector3 cover) { _point = point; _cover = cover; Enter(RoleState.Working); }
-        public void TakeCover(Vector3 cover) { _cover = cover; Enter(RoleState.Covering); }
-        public void Extract(Vector3 point) { _point = point; Enter(RoleState.Extracting); }
-        public void Stop() { Enter(RoleState.Idle); }
-        // Player control clears the native task. Handback must issue the current
-        // role again, even though its logical state did not change.
-        public void PlayerTookControl() { _orderIssued = false; }
+        public void Approach(Vector3 point, Vector3 cover) { CancelWork(); _point = point; _cover = cover; Enter(RoleState.Approaching); }
+        public void Observe(Vector3 point, Vector3 cover) { CancelWork(); _point = point; _cover = cover; Enter(RoleState.Observing); }
+        public void Work(Vector3 point, Vector3 cover) { Work(point, cover, null); }
+        public void Work(Vector3 point, Vector3 cover, RoleAction action)
+        {
+            if (_action != null && _action != action) _action.Cancel(Ped);
+            _action = action;
+            _point = point;
+            _cover = cover;
+            Enter(RoleState.Working);
+        }
+        public void TakeCover(Vector3 cover) { CancelWork(); _cover = cover; Enter(RoleState.Covering); }
+        public void Extract(Vector3 point) { CancelWork(); _point = point; Enter(RoleState.Extracting); }
+        public void Stop() { CancelWork(); Enter(RoleState.Idle); }
+
+        // Player control clears native tasks. AI work is suspended, not canceled;
+        // handback must issue the current role again even though its logical state did
+        // not change. Mission code may read the same RoleAction progress while active.
+        public void PlayerTookControl()
+        {
+            if (State == RoleState.Working) _action?.Suspend(Ped);
+            _orderIssued = false;
+        }
+
+        private void CancelWork()
+        {
+            if (_action == null) return;
+            _action.Cancel(Ped);
+            _action = null;
+        }
 
         private void Enter(RoleState state)
         {
@@ -63,13 +88,23 @@ namespace Bloodlines.Missions
             if (!_orderIssued) { Order(); _orderIssued = true; }
 
             if (State == RoleState.Approaching && Arrived) { State = RoleState.Observing; Order(); return; }
-            // At the pickup a brother fights what is shooting at him rather than standing in it (Ron, September 12).
-            if (State == RoleState.Extracting && Arrived && Game.GameTime - _lastOrder > 500) { Ped.Task.FightAgainstHatedTargets(80f); _lastOrder = Game.GameTime + 60000; return; }
+            // At the pickup a brother fights what is shooting at him rather than standing in it.
+            if (State == RoleState.Extracting && Arrived && Game.GameTime - _lastOrder > 500)
+            { Ped.Task.FightAgainstHatedTargets(80f); _lastOrder = Game.GameTime + 60000; return; }
 
             bool threatened = Threatened();
             if (State == RoleState.Approaching || State == RoleState.Observing || State == RoleState.Working)
             {
-                if (threatened) { _resume = State; State = RoleState.Threatened; Order(); Logger.Debug(Slot + " threatened; taking cover at " + _cover); }
+                if (threatened)
+                {
+                    _resume = State;
+                    if (State == RoleState.Working) _action?.Suspend(Ped);
+                    State = RoleState.Threatened;
+                    Order();
+                    Logger.Debug(Slot + " threatened; taking cover at " + _cover);
+                    return;
+                }
+                if (State == RoleState.Working) _action?.Tick(Ped);
                 return;
             }
             if (State == RoleState.Threatened)
@@ -77,8 +112,10 @@ namespace Bloodlines.Missions
                 if (threatened) { _clearSince = 0; return; }
                 if (_clearSince == 0) _clearSince = Game.GameTime;
                 if (Game.GameTime - _clearSince < ClearMs) return;
-                State = _resume == RoleState.Idle ? RoleState.Observing : _resume; _clearSince = 0; Order();
-                Logger.Debug(Slot + " clear; resuming " + State);
+                State = _resume == RoleState.Idle ? RoleState.Observing : _resume;
+                _clearSince = 0;
+                Order();
+                Logger.Debug(Slot + " clear; resuming " + State + (State == RoleState.Working && _action != null ? " (" + _action.Name + ")" : ""));
             }
         }
 
@@ -101,12 +138,20 @@ namespace Bloodlines.Missions
             var task = Ped.Task;
             switch (State)
             {
-                case RoleState.Approaching: task.ClearAll(); task.GoTo(_point); break;
-                case RoleState.Observing: task.ClearAll(); Ped.Heading = DriveUpStep.HeadingBetween(Ped.Position, _cover == Vector3.Zero ? _point : _cover); task.GuardCurrentPosition(); break;
-                case RoleState.Working: task.ClearAll(); task.StandStill(-1); break;
+                case RoleState.Approaching:
+                    task.ClearAll(); task.GoTo(_point); break;
+                case RoleState.Observing:
+                    task.ClearAll(); Ped.Heading = DriveUpStep.HeadingBetween(Ped.Position, _cover == Vector3.Zero ? _point : _cover); task.GuardCurrentPosition(); break;
+                case RoleState.Working:
+                    task.ClearAll();
+                    if (_action == null) task.StandStill(-1);
+                    else { _action.EnsureStarted(Ped); _action.Resume(Ped); }
+                    break;
                 case RoleState.Threatened:
-                case RoleState.Covering: task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
-                case RoleState.Extracting: task.ClearAll(); task.RunTo(_point, false, 20000); break;
+                case RoleState.Covering:
+                    task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
+                case RoleState.Extracting:
+                    task.ClearAll(); task.RunTo(_point, false, 20000); break;
             }
         }
     }
@@ -140,6 +185,7 @@ namespace Bloodlines.Missions
 
         public void Release()
         {
+            foreach (var track in _tracks.Values) track.Stop();
             foreach (var slot in _tracks.Keys.ToList()) _crew.CompanionAI.ReleaseControl(slot);
             _tracks.Clear();
         }

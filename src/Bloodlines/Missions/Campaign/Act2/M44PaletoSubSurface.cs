@@ -74,6 +74,7 @@ namespace Bloodlines.Missions.Campaign
             _sensor = Working("M44.Sensor");
             _surface = At("M44.Surface");
 
+            Paleto.Review(Ctx, PlacementContract.Ped("M44.Start"));
             Ctx.Crew.CompanionsHoldPosition = true;
             Station(CrewSlot.Gohan, _kraken, VehicleSeat.Driver);
             Station(CrewSlot.Ice, At("M44.Start"));
