@@ -84,6 +84,14 @@ namespace Bloodlines.Core
         public string MissionScoreEvent { get; private set; } = "DHP1_START";
         public string MissionScoreStopEvent { get; private set; } = "DHP1_STOP";
 
+        /// <summary>
+        /// Every edit to a vehicle model's shared handling: the doubled redline,
+        /// the grip and brake profile, the speed-dependent torque, crew damage
+        /// protection and panel dents. Off leaves cars exactly as the game ships
+        /// them, which is the fastest way to find out whether a crash belongs to
+        /// this pass. Running speed is not affected.
+        /// </summary>
+        public bool HandlingTuningEnabled { get; private set; } = true;
         public bool VehicleDamageEnabled { get; private set; } = true;
         public bool VisibleCrosshair { get; private set; } = true;
         public bool PanelDamageEnabled { get; private set; } = true;
@@ -171,6 +179,7 @@ namespace Bloodlines.Core
             config.MissionScoreEvent = settings.GetValue<string>("Audio", "MissionScoreEvent", config.MissionScoreEvent);
             config.MissionScoreStopEvent = settings.GetValue<string>("Audio", "MissionScoreStopEvent", config.MissionScoreStopEvent);
 
+            config.HandlingTuningEnabled = settings.GetValue<bool>("Handling", "Enabled", config.HandlingTuningEnabled);
             config.VehicleDamageEnabled = settings.GetValue<bool>("VehicleDamage", "Enabled", config.VehicleDamageEnabled);
             config.VisibleCrosshair = settings.GetValue<bool>("HUD", "VisibleCrosshair", true);
             config.PanelDamageEnabled = settings.GetValue<bool>("VehicleDamage", "PanelDamageEnabled", true);
