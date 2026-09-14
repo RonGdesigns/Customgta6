@@ -46,9 +46,13 @@ removed rather than left doing the wrong thing.
 ## Verifying a timecycle modifier name
 
 A modifier name the game does not know applies nothing and says nothing. The four
-defaults in this build (`cinema_default`, `New_Chinatown_sky`, `color_neutral`,
-`rply_saturation`, `cinema`) came from a research note, not from the game data, and
-have not been checked against Ron's current installed data. Runtime index acceptance
+defaults came from a research note rather than from the game data. They were read
+out of Ron's installed archives on September 13, 2026: the game defines 1,119
+timecycle modifiers, and `cinema` is one of them while `cinema_default`,
+`color_neutral` and `New_Chinatown_sky` are not. Those three applied nothing, so the
+daytime and dawn grades never ran; the shipped build now forces neither, which is
+what has actually been on screen. The two named presets use `cinema_001` and
+`NeutralColorCode`, which do exist. Runtime index acceptance
 is now checked, but that is not an artistic or collision test. Before judging the grading:
 
 1. In OpenIV, open `update\update.rpf\common\data\timecycle\` and the

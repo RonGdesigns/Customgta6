@@ -114,9 +114,9 @@ public static partial class StoryTests
 
         // Exercise the actual VisualAtmosphere and its native adapter, not only the isolated driver.
         Reset(); Function.Calls.Clear(); World.CurrentTimeOfDay = TimeSpan.FromHours(13);
-        var visuals = new VisualAtmosphere(new ModConfig()); visuals.Update(false, true);
+        var visuals = new VisualAtmosphere(new ModConfig { DayModifier = "cinema" }); visuals.Update(false, true);
         for (int i = 0; i < 10; i++) { Game.GameTime += 100; visuals.Update(false, true); }
-        Check(visuals.ActiveModifier == "cinema_default" && Math.Abs(visuals.ActiveStrength - .35f) < .0001f,
+        Check(visuals.ActiveModifier == "cinema" && Math.Abs(visuals.ActiveStrength - .35f) < .0001f,
             "Production visual controller uses checked native grade and smooth strength");
         visuals.ToggleGradingComparison();
         for (int i = 0; i < 10; i++) { Game.GameTime += 100; visuals.Update(false, true); }

@@ -38,9 +38,13 @@ public static partial class StoryTests
   Check((float)LastCall(Hash.SET_VEHICLE_DAMAGE_SCALE)[1]==1f&&(float)LastCall(Hash.SET_PLAYER_VEHICLE_DAMAGE_MODIFIER)[1]==1f,"Stand-down restores the vehicle and the player's damage scale");
 
   // ---- Visuals: grading by time band, persistent settings once, per-frame ones every frame, all restored.
-  Reset();Function.Calls.Clear();var visuals=new VisualAtmosphere(config);World.CurrentTimeOfDay=TimeSpan.FromHours(13);
+  Reset();Function.Calls.Clear();var defaultGrade=new VisualAtmosphere(config);World.CurrentTimeOfDay=TimeSpan.FromHours(13);
+  defaultGrade.Update(false,false);defaultGrade.Update(false,false);
+  Check(defaultGrade.ActiveModifier==null&&Calls(Hash.SET_TIMECYCLE_MODIFIER)==0,"The shipped build forces no daytime grade: the three old names are not in the game");
+  defaultGrade.Reset();Reset();Function.Calls.Clear();
+  var visuals=new VisualAtmosphere(new ModConfig{DayModifier="cinema"});World.CurrentTimeOfDay=TimeSpan.FromHours(13);
   visuals.Update(false,false);visuals.Update(false,false);visuals.Update(false,false);
-  Check(visuals.ActiveModifier=="cinema_default"&&visuals.ActiveStrength==0&&Calls(Hash.SET_TIMECYCLE_MODIFIER)==1&&Calls(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH)==1,"At noon the daytime grade is acquired once at neutral before its smooth fade");
+  Check(visuals.ActiveModifier=="cinema"&&visuals.ActiveStrength==0&&Calls(Hash.SET_TIMECYCLE_MODIFIER)==1&&Calls(Hash.SET_TIMECYCLE_MODIFIER_STRENGTH)==1,"At noon the daytime grade is acquired once at neutral before its smooth fade");
   Check(Calls(Hash.SET_VEHICLE_LOD_MULTIPLIER)==0&&Calls(Hash.SET_PED_LOD_MULTIPLIER)==1&&LastCall(Hash.SET_PED_LOD_MULTIPLIER)[0]==Game.Player.Character&&(float)LastCall(Hash.SET_PED_LOD_MULTIPLIER)[1]==1.75f&&Calls(Hash.OVERRIDE_LODSCALE_THIS_FRAME)==3,"Persistent level-of-detail multipliers are set once; the scene override is per frame");
   Check(Calls(Hash.CASCADE_SHADOWS_SET_CASCADE_BOUNDS_SCALE)==1&&Calls(Hash.SET_VEHICLE_HEADLIGHT_SHADOWS)==0&&Calls(Hash.SET_GAMEPLAY_CAM_MOTION_BLUR_SCALING_THIS_UPDATE)==3,"Shadows are configured once; blur is stripped every frame");
   var reflect=Function.Calls.Where(c=>c.Item1==Hash.SET_ENTITY_USE_MAX_DISTANCE_FOR_WATER_REFLECTION).ToList();
@@ -60,7 +64,7 @@ public static partial class StoryTests
   var named=new VisualAtmosphere(new ModConfig{DayModifier="my_daytime",VisualPreset="SunnyCoast"});named.Update(false,false);
   Check(named.ActiveModifier=="my_daytime","An ini modifier override wins over the preset");
   named.Reset();
-  var sunny=new VisualAtmosphere(new ModConfig{VisualPreset="SunnyCoast"});sunny.Update(false,false);Check(sunny.ActiveModifier=="New_Chinatown_sky","Presets pick the daytime modifier");
+  var sunny=new VisualAtmosphere(new ModConfig{VisualPreset="SunnyCoast"});sunny.Update(false,false);Check(sunny.ActiveModifier=="cinema_001","Presets pick a daytime modifier the installed game actually defines");
   sunny.Reset();
   var capped=new VisualAtmosphere(new ModConfig{LODScale=2.5f});Function.Calls.Clear();capped.Update(false,false);
   Check((float)LastCall(Hash.SET_VEHICLE_LOD_MULTIPLIER)[1]==2f&&(float)LastCall(Hash.OVERRIDE_LODSCALE_THIS_FRAME)[0]==2f,"Level of detail is capped at 2.0");

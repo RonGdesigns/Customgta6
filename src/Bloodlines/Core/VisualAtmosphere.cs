@@ -120,7 +120,15 @@ namespace Bloodlines.Core
                 strength = contrast;
                 if (!_config.DeSmogEnabled) return null;
                 if (!string.IsNullOrWhiteSpace(_config.DayModifier)) return _config.DayModifier;
-                return _config.VisualPreset == "SunnyCoast" ? "New_Chinatown_sky" : _config.VisualPreset == "ModernCrisp" ? "color_neutral" : "cinema_default";
+                // Read out of the installed archives on September 13: the game defines
+                // 1,119 timecycle modifiers and none of them is cinema_default,
+                // color_neutral or New_Chinatown_sky. Those three never applied, so
+                // the default daylight on screen has always been the game's own and
+                // stays that way. The two named presets now ask for modifiers that
+                // exist; DayModifier in the ini still overrides any of it.
+                if (_config.VisualPreset == "SunnyCoast") return "cinema_001";
+                if (_config.VisualPreset == "ModernCrisp") return "NeutralColorCode";
+                return null;
             }
             if (hours >= 17.0 && hours < 20.5)
             {
@@ -135,7 +143,8 @@ namespace Bloodlines.Core
                 return string.IsNullOrWhiteSpace(_config.NightModifier) ? "cinema" : _config.NightModifier;
             }
             strength = contrast * 0.80f;
-            return string.IsNullOrWhiteSpace(_config.DawnModifier) ? "cinema_default" : _config.DawnModifier;
+            // Same missing name as the day grade had: dawn was never graded either.
+            return string.IsNullOrWhiteSpace(_config.DawnModifier) ? null : _config.DawnModifier;
         }
 
         // These natives are per entity, not global switches. Own at most the
