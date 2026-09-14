@@ -10,6 +10,11 @@ namespace Bloodlines.Core
     /// Placement for authored lanes, bridge decks and runway starts. A nearby
     /// pedestrian navmesh is NOT permission to change floors or move a plane.
     /// No estimates are persisted and no personal survey is overwritten.
+    ///
+    /// Two shapes of the same check: the throwing form refuses the placement with
+    /// a named message (the mission then fails to start), and the Try form reports
+    /// the refusal and hands the authored point back so a mission that would rather
+    /// play through on a point the player captured in game can do that.
     /// </summary>
     public static class BoundedPlacement
     {
@@ -29,8 +34,35 @@ namespace Bloodlines.Core
 
         public static Vector3 PedAt(Vector3 anchor, string label, Func<Vector3, bool> allowed = null)
         {
-            RequireFinite(anchor, label);
-            if (allowed != null && !allowed(anchor)) throw Refused(label, "inside the excluded freight stack");
+            if (!TryPedCore(anchor, allowed, out var point, out string reason)) throw Refused(label, reason);
+            return point;
+        }
+
+        /// <summary>
+        /// The same standing-space check without the refusal. False means the check
+        /// did not pass and <paramref name="point"/> is the authored position as it is,
+        /// logged as a warning; the caller decides whether that is good enough.
+        /// </summary>
+        public static bool TryPed(LocationBook book, string key, out Vector3 point, Func<Vector3, bool> allowed = null)
+        {
+            var site = book.Get(key);
+            if (site == null) { point = Vector3.Zero; Logger.Warn("Missing placement: " + key); return false; }
+            return TryPedAt(site.Position, key, out point, allowed);
+        }
+
+        public static bool TryPedAt(Vector3 anchor, string label, out Vector3 point, Func<Vector3, bool> allowed = null)
+        {
+            if (TryPedCore(anchor, allowed, out point, out string reason)) return true;
+            Logger.Warn(label + ": " + reason + "; using the authored point as it is.");
+            point = anchor;
+            return false;
+        }
+
+        private static bool TryPedCore(Vector3 anchor, Func<Vector3, bool> allowed, out Vector3 point, out string reason)
+        {
+            point = anchor; reason = null;
+            if (!Finite(anchor)) { reason = "invalid coordinates"; return false; }
+            if (allowed != null && !allowed(anchor)) { reason = "inside the excluded freight stack"; return false; }
             try
             {
                 Focus(anchor);
@@ -39,19 +71,20 @@ namespace Bloodlines.Core
                     Function.Call(Hash.REQUEST_COLLISION_AT_COORD, anchor.X, anchor.Y, anchor.Z);
                     var safe = World.GetSafeCoordForPed(anchor, false, 0);
                     if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, anchor, 1.5f) && Math.Abs(safe.Z - anchor.Z) <= 1.1f &&
-                        (allowed == null || allowed(safe)) && ClearBody(safe, .6f, 1.8f)) return safe;
+                        (allowed == null || allowed(safe)) && ClearBody(safe, .6f, 1.8f)) { point = safe; return true; }
                     // Raised rail decks and roofs need not have pedestrian navmesh.
                     // Only accept a real supporting surface beside the authored Z.
                     if (Floor(anchor, out float z) && Math.Abs(z - anchor.Z) <= 1.1f)
                     {
                         var grounded = new Vector3(anchor.X, anchor.Y, z + .05f);
-                        if ((allowed == null || allowed(grounded)) && ClearBody(grounded, .6f, 1.8f)) return grounded;
+                        if ((allowed == null || allowed(grounded)) && ClearBody(grounded, .6f, 1.8f)) { point = grounded; return true; }
                     }
                     Script.Wait(50);
                 }
             }
             finally { Function.Call(Hash.CLEAR_FOCUS); }
-            throw Refused(label, "no clear standing space on the authored level");
+            reason = "no clear standing space on the authored level";
+            return false;
         }
 
         // User's September 13 report identifies the OLD freight yard as unusable.
@@ -61,10 +94,14 @@ namespace Bloodlines.Core
         public static bool OutsideSoloFreight(Vector3 p) =>
             !(p.X >= 1000f && p.X <= 1120f && p.Y >= -3140f && p.Y <= -3062.5f);
 
+        /// <summary>
+        /// A straight-line corridor check at waist and chest height. Peds path around
+        /// obstacles, so a hit here is not proof the walk is impossible; use it only
+        /// where a straight walk is the point (a scene that must not be seen to cut
+        /// through freight), never as a gate on whether a mission continues.
+        /// </summary>
         public static void ClearWalk(Vector3 from, Vector3 to, string label)
         {
-            // Validate the corridor at waist/chest height before a scene can move
-            // its actor. In particular skip/finalization must not enter a freight.
             for (int i = 0; i <= 12; i++)
             {
                 var p = from + (to - from) * (i / 12f);
@@ -90,9 +127,29 @@ namespace Bloodlines.Core
         public static Vector3 VehicleAt(Vector3 anchor, float heading, string label, Model model, Entity ignore = null,
             Func<Vector3, bool> allowed = null, float departureMeters = 0f)
         {
-            RequireFinite(anchor, label);
+            if (!TryVehicleCore(anchor, heading, model, ignore, allowed, departureMeters, out var point, out string reason)) throw Refused(label, reason);
+            return point;
+        }
+
+        /// <summary>The footprint check without the refusal: false hands back the authored point, logged as a warning.</summary>
+        public static bool TryVehicle(LocationBook book, string key, Model model, out Vector3 point, Entity ignore = null,
+            Func<Vector3, bool> allowed = null, float departureMeters = 0f)
+        {
+            var site = book.Get(key);
+            if (site == null) { point = Vector3.Zero; Logger.Warn("Missing placement: " + key); return false; }
+            if (TryVehicleCore(site.Position, site.Heading, model, ignore, allowed, departureMeters, out point, out string reason)) return true;
+            Logger.Warn(key + ": " + reason + "; using the authored point as it is.");
+            point = site.Position;
+            return false;
+        }
+
+        private static bool TryVehicleCore(Vector3 anchor, float heading, Model model, Entity ignore, Func<Vector3, bool> allowed,
+            float departureMeters, out Vector3 point, out string reason)
+        {
+            point = anchor; reason = null;
+            if (!Finite(anchor)) { reason = "invalid coordinates"; return false; }
             var min = model.Dimensions.Item1; var max = model.Dimensions.Item2;
-            if (max.X <= min.X || max.Y <= min.Y || max.Z <= min.Z) throw Refused(label, "model bounds unavailable");
+            if (max.X <= min.X || max.Y <= min.Y || max.Z <= min.Z) { reason = "model bounds unavailable"; return false; }
             float left = min.X - .5f, right = max.X + .5f, back = min.Y - .5f, front = max.Y + .5f;
             try
             {
@@ -129,13 +186,14 @@ namespace Bloodlines.Core
                             if (Math.Abs(center.Z) < 6f && across + radius >= left && across - radius <= right &&
                                 along + radius >= back && along - radius <= front + departureMeters) clear = false;
                         }
-                        if (clear) return new Vector3(anchor.X, anchor.Y, highest - min.Z + .04f);
+                        if (clear) { point = new Vector3(anchor.X, anchor.Y, highest - min.Z + .04f); return true; }
                     }
                     Script.Wait(50);
                 }
             }
             finally { Function.Call(Hash.CLEAR_FOCUS); }
-            throw Refused(label, "vehicle footprint or initial departure lane is not clear on the authored level");
+            reason = "vehicle footprint or initial departure lane is not clear on the authored level";
+            return false;
         }
 
         private static bool Floor(Vector3 p, out float height, Entity ignore = null)
@@ -156,11 +214,8 @@ namespace Bloodlines.Core
             return true;
         }
         private static void Focus(Vector3 p) => Function.Call(Hash.SET_FOCUS_POS_AND_VEL, p.X, p.Y, p.Z, 0f, 0f, 0f);
-        private static void RequireFinite(Vector3 p, string label)
-        {
-            if (float.IsNaN(p.X) || float.IsInfinity(p.X) || float.IsNaN(p.Y) || float.IsInfinity(p.Y) || float.IsNaN(p.Z) || float.IsInfinity(p.Z))
-                throw Refused(label, "invalid coordinates");
-        }
+        private static bool Finite(Vector3 p) =>
+            !(float.IsNaN(p.X) || float.IsInfinity(p.X) || float.IsNaN(p.Y) || float.IsInfinity(p.Y) || float.IsNaN(p.Z) || float.IsInfinity(p.Z));
         private static InvalidOperationException Refused(string key, string reason)
         {
             string message = key + ": " + reason + ". Move/clear this placement in the survey editor and retry; no alternate floor was used.";
