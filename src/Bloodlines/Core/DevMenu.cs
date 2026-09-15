@@ -119,22 +119,26 @@ namespace Bloodlines.Core
             switch (key)
             {
                 case Keys.Up:
-                    page.Move(-1);
+                    page.Move(-page.Stride);
                     return true;
                 case Keys.Down:
-                    page.Move(1);
+                    page.Move(page.Stride);
                     return true;
                 case Keys.PageUp:
-                    page.Move(-VisibleRows);
+                    page.Move(-page.Stride * page.Screenful);
                     return true;
                 case Keys.PageDown:
-                    page.Move(VisibleRows);
+                    page.Move(page.Stride * page.Screenful);
                     return true;
                 case Keys.Left:
-                    page.Selected?.Adjust?.Invoke(-1);
+                    // On a grid the sideways press walks the row; there is nothing to
+                    // adjust on a tile, and a row of colors reads left to right.
+                    if (page.Columns > 0) page.Move(-1);
+                    else page.Selected?.Adjust?.Invoke(-1);
                     return true;
                 case Keys.Right:
-                    page.Selected?.Adjust?.Invoke(1);
+                    if (page.Columns > 0) page.Move(1);
+                    else page.Selected?.Adjust?.Invoke(1);
                     return true;
                 case Keys.Enter:
                     Activate(page.Selected);
@@ -849,6 +853,17 @@ namespace Bloodlines.Core
 
             y += 32f;
 
+            // A page of colors draws as colors. It refuses if the palette never came
+            // back, and then the names below are drawn exactly as they always were.
+            if (DrawSwatchGrid(page, x, width, ref y))
+            {
+                new TextElement(
+                    (page.Index + 1) + "/" + page.Items.Count +
+                    "   D-pad: move | A: preview | B: back | " + _config.DevMenuKey + " close",
+                    new PointF(x, y + 4f), 0.26f, Color.FromArgb(190, 150, 156, 166)).Draw();
+                return;
+            }
+
             int first = Math.Max(0, Math.Min(page.Index - VisibleRows / 2, page.Items.Count - VisibleRows));
             if (first < 0) first = 0;
 
@@ -864,9 +879,21 @@ namespace Bloodlines.Core
                     selected ? Color.FromArgb(245, 245, 245, 245) : Color.FromArgb(215, 190, 194, 200)).Draw();
 
                 string value = item.Value?.Invoke() ?? "";
+                float valueRight = x + width - 10f;
+                // A row that stands for a color shows the color. The channel list used to
+                // say "Primary  $400" and leave him to remember what primary currently is.
+                var chip = item.Swatch?.Invoke();
+                if (chip.HasValue)
+                {
+                    float chipX = valueRight - 34f;
+                    new ContainerElement(new PointF(chipX - 1f, y + 5f), new SizeF(34f, 16f),
+                        Color.FromArgb(180, 90, 96, 106)).Draw();
+                    new ContainerElement(new PointF(chipX, y + 6f), new SizeF(32f, 14f), chip.Value).Draw();
+                    valueRight = chipX - 8f;
+                }
                 if (!string.IsNullOrEmpty(value))
                 {
-                    new TextElement(value, new PointF(x + width - 10f, y + 4f), 0.28f,
+                    new TextElement(value, new PointF(valueRight, y + 4f), 0.28f,
                         Color.FromArgb(220, 150, 200, 160))
                     {
                         Alignment = Alignment.Right
@@ -907,11 +934,28 @@ namespace Bloodlines.Core
             public List<Item> Items { get; } = new List<Item>();
             public int Index { get; private set; }
 
+            /// <summary>
+            /// Tiles across, or zero for an ordinary list. A page sets this when its items
+            /// are colors; the drawing still refuses the grid if the colors are missing,
+            /// so this is a request rather than a promise.
+            /// </summary>
+            public int Columns;
+            /// <summary>What one press of up or down moves through: a row, or an item.</summary>
+            public int Stride => Columns > 0 ? Columns : 1;
+            /// <summary>How many of those a page jump covers — what is actually on screen.</summary>
+            public int Screenful => Columns > 0 ? SwatchRows : VisibleRows;
+
             public Item Selected => Items.Count > 0 ? Items[Index] : null;
 
             public void Add(string label, Func<string> value, Action action = null, Action<int> adjust = null)
             {
                 Items.Add(new Item { Label = label, Value = value, Action = action, Adjust = adjust });
+            }
+
+            /// <summary>Open on a particular row, for a page that has a current answer.</summary>
+            public void Select(int index)
+            {
+                if (index >= 0 && index < Items.Count) Index = index;
             }
 
             public void Move(int delta)
@@ -929,6 +973,8 @@ namespace Bloodlines.Core
             public Action Action;
             public Action<int> Adjust;
             public uint StatWeapon, StatComponent;
+            /// <summary>The color this item stands for, asked for each frame; null draws nothing.</summary>
+            public Func<Color?> Swatch;
         }
     }
 }

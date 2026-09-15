@@ -859,3 +859,30 @@ they reach speed. That is what stopped Ron's heist at M45 on every attempt.
 Call `AircraftHold.LaunchAirborne` immediately after creating one above the ground.
 It runs the engine, brings the rotors to full speed and gives it approach airspeed.
 Any key whose kind is `air` is a spawn that needs it.
+
+## The customs card, and paint you can see
+
+Ron brought a rental interface as a reference: make over model, performance bars with
+numbers on them, paint as swatches. The information was the ask; none of the rental
+machinery came with it, and a story test refuses the words "duration", "per hour",
+"total due" and "rental" in anything the card draws.
+
+**The card is on the right-hand edge.** It used to start at x 490, which in the 1280-wide
+drawing space is the middle of the screen — sitting on the car being customized. Anything
+new belongs at `CardX` or inside the left menu's 40-460, never between them.
+
+**`Core/PaintPalette` reads the game's paints out of the game.** Every index is written to
+the car and the rendered color read straight back, in one pass inside a single frame, with
+the car's own finish — custom primary included — captured first and restored in a
+`finally`. Never replace that with a typed table of RGB values: a hundred and sixty
+hand-copied colors is a hundred and sixty chances to sell a blue the car will not be
+painted. `GET_VEHICLE_COLOR` answering what `SET_VEHICLE_COLOURS` just wrote is an
+assumption about the engine, so a sweep that comes back with fewer than
+`MinimumDistinct` colors is refused, `Ready` stays false, and every paint page falls back
+to the list of names it used to be. Nobody has watched this run in game yet.
+
+**A menu page can be a grid.** `Page.Columns` asks for tiles; `Item.Swatch` is the color,
+asked for each frame. Up and down move a row (`Page.Stride`), left and right move one
+tile, and the drawing still refuses the grid when the colors are missing — so the request
+is never a promise. A list row with a `Swatch` draws its chip beside the value, which is
+how the channel list finally says which primary the car is wearing.

@@ -17,6 +17,9 @@ namespace Bloodlines.Core
             if(Shops==null||!Shops.CanUse(site))return;
             Close();Shops.WeaponCustomer=_crew.ActiveSlot;_shopping=site;_stick.Reset();IsOpen=true;_openedAt=Game.GameTime;
             _shopReceipts.Clear(); GameUtils.MenuNotice = ShopNotice;
+            // One sweep for the session, on the frame the shop opens: the card shows the
+            // car's four painted channels as colors, and it should show them straight away.
+            if(ShopService.IsGarage(site))PaintPalette.Sample(Shops.Car(site));
             _stack.Push(BuildShop(site));
         }
         private static string PartName(object value) => Regex.Replace(value.ToString(),"([a-z])([A-Z])","$1 $2");
@@ -185,28 +188,58 @@ namespace Bloodlines.Core
         }
         private Page BuildShopColors(ShopSite site)
         {
+            // Read the game's paints on the way in, so every channel row can show the color
+            // it is currently set to rather than only the word for it.
+            PaintPalette.Sample(Shops.Car(site));
             var page=new Page("Paint and colors");string[] names={"Primary","Secondary","Pearlescent","Rims","Interior trim","Dashboard"};
-            for(int i=0;i<names.Length;i++){int channel=i;string name=names[i];page.Add(name,()=>"$"+Shops.Price(site,400),()=>_stack.Push(BuildShopPaint(site,channel,name)));}
+            for(int i=0;i<names.Length;i++)
+            {
+                int channel=i;string name=names[i];
+                page.Add(name,()=>"$"+Shops.Price(site,400),()=>_stack.Push(BuildShopPaint(site,channel,name)));
+                page.Items.Last().Swatch=()=>PaintPalette.Ready?PaintPalette.Of((int)Shops.PaintColor(site,channel)):(Color?)null;
+            }
             string[] rgb={"Custom primary","Custom secondary","Neon color","Tire smoke color"};
             for(int i=0;i<rgb.Length;i++){int channel=i;string name=rgb[i];page.Add(name,()=>"RGB / $"+Shops.Price(site,600),()=>_stack.Push(BuildShopRgb(site,channel,name)));}
             return page;
         }
+        /// <summary>
+        /// A hundred and sixty paints as tiles you can see, on the car's current one.
+        ///
+        /// It was a hundred and sixty rows of text, which is the one thing a color cannot
+        /// be described by: "Ultra Blue" over "Pacific Blue" over "Bright Blue" tells a
+        /// buyer nothing. If the game would not give up its palette the grid refuses
+        /// itself and these same rows are drawn as the list they always were.
+        /// </summary>
         private Page BuildShopPaint(ShopSite site,int channel,string name)
         {
             var page=new Page(name+" paint");
+            page.Columns=PaintPalette.Sample(Shops.Car(site))?SwatchColumns:0;
+            var current=Shops.PaintColor(site,channel);
             foreach(VehicleColor color in Enum.GetValues(typeof(VehicleColor)))
-            {var selected=color;page.Add(PartName(color),()=>"$"+Shops.Price(site,400),()=>PreviewCar(site,()=>Shops.PaintChannel(site,channel,selected)));}
+            {
+                var selected=color;
+                page.Add(PartName(color),()=>"$"+Shops.Price(site,400),()=>PreviewCar(site,()=>Shops.PaintChannel(site,channel,selected)));
+                page.Items.Last().Swatch=()=>PaintPalette.Ready?PaintPalette.Of((int)selected):(Color?)null;
+                // Open on the paint the car is wearing, so the grid starts where he is.
+                if(selected==current)page.Select(page.Items.Count-1);
+            }
             return page;
         }
         private Page BuildShopRgb(ShopSite site,int channel,string name)
         {
             var page=new Page(name);int red=255,green=255,blue=255;
             if(channel==2)foreach(var preset in new[]{Color.White,Color.Red,Color.Blue,Color.Cyan,Color.Lime,Color.Yellow,Color.Orange,Color.HotPink,Color.Purple})
-            {var color=preset;page.Add(color.Name,()=>"Preview / $"+Shops.Price(site,600),()=>PreviewCar(site,()=>Shops.Rgb(site,channel,color)));}
+            {
+                var color=preset;
+                page.Add(color.Name,()=>"Preview / $"+Shops.Price(site,600),()=>PreviewCar(site,()=>Shops.Rgb(site,channel,color)));
+                // These are ours, not the game's: the color is right here to be shown.
+                page.Items.Last().Swatch=()=>color;
+            }
             page.Add("Red",()=>red.ToString(),adjust:d=>red=Math.Max(0,Math.Min(255,red+d*5)));
             page.Add("Green",()=>green.ToString(),adjust:d=>green=Math.Max(0,Math.Min(255,green+d*5)));
             page.Add("Blue",()=>blue.ToString(),adjust:d=>blue=Math.Max(0,Math.Min(255,blue+d*5)));
             page.Add("Preview color",()=>"$"+Shops.Price(site,600),()=>PreviewCar(site,()=>Shops.Rgb(site,channel,Color.FromArgb(red,green,blue))));
+            page.Items.Last().Swatch=()=>Color.FromArgb(red,green,blue);
             return page;
         }
         private Page BuildShopEquipment(ShopSite site)
