@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using Bloodlines.Core;
@@ -332,17 +333,46 @@ public static partial class StoryTests
         Check(!m45.Contains("guard.Task.FightAgainstHatedTargets"),
             "None of them are told to go and find somebody, which is how they went over the side");
         Check(m45.Contains("guard.Task.GuardCurrentPosition();"), "They hold the deck instead");
-        // The probe answer is now checked instead of assumed. OnDeck hands back the authored
-        // point when it finds nothing, and Ron found the consequence: four of the ten kept an
-        // unverified height and one ended up inside the hull where he could not be shot.
+        // A post has to be standing on something AND have sky over it. Checking only the
+        // first is what left two men inside the hull after the first repair: a deck is a
+        // surface and so is the floor of the room beneath it, and a probe looking down
+        // cannot tell them apart.
         Check(m45.Contains("MissionSites.SurfaceHeight(tried, tried.Z + PaletoSite.DeckHeadroom"),
             "Each post asks whether there is any deck under it");
-        Check(m45.Contains("for (int back = 0; back <= PostRetries && !deck.HasValue; back++)"),
-            "and a refused post steps back toward the pad looking for deck that exists");
-        Check(m45.Contains("post = new Vector3(post.X, post.Y, pad.Z);"),
-            "falling back to the height the pad probe measured rather than the authored guess");
-        Check(M45PaletoBreach.PadClearance >= 15f,
-            "The nearest rank stands clear of the landing zone, not under the rotors");
+        Check(m45.Contains("MissionSites.OpenAbove(candidate, DeckClearance)"),
+            "and whether there is sky over it, which is what tells a deck from a cabin floor");
+        Check(M45PaletoBreach.DeckClearance >= 1.9f,
+            "The clearance a post needs is at least the height of the man standing on it");
+        Check(m45.Contains("Math.Sign(beam) * step * PostStepOut"),
+            "A refused post steps outboard toward the rail, where the open deck is");
+        Check(m45.Contains("empty++;") && m45.Contains("has a deckhead over every point on its line and is left empty."),
+            "A post that is under cover the whole way out to the rail is left empty rather than filled blind");
+        // Under cover and no answer at all are different failures. A vessel whose collision
+        // has not streamed answers nothing, and leaving the deck empty there is a mission
+        // that cannot be completed - so that case still places him, and says the height is
+        // unverified. Only the covered case loses a man.
+        Check(m45.Contains("if (stand == null && answered)") && m45.Contains("unverified++;"),
+            "while a post nothing answered for at all is still filled, at a height the log calls unverified");
+
+        // ---- The landing zone and the detail are separate keys now. Ron asked for the
+        // arrival to move to the far end of the vessel: ten men in the open watching a
+        // helicopter land and not firing on it reads wrong however far off they stand. A
+        // detail measured off the pad would have walked to the bow with it.
+        Check(m45.Contains("PaletoSite.OnDeck(At(\"M45.Deck\")"),
+            "The deck detail is laid out around its own surveyable key");
+        Check(!m45.Contains("PadClearance"),
+            "and nothing positions it by counting meters back from the landing zone");
+        var book = File.ReadAllLines(Path.Combine(Repo, "data", "locations.tsv"));
+        var padRow = book.First(line => line.StartsWith("M45.Helipad\t")).Split('\t');
+        var detailRow = book.First(line => line.StartsWith("M45.Deck\t")).Split('\t');
+        float padX = float.Parse(padRow[1], CultureInfo.InvariantCulture);
+        float detailX = float.Parse(detailRow[1], CultureInfo.InvariantCulture);
+        Check(Math.Abs(padX - detailX) >= M45PaletoBreach.DetailStandoff,
+            "The two are authored a good part of the ship apart");
+        Check(padX < detailX && padX >= -1810.1f + 8f,
+            "with the landing zone forward of the detail and still on the hull");
+        Check(m45.Contains("hub.DistanceTo2D(_deck) < DetailStandoff"),
+            "and a survey that brings them back together says so in the log");
         // Ten men who cannot react are not a fight. M48 clears this flag in WakeCordon and
         // M45 never did, which is why Ron was not being attacked.
         Check(m45.Contains("guard.BlockPermanentEvents = false;") && m45.Contains("private void WakeDeck()"),

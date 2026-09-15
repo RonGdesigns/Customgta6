@@ -33,16 +33,37 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         public const int DeckGuards = 10;
         /// <summary>
-        /// How far down the deck the nearest guard post is from the helipad. Ron found men
-        /// standing in the landing zone: eight meters put the first rank where the
-        /// helicopter comes down, and a guard under the rotors is a guard in the way of the
-        /// mission rather than a guard defending anything.
+        /// How far apart the ranks of the deck detail stand, along the vessel.
+        ///
+        /// The detail is laid out around its own key now, not measured off the landing
+        /// zone. Ron asked for the landing zone to move to the far end of the ship - ten
+        /// men standing in the open watching a helicopter arrive and not firing on it
+        /// reads wrong however far away they are - and a detail pinned to the pad would
+        /// have walked to the bow with it and off the front of the boat.
         /// </summary>
-        public const float PadClearance = 20f;
-        /// <summary>How many times a refused post steps back toward the pad looking for deck.</summary>
+        public const float DeckRankSpacing = 7f;
+        /// <summary>How far off the centerline each man of a rank stands.</summary>
+        public const float DeckBeam = 5f;
+        /// <summary>How many times a roofed or unsupported post steps outboard looking for open deck.</summary>
         public const int PostRetries = 4;
-        /// <summary>How far each of those steps moves it, as a fraction of the way to the pad.</summary>
-        public const float PostStepBack = .2f;
+        /// <summary>How far outboard each of those steps moves it, toward the rail.</summary>
+        public const float PostStepOut = 1.5f;
+        /// <summary>
+        /// How much open air a post needs over it before a man is put there.
+        ///
+        /// This is the check the first repair was missing. A downward probe answers
+        /// "something solid is under this point", which inside a hull is just as true as
+        /// out on the deck: an interior floor is a surface. Two of the ten were still
+        /// standing inside the vessel where Ron could not shoot them. A man is about 1.9
+        /// meters; anything closer than this overhead is a deckhead, not the sky.
+        /// </summary>
+        public const float DeckClearance = 2.2f;
+        /// <summary>
+        /// How far the detail has to be from where Ice steps off before it is worth saying
+        /// so. Both ends are surveyable keys, and a survey that puts them together brings
+        /// back the landing zone Ron asked to get away from.
+        /// </summary>
+        public const float DetailStandoff = 25f;
         /// <summary>How often a deck guard's combat order is refreshed once the fight is on.</summary>
         public const int DeckOrderMs = 5000;
         /// <summary>How far a deck guard will engage. The deck is about this long.</summary>
@@ -133,6 +154,10 @@ namespace Bloodlines.Missions.Campaign
             world?.Bind("chopper", _chopper);
             RequireAsset(_chopper, "The extraction helicopter was lost before the boarding.");
 
+            // The interior is asked for here rather than in M46, because it needs to be in
+            // by the time Gohan reaches a door and M45 is several minutes of deck fight
+            // ahead of that. Ensure is called again every frame until it answers.
+            Paleto.EnsureInside(Ctx);
             // The deck and platform points are the least proven in the operation.
             Paleto.Review(Ctx, PlacementContract.Ped("M45.Helipad"), PlacementContract.Ped("M45.Board"));
             Station(CrewSlot.Guess, _chopper, VehicleSeat.Driver);
@@ -172,55 +197,80 @@ namespace Bloodlines.Missions.Campaign
             return sub;
         }
 
+        /// <summary>
+        /// The deck detail, on the part of the vessel it defends rather than around the
+        /// spot Ice arrives at.
+        ///
+        /// Ron played the repaired version and reported two things: two men were still
+        /// inside the hull and could not be shot, and the arrival looked wrong - a detail
+        /// standing in the open, not firing, while a helicopter puts someone on their
+        /// deck. Both are answered here. Every post has to be open to the sky before
+        /// anybody stands on it, and the detail is laid out around its own key amidships
+        /// while the landing zone moved to the bow.
+        /// </summary>
         private void SpawnDeckGuards()
         {
             var model = new Model(GuardModel);
             if (!GameUtils.RequestModel(model)) return;
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
-            var pad = _deck;
-            int placed = 0;
+            // One attempt: the landing-zone probe in Setup already paid for this collision,
+            // and ten waiting probes here stalled Setup long enough for the helicopter
+            // created just before them to fly itself into the sea.
+            var hub = PaletoSite.OnDeck(At("M45.Deck"), Id + " deck detail", 1);
+            if (hub.DistanceTo2D(_deck) < DetailStandoff)
+                Logger.Warn(Id + ": the deck detail stands " + hub.DistanceTo2D(_deck).ToString("0.0") +
+                    " m from where Ice steps off. Survey M45.Deck and M45.Helipad apart, or the detail is standing in the landing zone again.");
+            int ranks = Math.Max(1, DeckGuards / 2);
+            int placed = 0, empty = 0, unverified = 0;
             for (int i = 0; i < DeckGuards; i++)
             {
-                // Two ranks down the deck away from the pad, spread so ten men are a
-                // detail rather than a pile, and each one dropped onto the deck that is
-                // really under him. GameUtils.OnGround would have put all of them in the
-                // water: the ground under a point fifteen meters up on a vessel is the sea.
-                var post = pad + new Vector3(-PadClearance - (i / 2) * 7f, i % 2 == 0 ? 5f : -5f, 0f);
-                // One attempt, no waiting. The deck probe above already requested this
-                // collision and waited for it, and ten waiting probes here stalled Setup for
-                // up to ten seconds — long enough for the helicopter created just before them
-                // to fly itself into the sea, which is exactly what Ron saw.
-                //
-                // And the answer is checked rather than assumed. OnDeck hands back the
-                // authored point when it finds nothing solid, which on this vessel means a
-                // man at a height nobody verified: four of the ten did exactly that and one
-                // of them ended up inside the hull where Ron could not shoot him. A post
-                // with no deck under it is skipped. Nine guards is a thinner fight; a guard
-                // inside the ship is a mission that cannot be finished.
-                // Walk the post back toward the pad until the deck answers. A post that keeps
-                // the authored height is a man at a height nobody measured for that spot, and
-                // Ron found the consequence: four of the ten did exactly that and one ended up
-                // inside the hull where he could not be shot. Stepping in finds deck that
-                // actually exists instead of trusting a number.
-                float? deck = null;
-                for (int back = 0; back <= PostRetries && !deck.HasValue; back++)
+                // Ranks along the vessel either side of the detail's own key, two men to a
+                // rank off each beam, so ten men are a detail rather than a pile.
+                float along = ((i / 2) - (ranks - 1) / 2f) * DeckRankSpacing;
+                float beam = i % 2 == 0 ? DeckBeam : -DeckBeam;
+                var post = hub + new Vector3(along, beam, 0f);
+                // A post has to be standing on something AND have sky over it. The first
+                // condition on its own is what put two men inside the hull: a deck is a
+                // surface and so is the floor of the room under it, and a probe looking
+                // down cannot tell them apart. A refused post steps outboard toward the
+                // rail, because on a vessel the enclosed space is down the middle and the
+                // open deck is along the sides.
+                Vector3? stand = null;
+                bool answered = false;
+                for (int step = 0; step <= PostRetries && stand == null; step++)
                 {
-                    var tried = post + (pad - post) * (back * PostStepBack);
-                    deck = MissionSites.SurfaceHeight(tried, tried.Z + PaletoSite.DeckHeadroom, PaletoSite.WaterlineDeck - 1f);
-                    if (deck.HasValue) post = new Vector3(tried.X, tried.Y, deck.Value);
+                    var tried = post + new Vector3(0f, Math.Sign(beam) * step * PostStepOut, 0f);
+                    float? deck = MissionSites.SurfaceHeight(tried, tried.Z + PaletoSite.DeckHeadroom, PaletoSite.WaterlineDeck - 1f);
+                    if (!deck.HasValue) continue;
+                    answered = true;
+                    var candidate = new Vector3(tried.X, tried.Y, deck.Value);
+                    if (!MissionSites.OpenAbove(candidate, DeckClearance)) continue;
+                    stand = candidate;
                 }
-                if (!deck.HasValue)
+                if (stand == null && answered)
                 {
-                    // Nothing on that line answered. The pad's own height was measured by the
-                    // probe in Setup, so it is a real deck height on this deck rather than the
-                    // authored guess - the best answer left, and it is logged as a fallback.
-                    post = new Vector3(post.X, post.Y, pad.Z);
-                    Logger.Warn(Id + ": no deck answered under post " + (i + 1) + "; standing him at the pad's measured height " +
-                        pad.Z.ToString("0.00") + ". Survey the deck posts if he is in the wrong place.");
+                    // Every point on that line is under cover. He is left out rather than put
+                    // there: eight men Ron can fight is a thinner detail, two he cannot reach
+                    // is a mission he cannot finish. This is the case that was wrong.
+                    empty++;
+                    Logger.Warn(Id + ": post " + (i + 1) + " at " + post + " has a deckhead over every point on its line and is left empty.");
+                    continue;
                 }
-                var guard = World.CreatePed(model, post, 180f);
+                if (stand == null)
+                {
+                    // Nothing answered at all, which is not the same thing. That is a vessel
+                    // whose collision has not streamed, or a chapter opened alone in QA with
+                    // no structure under it — and leaving the deck empty there is a mission
+                    // that cannot be completed. He stands at the height the detail's own probe
+                    // measured, and the log says the post is unverified.
+                    stand = new Vector3(post.X, post.Y, hub.Z);
+                    unverified++;
+                    Logger.Warn(Id + ": nothing solid answered under post " + (i + 1) + " at " + post +
+                        "; standing him at the detail's measured height " + hub.Z.ToString("0.00") + ".");
+                }
+                var guard = World.CreatePed(model, stand.Value, 180f);
                 if (guard == null || !guard.Exists())
-                { Logger.Warn(Id + ": deck guard " + (i + 1) + " could not be created at " + post + "."); continue; }
+                { Logger.Warn(Id + ": deck guard " + (i + 1) + " could not be created at " + stand.Value + "."); continue; }
                 placed++;
                 guard.RelationshipGroup = aegis;
                 guard.IsPersistent = true;
@@ -242,7 +292,9 @@ namespace Bloodlines.Missions.Campaign
                 _guards.Add(Track(guard));
             }
             model.MarkAsNoLongerNeeded();
-            Logger.Info(Id + ": " + placed + " of " + DeckGuards + " deck guards are on the upper deck.");
+            Logger.Info(Id + ": " + placed + " of " + DeckGuards + " deck guards are on the upper deck" +
+                (empty > 0 ? "; " + empty + " posts were under cover and left empty" : "") +
+                (unverified > 0 ? "; " + unverified + " stand at an unverified height" : "") + ".");
         }
 
         /// <summary>
@@ -348,6 +400,7 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected override void OnUpdate()
         {
+            Paleto.EnsureInside(Ctx);
             // Ten men who will not shoot are not a fight. Ordered on a cadence once the deck
             // stage has woken them; before that they are standing at their posts.
             if (Stage >= DeckFightStage && !GuardsDown) PressTheDeck();
@@ -370,6 +423,18 @@ namespace Bloodlines.Missions.Campaign
             record.Notes["deck"] = "upper deck clear; Ice holding the stair head";
             record.Notes["gohan"] = "aboard by the stern platform, out of the sub";
             record.Notes["chopper"] = "Guess holding station off the beam";
+            // Whether the vessel's interior is genuinely there. Ron boarded at the stern and
+            // could not get inside, and from outside the hull the two causes look identical:
+            // an interior that never loaded, and a route nobody has walked. The game knows
+            // which, and this is the moment to ask it.
+            bool inside = Paleto.EnsureInside(Ctx);
+            record.Notes["interior"] = inside ? "vessel interior pinned and ready" : "vessel interior NOT ready";
+            if (!inside)
+            {
+                Ctx.Doctor?.Warn("interior", "Paleto vessel",
+                    "the vessel's interior is not loaded, so the command deck cannot be walked to.");
+                Logger.Warn(Id + ": the vessel interior is not ready as Gohan comes aboard. M46's first marker will be unreachable.");
+            }
             Ctx.Handoffs.Record(record);
             Release(_chopper);
         }

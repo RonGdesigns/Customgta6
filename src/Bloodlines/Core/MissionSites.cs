@@ -131,6 +131,40 @@ namespace Bloodlines.Core
         }
 
         /// <summary>
+        /// Whether a standing point has open sky over it for <paramref name="height"/>
+        /// meters.
+        ///
+        /// <see cref="SurfaceHeight"/> answers "is something solid under this point",
+        /// which on a vessel is true inside the hull as well as out on the deck: an
+        /// interior floor is a surface, and a man dropped onto one is a man behind a
+        /// bulkhead that the player cannot shoot through. Ron found two of them still
+        /// standing inside the Paleto vessel after the first repair, because that repair
+        /// only checked that the probe answered at all.
+        ///
+        /// This is the missing half. Fire the probe upward from just above the surface:
+        /// anything it hits is a deck, a roof or an overhead the point is standing under.
+        /// A post that is not open to the sky is not a post.
+        /// </summary>
+        public static bool OpenAbove(Vector3 at, float height)
+        {
+            if (height <= 0f) return true;
+            try
+            {
+                Function.Call(Hash.REQUEST_COLLISION_AT_COORD, at.X, at.Y, at.Z);
+                var from = new Vector3(at.X, at.Y, at.Z + .4f);
+                var to = new Vector3(at.X, at.Y, at.Z + height);
+                return !World.Raycast(from, to, IntersectFlags.Map | IntersectFlags.Objects).DidHit;
+            }
+            catch (Exception ex)
+            {
+                // A probe that will not run is not evidence of a roof. Say so and let the
+                // caller place the man; a thinner check is better than an empty deck.
+                Logger.Warn("A clearance probe at " + at + " could not run: " + ex.Message);
+                return true;
+            }
+        }
+
+        /// <summary>
         /// The same probe, given a few frames for collision to stream in, and the point
         /// it was handed if it never answers. A wrong height is better than a refused
         /// mission, but it is reported either way.

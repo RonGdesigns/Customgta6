@@ -3,6 +3,7 @@ using System.Linq;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using GTA;
+using GTA.Math;
 
 namespace Bloodlines.Missions
 {
@@ -36,12 +37,31 @@ namespace Bloodlines.Missions
         public PaletoWorld(MissionContext context) : base(context)
         {
             Structure = new ScriptedMap(YachtMaps);
+            // The hull's ymap and the hull's interior are two different things. Asking for
+            // h4_islandx_yacht_03_int places the MLO; until it is pinned, the way in is a
+            // wall - which is why Ron could stand on the stern platform and never get
+            // inside, and why M46's first marker sat in a room he could not reach.
+            Inside = new ScriptedInterior("Paleto vessel", InteriorProbes);
         }
+
+        /// <summary>
+        /// Where to look for the vessel's interior. The first is the MLO instance's own
+        /// placed origin out of h4_islandx_yacht_03_int.ymap - a read number, not an
+        /// estimate. The second is the vault deck, in case the origin sits a meter the
+        /// wrong side of a bulkhead.
+        /// </summary>
+        public static readonly Vector3[] InteriorProbes =
+        {
+            new Vector3(-1769.67f, 5334.14f, 4.89f),
+            new Vector3(-1770f, 5334f, 4.89f),
+        };
 
         public override string Label => "Paleto operation";
 
         /// <summary>The yacht, as a request this attempt owns rather than as scenery.</summary>
         public ScriptedMap Structure { get; }
+        /// <summary>Its interior, held open so the brothers can walk into it.</summary>
+        public ScriptedInterior Inside { get; }
         /// <summary>Set once the sea defenses are actually down, so M45 cannot fly in early.</summary>
         public bool DefensesDown { get; set; }
         /// <summary>Set once the evidence is physically in a brother's hands.</summary>
@@ -53,7 +73,7 @@ namespace Bloodlines.Missions
         /// The structure was requested map, not scenery. Whether the operation
         /// passed, failed or was abandoned, the cove goes back to how it was found.
         /// </summary>
-        protected override void OnDisposed(bool successful) => Structure.Release();
+        protected override void OnDisposed(bool successful) { Inside.Release(); Structure.Release(); }
 
         public override bool ValidateActive(Mission phase, out string reason)
         {

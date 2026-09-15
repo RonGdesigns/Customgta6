@@ -784,7 +784,7 @@ Prerequisite: M44. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M44.Surface, M45.Approach, M45.Board, M45.Helipad, M45.Hold, M45.Stern.
+Survey references: M44.Surface, M45.Approach, M45.Board, M45.Deck, M45.Helipad, M45.Hold, M45.Stern.
 
 ## M46 — PALETO DEEP-SEA: VAULT CRACK
 
