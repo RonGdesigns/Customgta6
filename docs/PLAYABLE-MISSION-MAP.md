@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-59 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+62 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -894,6 +894,49 @@ Prerequisite: M51. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+
+## M53 — SUBTERRANEAN SWEEP
+
+Prerequisite: M52. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Set the tripwires** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | any brother | **Clear the tunnel** — KillTargetsObjective: Take both sweep teams in the tunnel |
+| 3 | any brother | **Out through the station** — ReachZoneObjective: Get up onto the station walkway and out |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.Start, M53.Train.
+
+## M54 — THE PILLBOX REDOUBT
+
+Prerequisite: M53. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Get the crew aboard** — EnterVehicleObjective: Guess: get in the Annihilator<br>ConditionObjective: Ice and Gohan: in the back |
+| 2 | Guess | **Put it on the roof** — DeliverVehicleObjective: Guess: land on the tower helipad |
+| 3 | Guess | **Fortify the nest** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M54.Antenna, M54.GohanStart, M54.GuessStart, M54.IceStart, M54.Lift, M54.Pad, M54.RoostNorth, M54.RoostSouth, M54.Start.
+
+## M56 — IRON IN THE DRAIN
+
+Prerequisite: M55. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Take the half-track down the drain** — TravelObjective: Guess: drive the half-track down the channel |
+| 2 | any brother | **Break the armor** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | any brother | **Put the Savage in the concrete** — DestroyVehicleObjective: Shoot the Aegis Savage down |
+| 4 | any brother | **Clear the channel** — TravelObjective: Bring the half-track back up the channel |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M56.ApcOne, M56.ApcTwo, M56.BridgeGunner, M56.Chopper, M56.Exit, M56.GohanStart, M56.GuessStart, M56.Halftrack, M56.IceStart, M56.Start.
 
 ## M57 — VESPUCCI FLAK
 

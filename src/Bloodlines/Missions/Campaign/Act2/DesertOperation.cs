@@ -61,7 +61,15 @@ namespace Bloodlines.Missions.Campaign
             }
             finally { model.MarkAsNoLongerNeeded(); }
         }
-        protected Ped Guard(Vector3 point, WeaponHash weapon = WeaponHash.CarbineRifle)
+        /// <param name="trustPoint">
+        /// True when the caller already knows where the man stands and the engine's walkable
+        /// query would answer wrongly. It accepts an answer up to 35 meters away, which is
+        /// fine beside a jetty and wrong inside a subway tunnel: the street is twenty meters
+        /// overhead, well within that tolerance, so every contractor in M53 would have been
+        /// standing on Vespucci Boulevard instead of in the tunnel. Pass true for any post
+        /// below ground or on a structure, having already put the point on its real surface.
+        /// </param>
+        protected Ped Guard(Vector3 point, WeaponHash weapon = WeaponHash.CarbineRifle, bool trustPoint = false)
         {
             var model = new Model("s_m_y_blackops_01");
             try
@@ -72,11 +80,15 @@ namespace Bloodlines.Missions.Campaign
                 // and M32 and M39 both died refusing one (Ron, September 13). Prefer
                 // navmesh where it exists, otherwise stand him on the authored point's
                 // own ground, and only give up if the ped itself cannot be created.
-                var safe = World.GetSafeCoordForPed(point, false, 0);
-                if (safe == Vector3.Zero || safe.DistanceTo(point) > 35f)
+                var safe = point;
+                if (!trustPoint)
                 {
-                    safe = GameUtils.OnGround(point);
-                    Logger.Warn("Guard post has no navmesh; standing him on the authored point at " + safe + ".");
+                    safe = World.GetSafeCoordForPed(point, false, 0);
+                    if (safe == Vector3.Zero || safe.DistanceTo(point) > 35f)
+                    {
+                        safe = GameUtils.OnGround(point);
+                        Logger.Warn("Guard post has no navmesh; standing him on the authored point at " + safe + ".");
+                    }
                 }
                 var ped = Track(World.CreatePed(model, safe, 180));
                 if (ped == null || !ped.Exists()) return null;

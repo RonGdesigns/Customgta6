@@ -155,6 +155,23 @@ namespace Bloodlines.Core
             return at;
         }
 
+        /// <summary>
+        /// How far the real surface under a point sits from the height it was authored at.
+        ///
+        /// For a site whose floor is flat and whose authored heights all came from the same
+        /// datum — a metro tunnel run whose section origins are every one of them at 13.03, a
+        /// concrete channel, a deck — one measurement describes the whole thing, and adding
+        /// this offset to each authored point puts all of them on the slab. Seventeen separate
+        /// probes would be seventeen chances to fail and, with a retry each, seconds of
+        /// <c>Script.Wait</c> inside <c>Setup</c> — which is exactly how M45's helicopter ended
+        /// up in the sea.
+        ///
+        /// Zero when nothing solid is found, so a site with no answer keeps its authored
+        /// heights rather than collapsing to the origin. <see cref="OnSurface"/> logs either way.
+        /// </summary>
+        public static float OffsetToSurface(Vector3 at, float headroom, float floor, string what, int attempts = 3) =>
+            OnSurface(at, headroom, floor, what, attempts).Z - at.Z;
+
         /// <summary>How far out a clearance probe looks. Beyond this nothing is cramped.</summary>
         public const float RoomProbeMeters = 14f;
         /// <summary>Under this much room no vehicle the campaign spawns will fit.</summary>

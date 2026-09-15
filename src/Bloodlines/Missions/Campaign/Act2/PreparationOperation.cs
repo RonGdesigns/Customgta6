@@ -89,9 +89,20 @@ namespace Bloodlines.Missions.Campaign
             }
             finally { model.MarkAsNoLongerNeeded(); }
         }
-        protected Ped Enemy(string key)
+        protected Ped Enemy(string key) => Register(Guard(At(key)), key);
+
+        /// <summary>
+        /// A hostile at a position the caller has already settled onto its real surface - a
+        /// tunnel floor, a deck, anything the engine's walkable query would answer with the
+        /// ground above or beside it. The navmesh snap is skipped outright rather than
+        /// widened, because underground its answer is not merely imprecise, it is the street.
+        /// <paramref name="key"/> is only used for the log line.
+        /// </summary>
+        protected Ped EnemyAt(Vector3 point, string key) =>
+            Register(Guard(point, WeaponHash.CarbineRifle, true), key);
+
+        private Ped Register(Ped ped, string key)
         {
-            var ped = Guard(At(key));
             // One guard that will not spawn is a thinner fight, not a dead mission.
             // M32 and M39 both refused to start over a single post (Ron, September 13).
             if (ped == null) { Logger.Error("Could not place guard " + key + "; the encounter continues without him. Survey that key."); return null; }

@@ -26,7 +26,7 @@ public static partial class StoryTests
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
    .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==53,"All 53 later and solo production mission classes are covered by the flow harnesses");
+  Check(types.Length==56,"All 56 later and solo production mission classes are covered by the flow harnesses");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);

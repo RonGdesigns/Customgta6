@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-59 of 79 missions have gameplay scripts (M01–M52 except M53, M57, SM01–SM06); the rest are loaded as data
+62 of 79 missions have gameplay scripts (M01–M54, M56, M57, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M53–M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M55, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -553,10 +553,9 @@ fired, because narrating a place the player is not standing in is worse than sil
 each divergence is recorded in `data/mission_gameplay.tsv`. Never edit the extraction to
 follow gameplay; an authored revision goes through `data/dialogue_edits.json`.
 
-**M53 is the one left, and it cannot be authored offline.** Not one placed entity exists
-below z = 0 under Pillbox Hill: the subway is a handful of large models whose origins sit
-at street level, and a model origin is not a floor. Every M53 coordinate has to come from
-an in-game capture.
+**M53 was called unbuildable here twice, and that was a wrong test, not a wrong answer.**
+See the section below. Searching below z = 0 under Pillbox Hill finds nothing because there
+is nothing below z = 0; the metro runs at z 13, twenty meters under a street at z 31.
 
 ## Three presentation and placement rules, learned the expensive way
 
@@ -593,6 +592,119 @@ on the bunker to register it. Nothing said so, in either direction. A story test
 `Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
 
 This loads map data the game already shipped with. It does not join or enable GTA Online.
+
+## M54, and what the archives will and will not tell you about a roof
+
+M54 was an express-elevator breach into a foreclosed penthouse. Ron replaced it with **roof
+access by air**, and the rewrite is worth reading as a method rather than as one mission.
+
+The penthouse version had to put three work positions inside an MLO nobody has walked: the
+only two penthouse interiors the installed game loads are already crew homes, and the
+`Apartment.Room.Luxury.*` keys were never surveyed, so the roosts were offsets from the
+arrival point snapped with `GetSafeCoordForPed`. Honest, and unfalsifiable. The roof version
+stands on placed geometry the whole way up — `dt1_02_helipad` at (-142.67, -593.35, 206.31)
+on a Pillbox Hill tower, the parapet rail beside it, the `prop_elecbox_23` cabinet Gohan
+taps, and a ring of `prop_wall_light_03a` at 209.15 that outlines the deck at roughly twelve
+meters square. Every authored point is inside that rectangle and borrows its x and y from
+something Rockstar put there.
+
+**What a prop gives you is a position, never a floor.** Each roof point's height is a
+downward probe onto the slab, the M52 fix applied before the bug rather than after it.
+
+**A probe only answers where collision is loaded.** The roof is two hundred meters up and
+sixteen hundred meters from the departure yard, so the probe runs when the crew has landed,
+not in `Setup`. A story test asserts that no `OnSurface` call appears inside `Setup` in that
+file.
+
+**A roof point must be a fixed surface.** `FixedSurfaces` names all four. Ground preparation
+asks the engine for walkable ground and would answer with the sidewalk two hundred meters
+below — the same failure that put M40's hull kits under a pier.
+
+**The tower is deliberately not Maze Bank.** Maze Bank's roof (`dt1_11_heliport`, 323.26) is
+the only other helipad in the city core, and `M54_S1_02_ICE` claims a firing line *on* Maze
+Bank Tower. Standing on a different Pillbox Hill roof keeps the authored line true. The same
+building's lower tiers — `prop_radiomast01` on a deck at 199.13, three more pads at 175.52 —
+are unused, because a radio mast would be a better antenna and nothing in the archives shows
+a man can walk down to it.
+
+`M54_S1_01_GUESS` clones an elevator keycard that no longer exists. It goes unplayed and
+`M54_RADIO_01_GUESS` calls the roof approach instead; `data/mission_gameplay.tsv` records
+that, the tower swap and the unreproduced balcony. Nobody has stood on that deck yet.
+
+One trap worth keeping named: `MultiHoldObjective` **copies its site list in its
+constructor**. `BuildStages` runs before a mission has been anywhere, so a list filled in
+later is captured empty and the objective completes the instant its stage opens. Use
+interactions with `Func<Vector3>` positions for anything discovered at runtime.
+
+## M53, and the depth you measure from
+
+Two planning passes wrote M53 off as impossible to author offline, both on the same
+evidence: not one placed entity sits below z = 0 under Pillbox Hill. That was a correct
+reading of a question that did not matter. **Downtown street level is about z 31 and the
+metro runs at z 13** — twenty meters under the street and eighteen meters above the sea.
+The tunnel was never hidden; the search floor was in the wrong place. When a site "does not
+exist" in the archives, check what height you are searching from before believing it.
+
+What is there is a whole line: `metro_station_3_seoul` (-497.73, -673.53, 13.64),
+`metro_stat3join1` (-437.69, -675.41, 13.64) where platform becomes tunnel, ninety meters of
+straight `metro_t_*` sections whose origins are every one of them at 13.03, the bend east at
+`metro_t_stair` (-341.91, -682.70), `metro_newwalk1` (-470.15, -714.52, 22.51) for the walk
+out and `kt1_09_seoul_subway` (-490.29, -714.59, 25.97) for the way in. The run is in the
+**Downtown** zone and the platform end in **Little Seoul**; the district text is machine-read,
+so it names those and not Pillbox Hill.
+
+**A flat floor is measured once.** Every section origin on that run is at 13.03, so one
+downward probe at the carriage describes the whole tunnel and its offset moves the other
+sixteen points. Seventeen probes would be seventeen chances to fail and seconds of `Script.Wait`
+inside `Setup`, which is exactly what put M45's helicopter in the sea.
+
+**Underground, the walkable-ground query does not miss — it lies.** `Guard` accepts an answer
+up to 35 meters away, and from a tunnel twenty meters down that answer is Vespucci Boulevard,
+comfortably inside the tolerance. All eight contractors would have spawned in traffic. `Guard`
+now takes `trustPoint` and `PreparationOperation.EnemyAt` passes it; `Enemy(key)` is untouched,
+because sixty missions depend on the snap it does.
+
+**`Core/NightVision` owns the goggles the way `WorldLights` owns the lights.** One switch, no
+getter, held and released by name. It matters more than the lights did: night vision left on is
+a green screen the player cannot clear from any menu, on a save he keeps playing, so the release
+lives in `OnCleanup` where pass, failure, abort and death all pass through.
+
+The authored line counts the enemy — "sweep team of eight" — so there are eight, two squads of
+four. A spoken number is a contract. The one judgment in the placement is the three meters
+across the bore between the carriage and the crew; nobody has walked that tunnel with F11.
+
+## M56, and reading a site off what people threw into it
+
+The Los Santos River channel is baked terrain, the same problem M49 has with the Great Ocean
+Highway: no placed-entity survey finds a road or a riverbed. Two things made it authorable
+anyway, and both generalize.
+
+**The site's own section models draw its path.** `sp1_12_riv_01` through `riv_11` run from
+(-825.0, -1614.0) to (54.1, -2135.4), which is the whole channel. **Their z values are
+useless** — a section origin is the middle of a twenty-eight-meter box, so one reads 22.52 and
+its neighbor -0.28. Use a section model for x and y and never for a height.
+
+**Debris measures a floor.** A hundred and fifty pieces of `prop_rub_litter`,
+`prop_rub_cardpile`, shopping trolleys and car wrecks sit on that floor between z -0.77 and
+1.36, **median -0.40**, in a band nineteen meters either side of the centerline. That is the
+floor height, the channel width and the fact that it is a canyon — all from trash. Where a
+site has no geometry of its own, look for what is lying on it.
+
+**A sunken channel gets its own kind.** Its floor is genuinely below sea level, so
+`validate_locations` would call every key a mistake, and the engine's walkable query would
+answer with the street twenty-eight meters up. `kind = channel` settles both:
+`MissionSites.Prepare` only grounds `land`, and `DEEP_KINDS` exempts it from the sea-level
+rule. Do not reach for `underground` instead — that label means an interior at z -99.
+
+**`MissionSites.OffsetToSurface` is the shared form of the one-probe trick.** M53 and M56 both
+author a flat floor from one datum and correct all of it with a single measurement. Use it
+wherever a site's heights share an origin; do not probe each point.
+
+The zones here are **La Puerta** and **Maze Bank Arena**, not the east-side river the name
+suggests. `scarab` turned out to be a real model, so the bible named a vehicle the game ships;
+check the dump before assuming an authored name is invented. And a half-track has three seats,
+so `BoardBrothers` — which asks for `RightRear` — would refuse it: all three are seated
+outright.
 
 ## Aircraft created in the air
 

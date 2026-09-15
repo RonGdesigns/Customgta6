@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 59 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 62 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2491,7 +2491,7 @@ And if either of you has something personal left to settle, say it. Secrets make
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M53 - SUBTERRANEAN SWEEP (future gameplay)
+## M53 - SUBTERRANEAN SWEEP (scripted)
 
 ### Intro
 
@@ -2534,7 +2534,7 @@ The foreclosed Pillbox penthouse has sightlines and a transmitter. Temporary ope
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M54 - THE PILLBOX REDOUBT (future gameplay)
+## M54 - THE PILLBOX REDOUBT (scripted)
 
 ### Intro
 
@@ -2625,7 +2625,7 @@ Escrow constrained, not cashed out. We still need the master authorization. Firs
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M56 - IRON IN THE DRAIN (future gameplay)
+## M56 - IRON IN THE DRAIN (scripted)
 
 ### Intro
 
