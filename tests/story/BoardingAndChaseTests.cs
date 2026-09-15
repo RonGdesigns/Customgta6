@@ -299,6 +299,17 @@ public static partial class StoryTests
         Check(!m48.Contains("guard.Task.FightAgainstHatedTargets"),
             "The cordon does not engage a crew that has only just arrived");
         Check(m48.Contains("guard.Task.GuardCurrentPosition();"), "It holds the roadblock until they drive into it");
+        // Holding position stopped them walking into the sea in M45. It does not stop them
+        // shooting: BLOODLINES_AEGIS hates the crew for the whole game, so four riflemen
+        // with line of sight to a stationary driver 77 m away still killed Guess at the
+        // wheel. Until the crew drives into the roadblock they stand in a group that hates
+        // nobody.
+        Check(m48.Contains("guard.RelationshipGroup = holding;"),
+            "The cordon does not start in a group that hates the crew");
+        Check(m48.Contains("private void WakeCordon()") && m48.Contains(".OnEnter(c => WakeCordon())"),
+            "and it becomes Aegis on the stage where the fight belongs");
+        Check(M48TheRoadBackSouth.HoldingGroup != "BLOODLINES_AEGIS",
+            "which is a different group from the one the roster made hostile");
 
         // A throw out of Setup is the whole operation refusing to start, which is what Ron
         // got after arming the charges, five chapters in.
