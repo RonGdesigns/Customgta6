@@ -44,6 +44,27 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Room the Kraken needs between the keel and its work point.</summary>
         public const float SubClearance = 3f;
 
+        /// <summary>How far above an authored deck point the probe starts looking down.</summary>
+        public const float DeckHeadroom = 2.5f;
+
+        /// <summary>
+        /// An authored deck point moved onto the deck that is actually there.
+        ///
+        /// Every vertical number here was read out of the archives, but which of the
+        /// vessel's levels a given standing point belongs to was a judgment, and Ron
+        /// found the first one wrong by playing it: M45's helipad marker floated above
+        /// the surface he was standing on, so the zone under it never registered no
+        /// matter where he stood. The geometry knows where its own deck is. Ask it.
+        ///
+        /// Searched downward from a little above the authored point rather than from the
+        /// hull top, so a point under the superstructure finds the deck he walks on and
+        /// not the roof over it. If nothing answers — the vessel has not streamed, or a
+        /// chapter is being run alone in QA with no structure at all — the authored
+        /// height stands and the log says so.
+        /// </summary>
+        public static Vector3 OnDeck(Vector3 authored, string what) =>
+            Core.MissionSites.OnSurface(authored, DeckHeadroom, WaterlineDeck - 1f, what);
+
         /// <summary>True for a position that is genuinely on the structure rather than beside it.</summary>
         public static bool Aboard(Vector3 point) =>
             point.Z >= WaterlineDeck && point.X >= HullMin.X - 6f && point.X <= HullMax.X + 6f &&

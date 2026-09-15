@@ -28,6 +28,8 @@ namespace Bloodlines.Missions.Campaign
         public const float ClearRange = 120f;
 
         private readonly CrewBoarding _pickup = new CrewBoarding();
+        /// <summary>The rail and the edge where they really are, for the same reason M45 probes its deck.</summary>
+        private Vector3 _trigger, _edge;
         private Vehicle _boat;
         private Vehicle _chopper;
         private bool _triggered;
@@ -50,6 +52,9 @@ namespace Bloodlines.Missions.Campaign
             if (world != null && (!world.ChargesArmed || !world.EvidenceHeld))
                 throw new InvalidOperationException("M47 opened before the charges were armed and the evidence taken.");
             if (!Paleto.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Gohan, At("M47.Jump"), Ctx.Locations.Heading("M47.Jump"))) return false;
+
+            _trigger = PaletoSite.OnDeck(At("M47.Trigger"), Id + " charge rail");
+            _edge = PaletoSite.OnDeck(At("M47.Jump"), Id + " jump point");
 
             _chopper = world?.Get<Vehicle>("chopper");
             // Opened alone there is no helicopter to inherit: stage one on the strip
@@ -122,14 +127,15 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess);
 
             yield return new MissionStage("Trigger the charges",
-                new MissionInteraction("Gohan: trigger the charges from the rail", () => At("M47.Trigger"), 3, 3f,
+                new MissionInteraction("Gohan: trigger the charges from the rail", () => _trigger, 3, 3f,
                     animation: MissionInteraction.ReachInside))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => FireCharges())
                 .AfterCues("M47_S1_01_GOHAN");
 
             yield return new MissionStage("Go off the side",
-                new ConditionObjective("Ice and Gohan: get to the edge and go into the water", () => InWater(CrewSlot.Ice) && InWater(CrewSlot.Gohan)))
+                new ConditionObjective("Ice and Gohan: get to the edge and go into the water",
+                    () => InWater(CrewSlot.Ice) && InWater(CrewSlot.Gohan)) { Marker = () => _edge, MarkerRadius = 4f })
                 .AnyOf()
                 .OnExit(c => _jumped = true)
                 .AfterCues("M47_S1_02_ICE");

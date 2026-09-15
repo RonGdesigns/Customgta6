@@ -73,6 +73,66 @@ namespace Bloodlines.Core
             finally { Function.Call(Hash.CLEAR_FOCUS); }
         }
         /// <summary>Reject solid map/prop space even when a nearby navmesh point exists.</summary>
+        /// <summary>
+        /// The height of the first solid surface under a point, searched downward from
+        /// <paramref name="ceiling"/> to <paramref name="floor"/>, or null if the probe
+        /// found nothing between them.
+        ///
+        /// This is for standing on something the world built rather than on terrain.
+        /// <see cref="Ground"/> asks the engine for walkable ground, and over water or
+        /// on a vessel the honest answer to that is the sea. A deck, a pier or a
+        /// platform has to be measured where it is, and the only thing that actually
+        /// knows where a deck is at runtime is the geometry.
+        ///
+        /// Search downward from just above the authored point, never from the top of the
+        /// structure: a probe that starts above a superstructure finds its roof, which is
+        /// a worse answer than the estimate it was correcting.
+        /// </summary>
+        public static float? SurfaceHeight(Vector3 at, float ceiling, float floor)
+        {
+            if (ceiling <= floor) return null;
+            try
+            {
+                Function.Call(Hash.REQUEST_COLLISION_AT_COORD, at.X, at.Y, ceiling);
+                var from = new Vector3(at.X, at.Y, ceiling);
+                var to = new Vector3(at.X, at.Y, floor);
+                var hit = World.Raycast(from, to, IntersectFlags.Map | IntersectFlags.Objects);
+                if (!hit.DidHit) return null;
+                float z = hit.HitPosition.Z;
+                return z <= ceiling + .01f && z >= floor - .01f ? z : (float?)null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("A surface probe at " + at + " could not run: " + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// The same probe, given a few frames for collision to stream in, and the point
+        /// it was handed if it never answers. A wrong height is better than a refused
+        /// mission, but it is reported either way.
+        /// </summary>
+        public static Vector3 OnSurface(Vector3 at, float headroom, float floor, string what, int attempts = 8)
+        {
+            for (int i = 0; i < Math.Max(1, attempts); i++)
+            {
+                float? found = SurfaceHeight(at, at.Z + headroom, floor);
+                if (found.HasValue)
+                {
+                    float corrected = found.Value;
+                    if (Math.Abs(corrected - at.Z) > .25f)
+                        Logger.Info(what + ": the surface is at " + corrected.ToString("0.00") +
+                            ", not the authored " + at.Z.ToString("0.00") + " — using the geometry.");
+                    return new Vector3(at.X, at.Y, corrected);
+                }
+                if (i < attempts - 1) Script.Wait(125);
+            }
+            Logger.Warn(what + ": nothing solid found under " + at + " between " +
+                (at.Z + headroom).ToString("0.00") + " and " + floor.ToString("0.00") + "; keeping the authored height.");
+            return at;
+        }
+
         public static Vector3 Actor(LocationBook book, string key, Vector3 fallback)
         {
             var anchor = MissionPlacement.Position(book, key, fallback);

@@ -137,7 +137,20 @@ namespace Bloodlines.Missions.Objectives
     {
         private readonly Func<bool> _done;
         public ConditionObjective(string label, Func<bool> done) : base(label) { _done = done; }
-        public override void Update(MissionContext c) { if (_done()) Complete(); }
+        /// <summary>
+        /// Where the thing being waited for actually is, when there is a place for it.
+        /// A condition with somewhere to be and nothing drawn leaves the player guessing:
+        /// M45 asked Ice onto a deck and showed him nothing once the zone was gone.
+        /// </summary>
+        public Func<Vector3> Marker { get; set; }
+        /// <summary>How wide to draw it.</summary>
+        public float MarkerRadius { get; set; } = 3f;
+        public override void Update(MissionContext c)
+        {
+            if (Marker != null && !IsFinished)
+                GameUtils.DrawObjectiveMarker(Marker(), Color.FromArgb(120, 232, 168, 56), MarkerRadius);
+            if (_done()) Complete();
+        }
     }
 
     public sealed class QuietRuleObjective : Objective
