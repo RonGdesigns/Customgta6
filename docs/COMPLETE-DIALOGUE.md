@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 61 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 62 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2625,7 +2625,7 @@ Escrow constrained, not cashed out. We still need the master authorization. Firs
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M56 - IRON IN THE DRAIN (future gameplay)
+## M56 - IRON IN THE DRAIN (scripted)
 
 ### Intro
 

@@ -42,12 +42,12 @@ public static partial class StoryTests
 
         // ---- One probe, not seventeen. The tunnel section origins on this run are all at
         // 13.03, so the floor is flat and one measurement describes it.
-        Check(src.Contains("MissionSites.OnSurface(authored, TunnelHeadroom, TunnelFloor"),
+        Check(src.Contains("MissionSites.OffsetToSurface(authored, TunnelHeadroom, TunnelFloor"),
             "The tunnel floor is measured once, at the carriage");
-        Check(src.Contains("_floorOffset = floor.Z - authored.Z") &&
-              src.Contains("private Vector3 Down(string key) => At(key) + new Vector3(0f, 0f, _floorOffset)"),
+        Check(src.Contains("private Vector3 Down(string key) => At(key) + new Vector3(0f, 0f, _floorOffset)"),
             "and every other tunnel point moves by the offset that probe found");
-        Check(src.Split(new[] { "OnSurface" }, StringSplitOptions.None).Length - 1 == 1,
+        Check(src.Split(new[] { "OffsetToSurface(" }, StringSplitOptions.None).Length - 1 == 1 &&
+              !src.Contains("MissionSites.OnSurface"),
             "There is exactly one probe in the mission, not one per point");
 
         // ---- A contractor down here is placed, not snapped. Guard accepts a walkable answer

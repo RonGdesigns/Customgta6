@@ -130,10 +130,10 @@ namespace Bloodlines.Missions.Campaign
             // difference everywhere, and finding it once costs one probe instead of
             // seventeen chances to fail.
             var authored = At("M53.Train");
-            var floor = MissionSites.OnSurface(authored, TunnelHeadroom, TunnelFloor, Id + " tunnel floor", 3);
-            _floorOffset = floor.Z - authored.Z;
-            Logger.Info(Id + ": the tunnel floor is " + floor.Z.ToString("0.00") + " against the authored " +
-                authored.Z.ToString("0.00") + "; every tunnel point moves by " + _floorOffset.ToString("0.00") + ".");
+            _floorOffset = MissionSites.OffsetToSurface(authored, TunnelHeadroom, TunnelFloor, Id + " tunnel floor");
+            Logger.Info(Id + ": the tunnel floor is " + (authored.Z + _floorOffset).ToString("0.00") +
+                " against the authored " + authored.Z.ToString("0.00") +
+                "; every tunnel point moves by " + _floorOffset.ToString("0.00") + ".");
 
             // The stalled carriage. A train that will not create is a thinner set piece, not
             // a dead mission: the ambush is a tunnel fight with or without it, and refusing

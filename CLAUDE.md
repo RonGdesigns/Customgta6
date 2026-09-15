@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-61 of 79 missions have gameplay scripts (M01–M54, M57, SM01–SM06); the rest are loaded as data
+62 of 79 missions have gameplay scripts (M01–M54, M56, M57, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M55, M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M55, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -672,6 +672,39 @@ lives in `OnCleanup` where pass, failure, abort and death all pass through.
 The authored line counts the enemy — "sweep team of eight" — so there are eight, two squads of
 four. A spoken number is a contract. The one judgment in the placement is the three meters
 across the bore between the carriage and the crew; nobody has walked that tunnel with F11.
+
+## M56, and reading a site off what people threw into it
+
+The Los Santos River channel is baked terrain, the same problem M49 has with the Great Ocean
+Highway: no placed-entity survey finds a road or a riverbed. Two things made it authorable
+anyway, and both generalize.
+
+**The site's own section models draw its path.** `sp1_12_riv_01` through `riv_11` run from
+(-825.0, -1614.0) to (54.1, -2135.4), which is the whole channel. **Their z values are
+useless** — a section origin is the middle of a twenty-eight-meter box, so one reads 22.52 and
+its neighbor -0.28. Use a section model for x and y and never for a height.
+
+**Debris measures a floor.** A hundred and fifty pieces of `prop_rub_litter`,
+`prop_rub_cardpile`, shopping trolleys and car wrecks sit on that floor between z -0.77 and
+1.36, **median -0.40**, in a band nineteen meters either side of the centerline. That is the
+floor height, the channel width and the fact that it is a canyon — all from trash. Where a
+site has no geometry of its own, look for what is lying on it.
+
+**A sunken channel gets its own kind.** Its floor is genuinely below sea level, so
+`validate_locations` would call every key a mistake, and the engine's walkable query would
+answer with the street twenty-eight meters up. `kind = channel` settles both:
+`MissionSites.Prepare` only grounds `land`, and `DEEP_KINDS` exempts it from the sea-level
+rule. Do not reach for `underground` instead — that label means an interior at z -99.
+
+**`MissionSites.OffsetToSurface` is the shared form of the one-probe trick.** M53 and M56 both
+author a flat floor from one datum and correct all of it with a single measurement. Use it
+wherever a site's heights share an origin; do not probe each point.
+
+The zones here are **La Puerta** and **Maze Bank Arena**, not the east-side river the name
+suggests. `scarab` turned out to be a real model, so the bible named a vehicle the game ships;
+check the dump before assuming an authored name is invented. And a half-track has three seats,
+so `BoardBrothers` — which asks for `RightRear` — would refuse it: all three are seated
+outright.
 
 ## Aircraft created in the air
 

@@ -41,7 +41,12 @@ MAP_MIN_Y, MAP_MAX_Y = -4000.0, 8200.0
 SEA_LEVEL = 0.0
 
 # Kinds where a low or negative Z is the point rather than a mistake.
-DEEP_KINDS = ('water', 'underground', 'interior')
+# 'channel' is a sunken concrete storm channel: its floor is genuinely below sea
+# level — the Los Santos River channel measures -0.40 from a hundred and fifty pieces
+# of debris sitting on it — and it is neither water to swim in nor ground to snap to.
+# MissionSites.Prepare only grounds kind 'land', so the label also keeps the engine's
+# walkable query, which would answer with the street twenty-eight meters up, away from it.
+DEEP_KINDS = ('water', 'underground', 'interior', 'channel')
 
 
 def load_zones():
