@@ -158,6 +158,8 @@ namespace Bloodlines.Core
         /// <summary>Ground-hugging objective cylinder, drawn per frame.</summary>
         public static void DrawObjectiveMarker(Vector3 position, Color color, float radius = 1.5f)
         {
+            // Another brother's marker is not drawn at all, blip or cylinder.
+            if (ObjectiveMarkers.Suppressed) return;
             ObjectiveMarkers.Show(position, color.R > 150 && color.G < 110 ? BlipColor.Red : BlipColor.Yellow);
             World.DrawMarker(
                 MarkerType.VerticalCylinder,

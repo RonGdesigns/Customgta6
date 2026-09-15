@@ -16,10 +16,11 @@ namespace Bloodlines.Missions.Campaign
     ///
     /// The bible puts Ice on the Union Depository roof "across the plaza" from City Hall.
     /// Those two buildings are 716 meters apart, which is not a plaza and not a shot. The
-    /// roof this uses is 46 meters out and 15 above the plaza, and Rockstar already put a
-    /// ladder on it — bh1_16_ladder_mission_fizz, a ladder placed for a mission — so the
-    /// climb up and the way down both exist without inventing either. See
-    /// docs/ACT3-OPENING-MAP-M49-M53.md.
+    /// roof this uses is 96 meters out, and Ice stands at the top of a ladder Rockstar
+    /// placed for a mission — bh1_16_ladder_mission_fizz — so the climb up and the way down
+    /// both exist without inventing either. Standing on the ladder's own spot rather than
+    /// somewhere else on the same roof is deliberate: it is the one point that is certainly
+    /// reachable. See docs/ACT3-OPENING-MAP-M49-M53.md.
     ///
     /// The machinery is M41's, deliberately. Bradley's chapter already runs identify, wait
     /// for a clear shot, eliminate, extract, with working failure paths for the wrong
@@ -60,12 +61,24 @@ namespace Bloodlines.Missions.Campaign
         public bool ClearShot => _clear;
         public bool Struck => _struck;
 
-        /// <summary>The roost is a roof. Ground preparation would put the marker on the street.</summary>
+        /// <summary>
+        /// The roost is a roof, so ground preparation must not touch it — it would find the
+        /// street eighty feet below and put Ice there. But the authored height came off a
+        /// ladder prop's origin, and a prop origin is not a floor: Ron found the marker
+        /// floating and no way up the side of the building. Fixed against the ground snap,
+        /// and probed down onto the actual slab in Setup.
+        /// </summary>
         protected override string[] FixedSurfaces => new[] { "M52.Roost" };
+
+        /// <summary>The roof, at the height the geometry actually puts it.</summary>
+        private Vector3 _roost;
 
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Ice)) return false;
+
+            // The key sits at the top of the ladder; the slab under it is where Ice stands.
+            _roost = MissionSites.OnSurface(At("M52.Roost"), 3f, 38f, Id + " roof roost");
 
             Harrison = Person(HarrisonModel, "M52.Harrison", false);
             _bike = Car(BikeModel, At("M52.Bike"), Ctx.Locations.Heading("M52.Bike"), false);
@@ -93,11 +106,11 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Get on the roof",
-                new ReachZoneObjective("Ice: take the service ladder to the roof across the plaza", () => At("M52.Roost"), 6f))
+                new ReachZoneObjective("Ice: take the service ladder to the roof across the plaza", () => _roost, 6f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Identify Harrison",
-                new MissionInteraction("Ice: glass the steps and let Gohan confirm the man", () => At("M52.Roost"),
+                new MissionInteraction("Ice: glass the steps and let Gohan confirm the man", () => _roost,
                     IdentifySeconds, 6f, face: () => Harrison.Position))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(c =>
@@ -105,9 +118,7 @@ namespace Bloodlines.Missions.Campaign
                     _identified = true;
                     _walkAt = Game.GameTime;
                     Harrison.Task.GoTo(At("M52.Walk"));
-                    var blip = Track(Harrison.AddBlip());
-                    blip.Color = BlipColor.Red;
-                    blip.Name = "Chief Prosecutor Harrison";
+                    Blips.Attach(Harrison, BlipColor.Red, "Chief Prosecutor Harrison");
                 })
                 .AfterCues("M52_S1_01_ICE");
 

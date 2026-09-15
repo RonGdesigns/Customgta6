@@ -36,13 +36,14 @@ public static partial class StoryTests
         Check(westMiddle.DistanceTo2D(eastMiddle) > 80f,
             "The two banks are far enough apart to be two sections rather than one");
 
-        // ---- The plant points keep their authored height. Asking the engine for walkable
-        // ground beside a tank moves the marker off the tank, which is how M40's kits ended
-        // up under the pier.
-        foreach (var key in Enumerable.Range(1, 6).Select(i => "M51.Charge" + i).Concat(new[] { "M51.Control" }))
-            Check(src.Contains("\"" + key + "\""), key + " is declared a fixed surface and keeps its archive height");
-        Check(src.Contains("protected override string[] FixedSurfaces"),
-            "and the mission actually overrides the surface list rather than relying on the default");
+        // ---- A limpet point is where Ice STANDS, not where the charge ends up, and a
+        // placed prop's origin is not a floor. The first version of this mission held all
+        // seven at their archive heights and Ron could not reach them: markers up in the air
+        // on the side of a tank, with no way up. Ground preparation owns them now.
+        Check(src.Contains("FixedSurfaces => new string[0]"),
+            "Nothing in M51 is held at a prop's origin height");
+        Check(WorstGap(west) > 12f && WorstGap(east) > 5f,
+            "and the units are far enough apart that a stride of correction cannot make two ambiguous");
 
         // ---- Ron's decision: armed, not fired.
         Check(!src.Contains("WorldLights."),
@@ -131,6 +132,130 @@ public static partial class StoryTests
 
         Check(src.Contains("SetEvidence(\"harrisonRemoved\""),
             "and the result is recorded for the missions that follow");
+    }
+    static void RedactedVaultChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M50TheRedactedVault.cs"));
+
+        // ---- The splice is on a street, not in a field. There is no archive in Rockford
+        // Hills, but the synopsis is already a conduit tap, and the cabinet chosen is the one
+        // standing in the most built-up part of the zone.
+        var tap = KeyPoint("M50.Conduit");
+        var van = KeyPoint("M50.Van");
+        Check(tap.DistanceTo2D(van) > 10f && tap.DistanceTo2D(van) < 60f,
+            "The van waits near the cabinet but not on top of it");
+        // The conduit key is where Gohan stands to work the cabinet, and a prop origin is
+        // not a floor — the same mistake that put M51's limpet markers in the air.
+        Check(src.Contains("FixedSurfaces => new string[0]"),
+            "The conduit point is placed on the pavement rather than held at the cabinet's origin");
+
+        // ---- Contained, not killed. Private security outside a residential block.
+        Check(src.Contains("new SubdueTargetsObjective(") && src.Contains("new NonlethalGuards()"),
+            "The security is subdued rather than shot");
+        Check(!src.Contains("KillTargetsObjective"), "and there is no objective that asks for bodies");
+        Check(src.Contains("_contained?.Dispose();"), "and the nonlethal state is released on teardown");
+
+        // ---- The result is bounded, and has to stay bounded.
+        Check(src.Contains("local and physical copies") || src.Contains("Local copies still exist"),
+            "The feed is invalidated and nothing is erased");
+        Check(!src.Contains("WantedLevel = 0") && !src.Contains("LoseWanted"),
+            "and nothing about it clears a wanted level");
+
+        // Two authored lines describe a vault sub-level with turrets and a left corridor.
+        // That interior does not exist; narrating it would be worse than silence.
+        Check(!src.Contains(".AfterCues(\"M50_S1_01_GOHAN\")") && src.Contains("M50_S1_01_GOHAN and M50_S1_02_ICE are not fired"),
+            "The interior lines are withheld, with the reason written down");
+        Check(src.Contains("M50_S1_03_GOHAN"), "and the one that states the bounded result is fired");
+        string overlay = File.ReadAllText(Path.Combine(dataDir, "mission_gameplay.tsv"));
+        Check(overlay.Contains("M50	") && overlay.Contains("NONLETHALLY"),
+            "and the adaptation is recorded in the overlay rather than by editing the extraction");
+    }
+
+    static void ReturnToTheConcreteChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M49ReturnToTheConcrete.cs"));
+
+        // ---- The ram is gone. A barricade that only yields to a 90-mph collision is one
+        // the player cannot fail at honestly, and CAMPAIGN-REMAINDER refuses it outright.
+        Check(src.Contains("The ram is deliberately gone"),
+            "The checkpoint opens because the defense lost, not because the car is harder than concrete");
+        Check(src.Contains("if (i == 1) continue;"),
+            "The seam is a gap left in the concrete rather than a hole punched through it");
+
+        // ---- Roads are baked terrain, so the lane cannot be authored. It is resolved from
+        // a vehicle node and everything else is an offset from it: one seed can be wrong,
+        // where six separate authored points can each be wrong on their own.
+        Check(src.Contains("GameUtils.NearestRoadNode(seed, LaneSearch"),
+            "The lane comes from a road node at runtime");
+        Check(src.Contains("_forward = new Vector3(") && src.Contains("_right = new Vector3(_forward.Y, -_forward.X, 0f);"),
+            "and the barricade is laid out along that lane's own heading");
+        Check(src.Contains("Ctx.Doctor?.Warn(\"placement\", \"M49.Checkpoint\"") && src.Contains("_lane = seed;"),
+            "A missing node is reported and the seed used, rather than refusing the mission");
+
+        // ---- Ice comes down off the shoulder. This is the M47 and M48 bug.
+        Check(src.Contains("_boarding.Update(Ctx.Crew, CrewCar"),
+            "Ice is ordered into the Granger rather than left at his firing position");
+
+        Check(src.Contains("!_towersDown || !_jammed || !_through"),
+            "It cannot pass without the towers, the jam and the run through the seam");
+    }
+    static void PresentationRepairChecks()
+    {
+        // ---- A dot over a corpse. Ron saw this in mission after mission: a blip added with
+        // AddBlip is its own entity and outlives the ped, so the radar kept telling him there
+        // was a fight where there was not.
+        Reset();
+        var blips = new TargetBlips();
+        var alive = new Ped { Position = new Vector3(5f, 0f, 0f) };
+        var doomed = new Ped { Position = new Vector3(9f, 0f, 0f) };
+        blips.Attach(alive, BlipColor.Red, "Armed guard");
+        blips.Attach(doomed, BlipColor.Red, "Armed guard");
+        Check(blips.Count == 2, "Two hostiles, two dots");
+        blips.Update();
+        Check(blips.Count == 2, "and they stay while both are on their feet");
+        doomed.IsDead = true;
+        blips.Update();
+        Check(blips.Count == 1, "The dot goes the frame the man does");
+        blips.Dispose();
+        Check(blips.Count == 0, "and teardown takes the rest");
+
+        // Every mission that spawns hostiles goes through the owner rather than adding its
+        // own blips and forgetting them.
+        string prep = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "PreparationOperation.cs"));
+        Check(prep.Contains("Blips.Attach(ped, BlipColor.Red") && prep.Contains("Blips.Update();"),
+            "The shared guard spawner owns its dots and sweeps them every frame");
+        foreach (var file in ScriptFiles())
+        {
+            string text = File.ReadAllText(file);
+            Check(!text.Contains("Track(ped.AddBlip())") && !text.Contains("Track(Harrison.AddBlip())"),
+                Path.GetFileName(file) + " does not add a ped blip it will never remove");
+        }
+
+        // ---- A brother's markers are his own. M51 drew six limpet points and an interlock
+        // cabinet at once, so there was no telling which one was being asked for.
+        string composed = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "ComposedMission.cs"));
+        Check(composed.Contains("ObjectiveMarkers.Suppressed = !mine;") &&
+              composed.Contains("finally { ObjectiveMarkers.Suppressed = false; }"),
+            "Only the active brother's objective draws, and the flag is always cleared");
+        string utils = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "GameUtils.cs"));
+        Check(utils.Contains("if (ObjectiveMarkers.Suppressed) return;"),
+            "and the suppression reaches the cylinder as well as the blip");
+
+        // ---- DLC map registration has one owner. It used to happen as a side effect of the
+        // bunker drawing a blip on the first frame of every session; moving that out fixed a
+        // loading screen and broke the Paleto yacht, which is Cayo Perico map data.
+        string dlc = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "DlcMaps.cs"));
+        Check(dlc.Contains("0x0888C3502DBBEEF5UL"),
+            "The registration native lives in one place");
+        foreach (var file in Directory.GetFiles(Path.Combine(Repo, "src", "Bloodlines"), "*.cs", SearchOption.AllDirectories))
+        {
+            if (Path.GetFileName(file) == "DlcMaps.cs") continue;
+            string text = File.ReadAllText(file);
+            Check(!text.Contains("Hash.REQUEST_IPL"),
+                Path.GetFileName(file) + " asks for maps through DlcMaps, so the archives are registered first");
+            Check(!text.Contains("0x0888C3502DBBEEF5"),
+                Path.GetFileName(file) + " does not register the DLC maps behind anyone's back");
+        }
     }
     /// <summary>A location key's authored position, straight out of the shipped book.</summary>
     static Vector3 KeyPoint(string key)

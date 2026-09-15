@@ -58,7 +58,11 @@ namespace Bloodlines.Core
                 try
                 {
                     if (first && !Function.Call<bool>(Hash.IS_IPL_ACTIVE, name)) _owned.Add(name);
-                    Function.Call(Hash.REQUEST_IPL, name);
+                    // Through DlcMaps: the Paleto yacht is Cayo Perico map data, and a DLC
+                    // name requested before the archives are registered never goes active.
+                    // It used to work only because the bunker happened to register them on
+                    // the first frame of every session.
+                    DlcMaps.RequestIpl(name);
                 }
                 catch (Exception ex) { Logger.Error("Requesting map " + name, ex); }
             }

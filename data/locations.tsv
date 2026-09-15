@@ -876,9 +876,26 @@ M52.IceStart	-650.000	-269.000	38.000	45	land	estimate	Rockford Hills / the serv
 M52.GuessStart	-650.000	-263.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
 M52.GohanStart	-650.000	-275.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 28 m clear, live survey pending
 M52.Bike	-644.000	-275.000	38.000	200	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, the superbike waits here, live survey pending
-M52.Roost	-585.000	-225.000	53.300	55	land	estimate	Rockford Hills / the roof across the plaza, reached by bh1_16_ladder_mission_fizz, 15 m above the plaza and 46 m from City Hall; archives show 11 m of clear stand at this height, live survey pending
+M52.Roost	-615.900	-240.800	53.300	60	land	estimate	Rockford Hills / the top of bh1_16_ladder_mission_fizz, the ladder Rockstar placed for a mission; the standing height is probed down onto the roof slab at runtime because a prop origin is not a floor
 M52.Harrison	-537.000	-186.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 12 m from the hall; where he comes out, live survey pending
 M52.Walk	-521.000	-226.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 55 m from the roost; where he is clear of his detail, live survey pending
 M52.Guard1	-537.000	-194.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, live survey pending
 M52.Guard2	-537.000	-234.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 12 m clear, live survey pending
 M52.Guard3	-561.000	-242.000	38.000	200	land	estimate	Rockford Hills / City Hall plaza at its own level; archives show 12 m clear, live survey pending
+M50.Start	-916.000	352.000	74.500	120	land	estimate	Rockford Hills / the residential street above the conduit run; archives show 17 m clear
+M50.IceStart	-916.000	358.000	74.500	120	land	estimate	Rockford Hills / the residential street above the conduit run; archives show 15 m clear
+M50.GohanStart	-922.000	352.000	74.500	120	land	estimate	Rockford Hills / the residential street above the conduit run; archives show 14 m clear
+M50.GuessStart	-910.000	346.000	74.500	120	land	estimate	Rockford Hills / the residential street above the conduit run; archives show 16 m clear
+M50.Van	-910.000	352.000	74.500	120	land	estimate	Rockford Hills / where the surveillance van waits; archives show 14 m clear
+M50.Conduit	-898.120	334.870	74.610	30	land	estimate	Rockford Hills / the street cabinet Gohan splices, a placed prop_elecbox_11 at its own archive height; 88 things within 40 m, so this is a built-up street rather than open ground
+M50.Guard1	-913.000	349.000	74.500	200	land	estimate	Rockford Hills / private security post, 21 m from the cabinet; archives show 18 m clear
+M50.Guard2	-901.000	319.000	74.500	0	land	estimate	Rockford Hills / private security post, 16 m from the cabinet; archives show 12 m clear
+M50.Guard3	-859.000	331.000	74.500	270	land	estimate	Rockford Hills / private security post, 39 m from the cabinet; archives show 13 m clear
+M50.Exit	-1075.000	290.000	63.000	200	land	estimate	Rockford Hills / clear of the block, beside a placed cabinet at 62.9 so the height is grounded; live survey pending
+M49.Checkpoint	-3020.000	1300.000	20.000	20	land	estimate	Chumash / the Great Ocean Highway seed for the checkpoint; the lane itself is resolved from a road node at runtime, because roads are baked terrain and no placed-entity survey can find one
+M49.Start	-3060.000	1180.000	22.000	20	land	estimate	Chumash / the shoulder south of the checkpoint, clear of the village; live survey pending
+M49.IceStart	-3066.000	1174.000	22.000	20	land	estimate	Chumash / the shoulder south of the checkpoint; live survey pending
+M49.GohanStart	-3054.000	1174.000	22.000	20	land	estimate	BanhamCa / the shoulder south of the checkpoint; live survey pending
+M49.GuessStart	-3060.000	1168.000	22.000	20	land	estimate	Chumash / the shoulder south of the checkpoint; live survey pending
+M49.Crew	-3048.000	1168.000	22.000	20	land	estimate	BanhamCa / where the turbine Granger waits; live survey pending
+M49.South	-2860.000	1620.000	30.000	30	land	estimate	Tongva Hills / past the county line, north up the coast road; live survey pending

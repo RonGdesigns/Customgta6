@@ -9,7 +9,6 @@ namespace Bloodlines.Core
     public sealed partial class CrewHomes
     {
         private bool _foundryVisit;
-        private static bool _dlcRoomsRequested;
         private Blip _foundryBlip;
         public bool FoundryVisit => _foundryVisit;
         public bool FoundryUnlocked => _state.IsUnlocked("cypressFoundry");
@@ -43,12 +42,10 @@ namespace Bloodlines.Core
             if (location == null) { GameUtils.Notify("~y~Foundry interior location is missing."); return; }
             // Register the DLC map parts in Story Mode before requesting this room.
             // IPL lookup alone never registered an interior on the tested Enhanced build.
-            if (!_dlcRoomsRequested)
-            {
-                Function.Call((Hash)0x0888C3502DBBEEF5UL); // ON_ENTER_MP / LOAD_MP_DLC_MAPS; no network session.
-                _dlcRoomsRequested = true;
-                Logger.Info("Foundry HQ: requested Story Mode DLC interior map registration.");
-            }
+            // Through DlcMaps: this was the third place in the mod calling that native on
+            // its own, which is how the Paleto yacht came to depend on the bunker having
+            // done it first without anything saying so.
+            DlcMaps.EnsureRegistered();
             _foundryVisit = Apartment.Begin(location.Position, residence.Ipl, true, residence.Probe, location.Heading,
                 residence.EntitySets, new[] { "walls_02", "furnishings_01", "decorative_01", "no_gun_locker", "mod_booth" });
             if (_foundryVisit) Logger.Info("Foundry HQ: loading the furnished industrial clubhouse and weapon locker.");

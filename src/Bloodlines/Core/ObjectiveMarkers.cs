@@ -16,6 +16,15 @@ namespace Bloodlines.Core
         private static int _routedAt;
         public static CrewSlot? ActiveSlot { get; set; }
         private static int _used;
+        /// <summary>
+        /// While true, objective markers and routes are not drawn.
+        ///
+        /// A stage with parallel jobs used to draw every one of them at once — six limpet
+        /// markers and an interlock cabinet in M51 — so Ron could not tell which marker was
+        /// the one he was being asked to reach. An objective still updates while this is set,
+        /// because progress belongs to whoever owns it; only the drawing is held.
+        /// </summary>
+        public static bool Suppressed;
         private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; public bool Road; }
         private static readonly List<Destination> Pending = new List<Destination>();
         private static readonly List<Destination> Current = new List<Destination>();
@@ -26,7 +35,7 @@ namespace Bloodlines.Core
         /// </param>
         public static void Navigation(Vector3 position, CrewSlot? owner = null, Vehicle vehicle = null, bool road = true)
         {
-            if (!_enabled) return;
+            if (!_enabled || Suppressed) return;
             bool onRoad = road && (vehicle == null || !(vehicle.Model.IsBoat || vehicle.Model.IsSubmarine));
             Pending.Add(new Destination { Position = position, Owner = owner, Vehicle = vehicle?.Handle ?? 0, Road = onRoad });
         }

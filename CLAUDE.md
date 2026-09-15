@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-56 of 79 missions have gameplay scripts (M01–M48, M51, M52, SM01–SM06); the rest are loaded as data
+58 of 79 missions have gameplay scripts (M01–M52 except M53, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M49, M50, M53–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M53–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -522,6 +522,77 @@ rather than a coordinate, because an assassination ends when the response loses 
 The district text in `data/locations.tsv` is machine-read: City Hall's plaza is in
 **Burton** and the roof is in **Rockford Hills**, whatever the building is called. A hint
 that leads with anything else makes `validate_locations` resolve the wrong zone.
+
+## M49 and M50: derived geometry, and two bounded results
+
+**M49 does not author its checkpoint.** Roads are baked terrain, so no placed-entity
+survey can find the Great Ocean Highway. `M49.Checkpoint` is a seed; the real lane comes
+from `GameUtils.NearestRoadNode` at runtime, and the concrete, the APCs and the spotlight
+towers are all offsets from that lane and its heading. One seed can be wrong; six
+separately authored points can each be wrong on their own. A missing node is reported to
+the doctor and the seed used — a checkpoint slightly off the road is recoverable, a refused
+mission is not.
+
+The seam is a **gap left in the concrete**, not a hole punched through it. The 90-mph ram
+the bible describes is refused by `CAMPAIGN-REMAINDER` and stays refused: a barricade that
+only yields to a collision is one the player cannot fail at honestly.
+
+**M50 happens on a street.** There is no municipal archive in Rockford Hills — the zone is
+mansions — and no walkable records interior in the installed game, but the synopsis is
+already a conduit tap, so Gohan splices a real placed street cabinet. Its security is
+**contained, not killed** (`NonlethalGuards` + `SubdueTargetsObjective`): the story wants
+the crew to have been there without leaving bodies in Rockford Hills.
+
+Its result is bounded and must stay bounded: **the coordinated municipal feed is
+invalidated; local and physical copies remain, and nothing clears a wanted level.** The
+authored line says it outright — "that buys us time, not an acquittal".
+
+Three authored lines across these two describe places that do not exist — M50's vault
+sub-level with turrets and a left corridor, and M51's detonation countdown. They are not
+fired, because narrating a place the player is not standing in is worse than silence, and
+each divergence is recorded in `data/mission_gameplay.tsv`. Never edit the extraction to
+follow gameplay; an authored revision goes through `data/dialogue_edits.json`.
+
+**M53 is the one left, and it cannot be authored offline.** Not one placed entity exists
+below z = 0 under Pillbox Hill: the subway is a handful of large models whose origins sit
+at street level, and a model origin is not a floor. Every M53 coordinate has to come from
+an in-game capture.
+
+## Three presentation and placement rules, learned the expensive way
+
+**A placed prop's origin is not a floor.** M51 held its six limpet points and M52 its roof
+roost at the archive heights of a tank and a ladder, and both produced markers floating in
+the air that the player could not reach. A point a brother has to *stand at* belongs to
+ground preparation; `FixedSurfaces` is only for a surface the engine's walkable query would
+answer wrongly, and even then the height is probed down onto the real slab with
+`MissionSites.OnSurface` rather than trusted. The same sentence already appears in this file
+about the metro, and it was still got wrong twice.
+
+**A blip belongs to its ped.** `ped.AddBlip()` creates an independent entity that outlives
+the ped, so a dot sits over a corpse and tells the player there is still a fight. Attach
+through `Core/TargetBlips` and call its `Update` each frame; `PreparationOperation` already
+owns one as `Blips`. A story test refuses `Track(ped.AddBlip())` anywhere in the mission
+sources.
+
+**A brother's markers are his own.** A stage with parallel objectives drew every one of
+them at once, so there was no telling which marker was being asked for.
+`ComposedMission.OnUpdate` sets `ObjectiveMarkers.Suppressed` around any objective whose
+`RequiredCharacter` is not the active slot: the objective still updates, only the drawing
+waits.
+
+## DLC map data has exactly one owner
+
+Story Mode does not have the DLC map archives registered, and until one native has run,
+`REQUEST_IPL` on DLC content silently does nothing. **Always go through `Core/DlcMaps`** —
+`RequestIpl` for a map, `EnsureRegistered` before an interior.
+
+Three separate places used to call that native themselves, and the bunker's map blip ran it
+on the first frame of every session. Removing that startup call fixed a loading screen and
+broke the Paleto heist, because the cove yacht is Cayo Perico map data that had been relying
+on the bunker to register it. Nothing said so, in either direction. A story test now refuses
+`Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
+
+This loads map data the game already shipped with. It does not join or enable GTA Online.
 
 ## Aircraft created in the air
 

@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 56 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 58 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2319,7 +2319,7 @@ Then nobody celebrates early. Get the turbine Granger ready for the next crossin
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M49 - RETURN TO THE CONCRETE (future gameplay)
+## M49 - RETURN TO THE CONCRETE (scripted)
 
 ### Intro
 
@@ -2362,7 +2362,7 @@ I'll drive past Davis when we can do it without bringing a gunship behind us. I 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M50 - THE REDACTED VAULT (future gameplay)
+## M50 - THE REDACTED VAULT (scripted)
 
 ### Intro
 
