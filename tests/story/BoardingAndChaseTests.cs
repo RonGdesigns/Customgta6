@@ -332,14 +332,45 @@ public static partial class StoryTests
         Check(!m45.Contains("guard.Task.FightAgainstHatedTargets"),
             "None of them are told to go and find somebody, which is how they went over the side");
         Check(m45.Contains("guard.Task.GuardCurrentPosition();"), "They hold the deck instead");
-        Check(m45.Contains("PaletoSite.OnDeck(post,"), "And each post is dropped onto the deck that is really under it");
+        // The probe answer is now checked instead of assumed. OnDeck hands back the authored
+        // point when it finds nothing, and Ron found the consequence: four of the ten kept an
+        // unverified height and one ended up inside the hull where he could not be shot.
+        Check(m45.Contains("MissionSites.SurfaceHeight(tried, tried.Z + PaletoSite.DeckHeadroom"),
+            "Each post asks whether there is any deck under it");
+        Check(m45.Contains("for (int back = 0; back <= PostRetries && !deck.HasValue; back++)"),
+            "and a refused post steps back toward the pad looking for deck that exists");
+        Check(m45.Contains("post = new Vector3(post.X, post.Y, pad.Z);"),
+            "falling back to the height the pad probe measured rather than the authored guess");
+        Check(M45PaletoBreach.PadClearance >= 15f,
+            "The nearest rank stands clear of the landing zone, not under the rotors");
+        // Ten men who cannot react are not a fight. M48 clears this flag in WakeCordon and
+        // M45 never did, which is why Ron was not being attacked.
+        Check(m45.Contains("guard.BlockPermanentEvents = false;") && m45.Contains("private void WakeDeck()"),
+            "The deck detail becomes reactive when the fight starts");
+        Check(m45.Contains("if (Game.GameTime < _deckOrderAt) return;") && m45.Contains("guard.Task.FightAgainst(target);"),
+            "and is kept shooting on a cadence rather than re-tasked every frame");
+        // A stage exit that throws is a script error, not a failed mission: it ended a
+        // five-chapter sitting. The condition belongs to the objective.
+        Check(!m45.Contains("Gohan is not out of the water and on the structure"),
+            "Nothing throws out of the boarding stage any more");
+        Check(m45.Contains("private bool OnTheStructure()") && m45.Contains("gohan.IsInVehicle()) return false;"),
+            "Boarding asks for a man out of the boat and above the waterline up front");
 
         // ---- Nothing slow may run between creating an airborne aircraft and the first
         // frame that flies it. Ten waiting deck probes stalled Setup for up to ten seconds
         // after the helicopter was created, and it flew itself into the sea — the exact
         // failure PR #64 fixed, reintroduced by raising the guard count.
-        Check(m45.Contains("attempts: 1"),
+        // Still true and now structural: MissionSites.SurfaceHeight is one shape test with no
+        // retry loop and no Script.Wait in it at all, where OnSurface waits between attempts.
+        // The per-guard probe uses the one that cannot wait.
+        string siteSource = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "MissionSites.cs"));
+        int heightAt = siteSource.IndexOf("public static float? SurfaceHeight", StringComparison.Ordinal);
+        int nextAt = siteSource.IndexOf("public static", heightAt + 20, StringComparison.Ordinal);
+        string heightBody = nextAt > heightAt ? siteSource.Substring(heightAt, nextAt - heightAt) : siteSource.Substring(heightAt);
+        Check(!heightBody.Contains("Script.Wait("),
             "The repeated deck probes do not wait for collision the first one already paid for");
+        Check(!m45.Contains("PaletoSite.OnDeck(post"),
+            "and none of the ten goes through the waiting probe the helipad uses");
         int guardsAt = m45.IndexOf("SpawnDeckGuards();");
         int heliAt = m45.IndexOf("if (!SpawnHelicopter()) return false;");
         Check(guardsAt > 0 && heliAt > guardsAt,

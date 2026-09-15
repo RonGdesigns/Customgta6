@@ -849,6 +849,47 @@ route the player picks himself. The extraction is never edited to follow gamepla
 that cannot be checked offline — `CREATE_MISSION_TRAIN` — and it carries a fallback to standing
 freight if the consist misbehaves.
 
+## September 15: the M45 and M48 playtest
+
+**A stage exit must not throw.** M45 lost a whole five-chapter sitting to
+`OnExit` asserting that Gohan was out of the water after a `ReachZoneObjective` within four
+meters of the boarding point had already completed — which it does while he is still sitting in
+the Kraken below it. A throw there is not a failed mission, it is "Script error" and the end of
+the attempt. **Put the condition in the objective**, where failing it simply means the stage is
+not finished yet.
+
+**`BlockPermanentEvents = true` is why a guard will not fight.** A ped with permanent events
+blocked does not react to seeing an enemy. `PreparationOperation` gets away with it because
+`GuardAwareness` orders its hostiles explicitly; a plain `ComposedMission` has nothing doing
+that, so its guards stand there. M48 already cleared the flag in `WakeCordon` and M45 never
+did — ten men who would not attack. Clear it when the fight starts and issue combat on a
+cadence.
+
+**A probe that fails hands back what you gave it.** `MissionSites.OnSurface` returns the
+authored point when it finds nothing, so a caller that does not check is placing a man at a
+height nobody measured. Four of M45's ten deck posts did that and one ended up inside the hull
+where Ron could not shoot him. Check the answer: step the point back toward somewhere the deck
+is known to exist, and only then fall back — to a height that was actually measured, never to
+the authored guess.
+
+**Nothing spawns in a landing zone.** M45's first guard rank was eight meters from the helipad,
+which is under the rotors. `PadClearance` is twenty.
+
+**`AnyOf()` on a stage whose other objective is already true skips the stage.** M48's run south
+paired a travel leg with "everybody is in the truck", which is true the moment the cordon drops,
+so the chapter ended at the roadblock and the drive never happened. The comment above it
+described the opposite intent. If both have to be true, do not write `AnyOf`.
+
+**A surveyed key moves everything derived from it.** Ron surveyed `M48.Technical` up onto the
+road because the authored point was on a pier with no way back up, which left it eighteen meters
+from the authored roadblock — so the cordon spawned on top of the crew. `CordonLine()` pushes the
+line down the road until it is seventy meters from wherever the truck is, derived from the keys
+rather than authored, so it survives the next survey too.
+
+**A companion in a turret seat does not pick targets.** M35 learned that "a gun in the bed is
+for using" and answered it with `TASK_VEHICLE_SHOOT_AT_PED` on a cooldown. M48 never got that,
+so its gunner rode along and never fired.
+
 ## Aircraft created in the air
 
 `World.CreateVehicle` at an altitude gives you a helicopter with stopped rotors.
