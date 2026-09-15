@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 69 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 72 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2711,7 +2711,7 @@ We break their local command. We don't start calling everybody on that street ca
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M58 - CARTEL DECAPITATION (future gameplay)
+## M58 - CARTEL DECAPITATION (scripted)
 
 ### Intro
 
@@ -2754,7 +2754,7 @@ Send the proof, including the parts that don't flatter us. If we choose what peo
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M59 - THE WIRE CUTTERS (future gameplay)
+## M59 - THE WIRE CUTTERS (scripted)
 
 ### Intro
 
@@ -2797,7 +2797,7 @@ Then the escape waits. We left those streets once without explaining ourselves. 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M60 - SIEGE OF DAVIS (future gameplay)
+## M60 - SIEGE OF DAVIS (scripted)
 
 ### Intro
 

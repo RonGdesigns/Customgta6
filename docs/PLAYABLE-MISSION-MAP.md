@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-69 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+72 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -964,6 +964,47 @@ Prerequisite: M56. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M57.Patrol, M57.Return, M57.SkiGuess, M57.SkiIce.
+
+## M58 — CARTEL DECAPITATION
+
+Prerequisite: M57. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Take the gate** — DeliverVehicleObjective: Guess: put the hauler through the compound gate |
+| 2 | Guess | **Gas the villa** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | any brother | **Take the council** — KillTargetsObjective: Take the Cifuentes leadership council |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M58.Capo, M58.Gate, M58.Guard, M58.Hauler, M58.Overwatch, M58.Start, M58.Vent1, M58.Vent2.
+
+## M59 — THE WIRE CUTTERS
+
+Prerequisite: M58. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Ice: get up on the letters** — ReachZoneObjective: Ice: take the maintenance ladder up onto the sign |
+| 2 | Gohan | **Override the relay** — MissionInteraction: Gohan: override the state relay at the mast |
+| 3 | any brother | **Clear the sky over the sign** — KillTargetsObjective: Take the Aegis helicopter and its shooters |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M59.Approach, M59.IceStart, M59.Mast, M59.Roost.
+
+## M60 — SIEGE OF DAVIS
+
+Prerequisite: M59. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Set the pocket** — ReachZoneObjective: Guess: set the roadblock and hold the corner |
+| 2 | any brother | **Hold the line** — SurviveWavesObjective: Hold Davis. Three waves of Aegis contractors. |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M60.Ally, M60.Hold, M60.Start, M60.Wave, M60.Wave1, M60.Wave2, M60.Wave3.
 
 ## M63 — TOWER OF GLASS
 

@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-69 of 79 missions have gameplay scripts (M01–M57, M63–M66, SM01–SM08); the rest are loaded as data
+72 of 79 missions have gameplay scripts (M01–M60, M63–M66, SM01–SM08); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M58–M62, M67–M70, SM09, interstitial
+Gameplay not implemented: M61, M62, M67–M70, SM09, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
