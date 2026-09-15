@@ -34,8 +34,17 @@ namespace Bloodlines.Core
         /// this null and keeps its fixed <see cref="Body"/>.
         /// </summary>
         public Func<string> LiveBody;
+        /// <summary>
+        /// A subtitle computed each frame. A list row is the only thing drawn for an entry
+        /// that has children, so anything the player needs while choosing belongs here —
+        /// and it has to be live, because a model streaming in has no ratings yet and a
+        /// subtitle captured once would stay "reading ratings" forever.
+        /// </summary>
+        public Func<string> LiveSubtitle;
         /// <summary>What to actually show. Never null, so a missing body is still a sentence.</summary>
         public string Text => LiveBody != null ? LiveBody() : Body;
+        /// <summary>What the list row shows under the title.</summary>
+        public string SubtitleText => LiveSubtitle != null ? LiveSubtitle() : Subtitle;
     }
 
     /// <summary>Shared phone/Foundry views. Actions always revalidate the live service at execution.</summary>
@@ -113,17 +122,26 @@ namespace Bloodlines.Core
             var rows = _roadChoices.Select(v => v.Category).Distinct().Select(category => new PhoneEntry {
                 Id = "category:" + category, Title = category, Subtitle = "Browse vehicles / choose a garage",
                 Children = () => _roadChoices.Where(v => v.Category == category).OrderBy(VehiclePricing.Of).Select(choice => new PhoneEntry {
-                    Id = "model:" + choice.Model, Title = choice.Name, Subtitle = "$" + VehiclePricing.Of(choice).ToString("N0"),
-                    LiveBody = () => Showroom(choice),
+                    Id = "model:" + choice.Model, Title = choice.Name,
+                    // The subtitle, not the body. A row in a list draws its title and its
+                    // subtitle and nothing else: an entry with Children can never show a body,
+                    // because selecting it pushes straight into the folder and returns. So the
+                    // number a buyer compares cars by has to live here, on the page where he is
+                    // actually comparing them.
+                    LiveSubtitle = () => "$" + VehiclePricing.Of(choice).ToString("N0") + " - " +
+                        VehicleSpecs.Summary(new Model(choice.Model)),
                     Children = () => VehicleDestinations(choice)
                 }).ToList()
             }).ToList();
             rows.Add(RecoveryFolder());return rows;
         }
         /// <summary>
-        /// What the car is, on the page where he is choosing it. This list used to be a
-        /// name and a price with nothing else on it: the performance bars existed only in
-        /// the shop, which he cannot reach for a car he has not bought yet.
+        /// The full ratings for one car, shown on its own Performance row.
+        ///
+        /// This used to be the car entry's LiveBody, which is a place the phone never draws:
+        /// an entry with children pushes into its folder and returns, so its body is dead.
+        /// The comparison number lives in the row's subtitle instead, and this is what opens
+        /// when the player asks for the detail.
         /// </summary>
         private string Showroom(StoryVehicles.Choice choice) =>
             choice.Name + "\n$" + VehiclePricing.Of(choice).ToString("N0") + "\n" + choice.Category +
@@ -156,7 +174,14 @@ namespace Bloodlines.Core
         private List<PhoneEntry> VehicleDestinations(StoryVehicles.Choice choice)
         {
             int price = VehiclePricing.Of(choice);
-            return _garages.OwnedSites.Select(site => new PhoneEntry {
+            // Showroom used to hang off the car entry itself, where it could never be drawn.
+            // It is a row now: no children and no action, so opening it shows the reading pane
+            // with the full ratings, and the garages below it still take the money.
+            var rows = new List<PhoneEntry> { new PhoneEntry {
+                Id = "specs:" + choice.Model, Title = "Performance",
+                LiveSubtitle = () => VehicleSpecs.Summary(new Model(choice.Model)),
+                LiveBody = () => Showroom(choice) } };
+            rows.AddRange(_garages.OwnedSites.Select(site => new PhoneEntry {
                 Id = "buy:" + choice.Model + ":" + site.Id, Title = site.Name, Subtitle = _garages.Summary(site),
                 LiveBody = () => choice.Name + "\n$" + price.ToString("N0") + "\n\nStore at: " + site.Name + "\nBays: " + _garages.Used(site) + "/" + site.Capacity +
                     "\nCrew funds: $" + _state.CashOnHand.ToString("N0") +
@@ -169,7 +194,8 @@ namespace Bloodlines.Core
                     if (_state.CashOnHand < VehiclePricing.Of(choice)) return "Not enough crew funds for this vehicle.";
                     return _garages.BuyFromDealer(choice, site) ? "Purchased. Stored at " + site.Name + ". Open Garage to request KJ." : "Purchase unavailable. No vehicle was ordered.";
                 }
-            }).ToList();
+            }));
+            return rows;
         }
         private List<PhoneEntry> Properties()
         {

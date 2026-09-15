@@ -20,7 +20,13 @@ public static partial class StoryTests
   try
   {
    phone.Open(CrewSlot.Guess);PhoneApp(phone,CampaignPhone.App.Vehicles);
-   phone.Select();phone.Select();phone.Select();
+   phone.Select();phone.Select();
+   // Row zero of a car folder is Performance. The ratings used to hang off the car entry
+   // itself, which is a place the phone never draws: an entry with children pushes into its
+   // folder and returns. This drive is what proves the block is reachable at all.
+   phone.Select();
+   Check(phone.Body().Contains("PERFORMANCE")&&phone.Body().Contains("Est. top speed"),"A car's Performance row opens the model ratings the player is choosing on");
+   phone.Back();phone.Move(MenuDirection.Down);phone.Select();
    Check(phone.Body().Contains("Store at:")&&phone.Body().Contains("Crew funds:"),"Phone vehicle checkout shows the exact storage destination and crew funds");
    int cash=state.CashOnHand;phone.Select();Check(phone.Body().StartsWith("CONFIRM REQUEST")&&state.CashOnHand==cash,"Browsing and reviewing a vehicle never charges before confirmation");
    phone.Select();phone.FinishFrame(true);
@@ -40,11 +46,11 @@ public static partial class StoryTests
    PhoneApp(phone,CampaignPhone.App.Properties);PhonePreview(phone,"property-browser");
 
    var categories=hub.Entries(CampaignPhone.App.Vehicles);var choiceRow=categories.First(e=>e.Id.StartsWith("category:")).Children().First();
-   var destination=choiceRow.Children().First();state.CashOnHand=0;int count=state.Vehicles.Count;destination.Action();
+   var destination=choiceRow.Children().First(e=>e.Action!=null);state.CashOnHand=0;int count=state.Vehicles.Count;destination.Action();
    Check(state.Vehicles.Count==count&&state.CashOnHand==0,"Insufficient funds cannot create a free phone vehicle");state.CashOnHand=after;
    var firstSite=GarageService.Site(state.Vehicles[0].Garage);
    while(garage.Used(firstSite)<firstSite.Capacity)state.Vehicles.Add(new OwnedVehicle{Id=state.NextVehicleId++,Garage=firstSite.Id,Label="Filler",ModelName="sultanrs"});
-   count=state.Vehicles.Count;cash=state.CashOnHand;choiceRow.Children().First().Action();
+   count=state.Vehicles.Count;cash=state.CashOnHand;choiceRow.Children().First(e=>e.Action!=null).Action();
    Check(state.Vehicles.Count==count&&state.CashOnHand==cash,"A full destination refuses purchase without spending crew funds");
 
    var car=state.Vehicles[0];var live=garage.Retrieve(car);Check(live!=null,"Recovery fixture takes an actual owned car out of storage");

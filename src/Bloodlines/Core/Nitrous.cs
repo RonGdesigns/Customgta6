@@ -12,6 +12,17 @@ namespace Bloodlines.Core
     {
         public const int ModSlot = 17;
         public const float BoostSeconds = 5f, RechargeSeconds = 20f, TorqueMultiplier = 1.65f;
+        /// <summary>
+        /// How much of the car's own raised ceiling the boost unlocks.
+        ///
+        /// Torque alone was the whole boost, which is why it felt like acceleration and
+        /// nothing else: WorldTuning already lifts every car's entity speed cap to its
+        /// doubled redline, so the cap was identical with the bottle open and shut. Raising
+        /// it further while boosting means the cap is definitely not what the car is
+        /// running into. Whether the terminal speed visibly moves is a road test, not a
+        /// number anyone can read off this file.
+        /// </summary>
+        public const float SpeedMultiplier = 1.25f;
         public const string Controls = "hold A / keyboard X";
         private sealed class Bottle { public Vehicle Car; public int Model, LastUsed; public float Charge = 1f; }
         private readonly Dictionary<int, Bottle> _bottles = new Dictionary<int, Bottle>();
@@ -46,6 +57,9 @@ namespace Bloodlines.Core
             if (held && moving && bottle.Charge > 0f)
             {
                 _boosted = car; bottle.Charge = Math.Max(0f, bottle.Charge - dt / BoostSeconds); bottle.LastUsed = Game.GameTime;
+                // Fire out of the pipes for as long as he holds it. Stop calling and it
+                // stops; there is no handle to leak and nothing to tear down.
+                ExhaustFlame.Hold(car);
             }
             else if (!held && Game.GameTime - bottle.LastUsed >= 2000)
                 bottle.Charge = Math.Min(1f, bottle.Charge + dt / RechargeSeconds);
@@ -55,6 +69,6 @@ namespace Bloodlines.Core
             new GTA.UI.TextElement("NITRO " + (int)(Charge * 100) + "% | " + (Boosting ? "BOOST" : held && Charge <= 0 ? "Release to recharge" : Controls),
                 new PointF(24, 530), .27f, Boosting ? Color.Cyan : Color.White).Draw();
         }
-        public void Reset() { _boosted = null; _bottles.Clear(); Charge = 1f; }
+        public void Reset() { _boosted = null; _bottles.Clear(); Charge = 1f; ExhaustFlame.Reset(); }
     }
 }

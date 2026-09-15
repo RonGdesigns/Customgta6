@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using GTA;
 using GTA.Native;
@@ -10,11 +11,18 @@ namespace Bloodlines.Core
     /// What a car is, read off the model rather than off a spawned example.
     ///
     /// The shop panel already shows performance bars, but it reads the four
-    /// <c>GET_VEHICLE_*</c> natives, which need a vehicle in the world. The phone sells
-    /// cars the player has never seen: he picked a name and a price out of a list with
-    /// nothing else on the page, which is no way to spend forty thousand dollars. The
-    /// model-level natives answer the same questions without putting a car on the street,
-    /// so the phone can show the same ratings the shop does.
+    /// <c>GET_VEHICLE_*</c> natives, which need a vehicle in the world. Buying a car is
+    /// the opposite situation: he is choosing from a list of cars he has never seen, on a
+    /// page with a name and a price and nothing else, which is no way to spend forty
+    /// thousand dollars. The model-level natives answer the same questions without putting
+    /// a car on the street.
+    ///
+    /// **There are two places to buy a car and both of them use this.** The phone's
+    /// Vehicles app and the Premium Deluxe floor in the world menu. The first pass wired
+    /// only the phone, so Ron walked into the dealership and saw exactly what he saw
+    /// before — which is why <see cref="Rows"/> exists: one source of formatting, so a
+    /// surface cannot be updated and the other quietly left behind. A story test now
+    /// refuses a car-buying page that does not ask for these.
     ///
     /// The ratings are the game's own, on the game's own scale. Nothing here is a
     /// measured road test, and the top speed is the engine's estimate — it says
@@ -86,15 +94,52 @@ namespace Bloodlines.Core
             finally { if (ours) model.MarkAsNoLongerNeeded(); }
         }
 
+        /// <summary>
+        /// The ratings as label/value pairs, which is the one place their wording and their
+        /// rounding live. <see cref="Block"/> joins these for a phone page and the world
+        /// menu adds them as its own rows; neither formats anything itself, so the two
+        /// cannot drift apart the way they already did once.
+        ///
+        /// Empty while the model is still streaming in. A caller that gets nothing says so.
+        /// </summary>
+        public static IEnumerable<KeyValuePair<string, string>> Rows(Model model)
+        {
+            var ratings = Of(model);
+            if (ratings == null) yield break;
+            yield return Pair("Top speed", Bar(ratings.SpeedFraction) + " " + Percent(ratings.SpeedFraction));
+            yield return Pair("Acceleration", Bar(ratings.Acceleration) + " " + Percent(ratings.Acceleration));
+            yield return Pair("Braking", Bar(ratings.Braking) + " " + Percent(ratings.Braking));
+            yield return Pair("Traction", Bar(ratings.Traction) + " " + Percent(ratings.Traction));
+            yield return Pair("Est. top speed", ((int)Math.Round(ratings.SpeedMph)) + " mph");
+            if (ratings.Seats > 0) yield return Pair("Seats", ratings.Seats.ToString());
+            if (ratings.Upgradable)
+                yield return Pair("Fully built", "accel " + Percent(ratings.BuiltAcceleration) +
+                    " / braking " + Percent(ratings.BuiltBraking));
+        }
+
+        /// <summary>
+        /// One line for a list row, where there is no room for bars: the number a buyer
+        /// actually compares cars by, and a note while the model is still loading.
+        /// </summary>
+        public static string Summary(Model model)
+        {
+            var ratings = Of(model);
+            if (ratings == null) return "reading ratings";
+            return ((int)Math.Round(ratings.SpeedMph)) + " mph - accel " + Percent(ratings.Acceleration);
+        }
+
+        private static KeyValuePair<string, string> Pair(string label, string value) =>
+            new KeyValuePair<string, string>(label, value);
+
+        private static string Percent(float value) =>
+            ((int)Math.Round(Math.Max(0f, Math.Min(1f, value)) * 100f)) + "%";
+
         /// <summary>A rating drawn as a bar, in characters the game's text renderer has.</summary>
         public static string Bar(float value)
         {
             int filled = (int)Math.Round(Math.Max(0f, Math.Min(1f, value)) * BarCells);
             return "[" + new string('=', filled) + new string('.', BarCells - filled) + "]";
         }
-
-        private static string Row(string label, float value) =>
-            label.PadRight(9) + " " + Bar(value) + " " + (int)Math.Round(Math.Max(0f, Math.Min(1f, value)) * 100f) + "%";
 
         /// <summary>
         /// The performance block for a phone page, or a line saying it is not ready yet.
@@ -103,20 +148,11 @@ namespace Bloodlines.Core
         /// </summary>
         public static string Block(Model model)
         {
-            var ratings = Of(model);
-            if (ratings == null) return "PERFORMANCE\nReading the model's ratings. Give it a moment.";
+            var rows = Rows(model).ToList();
+            if (rows.Count == 0) return "PERFORMANCE\nReading the model's ratings. Give it a moment.";
 
             var text = new StringBuilder("PERFORMANCE\n");
-            text.Append(Row("Top speed", ratings.SpeedFraction)).Append('\n');
-            text.Append(Row("Accel", ratings.Acceleration)).Append('\n');
-            text.Append(Row("Braking", ratings.Braking)).Append('\n');
-            text.Append(Row("Traction", ratings.Traction)).Append('\n');
-            text.Append("Est. top speed: ").Append((int)Math.Round(ratings.SpeedMph)).Append(" mph\n");
-            if (ratings.Seats > 0) text.Append("Seats: ").Append(ratings.Seats).Append('\n');
-            if (ratings.Upgradable)
-                text.Append("Fully built: accel ")
-                    .Append((int)Math.Round(Math.Min(1f, ratings.BuiltAcceleration) * 100f)).Append("% / braking ")
-                    .Append((int)Math.Round(Math.Min(1f, ratings.BuiltBraking) * 100f)).Append("%\n");
+            foreach (var row in rows) text.Append(row.Key.PadRight(14)).Append(' ').Append(row.Value).Append('\n');
             text.Append("Game ratings for the stock model, not a road test.");
             return text.ToString();
         }

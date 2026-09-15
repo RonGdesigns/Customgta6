@@ -390,6 +390,51 @@ recorded in `data/mission_gameplay.tsv`: in M04 his Blackout is the same breaker
 beat from his own side, and in SM02 it kills the biometrics and holds the guards'
 awareness down while he taps the node.
 
+**Nitrous was torque and nothing else.** `SET_VEHICLE_CHEAT_POWER_INCREASE` raises
+acceleration; it does not move a top speed. And `WorldTuning` already lifts every car's entity
+cap to its doubled redline, so the ceiling was the same number with the bottle open or shut —
+which is exactly why it felt like acceleration only. `WorldTuning.ApplyCeiling` now raises that
+cap per instance while boosting and puts it straight back, written only when the number
+changes. It never touches `InitialDriveMaxFlatVelocity`, which is shared handling data.
+**Whether the terminal speed visibly moves is a road test, not a number to read off a file.**
+
+`Core/ExhaustFlame` is the gear-change backfire (`core` / `veh_backfire`) asked for on a
+cadence instead of once. **It must never `Script.Wait`**: it runs inside the per-frame input
+step, and `AircraftSmoke`'s wait loop — correct for a mission calling it once — would stall the
+whole mod for seconds to stream a particle asset. It asks with a zero timeout every frame and
+emits once the asset is in. Nothing loops the effect, so there is no handle to survive a failed
+exit path.
+
+**A source-text assertion must match a call, not a word.** Three checks in a row failed on
+their own documentation: `Contains("LaunchAirborne")`, `Contains("BoardBrothers")` and
+`Contains("Script.Wait")` all matched the comment explaining why the code does *not* do that.
+Match `Foo(` when the point is that something is called.
+
+**A phone list row draws its title and its subtitle. Nothing else.** An entry with
+`Children` can never show a body at all: selecting it pushes into the folder and returns, so
+`LiveBody` on such an entry is dead code. The first attempt at vehicle specs put them exactly
+there — which is why buying a car on the phone looked untouched even though the block existed
+and was installed. Anything the player needs **while choosing** belongs in the subtitle
+(`LiveSubtitle`, computed each frame so a streaming model fills itself in); anything he opens
+for detail needs a leaf row of its own. A story test drives the real phone to both.
+
+Positional assertions on hub rows are fragile for the same reason: a test that took
+`Children().First()` broke the moment a row was inserted above it. Pick by what the row does
+(`First(e => e.Action != null)`), not by where it sits.
+
+**A car can be bought in two places, so both of them show the ratings.** `Core/VehicleSpecs`
+reads the model-level `GET_VEHICLE_MODEL_*` natives, which answer without a car in the world,
+and its `Rows` is the one place their wording and rounding live — `Block` composes them for a
+phone page and the Premium Deluxe floor in the world menu adds them as its own rows. The first
+pass wired only the phone, so Ron walked into the dealership, saw a name and a price exactly as
+before, and reasonably concluded the work had never been done. **When a feature has more than
+one surface, wire every surface or the feature does not exist.** A story test now refuses a
+car-buying page that does not ask for the specs, so a third surface fails until it does too.
+
+A model still streaming in yields no rows rather than a row of zeroes, and an all-zero answer is
+never cached: a car permanently listed with no engine is worse than a page that says it is still
+reading.
+
 The mod-shop performance panel is translucent and sized to its content. It used to
 be alpha 235 over a fixed 510 pixels, sitting exactly where the vehicle preview is,
 so the part being fitted could not be seen.
@@ -590,6 +635,13 @@ on the first frame of every session. Removing that startup call fixed a loading 
 broke the Paleto heist, because the cove yacht is Cayo Perico map data that had been relying
 on the bunker to register it. Nothing said so, in either direction. A story test now refuses
 `Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
+
+**The registration is back on the first frame, and that is Ron's decision.** The pause cannot
+be made free, so the choice is only where it lands: one he expects at startup, or one he does
+not expect while driving up to the bunker. He chose startup. `BloodlinesMain` registers on its
+first tick and loads the bunker exterior too when he owns it, so nothing pauses later. Every
+call site still goes through `DlcMaps` and is still correct — they simply find the work already
+done, which is what keeps M44's cove yacht working.
 
 This loads map data the game already shipped with. It does not join or enable GTA Online.
 
