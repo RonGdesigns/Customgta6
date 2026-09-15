@@ -95,6 +95,12 @@ public static partial class StoryTests
      {
       var ice=crew.PedFor(CrewSlot.Ice);ice.Task.LeaveVehicle();
       var pad=c.Locations.Position("M45.Helipad");ice.Position=pad;
+      // The boarding beat asks for the real thing now - out of the Kraken, above the
+      // waterline, at the stern platform - rather than a zone check that completed while
+      // Gohan was still sitting in the boat and then threw out of the stage exit.
+      var gohan=crew.PedFor(CrewSlot.Gohan);gohan.Task.LeaveVehicle();
+      var board=c.Locations.Position("M45.Board");
+      gohan.Position=new Vector3(board.X,board.Y,System.Math.Max(board.Z,Bloodlines.Missions.Campaign.PaletoSite.WaterlineDeck+1f));
      }
      if(name=="ConditionObjective"&&m.Id=="M48")
      {
