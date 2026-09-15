@@ -133,6 +133,41 @@ namespace Bloodlines.Core
             return at;
         }
 
+        /// <summary>How far out a clearance probe looks. Beyond this nothing is cramped.</summary>
+        public const float RoomProbeMeters = 14f;
+        /// <summary>Under this much room no vehicle the campaign spawns will fit.</summary>
+        public const float TightRoomMeters = 6f;
+        /// <summary>
+        /// How much clear room there is around a point, up to <paramref name="max"/>,
+        /// measured by casting outward at standing height and taking the shortest hit.
+        ///
+        /// This exists because a survey is captured on foot. Ron stands where he wants
+        /// something and presses F11, and a man fits almost anywhere: he saved SM06's
+        /// fuel tractor onto a sidewalk with 2.3 meters between a shop wall and a row of
+        /// bollards, which is ample for him and impossible for a tanker rig. Nothing
+        /// measured the gap, so nothing could tell him.
+        /// </summary>
+        public static float FreeRadius(Vector3 at, float max, int rays = 12)
+        {
+            if (max <= 0f) return 0f;
+            float free = max;
+            var from = new Vector3(at.X, at.Y, at.Z + .9f);
+            for (int i = 0; i < Math.Max(4, rays); i++)
+            {
+                double angle = Math.PI * 2 * i / Math.Max(4, rays);
+                var to = from + new Vector3((float)Math.Cos(angle) * max, (float)Math.Sin(angle) * max, 0f);
+                try
+                {
+                    var hit = World.Raycast(from, to, IntersectFlags.Map | IntersectFlags.Objects);
+                    if (!hit.DidHit) continue;
+                    float d = new Vector3(hit.HitPosition.X - from.X, hit.HitPosition.Y - from.Y, 0f).Length();
+                    if (d < free) free = d;
+                }
+                catch (Exception ex) { Logger.Warn("A clearance probe at " + at + " could not run: " + ex.Message); return max; }
+            }
+            return free;
+        }
+
         public static Vector3 Actor(LocationBook book, string key, Vector3 fallback)
         {
             var anchor = MissionPlacement.Position(book, key, fallback);

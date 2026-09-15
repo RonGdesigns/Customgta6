@@ -26,6 +26,14 @@ namespace Bloodlines.Core
     {
         public string Key { get; set; }
         public Vector3 Position { get; set; }
+        /// <summary>
+        /// Where this key shipped, before any per-install override or survey capture.
+        /// Kept because a correction and a mistake look identical once the override has
+        /// overwritten the only copy of the original: SM06's delivery point was saved
+        /// 3.9 kilometers from the airfield it names, and there was nothing left to
+        /// compare it against.
+        /// </summary>
+        public Vector3 Authored { get; set; }
         public float Heading { get; set; }
         public string Kind { get; set; }
         public LocationStatus Status { get; set; }
@@ -101,6 +109,7 @@ namespace Bloodlines.Core
                 {
                     Key = key,
                     Position = new Vector3(row.Float("x"), row.Float("y"), row.Float("z")),
+                    Authored = new Vector3(row.Float("x"), row.Float("y"), row.Float("z")),
                     Heading = row.Float("heading"),
                     Kind = string.IsNullOrEmpty(row.Text("kind")) ? "land" : row.Text("kind"),
                     Status = ParseStatus(row.Text("status")),
@@ -141,11 +150,22 @@ namespace Bloodlines.Core
                 // a default that merely equals the old template is the default.
                 bool present = settings.GetValue<string>("Positions", location.Key + ".X", null) != null;
                 bool stale = !surveyed && present && IsRetiredTemplate(location.Key, overridden);
-                if (stale)
+                // A capture hundreds of meters from where the key shipped is not a
+                // correction to it; it is a capture of a different key. Four of SM06's
+                // five keys were saved from one spot outside a clothes shop, which moved
+                // its canyon bend 1.9 km and its airfield delivery 3.9 km, and the mission
+                // collapsed into a thirty-meter circle with no way to see why.
+                bool elsewhere = present && Displaced(location, overridden);
+                if (stale || elsewhere)
                 {
                     IgnoredStaleOverrides++;
-                    Logger.Warn("Ignored stale template override for " + location.Key + " in " + Path.GetFileName(overridesPath) +
-                                ": it is the pre-correction shipped value, not a survey. Delete the key or re-survey it.");
+                    if (elsewhere)
+                        Logger.Warn("Ignored the override for " + location.Key + " in " + Path.GetFileName(overridesPath) +
+                                    ": it is " + (int)FlatDistance(overridden, location.Authored) + " m from where that key belongs (" +
+                                    location.Authored + "), so it is a capture of somewhere else. Delete the key and re-survey it on the spot.");
+                    else
+                        Logger.Warn("Ignored stale template override for " + location.Key + " in " + Path.GetFileName(overridesPath) +
+                                    ": it is the pre-correction shipped value, not a survey. Delete the key or re-survey it.");
                 }
                 else if (overridden != location.Position || (surveyed && settings.GetValue<string>("Positions", location.Key + ".X", null) != null))
                 {
@@ -195,9 +215,27 @@ namespace Bloodlines.Core
         {
             var anchor = Get(anchorKey);
             if (anchor == null || _locations.ContainsKey(key)) return;
-            _locations[key] = new MissionLocation { Key = key, Position = anchor.Position + offset, Heading = anchor.Heading,
+            _locations[key] = new MissionLocation { Key = key, Position = anchor.Position + offset, Authored = anchor.Position + offset, Heading = anchor.Heading,
                 Kind = "land", Status = LocationStatus.Estimate, DistrictHint = label, IsEditorSlot = true };
         }
+
+        /// <summary>
+        /// The furthest a capture may sit from where its key shipped and still be read as
+        /// a correction to it. Real corrections are tens of meters — the largest genuine
+        /// one on this project moved a point 36 m. This is deliberately far above that and
+        /// far below a wrong-key mistake, which lands in the hundreds or thousands.
+        /// </summary>
+        public const float MaxCorrectionMeters = 250f;
+
+        /// <summary>Horizontal distance only: a capture's height is never what makes it the wrong place.</summary>
+        public static float FlatDistance(Vector3 a, Vector3 b)
+        {
+            float dx = a.X - b.X, dy = a.Y - b.Y;
+            return (float)Math.Sqrt(dx * dx + dy * dy);
+        }
+        /// <summary>True for a position that names a different place rather than correcting this one.</summary>
+        public static bool Displaced(MissionLocation location, Vector3 candidate) =>
+            location != null && FlatDistance(candidate, location.Authored) > MaxCorrectionMeters;
 
         public Vector3 Position(string key)
         {

@@ -32,6 +32,35 @@ namespace Bloodlines.Core
         private int _warpStarted;
         private static int _lastCaptureFrame = -1;
 
+        /// <summary>How long a refused capture waits for a deliberate second press.</summary>
+        public const int ConfirmWindowMs = 6000;
+
+        private string _confirmKey;
+        private int _confirmUntil;
+
+        /// <summary>
+        /// How much clear room there is at a spot, and the point below which no vehicle
+        /// the campaign spawns will fit. Reached through these two members rather than
+        /// directly so the recovery test harness, which compiles this file without the
+        /// placement helpers, still builds.
+        /// </summary>
+        public static Func<Vector3, float> ClearanceProbe;
+        /// <summary>
+        /// Under this much room no vehicle the campaign spawns will fit. Set from
+        /// MissionSites at startup, where the number lives; the default here only has to
+        /// be sane for a harness that compiles this file on its own.
+        /// </summary>
+        public static float TightRoom = 6f;
+
+        private static float Clearance(Vector3 at)
+        {
+            try { return ClearanceProbe != null ? ClearanceProbe(at) : float.MaxValue; }
+            catch (Exception ex) { Logger.Warn("A clearance probe could not run: " + ex.Message); return float.MaxValue; }
+        }
+        /// <summary>True while this key's refused capture is still waiting to be confirmed.</summary>
+        private bool Confirming(string key) =>
+            _confirmKey == key && Game.GameTime < _confirmUntil;
+
         public SurveyMode(LocationBook book, string outputPath, string captureKey = "F11", string teleportKey = "F7")
         {
             _book = book;
@@ -103,11 +132,37 @@ namespace Bloodlines.Core
                 GameUtils.Subtitle("~y~Exit the vehicle and stand on the intended spot to capture it.", 3500);
                 return;
             }
+            // A capture is made on foot, and a man fits where a truck does not. The two
+            // things Ron cannot see from where he is standing get measured for him:
+            // whether this is even the right part of the map, and how much room is here.
+            float away = LocationBook.FlatDistance(player.Position, location.Authored);
+            if (LocationBook.Displaced(location, player.Position) && !Confirming(location.Key))
+            {
+                _confirmKey = location.Key;
+                _confirmUntil = Game.GameTime + ConfirmWindowMs;
+                GameUtils.Notify("~r~" + location.Key + " belongs " + (int)away + " m from here.~s~\n" +
+                    "That reads as the wrong key rather than a correction. Press " + _captureKey +
+                    " again within " + (ConfirmWindowMs / 1000) + "s to save it here anyway.");
+                Logger.Warn("Refused a survey capture of " + location.Key + " at " + player.Position + ": " +
+                            (int)away + " m from where that key belongs. Waiting for a deliberate confirmation.");
+                return;
+            }
+
+            float room = Clearance(player.Position);
             _book.Record(location.Key, player.Position, player.Heading);
             _captured.Add(location.Key);
             if (!Write()) return;
-            Logger.Info("Surveyed " + location.Key + " = " + player.Position + " heading " + player.Heading);
-            GameUtils.Notify("~g~Saved " + location.Key + "~s~. Next destination marked.");
+            _confirmKey = null;
+            Logger.Info("Surveyed " + location.Key + " = " + player.Position + " heading " + player.Heading +
+                        "; " + room.ToString("0.0") + " m of clear room, " + (int)away + " m from the authored point.");
+            if (room < TightRoom)
+            {
+                GameUtils.Notify("~o~Saved " + location.Key + "~s~ with only " + room.ToString("0.0") +
+                    " m of room. A car or a truck will not fit here.");
+                Logger.Warn(location.Key + " was surveyed with " + room.ToString("0.0") +
+                            " m of clear room. If a mission spawns a vehicle here it will not fit.");
+            }
+            else GameUtils.Notify("~g~Saved " + location.Key + "~s~ (" + room.ToString("0.0") + " m clear). Next destination marked.");
             Next();
         }
 
@@ -137,8 +192,12 @@ namespace Bloodlines.Core
             }
             // The owned routed blip stays visible on the map at any distance and
             // can be removed on stop without clearing the player's personal waypoint.
+            // The distance is on this notification because the mistake it prevents is
+            // pressing capture without having gone to the next key at all.
+            float away = Game.Player.Character != null && Game.Player.Character.Exists()
+                ? LocationBook.FlatDistance(Game.Player.Character.Position, location.Position) : 0f;
             GameUtils.Notify("~y~Survey destination: " + location.Key + "~s~\n" + location.DistrictHint +
-                " - " + location.Kind + "\nFollow the yellow GPS route, or press " + _teleportKey + " to teleport.");
+                " - " + location.Kind + "\n" + (int)away + " m away. Follow the yellow GPS route, or press " + _teleportKey + " to teleport.");
         }
 
         public void TeleportToCurrent()
