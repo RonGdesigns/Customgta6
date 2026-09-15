@@ -124,6 +124,15 @@ namespace Bloodlines.Missions.Campaign
         {
             bool water = location.Kind == "water";
             bool verified = water ? MissionSites.Water(Ctx.Locations, location.Key) : MissionSites.Ground(Ctx.Locations, location.Key);
+            // A surveyed point the engine will not confirm is kept rather than refused, so
+            // the mission loads; the diagnostic still has to name it.
+            if (verified && !water && MissionSites.WasKeptOnTrust(location.Key))
+            {
+                Logger.Warn("M05 location kept on trust: " + location.Key + " at " + location.Position +
+                            "; the engine offered no walkable coordinate near it.");
+                if (!_unverifiedLocations.Contains(location.Key)) _unverifiedLocations.Add(location.Key);
+                return true;
+            }
             if (verified)
             {
                 Logger.Info("M05 location verified: " + location.Key + " at " + location.Position + "; configured " + _originalLocations[location]);

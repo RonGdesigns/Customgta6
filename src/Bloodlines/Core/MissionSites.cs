@@ -23,8 +23,19 @@ namespace Bloodlines.Core
             }
             return true;
         }
+        /// <summary>
+        /// Keys the last ground preparation kept on the strength of their survey, because
+        /// the engine offered no walkable coordinate near them. The mission starts — Ron
+        /// captured those points standing on them — but the location test and the mission
+        /// doctor still need to know, or trusting a survey would quietly hide a real
+        /// problem at the site.
+        /// </summary>
+        public static bool WasKeptOnTrust(string key) => Kept.Contains(key);
+        private static readonly List<string> Kept = new List<string>();
+
         public static bool Ground(LocationBook book, params string[] keys)
         {
+            Kept.Clear();
             var resolved = new Dictionary<MissionLocation, Vector3>();
             try
             {
@@ -57,10 +68,21 @@ namespace Bloodlines.Core
                     }
                     if (safe == Vector3.Zero)
                     {
-                        // Deliberately still a failure for a surveyed key as well as an
-                        // estimate: the location test exists to surface sites that need a
-                        // look, and silently keeping a surveyed point would hide a real
-                        // problem at it. The caller decides what to do about it.
+                        // A surveyed point was captured by standing on it, so it is walkable
+                        // by demonstration. GetSafeCoordForPed is a navmesh query and it
+                        // answers several meters away, or not at all, beside a curb or a
+                        // wall — which is exactly where SM06's approach is. Refusing the
+                        // mission over that disagreement is the tool overruling the survey,
+                        // and it stopped SM06 loading at a point Ron had surveyed twice.
+                        // The complaint is still recorded; the mission still starts.
+                        if (surveyed)
+                        {
+                            Logger.Warn("Keeping the surveyed point for " + key + " at " + point +
+                                        ": the engine offered no walkable coordinate near it, but it was captured on foot.");
+                            resolved[location] = point;
+                            Kept.Add(key);
+                            continue;
+                        }
                         Logger.Error("No walkable mission surface: " + key + " at " + point + " (authored " + location.Position + ", " + location.Status + ")");
                         GameUtils.Subtitle("~r~Cannot load " + key + ": no walkable ground near its coordinates. Survey it (F11) and retry.",6000);
                         return false;

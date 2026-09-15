@@ -71,18 +71,41 @@ namespace Bloodlines.Missions.Campaign
         private bool SpawnBoat()
         {
             var model = new Model(BoatModel);
-            if (!GameUtils.RequestModel(model)) return false;
+            if (!GameUtils.RequestModel(model))
+            { Logger.Error(Id + ": the Tropic model would not load."); return false; }
             // M43 left the Tropic on its holding marker; it is taken from there, not
             // conjured beside the swimmers at the moment they need it.
             // M40 records this under the plural key it actually writes.
             string staged = Paleto.CargoAt(Ctx, "extractionLaunches");
             string key = !string.IsNullOrEmpty(staged) && Ctx.Locations.Get(staged)?.Kind == "water" ? staged : "M47.BoatStart";
-            var point = MarineSites.ResolveOrThrow(Ctx.Locations, key, 2f);
+            var point = Afloat(key) ?? Afloat("M47.Clear") ?? At(key);
             _boat = Track(World.CreateVehicle(model, point, Ctx.Locations.Heading(key)));
             model.MarkAsNoLongerNeeded();
-            if (_boat == null || !_boat.Exists()) return false;
+            if (_boat == null || !_boat.Exists())
+            { Logger.Error(Id + ": the Tropic could not be created at " + point); return false; }
             _boat.IsPersistent = true;
             return true;
+        }
+
+        /// <summary>
+        /// Water deep enough for the Tropic at a key, or null when the probe will not
+        /// give it.
+        ///
+        /// The resolve used to be allowed to throw, and a throw out of Setup is the whole
+        /// operation refusing to start: that is what Ron got after arming the charges,
+        /// five chapters into one sitting. A boat put somewhere slightly wrong is
+        /// recoverable. Losing the sitting is not.
+        /// </summary>
+        private Vector3? Afloat(string key)
+        {
+            if (Ctx.Locations.Get(key) == null) return null;
+            try { return MarineSites.ResolveOrThrow(Ctx.Locations, key, 2f); }
+            catch (Exception ex)
+            {
+                Logger.Warn(Id + ": no clear water for the Tropic at " + key + " (" + ex.Message + ").");
+                Ctx.Doctor?.Warn("placement", key, "the boat could not be floated here: " + ex.Message);
+                return null;
+            }
         }
 
         private Vehicle StageHelicopter()
