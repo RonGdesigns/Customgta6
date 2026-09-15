@@ -68,6 +68,8 @@ namespace Bloodlines.Missions.Campaign
         /// swim, close enough to be reachable.
         /// </summary>
         public const float PickupOffsetMeters = 300f;
+        /// <summary>How often the offer to come and get him is repeated on screen.</summary>
+        public const int OfferIntervalMs = 7000;
         public const float BailTimeScale = 0.45f;
         /// <summary>
         /// How far past the pickup the dive is allowed to carry him. Checked rather than
@@ -90,6 +92,9 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _jetTrack;
         private Vector3 _seaPickup;
         private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered, _pickupPlaced;
+        private readonly Core.CrewBoarding _pickup = new Core.CrewBoarding();
+        private bool _offered;
+        private int _nextOffer;
         private Vehicle _roadCar;
 
         public override string Id => "M27";
@@ -179,9 +184,17 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("M27_S2_04_GOHAN")
                 .AfterCues("M27_S2_05_ICE");
 
+            // Either brother. Where Ice comes down is the player's flying, so the boat can
+            // always end up further away than a glide, and the answer Ron asked for is to let
+            // him drive it himself rather than to keep guessing at a distance. The stage waits
+            // for Ice to be in the boat, not for the player to be, because the player may be
+            // the one steering it.
             yield return new MissionStage("Sea pickup",
-                    new EnterVehicleObjective("Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy.", () => _dinghy))
-                .OwnedBy(CrewSlot.Ice)
+                    new ConditionObjective("Get Ice aboard Gohan's dinghy: glide to the boat, or switch to Gohan and bring it to him",
+                        () => IceAboard)
+                    { Marker = () => _dinghy != null && _dinghy.Exists() ? _dinghy.Position : Ctx.Locations.Position("M27.Shore"), MarkerRadius = 6f })
+                .AnyOf()
+                .OnEnter(context => Offer())
                 .OnExit(context => BoardWithLedger())
                 .AfterCues("M27_S2_06_GUESS");
 
@@ -338,6 +351,7 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected override void OnUpdate()
         {
+            RunPickup();
             if (_diving)
             {
                 HoldTheDive();
@@ -366,6 +380,59 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
             guess.Task.StartPlaneMission(_stuntPlane, _apron + new Vector3(0f, 0f, 80f), VehicleMissionType.GoTo, 40f, 60f, 80, 40, 0f, false);
             Radio("GUESS", "Peeling off. Empty seat beside me and the Vestra's going home to McKenzie on her own route. Gohan has you from here.", "M27_RADIO_01_GUESS");
+        }
+
+        /// <summary>Ice is in the boat, whoever brought it to him.</summary>
+        private bool IceAboard
+        {
+            get
+            {
+                var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+                return ice != null && ice.Exists() && !ice.IsDead && _dinghy != null && _dinghy.Exists() && ice.IsInVehicle(_dinghy);
+            }
+        }
+
+        /// <summary>
+        /// Gohan says what he can do about it, once, when the pickup begins.
+        /// </summary>
+        private void Offer()
+        {
+            _offered = true;
+            _pickup.Reset();
+            Radio("GOHAN", "I'm on the water off the lighthouse with the engine running. If I'm not close enough to swim to, say the word and I'll drive over and get you.", "M27_RADIO_02_GOHAN");
+        }
+
+        /// <summary>
+        /// The pickup, every frame it is running.
+        ///
+        /// Two things, and neither of them forces the player's hand. If he is Ice and cannot
+        /// see the boat, he is told he may take Gohan and bring it himself — told, not made
+        /// to. If he is already Gohan and has driven it to Ice, Ice is ordered aboard,
+        /// because a man treading water does not climb into a passing boat on his own.
+        /// </summary>
+        private void RunPickup()
+        {
+            if (!_offered || IceAboard || _dinghy == null || !_dinghy.Exists()) return;
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice == null || !ice.Exists() || ice.IsDead) return;
+
+            if (Ctx.Crew.ActiveSlot == CrewSlot.Gohan)
+            {
+                _pickup.Update(Ctx.Crew, _dinghy,
+                    new[] { new System.Collections.Generic.KeyValuePair<CrewSlot, VehicleSeat>(CrewSlot.Ice, VehicleSeat.RightFront) }, Id);
+                return;
+            }
+            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice || Game.GameTime < _nextOffer) return;
+            _nextOffer = Game.GameTime + OfferIntervalMs;
+            bool inView = false;
+            try
+            {
+                inView = Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, _dinghy.Position.X, _dinghy.Position.Y, _dinghy.Position.Z, 12f) &&
+                         ice.Position.DistanceTo(_dinghy.Position) < PickupOffsetMeters * 1.5f;
+            }
+            catch (Exception ex) { Logger.Warn("Checking whether the boat is in view: " + ex.Message); }
+            if (inView) return;
+            GameUtils.Subtitle("~y~Can't see the boat? Switch to Gohan and drive it to Ice yourself.", 4000);
         }
 
         /// <summary>

@@ -77,6 +77,14 @@ public static partial class StoryTests
      // M26 asks Guess to sit on the second spotter rather than wait out a timer: Ron
      // found rolling up and doing nothing unsatisfying, and the clock only runs while he
      // is on the wing.
+     // M27's pickup waits for Ice to be in the boat, whoever steered it there.
+     if(name=="ConditionObjective"&&m.Id=="M27")
+     {
+      var boat=((Bloodlines.Missions.Campaign.M27FlightRisk)m).Dinghy;
+      var ice=crew.PedFor(CrewSlot.Ice);
+      if(boat!=null&&boat.Exists()&&ice!=null&&!ice.IsInVehicle(boat))
+      {ice.Task.LeaveVehicle();ice.Position=boat.Position;ice.SetIntoVehicle(boat,VehicleSeat.RightFront);}
+     }
      if(name=="ConditionObjective"&&m.Id=="M26")
      {
       var spotters=((Bloodlines.Missions.Campaign.M26AlamoScramble)m).Spotters;

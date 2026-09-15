@@ -45,27 +45,34 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         public const float ListenRange = 320f;
         /// <summary>
-        /// How wide the spotters quarter the lake. This was 60 meters, which is a
-        /// continuous hard bank in one spot: a Lazer cannot turn inside that, so every
-        /// pass overshot. Four hundred was the other mistake — the patrol box is 1.2 km
-        /// from the strip, and a 400 m orbit on top of that put them somewhere new by the
-        /// time Ron was off the ground. Two hundred and twenty is a search pattern a jet
-        /// can still turn inside, holding an area small enough to fly back to.
+        /// How wide the spotters quarter the lake, and how fast.
+        ///
+        /// I have now had this number wrong in both directions. Sixty meters was a
+        /// continuous hard bank in one spot that a Lazer could not turn inside. Four
+        /// hundred put them somewhere new before Ron was off the ground, so I cut it to
+        /// two hundred and twenty to make them findable — and a circle that tight is a
+        /// forty-nine degree sustained bank at cruise, which is how a crop duster spins
+        /// into the lake. Ron watched one do it.
+        ///
+        /// The radius is set by what the aircraft can actually fly: at 380 m and 50 m/s a
+        /// Mammatus holds about thirty-four degrees, which it will keep all day. Finding
+        /// them is not this number's job — that belongs to the waypoint that tracks the
+        /// target and to blips that survive the range, both of which exist now.
         /// </summary>
-        public const float PatrolRadius = 220f;
+        public const float PatrolRadius = 380f;
         /// <summary>Patrol altitude. Low enough to see them against the lake.</summary>
         public const int PatrolHeight = 170;
         /// <summary>
-        /// Cruise for the patrol. A Mammatus will hold this; below about thirty it will
-        /// not, which is the mistake that was dropping M27's Shamal out of the sky.
+        /// Cruise for the patrol. A Mammatus sits near 55; forty is close enough to its
+        /// stall that a banked turn takes it, and stall speed climbs with bank angle.
         /// </summary>
-        public const float PatrolSpeed = 40f;
+        public const float PatrolSpeed = 50f;
         /// <summary>
         /// Airspeed they are created with. They are made at over two hundred meters and
         /// then told to descend to 170, and an aircraft handed to the AI already sinking
         /// does not always recover.
         /// </summary>
-        public const float SpotterLaunchSpeed = 60f;
+        public const float SpotterLaunchSpeed = 65f;
 
         private Vehicle _duster;
         private Vehicle _approachPlane;
