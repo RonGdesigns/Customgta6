@@ -46,6 +46,35 @@ namespace Bloodlines.Core
         /// speed. Ron watched M45's Annihilator do exactly that on every attempt at the
         /// heist. Call this immediately after creating one above the ground.
         /// </summary>
+        /// <summary>
+        /// An aircraft the player is flying has a running engine.
+        ///
+        /// World.CreateVehicle leaves an engine off, and the free-roam spawner
+        /// deliberately creates planes and helicopters cold — but nothing ever started
+        /// them, so a jet requested from the dev menu let Ron aim its guns and never
+        /// accelerate. That was M26's Lazer as well, fixed there by hand. This is the same
+        /// check in one place, so a cold aircraft is a thing standing on the apron rather
+        /// than a thing that never flies.
+        ///
+        /// Only while he is in the driver's seat. A parked aircraft stays cold, which is
+        /// what makes M26's scramble read as a scramble, and a passenger does not reach
+        /// past the pilot to start it.
+        /// </summary>
+        public static void KeepPlayerAircraftRunning()
+        {
+            try
+            {
+                var player = Game.Player.Character;
+                if (player == null || !player.Exists() || player.IsDead || !player.IsInVehicle()) return;
+                var aircraft = player.CurrentVehicle;
+                if (aircraft == null || !aircraft.Exists() || aircraft.IsDead || !aircraft.IsDriveable) return;
+                if (!aircraft.Model.IsPlane && !aircraft.Model.IsHelicopter) return;
+                if (player.SeatIndex != VehicleSeat.Driver || aircraft.IsEngineRunning) return;
+                aircraft.IsEngineRunning = true;
+                Logger.Info("Started a cold aircraft the player is flying: " + aircraft.DisplayName + ".");
+            }
+            catch (Exception ex) { Logger.Error("Starting the aircraft the player is flying", ex); }
+        }
         public static void LaunchAirborne(Vehicle aircraft, float forwardSpeed = AirborneSpeed)
         {
             if (aircraft == null || !aircraft.Exists()) return;

@@ -161,6 +161,30 @@ public static partial class StoryTests
         Check(m26.Contains("WatchSpotters();"),
             "A spotter that goes down on its own is logged, not silently scored as a kill");
 
+        // ---- An aircraft the player is flying has a running engine, wherever it came
+        // from. The free-roam spawner creates planes and helicopters cold and nothing ever
+        // started them, so a jet Ron requested from the dev menu fired its guns and never
+        // accelerated - M26's Lazer bug in a second place.
+        Reset();
+        var roster2 = Roster();
+        var jet = new Vehicle { Model = new Model("lazer"), IsEngineRunning = false };
+        jet.Model.IsPlane = true;
+        Game.Player.Character.SetIntoVehicle(jet, VehicleSeat.Driver);
+        AircraftHold.KeepPlayerAircraftRunning();
+        Check(jet.IsEngineRunning, "A cold aircraft the player is flying is started");
+        // A parked one stays cold: that is what makes M26's scramble read as a scramble.
+        var parked = new Vehicle { Model = new Model("lazer"), IsEngineRunning = false };
+        parked.Model.IsPlane = true;
+        AircraftHold.KeepPlayerAircraftRunning();
+        Check(!parked.IsEngineRunning, "An aircraft nobody is sitting in stays cold");
+        var car = new Vehicle { Model = new Model("granger"), IsEngineRunning = false };
+        Game.Player.Character.SetIntoVehicle(car, VehicleSeat.Driver);
+        AircraftHold.KeepPlayerAircraftRunning();
+        Check(!car.IsEngineRunning, "And it only touches aircraft, not every car he sits in");
+        string entry2 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "BloodlinesMain.cs"));
+        Check(entry2.Contains("AircraftHold.KeepPlayerAircraftRunning"),
+            "And the check is actually stepped every frame rather than only existing");
+
         // A moving target carries a waypoint that follows it. A ground cylinder and a
         // minimap blip are not enough to reacquire an aircraft a kilometer out.
         string std = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Objectives", "StandardObjectives.cs"));
