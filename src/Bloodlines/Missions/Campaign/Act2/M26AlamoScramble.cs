@@ -34,6 +34,17 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How long Gohan needs on the second spotter's traffic before it can go down.</summary>
         public const int ListenMs = 12000;
         /// <summary>
+        /// How close Guess has to sit on the second spotter for Gohan to pull the call sign.
+        ///
+        /// Ron asked why he cannot simply shoot both of them out of the sky, and the answer
+        /// is that the second one is transmitting the thing M27 is built on: the charter's
+        /// call sign, which is how the crew knows which Shamal to intercept. Kill him early
+        /// and that is gone. But "roll up and do nothing for twelve seconds" is not a beat,
+        /// so the wait is flying rather than waiting — hold station inside this range and
+        /// the clock runs; break off and it stops.
+        /// </summary>
+        public const float ListenRange = 320f;
+        /// <summary>
         /// How wide the spotters quarter the lake. This was 60 meters, which is a
         /// continuous hard bank in one spot: a Lazer cannot turn inside that, so every
         /// pass overshot. Four hundred was the other mistake — the patrol box is 1.2 km
@@ -62,7 +73,7 @@ namespace Bloodlines.Missions.Campaign
         private Prop _laptop;
         private Vector3 _pad;
         private Vector3 _patrolBox;
-        private int _listenUntil;
+        private int _listenUntil, _listenLeft = ListenMs, _lastListenTick;
         private bool _listening, _leadHeld, _parked;
 
         public override string Id => "M26";
@@ -123,7 +134,7 @@ namespace Bloodlines.Missions.Campaign
             // The second spotter is calling somebody: what he is calling is the lead.
             // Kill him too early and it goes into the lake with him.
             yield return new MissionStage("The charter",
-                    new ConditionObjective("Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic.", () => Game.GameTime >= _listenUntil)
+                    new ConditionObjective("Guess: sit on the second spotter's wing while Gohan pulls the charter's call sign.", () => Listened())
                         { Marker = () => _spotters.Count > 1 && _spotters[1] != null && _spotters[1].Exists() ? _spotters[1].Position : _patrolBox, MarkerRadius = 12f },
                     new ReactionTrigger(() => _spotters.Count > 1 && (!_spotters[1].Exists() || !_spotters[1].IsDriveable), () => Fail("The second spotter went into the lake before Gohan had the charter's call sign. The lead went with him.")))
                 .OwnedBy(CrewSlot.Guess)
@@ -166,6 +177,8 @@ namespace Bloodlines.Missions.Campaign
         private void HoldForTraffic()
         {
             _listening = true;
+            _listenLeft = ListenMs;
+            _lastListenTick = Game.GameTime;
             _listenUntil = Game.GameTime + ListenMs;
             Radio("GOHAN", "Hold the second one. He's calling a fix to somebody with a tail number, and I'm halfway through it. Keep him in sight; don't splash him yet.", "M26_RADIO_01_GOHAN");
         }
@@ -373,6 +386,29 @@ namespace Bloodlines.Missions.Campaign
                             ", " + (int)away + " m from Ron" +
                             (away > 350f ? " — too far to have been him, so it came down on its own." : "."));
             }
+        }
+
+        /// <summary>
+        /// The listening beat, run as flying. The clock only advances while Guess is inside
+        /// <see cref="ListenRange"/> of the second spotter, and the remaining time is on
+        /// screen, so the stage reads as a job rather than as dead air.
+        /// </summary>
+        private bool Listened()
+        {
+            if (!_listening) return false;
+            int now = Game.GameTime;
+            int step = System.Math.Max(0, System.Math.Min(1000, now - _lastListenTick));
+            _lastListenTick = now;
+            var player = Game.Player.Character;
+            var spotter = _spotters.Count > 1 ? _spotters[1] : null;
+            bool close = player != null && player.Exists() && spotter != null && spotter.Exists() &&
+                         player.Position.DistanceTo(spotter.Position) <= ListenRange;
+            if (close) _listenLeft -= step;
+            if (_listenLeft <= 0) { _listenUntil = now; return true; }
+            GameUtils.Subtitle(close
+                ? "~g~On his wing. Gohan needs " + ((_listenLeft / 1000) + 1) + "s more."
+                : "~o~Too far out. Close inside " + (int)ListenRange + " m or Gohan loses the call sign.", 400);
+            return false;
         }
 
         protected override void OnUpdate()

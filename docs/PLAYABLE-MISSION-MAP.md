@@ -441,7 +441,7 @@ Prerequisite: M25. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Scramble** — EnterVehicleObjective: Guess — take off in the marked Lazer. |
 | 2 | Guess | **First spotter** — DestroyVehicleObjective: Splash the lead spotter. |
-| 3 | Guess | **The charter** — ConditionObjective: Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic. |
+| 3 | Guess | **The charter** — ConditionObjective: Guess: sit on the second spotter's wing while Gohan pulls the charter's call sign. |
 | 4 | Guess | **Second spotter** — DestroyVehicleObjective: The second one is diving for Grapeseed — kill him. |
 | 5 | Guess | **Home** — DeliverVehicleObjective: Guess: land the Lazer at McKenzie and stop. |
 

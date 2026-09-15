@@ -58,6 +58,16 @@ namespace Bloodlines.Missions.Campaign
         public const float DiveSpeed = 48f;
         /// <summary>Who holds the clock down for the bail-out, and how far.</summary>
         public const string TimeOwner = "M27.Bailout";
+        /// <summary>
+        /// How far from where Ice actually comes down the boat is put.
+        ///
+        /// Gohan used to wait at one authored point, and where Ice lands depends on how the
+        /// player flew: the dive angle, the heading, when he chose to jump. No fixed
+        /// coordinate survives that, which is why Ron found the boat on the far side of the
+        /// map. It is placed relative to him instead, far enough to still be a glide and a
+        /// swim, close enough to be reachable.
+        /// </summary>
+        public const float PickupOffsetMeters = 300f;
         public const float BailTimeScale = 0.45f;
         /// <summary>
         /// How far past the pickup the dive is allowed to carry him. Checked rather than
@@ -79,7 +89,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _formUp;
         private Vector3 _jetTrack;
         private Vector3 _seaPickup;
-        private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered;
+        private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered, _pickupPlaced;
         private Vehicle _roadCar;
 
         public override string Id => "M27";
@@ -334,7 +344,14 @@ namespace Bloodlines.Missions.Campaign
                 var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
                 bool inside = ice != null && ice.Exists() && !ice.IsDead && _shamal != null && _shamal.Exists() && ice.IsInVehicle(_shamal);
                 if (inside && Ctx.Crew.ActiveSlot == CrewSlot.Ice) SlowMotion.Hold(TimeOwner, BailTimeScale);
-                else { SlowMotion.Release(TimeOwner); if (!inside) _diving = false; }
+                else
+                {
+                    SlowMotion.Release(TimeOwner);
+                    // He is out. Now we know where he is coming down, so put Gohan where he
+                    // can actually be reached instead of where the book guessed.
+                    if (!inside && ice != null && ice.Exists() && !ice.IsDead) PlacePickup(ice);
+                    if (!inside) _diving = false;
+                }
             }
             base.OnUpdate();
         }
@@ -349,6 +366,45 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
             guess.Task.StartPlaneMission(_stuntPlane, _apron + new Vector3(0f, 0f, 80f), VehicleMissionType.GoTo, 40f, 60f, 80, 40, 0f, false);
             Radio("GUESS", "Peeling off. Empty seat beside me and the Vestra's going home to McKenzie on her own route. Gohan has you from here.", "M27_RADIO_01_GUESS");
+        }
+
+        /// <summary>
+        /// Put Gohan's boat within reach of where Ice is actually descending: about
+        /// <see cref="PickupOffsetMeters"/> away, on the shore side of him so the glide is
+        /// toward land rather than out to sea, and on water that is really there. Done once.
+        /// </summary>
+        private void PlacePickup(Ped ice)
+        {
+            if (_pickupPlaced || _dinghy == null || !_dinghy.Exists()) return;
+            _pickupPlaced = true;
+            var from = ice.Position;
+            var shore = Ctx.Locations.Position("M27.Landing");
+            var toward = new Vector3(shore.X - from.X, shore.Y - from.Y, 0f);
+            float span = toward.Length();
+            if (span < 1f) { toward = new Vector3(1f, 0f, 0f); span = 1f; }
+            toward = new Vector3(toward.X / span, toward.Y / span, 0f);
+
+            // Straight at the shore first, then fanned around him, taking the first bearing
+            // that is genuinely afloat. A boat on dry land is worse than a boat a little off.
+            for (int step = 0; step < 12; step++)
+            {
+                double turn = (step == 0 ? 0 : (step % 2 == 0 ? 1 : -1) * ((step + 1) / 2) * 30) * System.Math.PI / 180.0;
+                float x = (float)(toward.X * System.Math.Cos(turn) - toward.Y * System.Math.Sin(turn));
+                float y = (float)(toward.X * System.Math.Sin(turn) + toward.Y * System.Math.Cos(turn));
+                var candidate = new Vector3(from.X + x * PickupOffsetMeters, from.Y + y * PickupOffsetMeters, 0f);
+                var height = new OutputArgument();
+                if (!Function.Call<bool>(Hash.GET_WATER_HEIGHT, candidate.X, candidate.Y, 100f, height)) continue;
+                float surface = height.GetResult<float>();
+                var spot = new Vector3(candidate.X, candidate.Y, surface);
+                if (!MissionSites.DeepEnough(spot.X, spot.Y, surface)) continue;
+                _dinghy.Position = spot;
+                _dinghy.Heading = new Vector3(from.X - spot.X, from.Y - spot.Y, 0f).ToHeading();
+                _dinghy.Speed = 0f;
+                Logger.Info(Id + ": Gohan moved to " + spot + ", " + (int)PickupOffsetMeters +
+                            " m from where Ice came out at " + from + ".");
+                return;
+            }
+            Logger.Warn(Id + ": no water found around " + from + " for the pickup; Gohan stays where he was staged.");
         }
 
         /// <summary>

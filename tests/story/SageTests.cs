@@ -111,7 +111,15 @@ public static partial class StoryTests
   m26.Tick();Check(m26.CurrentStage==1,"Airborne, the first spotter is the job");
   m26.Spotters[0].IsDriveable=false;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&m26.Listening&&c.Dialogue.HasPending,"The first spotter down, Gohan asks for the second one held while he listens");
   c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==2&&!m26.LeadHeld,"Too early: the call sign is not in yet");
-  Game.GameTime+=M26AlamoScramble.ListenMs+1;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==3&&m26.LeadHeld&&c.State.EvidenceOf("charterCallSign")==EvidenceState.CopyHeld,"Listening long enough holds the charter's call sign as evidence");
+  // The wait is flying now. Time alone does nothing: Guess has to be on the second
+  // spotter's wing, because Ron found rolling up and doing nothing unsatisfying and the
+  // story still needs the transmission.
+  Game.Player.Character.Position=m26.Spotters[1].Position+new Vector3(2000,0,0);
+  for(int i=0;i<20;i++){Game.GameTime+=1000;c.Dialogue.Clear();m26.Tick();}
+  Check(m26.CurrentStage==2&&!m26.LeadHeld,"Out of range the clock does not run, however long he waits");
+  Game.Player.Character.Position=m26.Spotters[1].Position+new Vector3(20,0,0);
+  for(int i=0;i<20&&m26.CurrentStage==2;i++){Game.GameTime+=1000;c.Dialogue.Clear();m26.Tick();}
+  Check(m26.CurrentStage==3&&m26.LeadHeld&&c.State.EvidenceOf("charterCallSign")==EvidenceState.CopyHeld,"On his wing long enough, the charter's call sign is held as evidence");
   m26.Spotters[1].IsDriveable=false;c.Dialogue.Clear();m26.Tick();Check(m26.CurrentStage==4,"The second spotter down, home is the job");
   m26.Lazer.Position=c.Locations.Position("M26.RunwayStart");m26.Lazer.HeightAboveGround=0f;m26.Lazer.Speed=0f;Game.Player.Character.Position=m26.Lazer.Position;c.Dialogue.Clear();m26.Tick();
   Check(m26.Parked&&c.Cutscenes.IsActive&&c.State.CargoAt("lazer")=="M26.DusterPad","Landed, the Lazer is parked as a scene beside the Duster and recorded at McKenzie");
