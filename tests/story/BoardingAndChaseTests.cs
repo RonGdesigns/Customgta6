@@ -311,6 +311,20 @@ public static partial class StoryTests
         Check(M48TheRoadBackSouth.HoldingGroup != "BLOODLINES_AEGIS",
             "which is a different group from the one the roster made hostile");
 
+        // Opened needing its own boat, M48 used to deploy nobody: the deploy was the third
+        // branch of an else-if chain about the boat, so staging one skipped it. Guess had no
+        // ped, and ComposedMission reports a missing brother with the same words it uses for
+        // a dead one — which is why this read as the cordon killing him.
+        Check(!m48.Contains("else if (!Ctx.Crew.Deploy"),
+            "Deploying the crew is not an alternative to staging a boat");
+        Check(m48.Contains("if (!Paleto.IsContinuing(Ctx) &&") &&
+              m48.Contains("!Ctx.Crew.Deploy(CrewSlot.Guess, At(\"M48.Technical\")"),
+            "A chapter that is not continuing deploys the crew whatever it has to stage");
+        // The same shape must not come back anywhere else.
+        foreach (var file in ScriptFiles())
+            Check(!File.ReadAllText(file).Contains("else if (!Ctx.Crew.Deploy"),
+                Path.GetFileName(file) + " does not make a crew deploy the alternative to something else");
+
         // A throw out of Setup is the whole operation refusing to start, which is what Ron
         // got after arming the charges, five chapters in.
         Check(m47.Contains("try { return MarineSites.ResolveOrThrow(Ctx.Locations, key, 2f); }"),

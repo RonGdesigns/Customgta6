@@ -68,10 +68,18 @@ namespace Bloodlines.Missions.Campaign
             var world = Paleto.Of(Ctx);
             if (world != null && !world.EvidenceHeld)
                 throw new InvalidOperationException("M48 opened without the evidence. The operation must run from M44.");
+            // Deploying the crew and staging a boat are different things, and they used to
+            // be the second and third branches of one else-if chain about the boat. A run
+            // that had to stage its own boat therefore never deployed anybody, Guess had no
+            // ped at all, and the mission failed on its first tick saying "Guess is down" —
+            // which is what ComposedMission reports for a required brother who is missing,
+            // not for one who has been shot. Ron read it as the cordon killing him.
+            if (!Paleto.IsContinuing(Ctx) &&
+                !Ctx.Crew.Deploy(CrewSlot.Guess, At("M48.Technical"), Ctx.Locations.Heading("M48.Technical"))) return false;
+
             _boat = world?.Get<Vehicle>("boat");
             if (Paleto.IsContinuing(Ctx)) _boat = Track(world.Require<Vehicle>("boat"));
             else if (_boat == null || !_boat.Exists()) _boat = StageBoat();
-            else if (!Ctx.Crew.Deploy(CrewSlot.Guess, At("M48.Technical"), Ctx.Locations.Heading("M48.Technical"))) return false;
 
             if (!SpawnTechnical()) return false;
             world?.Bind("technical", _technical);
