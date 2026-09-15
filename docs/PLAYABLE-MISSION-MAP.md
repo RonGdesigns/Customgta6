@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-58 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+59 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -894,6 +894,20 @@ Prerequisite: M51. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+
+## M57 — VESPUCCI FLAK
+
+Prerequisite: M56. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Get on the water** — EnterVehicleObjective: Guess: take your ski out past the surf break<br>EnterVehicleObjective: Ice: take the other ski out |
+| 2 | Guess | **Put them in the water** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Guess | **Back to the sand** — TravelObjective: Bring the skis back in to the beach |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M57.Patrol, M57.Return, M57.SkiGuess, M57.SkiIce.
 
 ## SM01 — LEAD & KEVLAR
 

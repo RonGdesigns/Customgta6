@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 58 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 59 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2668,7 +2668,7 @@ Then we defend the water exit too. I'm planning for a broken aircraft, not just 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M57 - VESPUCCI FLAK (future gameplay)
+## M57 - VESPUCCI FLAK (scripted)
 
 ### Intro
 
