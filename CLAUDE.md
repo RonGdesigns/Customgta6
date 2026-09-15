@@ -390,6 +390,26 @@ recorded in `data/mission_gameplay.tsv`: in M04 his Blackout is the same breaker
 beat from his own side, and in SM02 it kills the biometrics and holds the guards'
 awareness down while he taps the node.
 
+**Nitrous was torque and nothing else.** `SET_VEHICLE_CHEAT_POWER_INCREASE` raises
+acceleration; it does not move a top speed. And `WorldTuning` already lifts every car's entity
+cap to its doubled redline, so the ceiling was the same number with the bottle open or shut —
+which is exactly why it felt like acceleration only. `WorldTuning.ApplyCeiling` now raises that
+cap per instance while boosting and puts it straight back, written only when the number
+changes. It never touches `InitialDriveMaxFlatVelocity`, which is shared handling data.
+**Whether the terminal speed visibly moves is a road test, not a number to read off a file.**
+
+`Core/ExhaustFlame` is the gear-change backfire (`core` / `veh_backfire`) asked for on a
+cadence instead of once. **It must never `Script.Wait`**: it runs inside the per-frame input
+step, and `AircraftSmoke`'s wait loop — correct for a mission calling it once — would stall the
+whole mod for seconds to stream a particle asset. It asks with a zero timeout every frame and
+emits once the asset is in. Nothing loops the effect, so there is no handle to survive a failed
+exit path.
+
+**A source-text assertion must match a call, not a word.** Three checks in a row failed on
+their own documentation: `Contains("LaunchAirborne")`, `Contains("BoardBrothers")` and
+`Contains("Script.Wait")` all matched the comment explaining why the code does *not* do that.
+Match `Foo(` when the point is that something is called.
+
 **A phone list row draws its title and its subtitle. Nothing else.** An entry with
 `Children` can never show a body at all: selecting it pushes into the folder and returns, so
 `LiveBody` on such an entry is dead code. The first attempt at vehicle specs put them exactly

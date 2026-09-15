@@ -35,6 +35,10 @@ namespace Bloodlines.Core
         private readonly Dictionary<IntPtr, Profile> _profiles = new Dictionary<IntPtr, Profile>();
         private readonly Dictionary<int, Vehicle> _cars = new Dictionary<int, Vehicle>();
         private readonly Dictionary<int, float> _stockLimits = new Dictionary<int, float>();
+        /// <summary>The raised ceiling each instance normally runs under.</summary>
+        private readonly Dictionary<int, float> _appliedLimits = new Dictionary<int, float>();
+        /// <summary>The ceiling last written to each instance, so the native is not hammered.</summary>
+        private readonly Dictionary<int, float> _ceilings = new Dictionary<int, float>();
         private readonly Dictionary<int, float> _power = new Dictionary<int, float>();
         private readonly Dictionary<int, int> _models = new Dictionary<int, int>();
         private int _nextScan, _lastPowerTime;
@@ -159,9 +163,32 @@ namespace Bloodlines.Core
                 Function.Call(Hash.SET_VEHICLE_MAX_SPEED, car, profile.Applied);
                 _cars[car.Handle] = car;
                 _stockLimits[car.Handle] = profile.Original;
+                // The ceiling this instance is actually running under. Nitrous raises it
+                // while the bottle is open and puts it straight back, and both writes need
+                // this number to work from.
+                _appliedLimits[car.Handle] = profile.Applied;
+                _ceilings[car.Handle] = profile.Applied;
                 _power[car.Handle] = 1f;
                 _models[car.Handle] = car.Model.Hash;
         }
+        /// <summary>
+        /// The entity speed cap for one car, raised while its bottle is open.
+        ///
+        /// The boost used to be torque and nothing else, and the cap was the same number
+        /// open or shut - so whatever the extra torque was worth, the car met the same
+        /// ceiling either way, which is exactly what "it only feels like acceleration"
+        /// describes. This is per instance, never the shared handling data, and it is
+        /// written only when the number actually changes.
+        /// </summary>
+        private void ApplyCeiling(Vehicle car, bool boosting)
+        {
+            if (!_appliedLimits.TryGetValue(car.Handle, out float applied) || applied <= 0f) return;
+            float want = boosting ? applied * Nitrous.SpeedMultiplier : applied;
+            if (_ceilings.TryGetValue(car.Handle, out float current) && Math.Abs(current - want) < .01f) return;
+            _ceilings[car.Handle] = want;
+            Function.Call(Hash.SET_VEHICLE_MAX_SPEED, car, want);
+        }
+
         public static float PowerTarget(float forwardSpeed, float stockLimit)
         {
             if (stockLimit <= 0f || float.IsNaN(stockLimit) || float.IsInfinity(stockLimit) || float.IsNaN(forwardSpeed) || float.IsInfinity(forwardSpeed)) return 1f;
@@ -208,6 +235,7 @@ namespace Bloodlines.Core
                 float power = RampPower(_power[pair.Key], target, Game.LastFrameTime);
                 _power[pair.Key] = power;
                 Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car, power * Nitrous.MultiplierFor(car));
+                ApplyCeiling(car, Nitrous.MultiplierFor(car) > 1f);
             }
         }
         /// <summary>
