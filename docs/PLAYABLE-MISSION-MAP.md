@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-62 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+66 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -951,6 +951,63 @@ Prerequisite: M56. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M57.Patrol, M57.Return, M57.SkiGuess, M57.SkiIce.
+
+## M63 — TOWER OF GLASS
+
+Prerequisite: M62. Story gate: SM07, SM08 must be complete first (QA may bypass). Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Put the technical through the entrance** — DeliverVehicleObjective: Guess: ram the technical through the tower entrance |
+| 2 | any brother | **Clear the plaza** — KillTargetsObjective: Take the contractor gun nests off the plaza |
+| 3 | Gohan | **Bypass the security core** — MissionInteraction: Gohan: bypass the security core and release the freight lift |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M63.Core, M63.Doors, M63.GohanStart, M63.GuessStart, M63.IceStart, M63.Nest, M63.Start, M63.Technical.
+
+## M64 — THE 80TH FLOOR
+
+Prerequisite: M63. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Get into the tower** — ConditionObjective: Take the freight lift up to the service floor |
+| 2 | any brother | **Clear the service floor** — KillTargetsObjective: Take the executive security holding the floor |
+| 3 | Guess | **Take the executive lift** — MissionInteraction: Guess: blow the executive lift open |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M64.Doors, M64.GohanStart, M64.GuessStart, M64.IceStart, M64.Start.
+
+## M65 — EXECUTIVE PRIVILEGE
+
+Prerequisite: M64. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Reach the executive floor** — ConditionObjective: Take the lift to the executive floor |
+| 2 | any brother | **Break the detail** — KillTargetsObjective: Take Vance's bodyguard detail |
+| 3 | Gohan | **Open the escrow** — MissionInteraction: Gohan: force Vance's biometrics at the escrow terminal |
+| 4 | Ice | **Finish it** — ConditionObjective: Ice: take Vance |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M65.Doors, M65.GohanStart, M65.GuessStart, M65.IceStart, M65.Start.
+
+## M66 — THE SPIRE EVACUATION
+
+Prerequisite: M65. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Get to the edge** — ReachZoneObjective: Guess: get to the roof edge, past the gunships |
+| 2 | any brother | **Go off the tower** — ConditionObjective: Jump. Open the chute on the way down. |
+| 3 | any brother | **Down on the connector** — TravelObjective: Steer to the Del Perro connector and get down |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M66.Edge, M66.GohanStart, M66.GuessStart, M66.IceStart, M66.Landing, M66.Patrol, M66.Start.
 
 ## SM01 — LEAD & KEVLAR
 

@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-62 of 79 missions have gameplay scripts (M01–M54, M56, M57, SM01–SM06); the rest are loaded as data
+66 of 79 missions have gameplay scripts (M01–M54, M56, M57, M63–M66, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M55, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M55, M58–M62, M67–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -705,6 +705,52 @@ suggests. `scarab` turned out to be a real model, so the bible named a vehicle t
 check the dump before assuming an authored name is invented. And a half-track has three seats,
 so `BoardBrothers` — which asks for `RightRear` — would refuse it: all three are seated
 outright.
+
+## The interior wall was never there, and the Maze Bank Tower proves it
+
+This file used to say downtown interiors were unavailable, on the evidence that the mod's MP
+apartment tiers all resolve to a single interior location. That is true **of those apartment
+tiers** and false of everything else, and believing it cost M55, M64, M65, SM07 and SM08 a
+place to happen. **Executive offices, tower garages and the vanilla high-end apartments are
+placed at their own buildings, each with its own IPL**, and several can be live at once
+because they are different names at different coordinates.
+
+The Maze Bank Tower is walkable end to end, and `Missions/Campaign/Act3/MazeBankTower.cs` is
+the one place that records it so four missions do not each re-derive it:
+
+| floor | coordinate | IPL |
+|---|---|---|
+| plaza deck | (-76.6, -825.6, **36.77**) | `dt1_11_dt1_plaza`, baked |
+| carpark | (-84.13, -821.35, 36.71) | `hei_dt1_11_carpark` |
+| mid-tower | (-84.22, -823.09, **221.00**) | `imp_dt1_11_cargarage_a` |
+| executive | (-73.80, -818.96, **242.39**) | `ex_dt1_11_office_01a` |
+| upper | (-73.90, -821.62, 284.00) | `imp_dt1_11_modgarage` |
+| roof | (-75.20, -818.95, **323.26**) | `dt1_11_heliport`, baked |
+
+**The plaza is seven meters above the street it overlooks**, so every plaza key is a fixed
+surface and one probe at the entrance moves the rest.
+
+**Inside an MLO, exactly one coordinate is authored: the MLO's own placement.** Nobody has
+walked those floors. Everything else — six defender posts, Vance, his terminal, the lift — is
+an offset from where the crew actually arrives, resolved with `MazeBank.Nearby` and falling
+back to the arrival point. Never hard-code a coordinate inside an interior nobody has walked;
+a story test refuses a literal `new Vector3(-7…` or `(-8…` in those files.
+
+**An MLO is opened through `MazeBank.Enter`**, which registers the DLC archives through
+`DlcMaps` and hands the floor to the access service. Office and garage floors are DLC map
+data: a plain `REQUEST_IPL` on those quietly does nothing until the archives are registered.
+
+Two authored details the archives overruled, both recorded in `data/mission_gameplay.tsv`:
+**there is no antenna spire** (the tower stops at 325.17, a ring of parapet lights, so M66
+jumps from the roof and Ice's "eight hundred feet" is a real number from a real height), and
+**the executive floor is 242 m, not the hundredth**. M64's falling elevator cars are not
+reproduced either — there is no shaft to drop one down — so that one line goes unplayed
+rather than being faked.
+
+One trap this block re-taught: **an objective built from a list that Setup has not filled yet
+counts that list at zero.** `KillTargetsObjective`'s survivor count is captured at
+construction, so an "if the list is empty" branch written in `BuildStages` always takes the
+empty path. Read the list in the lambda and fail loudly in `Setup` instead.
 
 ## Aircraft created in the air
 

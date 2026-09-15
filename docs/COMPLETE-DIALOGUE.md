@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 62 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 66 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2941,7 +2941,7 @@ And everybody knows the way back out. Say it before we touch that lobby.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M63 - TOWER OF GLASS (future gameplay)
+## M63 - TOWER OF GLASS (scripted)
 
 ### Intro
 
@@ -2984,7 +2984,7 @@ You two stop me if I start chasing Vance ahead of the plan. I mean it this time.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M64 - THE 80TH FLOOR (future gameplay)
+## M64 - THE 80TH FLOOR (scripted)
 
 ### Intro
 
@@ -3027,7 +3027,7 @@ And the answer. Nobody decides for the other two.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M65 - EXECUTIVE PRIVILEGE (future gameplay)
+## M65 - EXECUTIVE PRIVILEGE (scripted)
 
 ### Intro
 
@@ -3070,7 +3070,7 @@ I thought seeing him fall would make it quiet. It didn't. Let's get out. I want 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M66 - THE SPIRE EVACUATION (future gameplay)
+## M66 - THE SPIRE EVACUATION (scripted)
 
 ### Intro
 
