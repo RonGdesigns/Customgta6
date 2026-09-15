@@ -172,6 +172,21 @@ namespace Bloodlines.Core
         public static float OffsetToSurface(Vector3 at, float headroom, float floor, string what, int attempts = 3) =>
             OnSurface(at, headroom, floor, what, attempts).Z - at.Z;
 
+        /// <summary>
+        /// Whether the game actually has an interior at a point.
+        ///
+        /// A mission that puts a man inside a building is trusting an MLO to be there, and if
+        /// it is not he is dropped into open sky at that height. The engine will say so before
+        /// anyone is placed: <c>GET_INTERIOR_AT_COORDS</c> returns zero where there is no
+        /// interior. Ask first and refuse the mission, rather than discovering it as three men
+        /// falling ninety meters.
+        /// </summary>
+        public static bool InteriorAt(Vector3 at)
+        {
+            try { return Function.Call<int>(Hash.GET_INTERIOR_AT_COORDS, at.X, at.Y, at.Z) != 0; }
+            catch (Exception ex) { Logger.Error("Asking for the interior at " + at, ex); return false; }
+        }
+
         /// <summary>How far out a clearance probe looks. Beyond this nothing is cramped.</summary>
         public const float RoomProbeMeters = 14f;
         /// <summary>Under this much room no vehicle the campaign spawns will fit.</summary>

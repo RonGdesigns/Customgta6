@@ -26,7 +26,7 @@ public static partial class StoryTests
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
    .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==56,"All 56 later and solo production mission classes are covered by the flow harnesses");
+  Check(types.Length==73,"All 73 later and solo production mission classes are covered by the flow harnesses");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
@@ -112,6 +112,32 @@ public static partial class StoryTests
        foreach(var hero in Protagonist.All)
         crew.PedFor(hero.Slot).SetIntoVehicle(collapse.Boat,hero.Slot==CrewSlot.Guess?VehicleSeat.Driver:hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);
      }
+     if(name=="ConditionObjective"&&m.Id=="M67")
+     {
+      var rig=((Bloodlines.Missions.Campaign.M67ScorchedGrid)m).Semi;
+      if(rig!=null){Game.Player.Character.SetIntoVehicle(rig,VehicleSeat.Driver);rig.Speed=18;}
+     }
+     if(name=="ConditionObjective"&&m.Id=="M68")
+     {
+      var rig=((Bloodlines.Missions.Campaign.M68BloodBrothersTheDrain)m).Rig;
+      if(rig!=null){Game.Player.Character.SetIntoVehicle(rig,VehicleSeat.Driver);rig.Speed=18;}
+     }
+     // The Act III condition beats. Each is a state the harness has to produce rather than
+     // a place it can stand in: a man dead, or a man three hundred meters below a roof.
+     if(name=="ConditionObjective"&&m.Id=="SM07")
+     {
+      var sterling=((Bloodlines.Missions.Campaign.SM07BloodDebt)m).Sterling;
+      if(sterling!=null)sterling.IsDead=true;
+     }
+     if(name=="ConditionObjective"&&m.Id=="M65")
+     {
+      var vance=((Bloodlines.Missions.Campaign.M65ExecutivePrivilege)m).Vance;
+      if(vance!=null)vance.IsDead=true;
+     }
+     if(name=="ConditionObjective"&&m.Id=="M66")
+      Game.Player.Character.Position=Bloodlines.Missions.Campaign.MazeBank.Roof
+       -new Vector3(0,0,Bloodlines.Missions.Campaign.M66TheSpireEvacuation.JumpedBelow+20f);
+
      // A travel leg is finished by actually being there, in the named vehicle, stopped.
      if(name=="TravelObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
      else if(name=="ReachZoneObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_position")());

@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 62 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 79 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2577,7 +2577,7 @@ Then each of us gets to call a delay. Trust has to work when I can't see either 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M55 - SKYLINE DESCENT (future gameplay)
+## M55 - SKYLINE DESCENT (scripted)
 
 ### Intro
 
@@ -2711,7 +2711,7 @@ We break their local command. We don't start calling everybody on that street ca
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M58 - CARTEL DECAPITATION (future gameplay)
+## M58 - CARTEL DECAPITATION (scripted)
 
 ### Intro
 
@@ -2754,7 +2754,7 @@ Send the proof, including the parts that don't flatter us. If we choose what peo
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M59 - THE WIRE CUTTERS (future gameplay)
+## M59 - THE WIRE CUTTERS (scripted)
 
 ### Intro
 
@@ -2797,7 +2797,7 @@ Then the escape waits. We left those streets once without explaining ourselves. 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M60 - SIEGE OF DAVIS (future gameplay)
+## M60 - SIEGE OF DAVIS (scripted)
 
 ### Intro
 
@@ -2855,7 +2855,7 @@ We finish their command network, then get their guns away from these streets. Th
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M61 - THE BLACK BOX (future gameplay)
+## M61 - THE BLACK BOX (scripted)
 
 ### Intro
 
@@ -2898,7 +2898,7 @@ Copies go out before the next job. We aren't carrying the only proof into anothe
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M62 - STEEL HORIZON (future gameplay)
+## M62 - STEEL HORIZON (scripted)
 
 ### Intro
 
@@ -2941,7 +2941,7 @@ And everybody knows the way back out. Say it before we touch that lobby.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M63 - TOWER OF GLASS (future gameplay)
+## M63 - TOWER OF GLASS (scripted)
 
 ### Intro
 
@@ -2984,7 +2984,7 @@ You two stop me if I start chasing Vance ahead of the plan. I mean it this time.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M64 - THE 80TH FLOOR (future gameplay)
+## M64 - THE 80TH FLOOR (scripted)
 
 ### Intro
 
@@ -3027,7 +3027,7 @@ And the answer. Nobody decides for the other two.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M65 - EXECUTIVE PRIVILEGE (future gameplay)
+## M65 - EXECUTIVE PRIVILEGE (scripted)
 
 ### Intro
 
@@ -3070,7 +3070,7 @@ I thought seeing him fall would make it quiet. It didn't. Let's get out. I want 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M66 - THE SPIRE EVACUATION (future gameplay)
+## M66 - THE SPIRE EVACUATION (scripted)
 
 ### Intro
 
@@ -3113,7 +3113,7 @@ Then I keep the truck moving. You've carried the file this far. You don't have t
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M67 - SCORCHED GRID (future gameplay)
+## M67 - SCORCHED GRID (scripted)
 
 ### Intro
 
@@ -3156,7 +3156,7 @@ If this connection dies now, the copies still exist. For the first time, nobody 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M68 - BLOOD BROTHERS: THE DRAIN (future gameplay)
+## M68 - BLOOD BROTHERS: THE DRAIN (scripted)
 
 ### Intro
 
@@ -3199,7 +3199,7 @@ Three. I have been counting three since the dockyard. You finally started saying
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M69 - BLOOD BROTHERS: RUNWAY 30L (future gameplay)
+## M69 - BLOOD BROTHERS: RUNWAY 30L (scripted)
 
 ### Intro
 
@@ -3242,7 +3242,7 @@ No last stand for a pile of gold. Guess, find us a path. Gohan, tell the boats w
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M70 - BLOOD BROTHERS: GROUNDED TITAN (future gameplay)
+## M70 - BLOOD BROTHERS: GROUNDED TITAN (scripted)
 
 ### Intro
 
@@ -3633,7 +3633,7 @@ And you slowed down for the blind bends. That's the part I want repeated.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM07 - BLOOD DEBT (future gameplay)
+## SM07 - BLOOD DEBT (scripted)
 
 ### Intro
 
@@ -3696,7 +3696,7 @@ Aight. Come back.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM08 - BURNER PROTOCOL (future gameplay)
+## SM08 - BURNER PROTOCOL (scripted)
 
 ### Intro
 
@@ -3754,7 +3754,7 @@ That's all I needed.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM09 - THE LONG EXIT (future gameplay)
+## SM09 - THE LONG EXIT (scripted)
 
 ### Intro
 
