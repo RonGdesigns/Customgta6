@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-54 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+55 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -831,6 +831,21 @@ Prerequisite: M47. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M47.Clear, M48.Cordon, M48.Shore, M48.South, M48.Technical.
+
+## M51 — BLACKOUT PROTOCOL
+
+Prerequisite: M50. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Wire both banks** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | Gohan | **Arm the sequence** — MissionInteraction: Gohan: arm the sequence and leave it waiting |
+| 3 | Gohan | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
+| 4 | Gohan | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M51.Charge, M51.Charge1, M51.Charge2, M51.Charge3, M51.Charge4, M51.Charge5, M51.Charge6, M51.Control, M51.Crew, M51.Exit, M51.Guard.
 
 ## SM01 — LEAD & KEVLAR
 

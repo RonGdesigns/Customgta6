@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 54 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 55 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2405,7 +2405,7 @@ Palmer-Taylor's grid feeds the approach. We place the blackout charges and contr
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M51 - BLACKOUT PROTOCOL (future gameplay)
+## M51 - BLACKOUT PROTOCOL (scripted)
 
 ### Intro
 

@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-54 of 79 missions have gameplay scripts (M01–M48, SM01–SM06); the rest are loaded as data
+55 of 79 missions have gameplay scripts (M01–M48, M51, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M49–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M49, M50, M52–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -469,6 +469,32 @@ height, SM06's start and fuel tractor left the inside of the Ammu-Nation buildin
 they were spawning in — the archives put its geometry at z 20 to 25 against their
 authored 19 — for open ground verified empty within 16 meters, and M32's brothers
 ride across the base with Guess instead of being left where the fight was.
+
+## M51, and the charges that are not fired
+
+Palmer-Taylor is wired and left that way. The owner chose to hold the outage for the
+downtown tower offensive, so `M51BlackoutProtocol` records readiness as cargo
+(`downtownBlackoutCharges`) and **never touches `Core/WorldLights`**. Do not "finish"
+M51 by blacking the city out: the lights going out is a later mission's beat, and firing
+it here spends it on an empty street. The authored line `M51_S1_03_GOHAN` counts the
+charges down and calls the blackout, so M51 does not fire it; it belongs to whichever
+mission actually triggers the sequence.
+
+The bible's six 500kV step-down transformers are not props on that site — its switchyard
+is baked map geometry. Six real plant units stand there in two clusters of three at yard
+level, 125 m apart, which is the two-section arrangement the plan asked for; those six
+are the charge points, declared in `FixedSurfaces` so ground preparation cannot move a
+marker off the tank it belongs on. The divergence is recorded in
+`data/mission_gameplay.tsv`, never by editing the extraction.
+
+Its three jobs — west bank, east bank, interlocks — are parallel objectives in one stage
+with a named brother on each. That is deliberate: the dispatcher only demands a switch
+when the brother the player holds has nothing left to do in the stage, so all three are
+open in any order. Three stages would have forced his hand three times.
+
+Site geometry for the whole Act III opening block is in
+`docs/ACT3-OPENING-MAP-M49-M53.md`; M49, M50, M52 and M53 remain unimplemented, and
+M53's coordinates cannot be authored offline at all — nothing is placed under Pillbox Hill.
 
 ## Aircraft created in the air
 
