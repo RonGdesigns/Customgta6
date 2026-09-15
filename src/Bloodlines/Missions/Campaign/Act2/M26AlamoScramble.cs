@@ -36,12 +36,25 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>
         /// How wide the spotters quarter the lake. This was 60 meters, which is a
         /// continuous hard bank in one spot: a Lazer cannot turn inside that, so every
-        /// pass overshot and Ron lost them behind him. Four hundred meters is a search
-        /// pattern rather than a knife fight, and it gives a jet a line to come in on.
+        /// pass overshot. Four hundred was the other mistake — the patrol box is 1.2 km
+        /// from the strip, and a 400 m orbit on top of that put them somewhere new by the
+        /// time Ron was off the ground. Two hundred and twenty is a search pattern a jet
+        /// can still turn inside, holding an area small enough to fly back to.
         /// </summary>
-        public const float PatrolRadius = 400f;
+        public const float PatrolRadius = 220f;
         /// <summary>Patrol altitude. Low enough to see them against the lake.</summary>
         public const int PatrolHeight = 170;
+        /// <summary>
+        /// Cruise for the patrol. A Mammatus will hold this; below about thirty it will
+        /// not, which is the mistake that was dropping M27's Shamal out of the sky.
+        /// </summary>
+        public const float PatrolSpeed = 40f;
+        /// <summary>
+        /// Airspeed they are created with. They are made at over two hundred meters and
+        /// then told to descend to 170, and an aircraft handed to the AI already sinking
+        /// does not always recover.
+        /// </summary>
+        public const float SpotterLaunchSpeed = 60f;
 
         private Vehicle _duster;
         private Vehicle _approachPlane;
@@ -110,7 +123,8 @@ namespace Bloodlines.Missions.Campaign
             // The second spotter is calling somebody: what he is calling is the lead.
             // Kill him too early and it goes into the lake with him.
             yield return new MissionStage("The charter",
-                    new ConditionObjective("Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic.", () => Game.GameTime >= _listenUntil),
+                    new ConditionObjective("Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic.", () => Game.GameTime >= _listenUntil)
+                        { Marker = () => _spotters.Count > 1 && _spotters[1] != null && _spotters[1].Exists() ? _spotters[1].Position : _patrolBox, MarkerRadius = 12f },
                     new ReactionTrigger(() => _spotters.Count > 1 && (!_spotters[1].Exists() || !_spotters[1].IsDriveable), () => Fail("The second spotter went into the lake before Gohan had the charter's call sign. The lead went with him.")))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => HoldTheLead());
@@ -276,7 +290,8 @@ namespace Bloodlines.Missions.Campaign
                 var plane = Track(World.CreateVehicle(planeModel,
                     _patrolBox + new Vector3(i * 120f - 60f, i * 80f, i * 40f), 180f));
                 if (plane == null || !plane.Exists()) continue;
-                plane.IsPersistent = true; plane.IsEngineRunning = true; plane.ForwardSpeed = 40f;
+                plane.IsPersistent = true;
+                AircraftHold.LaunchAirborne(plane, SpotterLaunchSpeed);
                 _spotters.Add(plane);
 
                 var pilot = Track(World.CreatePed(pilotModel, plane.Position, 0f));
@@ -302,7 +317,7 @@ namespace Bloodlines.Missions.Campaign
                 }
                 // Quartering the lake, not hunting the player: they are looking for gold.
                 pilot.Task.StartPlaneMission(plane, _patrolBox, VehicleMissionType.Circle,
-                    40f, PatrolRadius, PatrolHeight, 40, 0f, false);
+                    PatrolSpeed, PatrolRadius, PatrolHeight, 40, 0f, false);
                 _pilots.Add(pilot);
 
                 var blip = Track(plane.AddBlip());
@@ -335,9 +350,35 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info("M26: the interceptor was cold with Ron aboard; started it.");
         }
 
+        /// <summary>
+        /// Spotters that went down without being shot. DestroyVehicleObjective completes
+        /// on any undriveable target, so a spotter that stalls into the lake by itself is
+        /// silently scored as a kill and the mission looks fine while the chase never
+        /// happened. This does not change the outcome; it writes down which it was, so the
+        /// next report is diagnosable instead of guessable.
+        /// </summary>
+        private readonly HashSet<int> _reportedDown = new HashSet<int>();
+
+        private void WatchSpotters()
+        {
+            var player = Game.Player.Character;
+            for (int i = 0; i < _spotters.Count; i++)
+            {
+                var plane = _spotters[i];
+                if (plane == null || !plane.Exists()) continue;
+                if (plane.IsDriveable && !plane.IsDead) continue;
+                if (!_reportedDown.Add(plane.Handle)) continue;
+                float away = player != null && player.Exists() ? player.Position.DistanceTo(plane.Position) : -1f;
+                Logger.Info("M26: spotter " + (i + 1) + " is down at " + plane.Position +
+                            ", " + (int)away + " m from Ron" +
+                            (away > 350f ? " — too far to have been him, so it came down on its own." : "."));
+            }
+        }
+
         protected override void OnUpdate()
         {
             KeepInterceptorReady();
+            WatchSpotters();
             base.OnUpdate();
         }
 

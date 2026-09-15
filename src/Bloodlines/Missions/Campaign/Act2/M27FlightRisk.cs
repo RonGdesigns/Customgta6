@@ -37,13 +37,34 @@ namespace Bloodlines.Missions.Campaign
         public const float ShamalCruise = 62f;
         /// <summary>Airspeed it is created with, so the AI inherits a flying aircraft.</summary>
         public const float ShamalLaunchSpeed = 85f;
-        /// <summary>How steeply the dive is held. A man has to be able to get out of it.</summary>
-        public const float DivePitch = -12f;
-        /// <summary>And how fast. At this pitch and speed the fall to the floor is about fifty seconds.</summary>
-        public const float DiveSpeed = 55f;
+        /// <summary>
+        /// How steeply the dive is held, and how fast.
+        ///
+        /// These were -12 and 55, chosen to give Ice time to get out, and that was the
+        /// wrong lever. The dive begins directly above the sea pickup, so whatever the
+        /// aircraft travels horizontally before it reaches the bail floor is exactly how
+        /// far past the boat Ron ends up — and a twelve-degree descent from 700 m covers
+        /// 2.9 km of it. He landed a couple of kilometers from the dinghy with no way to
+        /// glide back, which is what he reported.
+        ///
+        /// Time to react is bought by <see cref="BailTimeScale"/>, not by a shallow dive.
+        /// At these values the fall takes about sixteen seconds of real time — some
+        /// thirty-five as the player experiences it — and lands him roughly 430 m
+        /// downrange, which is a glide.
+        /// </summary>
+        public const float DivePitch = -55f;
+        public const float DiveSpeed = 48f;
         /// <summary>Who holds the clock down for the bail-out, and how far.</summary>
         public const string TimeOwner = "M27.Bailout";
         public const float BailTimeScale = 0.45f;
+        /// <summary>
+        /// How far past the pickup the dive is allowed to carry him. Checked rather than
+        /// trusted: the geometry of a held dive is arithmetic, and getting it wrong once
+        /// already cost a playtest.
+        /// </summary>
+        public static float DriftMeters =>
+            (float)(System.Math.Cos(DivePitch * System.Math.PI / 180.0) * DiveSpeed) *
+            ((700f - BailAltitude) / (float)System.Math.Abs(System.Math.Sin(DivePitch * System.Math.PI / 180.0) * DiveSpeed));
 
         private Vehicle _stuntPlane;
         private Vehicle _lazer;

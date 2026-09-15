@@ -384,6 +384,14 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
             GameUtils.DrawObjectiveMarker(vehicle.Position, Color.FromArgb(120, 224, 74, 62), MarkerRadius(vehicle));
+            // And a waypoint that follows it. A cylinder on the ground and a minimap blip
+            // are not enough to find an aircraft a kilometer away: Ron could not reacquire
+            // the Alamo spotters between taking off and reaching them. Air and sea targets
+            // are marked off-road, because a driving route to the water under a plane points
+            // at the wrong thing.
+            bool flying = vehicle.Model.IsPlane || vehicle.Model.IsHelicopter || vehicle.IsInAir;
+            ObjectiveMarkers.Navigation(vehicle.Position, RequiredCharacter, null,
+                road: !flying && !vehicle.Model.IsBoat && !vehicle.Model.IsSubmarine);
         }
 
         /// <summary>

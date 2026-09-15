@@ -19,9 +19,16 @@ namespace Bloodlines.Core
         private struct Destination { public Vector3 Position; public CrewSlot? Owner; public int Vehicle; public bool Road; }
         private static readonly List<Destination> Pending = new List<Destination>();
         private static readonly List<Destination> Current = new List<Destination>();
-        public static void Navigation(Vector3 position, CrewSlot? owner = null, Vehicle vehicle = null)
+        /// <param name="road">
+        /// False for a destination a road route cannot reach — a target in the air, or a
+        /// point at sea. An aircraft 1.2 km away needs a waypoint that tracks it, not a
+        /// driving route to the water underneath it.
+        /// </param>
+        public static void Navigation(Vector3 position, CrewSlot? owner = null, Vehicle vehicle = null, bool road = true)
         {
-            if (_enabled) Pending.Add(new Destination { Position = position, Owner = owner, Vehicle = vehicle?.Handle ?? 0, Road = vehicle == null || !(vehicle.Model.IsBoat || vehicle.Model.IsSubmarine) });
+            if (!_enabled) return;
+            bool onRoad = road && (vehicle == null || !(vehicle.Model.IsBoat || vehicle.Model.IsSubmarine));
+            Pending.Add(new Destination { Position = position, Owner = owner, Vehicle = vehicle?.Handle ?? 0, Road = onRoad });
         }
         public static Vector3? DestinationFor(CrewSlot slot, Vehicle vehicle)
         {

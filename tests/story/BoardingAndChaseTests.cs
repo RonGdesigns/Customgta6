@@ -146,11 +146,28 @@ public static partial class StoryTests
         // Ron lost the Alamo spotters the moment he passed them. A 1.5 meter cylinder is
         // a dot at the range an air chase happens at, and a 60 meter orbit is a bank a
         // jet cannot turn inside.
-        Check(M26AlamoScramble.PatrolRadius >= 300f,
-            "The spotters quarter the lake widely enough for a jet to line up on them");
+        Check(M26AlamoScramble.PatrolRadius > 120f && M26AlamoScramble.PatrolRadius <= 260f,
+            "The orbit is wide enough for a jet to line up on and tight enough to fly back to");
         string m26 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M26AlamoScramble.cs"));
         Check(m26.Contains("blip.IsShortRange = false"),
             "Their blips survive the distance the chase is fought over");
+        // A Mammatus created at 220 m and told to descend must arrive flying - the same
+        // lesson as M27's Shamal, which stalled out of its own patrol.
+        Check(M26AlamoScramble.SpotterLaunchSpeed > M26AlamoScramble.PatrolSpeed &&
+              M26AlamoScramble.PatrolSpeed >= 35f,
+            "The spotters are created with flying speed on them and cruise above a stall");
+        Check(m26.Contains("AircraftHold.LaunchAirborne(plane, SpotterLaunchSpeed)"),
+            "And they use the same launch path as every other airborne spawn");
+        Check(m26.Contains("WatchSpotters();"),
+            "A spotter that goes down on its own is logged, not silently scored as a kill");
+
+        // A moving target carries a waypoint that follows it. A ground cylinder and a
+        // minimap blip are not enough to reacquire an aircraft a kilometer out.
+        string std = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Objectives", "StandardObjectives.cs"));
+        Check(std.Contains("ObjectiveMarkers.Navigation(vehicle.Position, RequiredCharacter, null,"),
+            "A destroy target is routed to, not only drawn on");
+        Check(std.Contains("road: !flying"),
+            "An airborne target is marked off-road, because a road route points at the water under it");
         Reset();
         var target = new Vehicle { Model = new Model("mammatus"), Position = new Vector3(0f, 0f, 0f) };
         Game.Player.Character.Position = new Vector3(0f, 0f, 0f);
@@ -172,11 +189,17 @@ public static partial class StoryTests
         // The dive was set once at 20 degrees and 90 m/s with the pilot dead: a jet
         // nobody is flying noses over and keeps accelerating, so it reached the water
         // before Ice could get out of his seat.
-        Check(M27FlightRisk.DivePitch > -15f && M27FlightRisk.DiveSpeed < 70f,
-            "The dive is shallow and capped, so there is a jump in it");
-        float fall = (float)(Math.Abs(Math.Sin(M27FlightRisk.DivePitch * Math.PI / 180.0)) * M27FlightRisk.DiveSpeed);
-        Check((700f - 80f) / fall > 25f,
-            "From the patrol altitude to the bail floor is more than twenty-five seconds of real descent");
+        // The dive begins directly above the sea pickup, so whatever it covers
+        // horizontally before the bail floor is how far past the boat he lands. A shallow
+        // dive bought reaction time and cost 2.9 km of glide; the slow motion buys the time
+        // instead. Both halves are checked, because getting this wrong cost a playtest.
+        Check(M27FlightRisk.DivePitch < -35f, "The dive is steep, so it comes down near the pickup");
+        Check(M27FlightRisk.DriftMeters < 700f,
+            "And it lands him inside a glide of the boat rather than kilometers past it");
+        float realSeconds = (700f - 80f) / (float)(Math.Abs(Math.Sin(M27FlightRisk.DivePitch * Math.PI / 180.0)) * M27FlightRisk.DiveSpeed);
+        Check(realSeconds > 10f, "There is still real time in the fall");
+        Check(realSeconds / M27FlightRisk.BailTimeScale > 25f,
+            "And the slow motion stretches it past twenty-five seconds as the player feels it");
         string m27 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M27FlightRisk.cs"));
         Check(m27.Contains("HoldTheDive();") && m27.Contains("protected override void OnUpdate()"),
             "And the attitude is held every frame rather than set once and hoped for");
