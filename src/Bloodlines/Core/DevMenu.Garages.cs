@@ -102,7 +102,12 @@ namespace Bloodlines.Core
             foreach (var choice in StoryVehicles.Catalog.Where(v => v.Category == category && GarageService.RoadModel(v)))
             {
                 var selected = choice;
-                page.Add(selected.Name, () => "$" + VehiclePricing.Of(selected).ToString("N0"), () => _stack.Push(BuildDealerDestination(selected)));
+                // Price and the number a buyer compares cars by, on the row itself. The
+                // phone has shown this since the specs went in; the floor did not, which
+                // meant walking into the dealership looked exactly like it always had.
+                page.Add(selected.Name, () => "$" + VehiclePricing.Of(selected).ToString("N0") +
+                    " - " + VehicleSpecs.Summary(new Model(selected.Model)),
+                    () => _stack.Push(BuildDealerDestination(selected)));
             }
             return page;
         }
@@ -110,6 +115,15 @@ namespace Bloodlines.Core
         private Page BuildDealerDestination(StoryVehicles.Choice choice)
         {
             var page = new Page(choice.Name + " - deliver to");
+            // The full ratings before he commits, from the same Rows the phone page uses.
+            // A model still streaming in yields nothing rather than a row of zeroes.
+            page.Add("PERFORMANCE", () => VehicleSpecs.Summary(new Model(choice.Model)));
+            foreach (var row in VehicleSpecs.Rows(new Model(choice.Model)))
+            {
+                var spec = row;
+                page.Add("  " + spec.Key, () => spec.Value);
+            }
+            page.Add("Crew cash", () => "$" + _state.CashOnHand.ToString("N0"));
             if (Garages == null) return page;
             bool any = false;
             foreach (var site in Garages.OwnedSites)

@@ -390,6 +390,19 @@ recorded in `data/mission_gameplay.tsv`: in M04 his Blackout is the same breaker
 beat from his own side, and in SM02 it kills the biometrics and holds the guards'
 awareness down while he taps the node.
 
+**A car can be bought in two places, so both of them show the ratings.** `Core/VehicleSpecs`
+reads the model-level `GET_VEHICLE_MODEL_*` natives, which answer without a car in the world,
+and its `Rows` is the one place their wording and rounding live — `Block` composes them for a
+phone page and the Premium Deluxe floor in the world menu adds them as its own rows. The first
+pass wired only the phone, so Ron walked into the dealership, saw a name and a price exactly as
+before, and reasonably concluded the work had never been done. **When a feature has more than
+one surface, wire every surface or the feature does not exist.** A story test now refuses a
+car-buying page that does not ask for the specs, so a third surface fails until it does too.
+
+A model still streaming in yields no rows rather than a row of zeroes, and an all-zero answer is
+never cached: a car permanently listed with no engine is worse than a page that says it is still
+reading.
+
 The mod-shop performance panel is translucent and sized to its content. It used to
 be alpha 235 over a fixed 510 pixels, sitting exactly where the vehicle preview is,
 so the part being fitted could not be seen.
