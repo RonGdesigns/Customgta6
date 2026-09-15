@@ -127,7 +127,10 @@ M26.DusterPad	2130.00	4790.00	41.00	160	land	estimate	Grapeseed
 M26.PatrolBox	900.00	4200.00	220.00	0	air	estimate	Alamo Sea
 M27.FormUp	-100.00	5000.00	700.00	270	air	estimate	Mount Chiliad
 M27.JetTrack	-1400.00	5200.00	700.00	250	air	estimate	Mount Chiliad
-M27.SeaPickup	-2100.00	5300.00	0.00	200	water	estimate	Paleto Cove
+M27.SeaPickup	3560.000	5190.000	0.000	250	water	estimate	Mount Gordo / open water 110 m off El Gordo Lighthouse, under the McKenzie departure path; the old point was 5.6 km away at the other end of the north coast, which is why the glide could not reach it
+M27.Shore	3400.000	5180.000	0.000	210	water	estimate	Pacific Ocean / the water directly under El Gordo Lighthouse, 40 m off the headland; the boat leg ends here rather than on a beach, because at the waterline the land is below sea level
+M27.Landing	3400.000	5140.000	12.000	200	land	estimate	El Gordo Lighthouse / the headland above the water landing, 45 m from the tower; archives show 46 m clear for a vehicle, live survey pending
+M27.Depot	1975.000	4985.000	39.800	90	land	estimate	Grapeseed / apron beside the pipe-department shed at (2001, 4980, 43.2), 1.4 km from the lighthouse; archives show 18 m clear, live survey pending
 Home.Ice	-1112.0	-1578.0	4.5	120	land	estimate	Vespucci Canals
 Home.Gohan	-693.0	-1004.0	20.0	90	land	estimate	Little Seoul
 Home.Guess	1169.0	-1650.0	36.0	90	land	estimate	El Burro Heights

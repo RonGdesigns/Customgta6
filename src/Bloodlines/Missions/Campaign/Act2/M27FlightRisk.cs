@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -77,7 +79,8 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _formUp;
         private Vector3 _jetTrack;
         private Vector3 _seaPickup;
-        private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving;
+        private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered;
+        private Vehicle _roadCar;
 
         public override string Id => "M27";
         public override string Title => "Flight Risk";
@@ -86,6 +89,12 @@ namespace Bloodlines.Missions.Campaign
         public Vehicle ApproachPlane => _stuntPlane;
         public Vehicle Lazer => _lazer;
         public Vehicle Shamal => _shamal;
+        /// <summary>The boat is on the beach and a vehicle is waiting.</summary>
+        public bool Ashore => _ashore;
+        /// <summary>The ledger reached the depot, which is where this job actually ends.</summary>
+        public bool Delivered => _delivered;
+        /// <summary>Whatever is carrying the ledger up the coast: Ice's car, the crew's, or a stand-in.</summary>
+        public Vehicle RoadCar => _roadCar;
         public Vehicle Dinghy => _dinghy;
         public Prop Ledger => _ledger;
         public bool Transferred => _transferred;
@@ -165,6 +174,27 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(context => BoardWithLedger())
                 .AfterCues("M27_S2_06_GUESS");
+
+            // Reaching Gohan used to be the end of the mission, which left the jump as the
+            // last thing that happened and the boat sitting in open water with nowhere to
+            // go. The ledger is the point of the job, so the job ends when it is somewhere
+            // other than a dinghy.
+            yield return new MissionStage("Run the boat ashore",
+                    new TravelObjective("Ice: bring the boat in under the lighthouse", () => Ctx.Locations.Position("M27.Shore"), 18f, () => _dinghy))
+                .OwnedBy(CrewSlot.Ice)
+                .OnExit(context =>
+                {
+                    _ashore = true;
+                    _roadCar = StageRoadCar();
+                    if (_roadCar == null) throw new InvalidOperationException("No vehicle could be staged at the shore for the ledger run.");
+                    RequireAsset(_roadCar, "The car waiting at the shore was destroyed.");
+                    if (_ledger != null && _ledger.Exists()) StowPropStep.Stow(_ledger, _roadCar, new Vector3(0f, -0.9f, 0.6f));
+                });
+
+            yield return new MissionStage("Take the ledger to the depot",
+                    new TravelObjective("Ice: drive the flight ledger to the Grapeseed depot shed", () => Ctx.Locations.Position("M27.Depot"), 18f, () => _roadCar))
+                .OwnedBy(CrewSlot.Ice)
+                .OnExit(context => _delivered = true);
         }
 
         // ---------- beats ----------
@@ -321,6 +351,50 @@ namespace Bloodlines.Missions.Campaign
             Radio("GUESS", "Peeling off. Empty seat beside me and the Vestra's going home to McKenzie on her own route. Gohan has you from here.", "M27_RADIO_01_GUESS");
         }
 
+        /// <summary>
+        /// The vehicle waiting where the boat comes ashore: Ice's own car if he owns one,
+        /// the crew's vehicle if he does not, and an ordinary four-door if neither answers.
+        /// Ron asked for it in that order — the man has a car, and if he does not the crew
+        /// does — and a mission must not end because nobody happened to buy one.
+        /// </summary>
+        private Vehicle StageRoadCar()
+        {
+            var point = Ctx.Locations.Position("M27.Landing");
+            float heading = Ctx.Locations.Heading("M27.Landing");
+
+            string mine = Ctx.State?.Vehicles
+                ?.Where(v => v != null && !string.IsNullOrWhiteSpace(v.ModelName) &&
+                             string.Equals(v.Owner, CrewSlot.Ice.ToString(), StringComparison.OrdinalIgnoreCase))
+                .Select(v => v.ModelName).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(mine))
+            {
+                var car = Spawn(mine, point, heading);
+                if (car != null) { Logger.Info("M27: Ice's own " + mine + " is waiting at the shore."); return car; }
+                Logger.Warn("M27: Ice owns a " + mine + " but it could not be staged; falling back to the crew vehicle.");
+            }
+
+            var van = Ctx.Vans?.Spawn(point, heading);
+            if (van != null && van.Exists())
+            {
+                Track(van); van.PlaceOnGround(); van.IsPersistent = true;
+                Logger.Info("M27: the crew vehicle is waiting at the shore; Ice owns nothing to send.");
+                return van;
+            }
+            return Spawn("granger", point, heading);
+        }
+
+        private Vehicle Spawn(string modelName, Vector3 point, float heading)
+        {
+            var model = new Model(modelName);
+            if (!GameUtils.RequestModel(model)) return null;
+            var car = Track(World.CreateVehicle(model, point, heading));
+            model.MarkAsNoLongerNeeded();
+            if (car == null || !car.Exists()) return null;
+            car.PlaceOnGround();
+            car.IsPersistent = true;
+            return car;
+        }
+
         /// <summary>Ice in the boat with the ledger, stowed where Gohan can see it.</summary>
         private void BoardWithLedger()
         {
@@ -470,9 +544,13 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnPassed()
         {
+            if (!_aboard || !_ashore || !_delivered)
+                throw new InvalidOperationException("The ledger has to reach the depot, not just the boat.");
             if (_dinghy != null && _dinghy.Exists()) Release(_dinghy);
             if (_ledger != null && _ledger.Exists()) Release(_ledger);
             if (_lazer != null && _lazer.Exists()) Release(_lazer);
+            // The car he drove there stays where he left it.
+            if (_roadCar != null && _roadCar.Exists()) Release(_roadCar);
         }
 
         protected override void OnCleanup()
