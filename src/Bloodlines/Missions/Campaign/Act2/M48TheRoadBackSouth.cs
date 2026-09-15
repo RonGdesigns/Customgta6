@@ -30,6 +30,17 @@ namespace Bloodlines.Missions.Campaign
         /// transfer off the beach, and the run south once the roadblock is behind them.
         /// Ordering them aboard during the cordon fight would march them into the guns.</summary>
         private const int LoadStage = 1, SouthStage = 3;
+        /// <summary>
+        /// The group the cordon stands in until the crew reaches it.
+        ///
+        /// BLOODLINES_AEGIS hates BLOODLINES_CREW for the whole game — the roster sets that
+        /// up once — so four riflemen in it with line of sight to a stationary driver
+        /// seventy-seven meters away will open fire the instant the chapter loads, which is
+        /// how Ron lost Guess at the wheel before he had control. Holding position stopped
+        /// them walking into the sea in M45; it does not stop them shooting. A group that
+        /// hates nobody does.
+        /// </summary>
+        public const string HoldingGroup = "BLOODLINES_CORDON_HOLD";
 
         private readonly List<Ped> _cordon = new List<Ped>();
         private readonly CrewBoarding _boarding = new CrewBoarding();
@@ -57,10 +68,18 @@ namespace Bloodlines.Missions.Campaign
             var world = Paleto.Of(Ctx);
             if (world != null && !world.EvidenceHeld)
                 throw new InvalidOperationException("M48 opened without the evidence. The operation must run from M44.");
+            // Deploying the crew and staging a boat are different things, and they used to
+            // be the second and third branches of one else-if chain about the boat. A run
+            // that had to stage its own boat therefore never deployed anybody, Guess had no
+            // ped at all, and the mission failed on its first tick saying "Guess is down" —
+            // which is what ComposedMission reports for a required brother who is missing,
+            // not for one who has been shot. Ron read it as the cordon killing him.
+            if (!Paleto.IsContinuing(Ctx) &&
+                !Ctx.Crew.Deploy(CrewSlot.Guess, At("M48.Technical"), Ctx.Locations.Heading("M48.Technical"))) return false;
+
             _boat = world?.Get<Vehicle>("boat");
             if (Paleto.IsContinuing(Ctx)) _boat = Track(world.Require<Vehicle>("boat"));
             else if (_boat == null || !_boat.Exists()) _boat = StageBoat();
-            else if (!Ctx.Crew.Deploy(CrewSlot.Guess, At("M48.Technical"), Ctx.Locations.Heading("M48.Technical"))) return false;
 
             if (!SpawnTechnical()) return false;
             world?.Bind("technical", _technical);
@@ -105,14 +124,15 @@ namespace Bloodlines.Missions.Campaign
             }
             var model = new Model(GuardModel);
             if (!GameUtils.RequestModel(model)) return;
-            var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+            // Deliberately not Aegis yet. See HoldingGroup.
+            var holding = World.AddRelationshipGroup(HoldingGroup);
             var line = At("M48.Cordon");
             for (int i = 0; i < CordonGuards; i++)
             {
                 var post = GameUtils.OnGround(line + new Vector3(-7f + i * 4.5f, i % 2 == 0 ? 3f : -3f, 0f));
                 var guard = World.CreatePed(model, post, 0f);
                 if (guard == null || !guard.Exists()) continue;
-                guard.RelationshipGroup = aegis;
+                guard.RelationshipGroup = holding;
                 guard.IsPersistent = true;
                 guard.BlockPermanentEvents = true;
                 guard.Accuracy = 30;
@@ -127,6 +147,25 @@ namespace Bloodlines.Missions.Campaign
                 _cordon.Add(Track(guard));
             }
             model.MarkAsNoLongerNeeded();
+        }
+
+        /// <summary>
+        /// The roadblock becomes Aegis, and hostile, when the crew drives into it. Until
+        /// this runs they are men standing at a barricade who have no opinion about anyone.
+        /// </summary>
+        private void WakeCordon()
+        {
+            var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+            int woken = 0;
+            foreach (var guard in _cordon)
+            {
+                if (guard == null || !guard.Exists() || guard.IsDead) continue;
+                guard.RelationshipGroup = aegis;
+                guard.BlockPermanentEvents = false;
+                guard.Task.GuardCurrentPosition();
+                woken++;
+            }
+            Logger.Info(Id + ": the cordon is hostile now — " + woken + " of " + _cordon.Count + " still standing.");
         }
 
         private bool Loaded => _technical != null && _technical.Exists() &&
@@ -148,6 +187,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Break the outer cordon",
                 new KillTargetsObjective("Clear the roadblock at the cove exit", () => _cordon))
                 .AnyOf()
+                .OnEnter(c => WakeCordon())
                 .OnExit(c => _broken = true)
                 .AfterCues("M48_S1_02_ICE");
 

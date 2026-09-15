@@ -320,6 +320,31 @@ public static partial class StoryTests
         Check(!m48.Contains("guard.Task.FightAgainstHatedTargets"),
             "The cordon does not engage a crew that has only just arrived");
         Check(m48.Contains("guard.Task.GuardCurrentPosition();"), "It holds the roadblock until they drive into it");
+        // Holding position stopped them walking into the sea in M45. It does not stop them
+        // shooting: BLOODLINES_AEGIS hates the crew for the whole game, so four riflemen
+        // with line of sight to a stationary driver 77 m away still killed Guess at the
+        // wheel. Until the crew drives into the roadblock they stand in a group that hates
+        // nobody.
+        Check(m48.Contains("guard.RelationshipGroup = holding;"),
+            "The cordon does not start in a group that hates the crew");
+        Check(m48.Contains("private void WakeCordon()") && m48.Contains(".OnEnter(c => WakeCordon())"),
+            "and it becomes Aegis on the stage where the fight belongs");
+        Check(M48TheRoadBackSouth.HoldingGroup != "BLOODLINES_AEGIS",
+            "which is a different group from the one the roster made hostile");
+
+        // Opened needing its own boat, M48 used to deploy nobody: the deploy was the third
+        // branch of an else-if chain about the boat, so staging one skipped it. Guess had no
+        // ped, and ComposedMission reports a missing brother with the same words it uses for
+        // a dead one — which is why this read as the cordon killing him.
+        Check(!m48.Contains("else if (!Ctx.Crew.Deploy"),
+            "Deploying the crew is not an alternative to staging a boat");
+        Check(m48.Contains("if (!Paleto.IsContinuing(Ctx) &&") &&
+              m48.Contains("!Ctx.Crew.Deploy(CrewSlot.Guess, At(\"M48.Technical\")"),
+            "A chapter that is not continuing deploys the crew whatever it has to stage");
+        // The same shape must not come back anywhere else.
+        foreach (var file in ScriptFiles())
+            Check(!File.ReadAllText(file).Contains("else if (!Ctx.Crew.Deploy"),
+                Path.GetFileName(file) + " does not make a crew deploy the alternative to something else");
 
         // A throw out of Setup is the whole operation refusing to start, which is what Ron
         // got after arming the charges, five chapters in.
