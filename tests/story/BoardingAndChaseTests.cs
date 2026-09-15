@@ -249,6 +249,25 @@ public static partial class StoryTests
         Check(m27.Contains("_pickup.Update(Ctx.Crew, _dinghy,"),
             "and when Gohan brings it, Ice is ordered aboard rather than left treading water");
 
+        // ---- A stage names the brother who is actually driving. Gohan is at the wheel of
+        // the dinghy, and asking Ice to run it ashore forced a switch back to the passenger
+        // the moment Ron took the man steering.
+        Check(m27.Contains("new TravelObjective(\"Gohan: bring the boat in under the lighthouse\"") &&
+              m27.Contains("Run the boat ashore"),
+            "The boat leg belongs to the brother holding the wheel");
+        Check(m27.Contains("_ride.Update(Ctx.Crew, _roadCar,"),
+            "and Gohan is brought along on the road leg rather than left on the rocks");
+
+        // ---- The bunker's map data is not loaded to draw a blip. Doing that on the first
+        // free-roam frame gave Ron a loading screen at every startup.
+        string bunkerHome = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "CrewHomes.Bunker.cs"));
+        int blipAt = bunkerHome.IndexOf("_bunkerBlip=World.CreateBlip(");
+        Check(blipAt > 0 && !bunkerHome.Substring(Math.Max(0, blipAt - 400), 400).Contains("BunkerSite.LoadMaps();"),
+            "Creating the bunker blip does not register the DLC maps");
+        Check(bunkerHome.Contains("IsWithinFlat(ped.Position,point.Value,BunkerSite.LoadRange))BunkerSite.LoadMaps()"),
+            "The load happens when he is walking up to it instead");
+        Check(BunkerSite.LoadRange > 60f, "and far enough out that the geometry is there before he arrives");
+
         // ---- The clock is shared, so a mission beat and Guess's ability cannot undo
         // each other, and the slowest holder is the one that applies.
         SlowMotion.Reset();
@@ -314,6 +333,27 @@ public static partial class StoryTests
             "None of them are told to go and find somebody, which is how they went over the side");
         Check(m45.Contains("guard.Task.GuardCurrentPosition();"), "They hold the deck instead");
         Check(m45.Contains("PaletoSite.OnDeck(post,"), "And each post is dropped onto the deck that is really under it");
+
+        // ---- Nothing slow may run between creating an airborne aircraft and the first
+        // frame that flies it. Ten waiting deck probes stalled Setup for up to ten seconds
+        // after the helicopter was created, and it flew itself into the sea — the exact
+        // failure PR #64 fixed, reintroduced by raising the guard count.
+        Check(m45.Contains("attempts: 1"),
+            "The repeated deck probes do not wait for collision the first one already paid for");
+        int guardsAt = m45.IndexOf("SpawnDeckGuards();");
+        int heliAt = m45.IndexOf("if (!SpawnHelicopter()) return false;");
+        Check(guardsAt > 0 && heliAt > guardsAt,
+            "and the aircraft is created after the slow work, not before it");
+
+        // An engine running is not a rotor turning.
+        string holdSrc = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "AircraftHold.cs"));
+        // Checked on the ignition path specifically, not anywhere in the file: LaunchAirborne
+        // has always spun blades, and the bug was the player-takeover path not doing it.
+        int ignitionAt = holdSrc.IndexOf("KeepPlayerAircraftRunning");
+        int launchAt = holdSrc.IndexOf("public static void LaunchAirborne");
+        Check(ignitionAt > 0 && launchAt > ignitionAt &&
+              holdSrc.Substring(ignitionAt, launchAt - ignitionAt).Contains("SET_HELI_BLADES_FULL_SPEED"),
+            "A helicopter the player takes over cold gets its blades spun up, not just its engine");
 
         // M48's cordon opened fire 77 m from where the crew loads in, which killed Guess
         // at the wheel before the player had control.

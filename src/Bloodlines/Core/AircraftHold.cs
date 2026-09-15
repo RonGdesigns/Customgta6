@@ -71,6 +71,12 @@ namespace Bloodlines.Core
                 if (!aircraft.Model.IsPlane && !aircraft.Model.IsHelicopter) return;
                 if (player.SeatIndex != VehicleSeat.Driver || aircraft.IsEngineRunning) return;
                 aircraft.IsEngineRunning = true;
+                // An engine running is not a rotor turning. A helicopter handed over cold
+                // falls while its blades spin up from zero, which is the whole reason
+                // LaunchAirborne exists; do the same thing here, once, as the engine starts.
+                if (aircraft.Model.IsHelicopter)
+                    try { Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, aircraft); }
+                    catch (Exception ex) { Logger.Error("Spinning up the blades on a cold helicopter", ex); }
                 Logger.Info("Started a cold aircraft the player is flying: " + aircraft.DisplayName + ".");
             }
             catch (Exception ex) { Logger.Error("Starting the aircraft the player is flying", ex); }

@@ -108,10 +108,14 @@ namespace Bloodlines.Missions.Campaign
             // Opened alone in QA there is no dive to inherit, so the sub is staged
             // where M44 would have surfaced it rather than left missing.
             else if (_kraken == null || !_kraken.Exists()) _kraken = StageSub();
+            // The guards first, deliberately. Everything slow in this Setup happens before
+            // the aircraft exists, so the gap between creating a helicopter at sixty meters
+            // and the first frame that flies it is as short as it can be.
+            SpawnDeckGuards();
+
             if (!SpawnHelicopter()) return false;
             world?.Bind("chopper", _chopper);
             RequireAsset(_chopper, "The extraction helicopter was lost before the boarding.");
-            SpawnDeckGuards();
 
             // The deck and platform points are the least proven in the operation.
             Paleto.Review(Ctx, PlacementContract.Ped("M45.Helipad"), PlacementContract.Ped("M45.Board"));
@@ -166,7 +170,11 @@ namespace Bloodlines.Missions.Campaign
                 // really under him. GameUtils.OnGround would have put all of them in the
                 // water: the ground under a point fifteen meters up on a vessel is the sea.
                 var post = pad + new Vector3(-8f - (i / 2) * 7f, i % 2 == 0 ? 5f : -5f, 0f);
-                post = PaletoSite.OnDeck(post, Id + " deck post " + (i + 1));
+                // One attempt, no waiting. The deck probe above already requested this
+                // collision and waited for it, and ten waiting probes here stalled Setup for
+                // up to ten seconds — long enough for the helicopter created just before them
+                // to fly itself into the sea, which is exactly what Ron saw.
+                post = PaletoSite.OnDeck(post, Id + " deck post " + (i + 1), attempts: 1);
                 var guard = World.CreatePed(model, post, 180f);
                 if (guard == null || !guard.Exists())
                 { Logger.Warn(Id + ": deck guard " + (i + 1) + " could not be created at " + post + "."); continue; }

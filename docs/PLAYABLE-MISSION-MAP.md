@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-54 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+56 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -460,7 +460,7 @@ Prerequisite: M26. Retry: full mission restart.
 | 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
 | 5 | Ice | **Sea pickup** — ConditionObjective: Get Ice aboard Gohan's dinghy: glide to the boat, or switch to Gohan and bring it to him |
-| 6 | Ice | **Run the boat ashore** — TravelObjective: Ice: bring the boat in under the lighthouse |
+| 6 | Gohan | **Run the boat ashore** — TravelObjective: Gohan: bring the boat in under the lighthouse |
 | 7 | Ice | **Take the ledger to the depot** — TravelObjective: Ice: drive the flight ledger to the Grapeseed depot shed |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
@@ -831,6 +831,38 @@ Prerequisite: M47. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M47.Clear, M48.Cordon, M48.Shore, M48.South, M48.Technical.
+
+## M51 — BLACKOUT PROTOCOL
+
+Prerequisite: M50. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Wire both banks** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | Gohan | **Arm the sequence** — MissionInteraction: Gohan: arm the sequence and leave it waiting |
+| 3 | Gohan | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
+| 4 | Gohan | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M51.Charge, M51.Charge1, M51.Charge2, M51.Charge3, M51.Charge4, M51.Charge5, M51.Charge6, M51.Control, M51.Crew, M51.Exit, M51.Guard.
+
+## M52 — JUDICIAL STRIKE
+
+Prerequisite: M51. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Get on the roof** — ReachZoneObjective: Ice: take the service ladder to the roof across the plaza |
+| 2 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
+| 3 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
+| 4 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
+| 5 | Ice | **Get to the bike** — EnterVehicleObjective: Ice: get down off the roof and onto the back of Guess's bike |
+| 6 | Ice | **Lose the response** — LoseWantedObjective: Ride clear of Downtown and lose the Aegis cruisers |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
 
 ## SM01 — LEAD & KEVLAR
 

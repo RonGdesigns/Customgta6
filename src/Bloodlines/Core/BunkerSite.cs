@@ -20,10 +20,30 @@ namespace Bloodlines.Core
             EntitySets = new[] { "Bunker_Style_A", "standard_bunker_set", "standard_security_set", "gun_wall_blocker", "gun_range_blocker_set" }
         };
         private static bool _registered;
+        /// <summary>How near the entrance the bunker's map data is worth loading.</summary>
+        public const float LoadRange = 150f;
+        /// <summary>Whether the DLC map registration has already happened this session.</summary>
+        public static bool Registered => _registered;
+
+        /// <summary>
+        /// Register the shipped DLC map data and ask for the bunker's exterior. This does
+        /// not join Online; it only makes map data the game already has available in Story
+        /// Mode.
+        ///
+        /// It is expensive and visible: the registration native stops to load, and Ron had
+        /// a loading screen on every startup because the free-roam tick called this the
+        /// first frame simply to put a blip on the map. A blip needs no map data at all.
+        /// Call it when the bunker's geometry is actually about to be needed — walking up to
+        /// it, or entering it, or a mission that opens there.
+        /// </summary>
         public static void LoadMaps()
         {
-            // Register shipped DLC map data in Story Mode; this does not join Online.
-            if (!_registered) { Function.Call((Hash)0x0888C3502DBBEEF5UL); _registered = true; }
+            if (!_registered)
+            {
+                Function.Call((Hash)0x0888C3502DBBEEF5UL);
+                _registered = true;
+                Logger.Info("Registered the shipped DLC map data for the bunker (Story Mode; this is map data, not Online).");
+            }
             Function.Call(Hash.REQUEST_IPL, ExteriorIpl);
         }
         public static bool Enter(ApartmentAccess access, LocationBook book)

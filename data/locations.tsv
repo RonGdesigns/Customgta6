@@ -855,3 +855,30 @@ M48.South	-1480	5040	44	150	land	estimate	Derived from verified hull extents; li
 M47.Jump	-1700	5322	12	200	land	estimate	Derived from verified hull extents; live survey pending
 
 M35.Response	2976	4628	51.6	180	land	estimate	Pursuit follows the convoy road; live survey pending
+M51.Start	2700.000	1395.000	23.700	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (17 m clear)
+M51.IceStart	2694.000	1414.000	23.700	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (12 m clear)
+M51.GohanStart	2692.000	1419.000	23.700	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (14 m clear)
+M51.GuessStart	2688.000	1424.000	23.600	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (12 m clear)
+M51.Crew	2748.000	1395.000	23.700	200	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (21 m clear, the widest spot on site)
+M51.Charge1	2653.610	1459.840	23.460	90	land	estimate	Palmer-Taylor Power Station / a real plant unit in the west bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Charge2	2664.500	1477.890	23.650	90	land	estimate	Palmer-Taylor Power Station / a real plant unit in the west bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Charge3	2664.790	1495.600	23.690	90	land	estimate	Palmer-Taylor Power Station / a real plant unit in the west bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Charge4	2777.720	1433.200	23.480	270	land	estimate	Palmer-Taylor Power Station / a real plant unit in the east bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Charge5	2779.180	1438.650	23.480	270	land	estimate	Palmer-Taylor Power Station / a real plant unit in the east bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Charge6	2780.640	1444.090	23.500	270	land	estimate	Palmer-Taylor Power Station / a real plant unit in the east bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
+M51.Control	2750.080	1465.180	23.480	0	land	estimate	Palmer-Taylor Power Station / placed plant machinery between the two banks, its own archive height; the failover interlocks
+M51.Guard1	2668.000	1395.000	23.600	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (15 m clear)
+M51.Guard2	2748.000	1403.000	23.700	180	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (19 m clear)
+M51.Guard3	2756.000	1443.000	23.600	180	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (14 m clear)
+M51.Exit	2620.000	1320.000	25.500	200	land	estimate	Palmer-Taylor Power Station / open ground south of the yard by the placed cabinet at 25.11; 31 m clear, live survey pending
+M52.Start	-644.000	-269.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
+M52.IceStart	-650.000	-269.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 25 m clear, live survey pending
+M52.GuessStart	-650.000	-263.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
+M52.GohanStart	-650.000	-275.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 28 m clear, live survey pending
+M52.Bike	-644.000	-275.000	38.000	200	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, the superbike waits here, live survey pending
+M52.Roost	-585.000	-225.000	53.300	55	land	estimate	Rockford Hills / the roof across the plaza, reached by bh1_16_ladder_mission_fizz, 15 m above the plaza and 46 m from City Hall; archives show 11 m of clear stand at this height, live survey pending
+M52.Harrison	-537.000	-186.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 12 m from the hall; where he comes out, live survey pending
+M52.Walk	-521.000	-226.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 55 m from the roost; where he is clear of his detail, live survey pending
+M52.Guard1	-537.000	-194.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, live survey pending
+M52.Guard2	-537.000	-234.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 12 m clear, live survey pending
+M52.Guard3	-561.000	-242.000	38.000	200	land	estimate	Rockford Hills / City Hall plaza at its own level; archives show 12 m clear, live survey pending
