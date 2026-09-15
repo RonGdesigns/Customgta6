@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-55 of 79 missions have gameplay scripts (M01–M48, M51, SM01–SM06); the rest are loaded as data
+56 of 79 missions have gameplay scripts (M01–M48, M51, M52, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M49, M50, M52–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M49, M50, M53–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -495,6 +495,33 @@ open in any order. Three stages would have forced his hand three times.
 Site geometry for the whole Act III opening block is in
 `docs/ACT3-OPENING-MAP-M49-M53.md`; M49, M50, M52 and M53 remain unimplemented, and
 M53's coordinates cannot be authored offline at all — nothing is placed under Pillbox Hill.
+
+## M52, and where the shot is actually taken from
+
+The bible puts Ice on the Union Depository roof "across the plaza" from City Hall. Those
+two buildings are **716 m apart** — not a plaza, and not a shot. M52 uses the roof 62 m
+from the steps and 15 m above them, which Rockstar gave a ladder named
+`bh1_16_ladder_mission_fizz`: a ladder placed for a mission, so the climb and the way down
+both already exist. `M52.Roost` is a fixed surface; ground preparation would put it on the
+street.
+
+Harrison comes out of the steps and walks 43 m **away** from the roost to his clear-shot
+mark, not toward it. Check that when moving either key: a mark closer to the roof than the
+steps turns a rooftop shot into a man walking into the muzzle.
+
+Its machinery is M41's on purpose — identify, wait for a clear shot, eliminate, extract —
+including the two failure paths M41 was given after a live report: shooting before the
+confirmation, and firing into the escort before he is clear. Do not reimplement that
+sequence; it would only find the same bugs again.
+
+The superbike seats two and that is all this needs: only Ice and Guess are at the plaza,
+Gohan is on the radio. An earlier planning pass read the bike as a conflict with a
+three-man extraction; there is no third man there. The getaway is a `LoseWantedObjective`
+rather than a coordinate, because an assassination ends when the response loses you.
+
+The district text in `data/locations.tsv` is machine-read: City Hall's plaza is in
+**Burton** and the roof is in **Rockford Hills**, whatever the building is called. A hint
+that leads with anything else makes `validate_locations` resolve the wrong zone.
 
 ## Aircraft created in the air
 

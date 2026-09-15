@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 55 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 56 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2448,7 +2448,7 @@ Killing a signature doesn't cancel the paperwork. Keep the ledger intact. The pu
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M52 - JUDICIAL STRIKE (future gameplay)
+## M52 - JUDICIAL STRIKE (scripted)
 
 ### Intro
 

@@ -79,6 +79,59 @@ public static partial class StoryTests
             "Passing requires six limpets, the lockout and the arming, checked rather than assumed");
     }
 
+    static void JudicialStrikeChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M52JudicialStrike.cs"));
+
+        // ---- The bible's firing position does not exist. It puts Ice on the Union
+        // Depository roof "across the plaza" from City Hall; those are 716 m apart, which
+        // is not a plaza and not a shot. This roof is 46 m out and 15 above it, and it has
+        // a ladder Rockstar placed for a mission.
+        var roost = KeyPoint("M52.Roost");
+        var hall = KeyPoint("M52.Harrison");
+        var clear = KeyPoint("M52.Walk");
+        Check(roost.DistanceTo2D(hall) < 200f, "The roost is a shot away from the steps, not most of a kilometer");
+        Check(roost.Z - hall.Z > 10f, "and it is high enough above the plaza to be a rooftop angle");
+        Check(clear.DistanceTo2D(roost) > 30f && clear.DistanceTo2D(roost) < 120f,
+            "The clear-shot mark is a rifle range from the roost");
+        Check(clear.DistanceTo2D(hall) > 25f,
+            "and far enough from the steps that walking to it takes him out of his escort");
+
+        // ---- The roost is a roof; ground preparation would put the marker on the street.
+        Check(src.Contains("FixedSurfaces => new[] { \"M52.Roost\" }"),
+            "The roof keeps its authored height");
+
+        // ---- M41's machinery, not a second implementation of it. Both failure paths it
+        // was given after a live report have to be here.
+        Check(src.Contains("Harrison was shot before Gohan confirmed him"),
+            "Shooting the wrong man in a suit fails the mission");
+        Check(src.Contains("Harrison was shot standing in his escort"),
+            "and so does firing into the detail before he walks clear");
+        Check(src.Contains("Harrison reached cover"),
+            "and he escapes if he is left alive after the alarm");
+        Check(src.Contains("WalkPatienceMs"),
+            "An obstructed walk is reported as a placement problem rather than left hanging");
+
+        // ---- Two seats is all this needs: only Ice and Guess are at the plaza, which is
+        // what the synopsis says. An earlier planning pass read the superbike as a conflict
+        // with a three-man extraction; there is no third man there.
+        Check(M52JudicialStrike.BikeModel == "hakuchou2",
+            "The extraction is the modified superbike the bible asks for");
+        Check(src.Contains("Station(CrewSlot.Guess, _bike, VehicleSeat.Driver)"),
+            "Guess is already on it, because the authored line is \"hop on\"");
+        Check(src.Contains("VehicleSeat.Passenger"), "and Ice rides pillion");
+
+        // ---- The getaway is a state, not a coordinate.
+        Check(src.Contains("new LoseWantedObjective("),
+            "It ends when the response loses them rather than at an invented map point");
+
+        // ---- The detail is owned by the awareness model, not tasked to fight at spawn.
+        Check(!src.Contains("FightAgainstHatedTargets"),
+            "Harrison's escort is not sent looking for somebody the moment it is created");
+
+        Check(src.Contains("SetEvidence(\"harrisonRemoved\""),
+            "and the result is recorded for the missions that follow");
+    }
     /// <summary>A location key's authored position, straight out of the shipped book.</summary>
     static Vector3 KeyPoint(string key)
     {
