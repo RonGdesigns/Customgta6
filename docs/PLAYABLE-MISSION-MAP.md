@@ -901,11 +901,13 @@ Prerequisite: M53. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Guess | **Hotwire the express elevator** — MissionInteraction: Guess: hotwire the private express elevator in the lobby |
-| 2 | Guess | **Forty floors up** — ConditionObjective: Ride the express elevator to the penthouse |
+| 1 | Guess | **Get the crew aboard** — EnterVehicleObjective: Guess: get in the Annihilator<br>ConditionObjective: Ice and Gohan: in the back |
+| 2 | Guess | **Put it on the roof** — DeliverVehicleObjective: Guess: land on the tower helipad |
 | 3 | Guess | **Fortify the nest** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M54.Antenna, M54.GohanStart, M54.GuessStart, M54.IceStart, M54.Lift, M54.Pad, M54.RoostNorth, M54.RoostSouth, M54.Start.
 
 ## M57 — VESPUCCI FLAK
 

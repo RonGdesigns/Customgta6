@@ -909,3 +909,12 @@ M57.Patrol1	-1750.000	-1300.000	60.000	200	air	estimate	Pacific Ocean / a gunshi
 M57.Patrol2	-1820.000	-1450.000	70.000	20	air	estimate	Pacific Ocean / a gunship sweep line out to sea; nothing placed within 130 m
 M57.Patrol3	-1700.000	-1550.000	55.000	340	air	estimate	Pacific Ocean / a gunship sweep line south of the pier; nothing placed within 100 m
 M57.Return	-1580.000	-1402.000	0.000	90	water	estimate	Pacific Ocean / the shallows the skis come back to, just off the sand
+M54.Start	826.000	-2114.000	30.000	180	land	estimate	Cypress Flats / the foundry yard, eleven meters from the Annihilator; archives show 12.1 m clear, live survey pending
+M54.IceStart	821.000	-2113.000	30.000	180	land	estimate	Cypress Flats / the foundry yard; archives show 10.1 m clear, live survey pending
+M54.GohanStart	831.000	-2113.000	30.000	180	land	estimate	Cypress Flats / the foundry yard; archives show 7.9 m clear, live survey pending
+M54.GuessStart	826.000	-2109.000	30.000	180	land	estimate	Cypress Flats / the foundry yard; archives show 7.7 m clear, live survey pending
+M54.Lift	825.000	-2125.000	29.600	0	land	estimate	Cypress Flats / the widest open ground within a hundred meters of the foundry apron, 15.7 m to the nearest placed object; where the Annihilator waits, live survey pending
+M54.Pad	-142.670	-593.350	206.310	0	land	estimate	Pillbox Hill / dt1_02_helipad, the helipad on the tower roof deck, at its own archive height; the standing height is probed onto the slab at runtime because a prop origin is not a floor
+M54.RoostNorth	-140.000	-589.000	206.310	0	land	estimate	Pillbox Hill / the north corner of the same roof deck, inside the prop_wall_light_03a ring at (-139.2, -587.5); height probed onto the slab at runtime
+M54.RoostSouth	-139.000	-597.500	206.310	180	land	estimate	Pillbox Hill / the south corner of the same roof deck, inside the prop_wall_light_03a ring at (-138.7, -598.7); height probed onto the slab at runtime
+M54.Antenna	-146.600	-597.800	206.310	225	land	estimate	Pillbox Hill / the roof cabinets prop_elecbox_23 at (-146.19, -598.05, 206.76) and prop_elecbox_03a at (-148.0, -597.8); the feed Gohan taps, height probed onto the slab at runtime

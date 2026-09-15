@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -10,187 +9,252 @@ using GTA.Math;
 namespace Bloodlines.Missions.Campaign
 {
     /// <summary>
-    /// M54 — "The Pillbox Redoubt". A high-rise penthouse, 16:00, dusk and smog.
+    /// M54 — "The Pillbox Redoubt". A Pillbox Hill tower roof, 16:00, dusk and smog.
     ///
-    /// Guess gets them past the private express elevator, Ice sets two heavy roosts with a
-    /// line over the district, and Gohan wires an antenna into the building's emergency
-    /// transmitter. The crew comes out of this with a nest for the rest of Act III.
+    /// Guess flies the crew up in an Annihilator and puts it down on the roof helipad. Ice
+    /// sets two heavy roosts along the parapet; Gohan wires an antenna into the roof's
+    /// electrical feed. The crew comes off that roof holding a forward post for the rest of
+    /// Act III.
     ///
-    /// The penthouse is the Eclipse Towers interior. Ron chose that knowingly: the only two
-    /// penthouse interiors the installed game will load are the Eclipse tier and the Diamond,
-    /// and both are already crew homes, so the flat they break into is a flat they may
-    /// already hold the keys to. The alternative was arriving on a roof by helicopter, and he
-    /// preferred keeping the walkable interior and the fortify beat.
+    /// Ron chose the roof over the penthouse, and the archives are the reason it works. The
+    /// authored beat is a private express elevator into a foreclosed flat, and the only two
+    /// penthouse interiors the installed game will load are already crew homes, so that
+    /// version had to put three work positions inside an MLO nobody has ever surveyed. This
+    /// one stands on placed geometry the whole way up:
     ///
-    /// What this mission does not do is invent coordinates inside an MLO. Exactly one point
-    /// in that penthouse is authored — the arrival spot — and the room keys for the Luxury
-    /// tier were never surveyed. Ron has just spent a day finding markers floating in the air
-    /// because a number was written down that nobody had stood on, so the three work
-    /// positions are offsets from the arrival point resolved to walkable floor at runtime.
-    /// They are honestly "three places inside the penthouse" rather than a balcony and a
-    /// service panel, and they will be on the floor because the engine puts them there.
+    ///   dt1_02_helipad        (-142.67, -593.35, 206.31)   the landing pad
+    ///   dt1_02_w01_rail       (-144.74, -593.61, 204.13)   the parapet rail beside it
+    ///   prop_elecbox_23       (-146.19, -598.05, 206.76)   the cabinet Gohan taps
+    ///   prop_elecbox_18       (-136.58, -593.24, 207.36)   the east side of the same deck
+    ///   prop_wall_light_03a   a ring at 209.15 spanning x -138..-150.5, y -587.5..-599.2
     ///
-    /// If he walks in and captures three spots with F11, they can become exact. Until then
-    /// this is the version that cannot float.
+    /// That light ring is the deck's own outline: roughly twelve meters by twelve, with the
+    /// pad in the middle of it. Every position this mission uses is inside that rectangle and
+    /// takes its x and y from something Rockstar placed on the deck. What it does not take
+    /// from those props is a standing height — a prop's origin is not a floor, which is the
+    /// mistake that left M51's marker in the air and M52's roost off the side of a building.
+    /// Each one is probed down onto the slab in <see cref="FindWorkPositions"/>, and that
+    /// probe runs when the crew is standing on the roof rather than in Setup, because the
+    /// collision two hundred meters over a building sixteen hundred meters away is not
+    /// streamed while they are still in the yard.
+    ///
+    /// The tower is not Maze Bank, which matters: Maze Bank's roof (dt1_11_heliport, 323.26)
+    /// is the only other helipad in the city core, and Ice's authored line claims a firing
+    /// line on Maze Bank Tower. Standing on a different Pillbox Hill roof keeps that line
+    /// true. The lower tiers of this same building — a deck at 199.13 with solar panels and
+    /// prop_radiomast01, three more pads at 175.52 — are deliberately unused: a radio mast is
+    /// a better-sounding antenna than a junction box, and there is no evidence in the archives
+    /// that a man can walk down to it from the pad deck.
+    ///
+    /// They leave from the Cypress Flats foundry, which is their own yard and real open
+    /// ground: the widest clear spot within a hundred meters of the apron, 15.7 m to the
+    /// nearest placed object.
     /// </summary>
     public sealed class M54ThePillboxRedoubt : PreparationOperation
     {
-        /// <summary>Whose penthouse. Ice's, because the roosts are his and it is his floor.</summary>
-        public const CrewSlot Penthouse = CrewSlot.Ice;
-        /// <summary>How long the elevator takes to hotwire.</summary>
-        public const int ElevatorSeconds = 8;
+        /// <summary>Four seats, and the helicopter the crew already flies.</summary>
+        public const string HelicopterModel = "annihilator";
         /// <summary>How long a roost takes to set, and the antenna to wire.</summary>
         public const int RoostSeconds = 5;
         public const int AntennaSeconds = 9;
-        /// <summary>How far from the arrival point the work positions are spread.</summary>
-        public const float WorkSpread = 6f;
+        /// <summary>How near the pad the skids have to be down. A twelve-meter deck, so this is the deck.</summary>
+        public const float PadRadius = 14f;
+        /// <summary>Altitude Guess circles at if the player leaves him flying. Above the tower, clear of Maze Bank.</summary>
+        public const int HoldAltitude = 250;
+        /// <summary>How far above and below an authored roof point the slab is looked for.</summary>
+        public const float RoofHeadroom = 4f;
+        public const float RoofFloor = 196f;
         /// <summary>Where the campaign records that the crew has an Act III nest.</summary>
         public const string NestCargo = "actThreeNest";
 
+        private readonly AircraftHold _hold = new AircraftHold();
         private readonly List<Vector3> _roosts = new List<Vector3>();
+        private Vehicle _helicopter;
         private Vector3 _antenna;
-        private Residence _residence;
-        private bool _elevator, _upstairs, _fortified;
+        private bool _aboard, _landed, _fortified;
 
         public override string Id => "M54";
         public override string Title => "The Pillbox Redoubt";
         protected override MissionEndpoint Endpoint => MissionEndpoint.SafehouseArrival;
 
-        /// <summary>The express elevator is hotwired.</summary>
-        public bool Elevator => _elevator;
-        /// <summary>The crew is inside the penthouse.</summary>
-        public bool Upstairs => _upstairs;
+        /// <summary>All three are in the Annihilator.</summary>
+        public bool Aboard => _aboard;
+        /// <summary>The skids are on the roof pad.</summary>
+        public bool Landed => _landed;
         /// <summary>Both roosts and the antenna are in.</summary>
         public bool Fortified => _fortified;
+        public Vehicle Helicopter => _helicopter;
         public IReadOnlyList<Vector3> Roosts => _roosts;
+        public Vector3 AntennaAt => _antenna;
+
+        /// <summary>
+        /// The pad and the three work positions are two hundred meters of air above the
+        /// street, so ground preparation must not touch them: asking the engine for walkable
+        /// ground near a roof gets the sidewalk underneath it.
+        /// </summary>
+        protected override string[] FixedSurfaces =>
+            new[] { "M54.Pad", "M54.RoostNorth", "M54.RoostSouth", "M54.Antenna" };
 
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Guess)) return false;
 
-            _residence = ApartmentTiers.For(Penthouse, ApartmentTier.Luxury);
-            if (Ctx.Locations.Get(_residence.EntranceKey) == null || Ctx.Locations.Get(_residence.InteriorKey) == null)
-            {
-                Logger.Error(Id + ": the Eclipse penthouse has no entrance or interior key; it cannot be breached.");
-                GameUtils.Notify("~r~The penthouse location is missing. See Bloodlines.log.");
-                return false;
-            }
+            // On the ground, cold. BloodlinesMain runs KeepPlayerAircraftRunning every
+            // frame, so it starts when Guess is aboard and stays off while nobody is —
+            // which is M26's fix, and the reason this is not LaunchAirborne: an aircraft
+            // created on a deck has nothing to fall out of.
+            _helicopter = Car(HelicopterModel, At("M54.Lift"), Ctx.Locations.Heading("M54.Lift"), false);
+            if (!RequireAssets(_helicopter)) return false;
+            _helicopter.IsPersistent = true;
+            RequireAsset(_helicopter, "The Annihilator was destroyed. There is no other way onto that roof.");
 
-            Establish("approach", "Forty floors and a transmitter on the roof",
-                "The penthouse has been foreclosed for a year and its express elevator still runs. Guess takes the elevator, Ice takes the roosts, Gohan takes the antenna.");
+            Paleto.Review(Ctx,
+                PlacementContract.Aircraft("M54.Lift", new Model(HelicopterModel), 0f),
+                PlacementContract.Ped("M54.Start"), PlacementContract.Ped("M54.IceStart"),
+                PlacementContract.Ped("M54.GohanStart"), PlacementContract.Ped("M54.GuessStart"));
+
+            Establish("approach", "Two hundred meters of nobody's business",
+                "Nobody watches a roof at dusk. Guess flies them up and puts the Annihilator on the pad; Ice sets the roosts along the parapet and Gohan takes the roof's own feed for the antenna.",
+                _helicopter);
             return true;
         }
 
+        /// <summary>Whether a brother is in the helicopter, in any seat.</summary>
+        private bool Seated(CrewSlot slot)
+        {
+            var ped = Ctx.Crew.PedFor(slot);
+            return ped != null && ped.Exists() && _helicopter != null && _helicopter.Exists() &&
+                ped.IsInVehicle(_helicopter);
+        }
+
         /// <summary>
-        /// Three places to work inside the penthouse, found rather than written down.
+        /// The three work positions, taken off the roof rather than out of the air.
         ///
-        /// Only the arrival point is authored, so each position is an offset from where the
-        /// crew actually ends up, snapped to walkable floor. A spot the engine refuses is
-        /// dropped back onto the arrival point, which is somewhere a man is definitely
-        /// standing — better a marker in the wrong corner than one in the air.
+        /// Each x and y belongs to something placed on that deck; each height comes from a
+        /// downward probe onto the slab under it. This runs on arrival, not in Setup: the
+        /// probe is a shape test, and a shape test only answers where collision is loaded.
         /// </summary>
         private void FindWorkPositions()
         {
-            var arrival = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot)?.Position ?? At(_residence.InteriorKey);
             _roosts.Clear();
-            var bearings = new[] { 0.0, 120.0, 240.0 };
-            var found = new List<Vector3>();
-            foreach (var degrees in bearings)
-            {
-                double radians = degrees * Math.PI / 180.0;
-                var candidate = arrival + new Vector3((float)Math.Cos(radians) * WorkSpread, (float)Math.Sin(radians) * WorkSpread, 0f);
-                var safe = World.GetSafeCoordForPed(candidate, false, 0);
-                bool usable = safe != Vector3.Zero && Math.Abs(safe.Z - arrival.Z) < 4f && safe.DistanceTo(arrival) < WorkSpread * 2.5f;
-                found.Add(usable ? safe : arrival);
-                if (!usable) Logger.Warn(Id + ": no walkable floor at " + candidate + " inside the penthouse; using the arrival point.");
-            }
-            _roosts.Add(found[0]);
-            _roosts.Add(found[1]);
-            _antenna = found[2];
-            Logger.Info(Id + ": roosts at " + found[0] + " and " + found[1] + ", antenna at " + found[2] + ".");
+            _roosts.Add(Probe("M54.RoostNorth", "north roost"));
+            _roosts.Add(Probe("M54.RoostSouth", "south roost"));
+            _antenna = Probe("M54.Antenna", "antenna cabinet");
+            Logger.Info(Id + ": roosts at " + _roosts[0] + " and " + _roosts[1] + ", antenna at " + _antenna + ".");
         }
+
+        private Vector3 Probe(string key, string what) =>
+            MissionSites.OnSurface(At(key), RoofHeadroom, RoofFloor, Id + " " + what, 3);
+
+        /// <summary>
+        /// A roost position, or the pad before they have been found. Never a zero vector: a
+        /// marker at the origin is a marker under the map.
+        /// </summary>
+        private Vector3 Roost(int index) => index < _roosts.Count ? _roosts[index] : At("M54.Pad");
+
+        private Vector3 AntennaPoint() => _antenna == Vector3.Zero ? At("M54.Antenna") : _antenna;
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            yield return new MissionStage("Hotwire the express elevator",
-                new MissionInteraction("Guess: hotwire the private express elevator in the lobby",
-                    () => At(_residence.EntranceKey), ElevatorSeconds, 4f, animation: MissionInteraction.ReachInside))
+            yield return new MissionStage("Get the crew aboard",
+                new EnterVehicleObjective("Guess: get in the Annihilator", () => _helicopter, VehicleSeat.Driver),
+                new ConditionObjective("Ice and Gohan: in the back",
+                    () => Seated(CrewSlot.Ice) && Seated(CrewSlot.Gohan))
+                {
+                    Marker = () => _helicopter != null && _helicopter.Exists() ? _helicopter.Position : At("M54.Lift"),
+                    MarkerRadius = 6f
+                })
+                .OwnedBy(CrewSlot.Guess);
+
+            // The authored M54_S1_01_GUESS clones an express-elevator keycard, which this
+            // version does not have. It goes unplayed and the approach is called over the
+            // radio instead; data/mission_gameplay.tsv records the swap.
+            yield return new MissionStage("Put it on the roof",
+                new DeliverVehicleObjective("Guess: land on the tower helipad",
+                    () => _helicopter, () => At("M54.Pad"), PadRadius, true),
+                new ProtectObjective("", () => _helicopter,
+                    "The Annihilator came down before it reached the roof."))
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(c => _elevator = true)
-                .AfterCues("M54_S1_01_GUESS");
+                .OnEnter(c => Radio("GUESS",
+                    "Forget the elevator. Nobody watches a roof at dusk - I will set us down on the pad and we step off the skids.",
+                    "M54_RADIO_01_GUESS"))
+                .OnExit(c => { _landed = true; Disembark(); FindWorkPositions(); });
 
-            // Up. ApartmentAccess owns the interior load, the fade and the entity sets, the
-            // same way the home menu does; this mission does not open an MLO by hand.
-            yield return new MissionStage("Forty floors up",
-                new ConditionObjective("Ride the express elevator to the penthouse", () => _upstairs)
-                { Marker = () => At(_residence.EntranceKey), MarkerRadius = 4f })
-                .AnyOf()
-                .OnEnter(c => GoUp())
-                .OnExit(c => FindWorkPositions());
-
-            // Deliberately two interactions rather than a MultiHoldObjective. That one copies
-            // its site list in its constructor, and BuildStages runs before the crew is
-            // upstairs, so it would have captured an empty list and completed the moment the
-            // stage opened. These read their positions every frame instead.
-            var first = new MissionInteraction("Ice: set the first heavy roost", () => Roost(0),
+            // Three interactions in one stage rather than a MultiHoldObjective, which copies
+            // its site list in its constructor: BuildStages runs long before the roof has
+            // been probed, so that list would be captured empty and complete instantly.
+            // These read their positions every frame, and being parallel they let the player
+            // move between Ice and Gohan as he likes.
+            var north = new MissionInteraction("Ice: set the north roost on the parapet", () => Roost(0),
                 RoostSeconds, 2.5f, animation: MissionInteraction.ReachInside)
             { RequiredCharacter = CrewSlot.Ice };
-            var second = new MissionInteraction("Ice: set the second heavy roost", () => Roost(1),
+            var south = new MissionInteraction("Ice: set the south roost, facing Maze Bank", () => Roost(1),
                 RoostSeconds, 2.5f, animation: MissionInteraction.ReachInside)
             { RequiredCharacter = CrewSlot.Ice };
-            var antenna = new MissionInteraction("Gohan: wire the antenna into the building's transmitter feed",
-                () => _antenna, AntennaSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+            var antenna = new MissionInteraction("Gohan: wire the antenna into the roof's feed", AntennaPoint,
+                AntennaSeconds, 2.5f, animation: MissionInteraction.ReachInside)
             { RequiredCharacter = CrewSlot.Gohan };
 
-            yield return new MissionStage("Fortify the nest", first, second, antenna)
+            yield return new MissionStage("Fortify the nest", north, south, antenna)
                 .OnExit(c => Fortify())
                 .AfterCues("M54_S1_02_ICE", "M54_S1_03_GOHAN");
         }
 
         /// <summary>
-        /// Into the penthouse, through the service every home tier already uses. A mission
-        /// must not load an interior by hand: the access service owns the fade, the entity
-        /// sets and the exit, and it is the thing that knows how to put them back.
+        /// Off the skids. The engine is left alone — KeepPlayerAircraftRunning owns it while
+        /// the player is in it, and fighting that would flicker the rotors while he climbs
+        /// out.
         /// </summary>
-        private void GoUp()
+        private void Disembark()
         {
-            var interior = Ctx.Locations.Get(_residence.InteriorKey);
-            if (interior == null) { Fail("The penthouse interior is missing. Survey " + _residence.InteriorKey + "."); return; }
-            var access = Ctx.Interior;
-            if (access == null)
+            _hold.Release();
+            if (_helicopter == null || !_helicopter.Exists()) return;
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
             {
-                Logger.Error(Id + ": no apartment access service; the penthouse cannot be entered.");
-                Fail("The penthouse could not be opened. See Bloodlines.log.");
-                return;
+                var ped = Ctx.Crew.PedFor(slot);
+                if (ped != null && ped.Exists() && ped != Game.Player.Character && ped.IsInVehicle(_helicopter))
+                    ped.Task.LeaveVehicle();
             }
-            if (!access.Begin(interior.Position, _residence.Ipl, true, _residence.Probe, interior.Heading, _residence.EntitySets))
-            {
-                Logger.Error(Id + ": the apartment service refused the penthouse.");
-                Fail("The express elevator opened onto nothing. Retry the mission.");
-                return;
-            }
-            _upstairs = true;
         }
-
-        /// <summary>
-        /// A roost position, or the penthouse arrival point before they have been found. Never
-        /// a zero vector: a marker at the origin is a marker under the map.
-        /// </summary>
-        private Vector3 Roost(int index) =>
-            index < _roosts.Count ? _roosts[index] : At(_residence.InteriorKey);
 
         private void Fortify()
         {
             _fortified = true;
-            Ctx.State?.SetCargo(NestCargo, _residence.InteriorKey);
-            Logger.Info(Id + ": the penthouse is the crew's Act III nest — two roosts and the antenna feed.");
-            GameUtils.Subtitle("~g~Roosts set and the antenna is on the building's feed. This is the nest now.", 6000);
+            Ctx.State?.SetCargo(NestCargo, "M54.Pad");
+            Logger.Info(Id + ": the tower roof is the crew's Act III nest — two roosts and the antenna on the roof feed.");
+            GameUtils.Subtitle("~g~Roosts set and the antenna is on the building's feed. This roof is the nest now.", 6000);
+        }
+
+        protected override void OnUpdate()
+        {
+            if (_helicopter != null && _helicopter.Exists() && !_landed)
+            {
+                if (!_aboard)
+                {
+                    _aboard = Seated(CrewSlot.Ice) && Seated(CrewSlot.Gohan) && Seated(CrewSlot.Guess);
+                    if (!_aboard) BoardBrothers(_helicopter);
+                }
+                // Nobody flies a helicopter the player has walked away from. Switching out of
+                // Guess in the air used to mean an aircraft with no pilot; the shared hold
+                // circles it over the pad until he comes back to it.
+                else _hold.Update(Ctx.Crew, CrewSlot.Guess, _helicopter, At("M54.Pad"), HoldAltitude);
+            }
+            base.OnUpdate();
+        }
+
+        protected override void OnCleanup()
+        {
+            _hold.Release();
+            base.OnCleanup();
         }
 
         protected override void OnPassed()
         {
-            if (!_elevator || !_upstairs || !_fortified)
-                throw new InvalidOperationException("The elevator, the climb and the fortification all have to have happened.");
+            if (!_landed || !_fortified)
+                throw new InvalidOperationException("The roof has to have been reached and the nest fortified.");
+            // Handed back to the world rather than deleted: the nest is two hundred meters
+            // up and this is the way down.
+            Release(_helicopter);
         }
     }
 }

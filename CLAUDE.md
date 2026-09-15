@@ -117,7 +117,7 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-60 of 79 missions have gameplay scripts (M01–M52 except M53, M54, M57, SM01–SM06); the rest are loaded as data
+60 of 79 missions have gameplay scripts (M01–M52, M54, M57, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
 Gameplay not implemented: M53, M55, M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
@@ -594,27 +594,48 @@ on the bunker to register it. Nothing said so, in either direction. A story test
 
 This loads map data the game already shipped with. It does not join or enable GTA Online.
 
-## M54, and the only interior rule that matters
+## M54, and what the archives will and will not tell you about a roof
 
-M54 breaches the **Eclipse Towers Luxury penthouse**. The owner chose that knowing it
-doubles as a crew home: the only two penthouse interiors the installed game loads are that
-tier and the Diamond, and both are already homes, so the foreclosed flat is one the crew may
-hold the keys to. The alternative on the table was arriving on a roof by helicopter.
+M54 was an express-elevator breach into a foreclosed penthouse. Ron replaced it with **roof
+access by air**, and the rewrite is worth reading as a method rather than as one mission.
 
-**Inside an MLO, exactly one point is authored.** `Apartment.Luxury.<slot>` is the arrival
-spot; the `Apartment.Room.Luxury.*` keys were never surveyed. So M54's two roost positions
-and its antenna point are offsets from where the crew actually lands, snapped with
-`GetSafeCoordForPed` and falling back to the arrival point. **Never hard-code a coordinate
-inside an interior nobody has walked** — that is the rule a day of floating markers bought,
-and a story test refuses a literal `new Vector3(-7…` in that file.
+The penthouse version had to put three work positions inside an MLO nobody has walked: the
+only two penthouse interiors the installed game loads are already crew homes, and the
+`Apartment.Room.Luxury.*` keys were never surveyed, so the roosts were offsets from the
+arrival point snapped with `GetSafeCoordForPed`. Honest, and unfalsifiable. The roof version
+stands on placed geometry the whole way up — `dt1_02_helipad` at (-142.67, -593.35, 206.31)
+on a Pillbox Hill tower, the parapet rail beside it, the `prop_elecbox_23` cabinet Gohan
+taps, and a ring of `prop_wall_light_03a` at 209.15 that outlines the deck at roughly twelve
+meters square. Every authored point is inside that rectangle and borrows its x and y from
+something Rockstar put there.
 
-A mission never opens an interior itself. `Ctx.Interior` (`ApartmentAccess`) owns the load,
-the fade, the entity sets and the exit.
+**What a prop gives you is a position, never a floor.** Each roof point's height is a
+downward probe onto the slab, the M52 fix applied before the bug rather than after it.
 
-One more trap worth naming: `MultiHoldObjective` **copies its site list in its constructor**.
-`BuildStages` runs before a mission has been anywhere, so a list filled in later is captured
-empty and the objective completes the instant its stage opens. Use interactions with
-`Func<Vector3>` positions for anything discovered at runtime.
+**A probe only answers where collision is loaded.** The roof is two hundred meters up and
+sixteen hundred meters from the departure yard, so the probe runs when the crew has landed,
+not in `Setup`. A story test asserts that no `OnSurface` call appears inside `Setup` in that
+file.
+
+**A roof point must be a fixed surface.** `FixedSurfaces` names all four. Ground preparation
+asks the engine for walkable ground and would answer with the sidewalk two hundred meters
+below — the same failure that put M40's hull kits under a pier.
+
+**The tower is deliberately not Maze Bank.** Maze Bank's roof (`dt1_11_heliport`, 323.26) is
+the only other helipad in the city core, and `M54_S1_02_ICE` claims a firing line *on* Maze
+Bank Tower. Standing on a different Pillbox Hill roof keeps the authored line true. The same
+building's lower tiers — `prop_radiomast01` on a deck at 199.13, three more pads at 175.52 —
+are unused, because a radio mast would be a better antenna and nothing in the archives shows
+a man can walk down to it.
+
+`M54_S1_01_GUESS` clones an elevator keycard that no longer exists. It goes unplayed and
+`M54_RADIO_01_GUESS` calls the roof approach instead; `data/mission_gameplay.tsv` records
+that, the tower swap and the unreproduced balcony. Nobody has stood on that deck yet.
+
+One trap worth keeping named: `MultiHoldObjective` **copies its site list in its
+constructor**. `BuildStages` runs before a mission has been anywhere, so a list filled in
+later is captured empty and the objective completes the instant its stage opens. Use
+interactions with `Func<Vector3>` positions for anything discovered at runtime.
 
 ## Aircraft created in the air
 

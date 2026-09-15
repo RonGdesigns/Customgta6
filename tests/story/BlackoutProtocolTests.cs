@@ -261,41 +261,76 @@ public static partial class StoryTests
     {
         string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M54ThePillboxRedoubt.cs"));
 
-        // ---- Nothing inside the penthouse is authored. Exactly one point in that MLO has a
-        // coordinate — the arrival spot — and the Luxury room keys were never surveyed, so the
-        // three work positions are found at runtime rather than written down. This is the
-        // rule that a day of floating markers bought.
-        Check(src.Contains("World.GetSafeCoordForPed(candidate"),
-            "The work positions are snapped to walkable floor inside the interior");
-        Check(src.Contains("using the arrival point"),
-            "and a refused spot falls back to somewhere a man is definitely standing");
-        Check(!src.Contains("new Vector3(-7"),
-            "No interior coordinate is hard-coded into the mission");
+        // ---- The pad and the three work positions are two hundred meters of air above the
+        // street. Ground preparation would find the sidewalk under them and put the crew
+        // there, which is exactly what it did to M40's hull kits under a pier.
+        foreach (var key in new[] { "M54.Pad", "M54.RoostNorth", "M54.RoostSouth", "M54.Antenna" })
+            Check(src.Contains("\"" + key + "\""), key + " is named by the mission");
+        Check(src.Contains("protected override string[] FixedSurfaces =>") &&
+              src.Contains("\"M54.Pad\", \"M54.RoostNorth\", \"M54.RoostSouth\", \"M54.Antenna\""),
+            "and every one of them is declared a fixed surface rather than ground-snapped");
+
+        // ---- The heights come off the geometry, not off a prop origin. That is the mistake
+        // that left M51's marker in the air and M52's roost off the side of a building.
+        Check(src.Contains("MissionSites.OnSurface(At(key), RoofHeadroom, RoofFloor"),
+            "Each roof position is probed down onto the slab under it");
+        int setup = src.IndexOf("protected override bool Setup()", StringComparison.Ordinal);
+        int seated = src.IndexOf("private bool Seated(", StringComparison.Ordinal);
+        Check(setup > 0 && seated > setup && src.IndexOf("OnSurface", setup, seated - setup, StringComparison.Ordinal) < 0,
+            "and the probe runs on arrival, not in Setup where that collision is not streamed");
+
+        // ---- A twelve-meter deck, whose outline is a ring of prop_wall_light_03a at 209.15
+        // spanning x -150.47..-138.74 and y -599.24..-587.54. Every authored point sits
+        // inside it, because outside it is a two-hundred-meter drop.
+        foreach (var key in new[] { "M54.Pad", "M54.RoostNorth", "M54.RoostSouth", "M54.Antenna" })
+        {
+            var at = KeyPoint(key);
+            Check(at.X > -150.5f && at.X < -138.7f && at.Y > -599.3f && at.Y < -587.5f,
+                key + " is inside the roof deck the light ring outlines");
+            Check(at.Z > 200f && at.Z < 212f, key + " is at the deck's own height, not the street's");
+        }
+
+        // ---- Three separate markers, not one pile. Ron could not tell M52's objectives
+        // apart because they all drew at once; these are far enough apart to read.
+        var pad = KeyPoint("M54.Pad");
+        var north = KeyPoint("M54.RoostNorth");
+        var south = KeyPoint("M54.RoostSouth");
+        var antenna = KeyPoint("M54.Antenna");
+        foreach (var pair in new[] { Tuple.Create(north, south), Tuple.Create(north, antenna), Tuple.Create(south, antenna) })
+            Check(pair.Item1.DistanceTo(pair.Item2) > 6f, "the work positions are distinguishable on the roof");
+        Check(pad.DistanceTo(north) > 4f && pad.DistanceTo(south) > 4f && pad.DistanceTo(antenna) > 4f,
+            "and none of them is under the rotor on the pad itself");
 
         // ---- The roost positions are read every frame. MultiHoldObjective copies its site
-        // list in its constructor, and BuildStages runs before the crew is upstairs, so it
+        // list in its constructor, and BuildStages runs long before the roof is probed, so it
         // would have captured an empty list and completed the instant the stage opened.
         Check(!src.Contains("new MultiHoldObjective"),
             "The roosts are not a site list captured before the sites exist");
         Check(src.Contains("() => Roost(0)") && src.Contains("private Vector3 Roost(int index)"),
             "and each roost reads its position when it is drawn, never at construction");
 
-        // ---- The interior is opened by the service that owns interiors, not by hand.
-        Check(src.Contains("Ctx.Interior") && src.Contains("access.Begin("),
-            "ApartmentAccess owns the load, the fade and the entity sets");
-        Check(!src.Contains("REQUEST_IPL") && !src.Contains("DlcMaps."),
-            "and the mission does not reach past it to open an MLO itself");
+        // ---- The helicopter is created on the ground, so it has nothing to fall out of
+        // while its rotors spin up. LaunchAirborne is for a spawn in the air, and using it
+        // here would lift a parked aircraft off a yard somebody is walking across.
+        Check(!src.Contains("AircraftHold.LaunchAirborne("),
+            "The Annihilator is parked, not created in the air");
+        Check(src.Contains("_hold.Update(Ctx.Crew, CrewSlot.Guess"),
+            "and switching away from Guess in the air leaves it flying rather than falling");
 
-        // ---- The penthouse is a real residence the mod already loads, chosen by the owner
-        // in full knowledge that it doubles as a crew home.
-        Check(M54ThePillboxRedoubt.Penthouse == CrewSlot.Ice,
-            "It uses a named Eclipse penthouse rather than an invented address");
-        Check(KeyPoint("Apartment.Luxury.Entrance").Z > 50f && KeyPoint("Apartment.Luxury.Ice").Z > 150f,
-            "whose lobby and penthouse are the authored heights of a tower, not a street");
+        // ---- No interior. This version claims no MLO and opens no map.
+        Check(!src.Contains("Ctx.Interior") && !src.Contains("REQUEST_IPL") && !src.Contains("DlcMaps."),
+            "The roof needs no interior service and no map request");
 
-        Check(src.Contains("!_elevator || !_upstairs || !_fortified"),
-            "It cannot pass without the elevator, the climb and the fortification");
+        // ---- The lift-off point is real open ground in the crew's own yard.
+        var lift = KeyPoint("M54.Lift");
+        Check(lift.Z < 40f, "The Annihilator waits on the ground, not on a roof");
+        Check(lift.DistanceTo2D(KeyPoint("M54.Start")) < 25f,
+            "and the crew starts within walking distance of it");
+
+        Check(src.Contains("!_landed || !_fortified"),
+            "It cannot pass without reaching the roof and fortifying the nest");
     }
+
     /// <summary>A location key's authored position, straight out of the shipped book.</summary>
     static Vector3 KeyPoint(string key)
     {
