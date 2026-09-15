@@ -299,6 +299,10 @@ namespace Bloodlines
             if (!CampaignPhone.BlocksGameplayInput) Step("controller menu", _menu.HandleControllerToggle);
             Step("menu", _menu.Update);
             Step("survey", _survey.Update);
+            // An aircraft the player is flying has a running engine. Planes and
+            // helicopters are created cold on purpose, and nothing ever started them: a
+            // jet spawned from the dev menu let Ron fire its guns and never accelerate.
+            Step("aircraft ignition", AircraftHold.KeepPlayerAircraftRunning);
             Step("mission markers", () => _missionMarkers.Update(_menu.IsOpen || CampaignPhone.BlocksGameplayInput || _prologue.IsActive));
             if (!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && _missionMarkers.Nearby != null && Game.IsControlJustPressed(GTA.Control.Context))
                 StartMission(_missionMarkers.Nearby);

@@ -460,10 +460,12 @@ Prerequisite: M26. Retry: full mission restart.
 | 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
 | 5 | Ice | **Sea pickup** — EnterVehicleObjective: Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy. |
+| 6 | Ice | **Run the boat ashore** — TravelObjective: Ice: bring the boat in under the lighthouse |
+| 7 | Ice | **Take the ledger to the depot** — TravelObjective: Ice: drive the flight ledger to the Grapeseed depot shed |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M26.DusterPad, M26.RunwayStart, M26.SparePlane, M27.Bailout, M27.CrewStart, M27.FormUp, M27.IcePost, M27.JetTrack, M27.ParkedLazer, M27.RunwayStart, M27.SeaPickup.
+Survey references: M26.DusterPad, M26.RunwayStart, M26.SparePlane, M27.Bailout, M27.CrewStart, M27.Depot, M27.FormUp, M27.IcePost, M27.JetTrack, M27.Landing, M27.ParkedLazer, M27.RunwayStart, M27.SeaPickup, M27.Shore.
 
 ## M28 — OFF THE GRID
 

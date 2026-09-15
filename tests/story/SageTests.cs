@@ -138,7 +138,24 @@ public static partial class StoryTests
   Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.CurrentVehicle=null;c.Dialogue.Clear();m27.Tick();Check(m27.CurrentStage==4&&!m27.Ledger.IsVisible,"Out of the jet, the case rides hidden under the canopy");
   Game.Player.Character.Position=m27.Dinghy.Position;Game.Player.Character.SetIntoVehicle(m27.Dinghy,VehicleSeat.Passenger);c.Dialogue.Clear();m27.Tick();
   Check(m27.Aboard&&m27.Ledger.IsVisible&&m27.Ledger.AttachedTo==m27.Dinghy,"In the boat, the ledger is stowed where Gohan can see it");
+  // Reaching Gohan used to be the end of it, which left the boat in open water with
+  // nowhere to go. The ledger goes ashore and up the coast to the Grapeseed depot.
+  var m27shore=c.Locations.Position("M27.Shore");var m27land=c.Locations.Position("M27.Landing");
+  m27.Dinghy.Position=m27shore;m27.Dinghy.Speed=0;Game.Player.Character.Position=m27shore;c.Dialogue.Clear();m27.Tick();
+  Check(m27.Ashore&&m27.RoadCar!=null&&m27.RoadCar.Exists(),"In under the lighthouse, with a vehicle waiting on the headland");
+  Check(m27.Ledger.AttachedTo==m27.RoadCar,"and the ledger moves out of the boat and into it");
+  var m27depot=c.Locations.Position("M27.Depot");
+  Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.SetIntoVehicle(m27.RoadCar,VehicleSeat.Driver);
+  m27.RoadCar.Position=m27depot;m27.RoadCar.Speed=0;Game.Player.Character.Position=m27depot;c.Dialogue.Clear();m27.Tick();
+  Check(m27.Delivered,"and the ledger reaches the depot shed at Grapeseed");
   c.Dialogue.Clear();m27.Tick();c.Dialogue.Clear();m27.Tick();Check(m27.Status==MissionStatus.Passed,"M27 passes");World.NearbyVehicles=new Vehicle[0];
+  // The pickup has to sit under the flight path. It used to be 5.6 km away at the other
+  // end of the north coast, which is why Ron could not glide to it.
+  Check(c.Locations.Position("M27.SeaPickup").DistanceTo2D(c.Locations.Position("M27.Shore")) < 400f &&
+        c.Locations.Position("M27.Shore").DistanceTo2D(m27land) < 80f,
+        "The boat and the beach are the same piece of coast");
+  Check(c.Locations.Position("M27.Depot").DistanceTo2D(c.Locations.Position("M27.Landing")) < 2200f,
+        "and the drive to the depot is a short run, not a trip across the map");
   string m27src=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act2","M27FlightRisk.cs"));
   // A Duster tops out at 69 and the Shamal at 91, so the old approach aircraft could
   // never hold station. The Vestra has two seats and beats the jet at 97.
