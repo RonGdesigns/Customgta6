@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-72 of 79 missions have gameplay scripts (M01–M60, M63–M66, SM01–SM08); the rest are loaded as data
-with no mission script yet. The code builds clean with `--warnaserror`.
+**All 79 missions have gameplay scripts** (M01–M70, SM01–SM09). Every one of them is
+archive-derived and none has been played. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M61, M62, M67–M70, SM09, interstitial
+Gameplay not implemented: interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -769,6 +769,33 @@ override belongs to `PreparationOperation`. The location book carries the same f
 **Never put `RequireAsset` on a man the mission exists to kill.** That contract fails the
 mission when the entity dies and cannot tell the intended death from a despawn, so it fails at
 the moment of success. SM07 lost a whole run to it.
+
+## Finishing the mission structure, and what "finished" means here
+
+All 79 missions now have scripts. That is a structural milestone and not a claim about
+quality: **every coordinate written in the last pass is archive-derived and nobody has played
+any of it.** 1,090 location keys, of which 29 are F11-surveyed.
+
+Three habits did most of the work, and they generalize past this campaign:
+
+**When a site "does not exist", check what you searched before believing it.** M53 was filed
+unbuildable twice because nothing sits below z=0 under Pillbox Hill; the metro is at z 13. M55
+was filed unbuildable because MP apartment tiers share one interior; the game's own high-end
+apartments sit at five real buildings. Both notes were accurate readings of the wrong query.
+
+**A site with no geometry of its own can still be measured by what is lying on it.** The storm
+channel's floor came from a hundred and fifty pieces of trash; the Vinewood sign turned out to
+have twelve maintenance ladders; LSIA's runway is a line of sixty-three road poles.
+
+**A beat that cannot be built honestly is recorded, not faked.** Nine authored lines across the
+campaign go unplayed, each with its reason in `data/mission_gameplay.tsv`: a falling elevator
+car with no shaft, an EMP that does not exist, a gas main that is not under Davis, a 747 on an
+unverifiable approach, a canal eight hundred meters from a ninety-meter roof, spike strips on a
+route the player picks himself. The extraction is never edited to follow gameplay.
+
+**M62 is the one to play first.** It is the only mission in the campaign standing on something
+that cannot be checked offline — `CREATE_MISSION_TRAIN` — and it carries a fallback to standing
+freight if the consist misbehaves.
 
 ## Aircraft created in the air
 

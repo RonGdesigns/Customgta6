@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-72 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+79 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -1006,6 +1006,35 @@ Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M60.Ally, M60.Hold, M60.Start, M60.Wave, M60.Wave1, M60.Wave2, M60.Wave3.
 
+## M61 — THE BLACK BOX
+
+Prerequisite: M60. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Get down to the wreck** — ReachZoneObjective: Gohan: dive to the flooded bridge |
+| 2 | Gohan | **Cut the server out** — MissionInteraction: Gohan: cut the command server out of the chassis |
+| 3 | any brother | **Deal with their divers** — KillTargetsObjective: Take the Aegis demolition divers |
+| 4 | any brother | **Surface with it** — TravelObjective: Bring the server up to the quay |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M61.Diver, M61.Surface, M61.Wreck.
+
+## M62 — STEEL HORIZON
+
+Prerequisite: M61. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Get onto the flatbeds** — ReachZoneObjective: Ice: get onto the freight consist |
+| 2 | any brother | **Take the escort** — KillTargetsObjective: Take the escort riding the consist |
+| 3 | any brother | **Hook the container** — MissionInteraction: Hook the cargo container onto the chopper sling |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Rider.
+
 ## M63 — TOWER OF GLASS
 
 Prerequisite: M62. Story gate: SM07, SM08 must be complete first (QA may bypass). Retry: full mission restart.
@@ -1062,6 +1091,62 @@ Prerequisite: M65. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M66.Edge, M66.GohanStart, M66.GuessStart, M66.IceStart, M66.Landing, M66.Patrol, M66.Start.
+
+## M67 — SCORCHED GRID
+
+Prerequisite: M66. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Get the rig rolling** — ConditionObjective: Guess: get the rig on the road to the airport |
+| 2 | Gohan | **Move the money** — MissionInteraction: Gohan: route the escrow into the offshore accounts |
+| 3 | any brother | **Make the airport** — TravelObjective: Take the rig to the airport perimeter |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M67.Airport, M67.Semi, M67.Start.
+
+## M68 — BLOOD BROTHERS: THE DRAIN
+
+Prerequisite: M67. Story gate: SM09 must be complete first (QA may bypass). Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Get the rig moving** — ConditionObjective: Guess: get the rig rolling down the channel |
+| 2 | any brother | **Break the pursuit** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | any brother | **Out of the channel** — TravelObjective: Take the rig out of the channel mouth toward the airport |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M68.Chaser, M68.GohanStart, M68.GuessStart, M68.IceStart, M68.Mouth, M68.Rig, M68.Start.
+
+## M69 — BLOOD BROTHERS: RUNWAY 30L
+
+Prerequisite: M68. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Through the perimeter** — TravelObjective: Guess: take the rig through the perimeter and onto the runway |
+| 2 | any brother | **Break the taxiway line** — DestroyVehicleObjective: Put the fuel bowser into the Aegis line<br>KillTargetsObjective: Clear the Aegis barricade |
+| 3 | Guess | **Up the ramp** — DeliverVehicleObjective: Guess: drive the rig up into the C-130's cargo hold |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M69.Block, M69.Bowser, M69.Ramp, M69.Rig, M69.Runway, M69.Swat.
+
+## M70 — BLOOD BROTHERS: GROUNDED TITAN
+
+Prerequisite: M69. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | any brother | **Hold the fuselage** — SurviveWavesObjective: Hold the plane. Three waves. |
+| 2 | Guess | **Start all four** — EnterVehicleObjective: Guess: get into the C-130 and start all four turboprops |
+| 3 | Guess | **Off the seawall** — DeliverVehicleObjective: Guess: take the plane off the end of the runway into the water |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M70.Plane, M70.Start, M70.Water, M70.Wave.
 
 ## SM01 — LEAD & KEVLAR
 
@@ -1182,6 +1267,19 @@ Prerequisite: M52. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: SM08.Exit, SM08.Floor.
+
+## SM09 — THE LONG EXIT
+
+Prerequisite: M52. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Take it out of the pound** — MissionInteraction: Guess: hotwire the prototype |
+| 2 | Guess | **Get it to the terminal** — DeliverVehicleObjective: Guess: get the prototype to the container on the quay |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: SM09.Berth, SM09.Pound.
 
 ## Boundaries of this audit
 

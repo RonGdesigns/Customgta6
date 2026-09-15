@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 72 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 79 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2855,7 +2855,7 @@ We finish their command network, then get their guns away from these streets. Th
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M61 - THE BLACK BOX (future gameplay)
+## M61 - THE BLACK BOX (scripted)
 
 ### Intro
 
@@ -2898,7 +2898,7 @@ Copies go out before the next job. We aren't carrying the only proof into anothe
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M62 - STEEL HORIZON (future gameplay)
+## M62 - STEEL HORIZON (scripted)
 
 ### Intro
 
@@ -3113,7 +3113,7 @@ Then I keep the truck moving. You've carried the file this far. You don't have t
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M67 - SCORCHED GRID (future gameplay)
+## M67 - SCORCHED GRID (scripted)
 
 ### Intro
 
@@ -3156,7 +3156,7 @@ If this connection dies now, the copies still exist. For the first time, nobody 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M68 - BLOOD BROTHERS: THE DRAIN (future gameplay)
+## M68 - BLOOD BROTHERS: THE DRAIN (scripted)
 
 ### Intro
 
@@ -3199,7 +3199,7 @@ Three. I have been counting three since the dockyard. You finally started saying
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M69 - BLOOD BROTHERS: RUNWAY 30L (future gameplay)
+## M69 - BLOOD BROTHERS: RUNWAY 30L (scripted)
 
 ### Intro
 
@@ -3242,7 +3242,7 @@ No last stand for a pile of gold. Guess, find us a path. Gohan, tell the boats w
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M70 - BLOOD BROTHERS: GROUNDED TITAN (future gameplay)
+## M70 - BLOOD BROTHERS: GROUNDED TITAN (scripted)
 
 ### Intro
 
@@ -3754,7 +3754,7 @@ That's all I needed.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM09 - THE LONG EXIT (future gameplay)
+## SM09 - THE LONG EXIT (scripted)
 
 ### Intro
 
