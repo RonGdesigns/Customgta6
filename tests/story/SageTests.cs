@@ -149,10 +149,15 @@ public static partial class StoryTests
   // Reaching Gohan used to be the end of it, which left the boat in open water with
   // nowhere to go. The ledger goes ashore and up the coast to the Grapeseed depot.
   var m27shore=c.Locations.Position("M27.Shore");var m27land=c.Locations.Position("M27.Landing");
+  // Gohan is at the wheel, so the run ashore is his leg. Asking Ice to drive forced a
+  // switch back to the passenger the moment Ron took the man actually steering.
+  Use(crew,CrewSlot.Gohan);
   m27.Dinghy.Position=m27shore;m27.Dinghy.Speed=0;Game.Player.Character.Position=m27shore;c.Dialogue.Clear();m27.Tick();
   Check(m27.Ashore&&m27.RoadCar!=null&&m27.RoadCar.Exists(),"In under the lighthouse, with a vehicle waiting on the headland");
   Check(m27.Ledger.AttachedTo==m27.RoadCar,"and the ledger moves out of the boat and into it");
   var m27depot=c.Locations.Position("M27.Depot");
+  // The ledger is Ice's, so the road leg is his.
+  Use(crew,CrewSlot.Ice);
   Game.Player.Character.Task.LeaveVehicle();Game.Player.Character.SetIntoVehicle(m27.RoadCar,VehicleSeat.Driver);
   m27.RoadCar.Position=m27depot;m27.RoadCar.Speed=0;Game.Player.Character.Position=m27depot;c.Dialogue.Clear();m27.Tick();
   Check(m27.Delivered,"and the ledger reaches the depot shed at Grapeseed");

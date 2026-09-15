@@ -93,6 +93,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _seaPickup;
         private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered, _pickupPlaced;
         private readonly Core.CrewBoarding _pickup = new Core.CrewBoarding();
+        private readonly Core.CrewBoarding _ride = new Core.CrewBoarding();
         private bool _offered;
         private int _nextOffer;
         private Vehicle _roadCar;
@@ -202,9 +203,11 @@ namespace Bloodlines.Missions.Campaign
             // last thing that happened and the boat sitting in open water with nowhere to
             // go. The ledger is the point of the job, so the job ends when it is somewhere
             // other than a dinghy.
+            // Gohan is at the wheel. This asked Ice to drive, which forced a switch back to
+            // the passenger the moment Ron switched to the man actually steering the boat.
             yield return new MissionStage("Run the boat ashore",
-                    new TravelObjective("Ice: bring the boat in under the lighthouse", () => Ctx.Locations.Position("M27.Shore"), 18f, () => _dinghy))
-                .OwnedBy(CrewSlot.Ice)
+                    new TravelObjective("Gohan: bring the boat in under the lighthouse", () => Ctx.Locations.Position("M27.Shore"), 18f, () => _dinghy))
+                .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context =>
                 {
                     _ashore = true;
@@ -214,9 +217,11 @@ namespace Bloodlines.Missions.Campaign
                     if (_ledger != null && _ledger.Exists()) StowPropStep.Stow(_ledger, _roadCar, new Vector3(0f, -0.9f, 0.6f));
                 });
 
+            // Ice drives the last leg: the ledger is his, and he is the one the job followed.
             yield return new MissionStage("Take the ledger to the depot",
                     new TravelObjective("Ice: drive the flight ledger to the Grapeseed depot shed", () => Ctx.Locations.Position("M27.Depot"), 18f, () => _roadCar))
                 .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context => _ride.Reset())
                 .OnExit(context => _delivered = true);
         }
 
@@ -352,6 +357,12 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             RunPickup();
+            // Gohan came ashore too; he is not left standing on the rocks while Ice drives
+            // off with the ledger. Ordered, not required: the job is the ledger reaching the
+            // depot, and a passenger who cannot find the door must not hold that up.
+            if (_ashore && !_delivered && _roadCar != null && _roadCar.Exists())
+                _ride.Update(Ctx.Crew, _roadCar,
+                    new[] { new System.Collections.Generic.KeyValuePair<CrewSlot, VehicleSeat>(CrewSlot.Gohan, VehicleSeat.RightFront) }, Id);
             if (_diving)
             {
                 HoldTheDive();

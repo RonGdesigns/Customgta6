@@ -33,10 +33,16 @@ namespace Bloodlines.Core
             if(!point.HasValue){ClearBunkerBlip();return;}
             if(_bunkerBlip==null||!_bunkerBlip.Exists())
             {
-                BunkerSite.LoadMaps();_bunkerBlip=World.CreateBlip(point.Value);
+                // Deliberately without BunkerSite.LoadMaps(). A blip is a marker on a map and
+                // needs no map data; loading it here ran the DLC registration native on the
+                // first free-roam frame of every session, which is the loading screen Ron saw
+                // at every startup.
+                _bunkerBlip=World.CreateBlip(point.Value);
                 if(_bunkerBlip!=null){_bunkerBlip.Sprite=BlipSprite.Safehouse;_bunkerBlip.Color=BlipColor.Green;_bunkerBlip.Name="Senora bunker - crew headquarters";}
             }
             else _bunkerBlip.Position=point.Value;
+            // Near enough to be going there: now the geometry is worth the load.
+            if(GameUtils.IsWithinFlat(ped.Position,point.Value,BunkerSite.LoadRange))BunkerSite.LoadMaps();
             if(!GameUtils.IsWithinFlat(ped.Position,point.Value,60f))return;
             GameUtils.DrawObjectiveMarker(point.Value,Color.FromArgb(130,100,210,160));
             if(ped.IsInVehicle()||!GameUtils.IsWithin(ped.Position,point.Value,3f))return;

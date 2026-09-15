@@ -460,7 +460,7 @@ Prerequisite: M26. Retry: full mission restart.
 | 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
 | 5 | Ice | **Sea pickup** — ConditionObjective: Get Ice aboard Gohan's dinghy: glide to the boat, or switch to Gohan and bring it to him |
-| 6 | Ice | **Run the boat ashore** — TravelObjective: Ice: bring the boat in under the lighthouse |
+| 6 | Gohan | **Run the boat ashore** — TravelObjective: Gohan: bring the boat in under the lighthouse |
 | 7 | Ice | **Take the ledger to the depot** — TravelObjective: Ice: drive the flight ledger to the Grapeseed depot shed |
 
 Final gameplay dialogue drains before the pass/aftermath transition.

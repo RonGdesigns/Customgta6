@@ -249,6 +249,25 @@ public static partial class StoryTests
         Check(m27.Contains("_pickup.Update(Ctx.Crew, _dinghy,"),
             "and when Gohan brings it, Ice is ordered aboard rather than left treading water");
 
+        // ---- A stage names the brother who is actually driving. Gohan is at the wheel of
+        // the dinghy, and asking Ice to run it ashore forced a switch back to the passenger
+        // the moment Ron took the man steering.
+        Check(m27.Contains("new TravelObjective(\"Gohan: bring the boat in under the lighthouse\"") &&
+              m27.Contains("Run the boat ashore"),
+            "The boat leg belongs to the brother holding the wheel");
+        Check(m27.Contains("_ride.Update(Ctx.Crew, _roadCar,"),
+            "and Gohan is brought along on the road leg rather than left on the rocks");
+
+        // ---- The bunker's map data is not loaded to draw a blip. Doing that on the first
+        // free-roam frame gave Ron a loading screen at every startup.
+        string bunkerHome = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "CrewHomes.Bunker.cs"));
+        int blipAt = bunkerHome.IndexOf("_bunkerBlip=World.CreateBlip(");
+        Check(blipAt > 0 && !bunkerHome.Substring(Math.Max(0, blipAt - 400), 400).Contains("BunkerSite.LoadMaps();"),
+            "Creating the bunker blip does not register the DLC maps");
+        Check(bunkerHome.Contains("IsWithinFlat(ped.Position,point.Value,BunkerSite.LoadRange))BunkerSite.LoadMaps()"),
+            "The load happens when he is walking up to it instead");
+        Check(BunkerSite.LoadRange > 60f, "and far enough out that the geometry is there before he arrives");
+
         // ---- The clock is shared, so a mission beat and Guess's ability cannot undo
         // each other, and the slowest holder is the one that applies.
         SlowMotion.Reset();
