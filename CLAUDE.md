@@ -636,6 +636,13 @@ broke the Paleto heist, because the cove yacht is Cayo Perico map data that had 
 on the bunker to register it. Nothing said so, in either direction. A story test now refuses
 `Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
 
+**The registration is back on the first frame, and that is Ron's decision.** The pause cannot
+be made free, so the choice is only where it lands: one he expects at startup, or one he does
+not expect while driving up to the bunker. He chose startup. `BloodlinesMain` registers on its
+first tick and loads the bunker exterior too when he owns it, so nothing pauses later. Every
+call site still goes through `DlcMaps` and is still correct — they simply find the work already
+done, which is what keeps M44's cove yacht working.
+
 This loads map data the game already shipped with. It does not join or enable GTA Online.
 
 ## M54, and what the archives will and will not tell you about a roof

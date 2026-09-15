@@ -50,6 +50,8 @@ namespace Bloodlines
         private readonly SurveyMode _survey;
         private readonly LocationBook _locations;
         private readonly CampaignState _state;
+        /// <summary>Whether the shipped DLC map archives have been registered this session.</summary>
+        private bool _mapsRegistered;
         private readonly PrologueSequence _prologue;
 
         private int _abortHeldSince;
@@ -208,6 +210,24 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            // Ron's call, and it is the right one: one pause he expects at startup rather than
+            // one he does not expect while driving. The registration native stops to load and
+            // there is no way to make it free, so it happens here, once, before he is anywhere.
+            //
+            // Moving this out of startup is what removed his loading screen and then broke the
+            // Paleto heist, because the cove yacht needed the archives the bunker had been
+            // registering as a side effect. Everything still goes through DlcMaps, so those
+            // call sites stay correct; they simply find the work already done.
+            if (!_mapsRegistered)
+            {
+                _mapsRegistered = true;
+                Step("dlc map registration", () => {
+                    DlcMaps.EnsureRegistered();
+                    // And the bunker's own exterior while the screen is already stopped, so
+                    // driving up to it later costs nothing. Only once he owns it.
+                    if (_state.IsUnlocked(BunkerSite.Unlock)) BunkerSite.LoadMaps();
+                });
+            }
             Step("campaign phone input", () => {
                 try {
                     _phone.Input(_config.CampaignPhoneEnabled, _crew.IsDeployed, PhoneAvailable(), _crew.ActiveSlot);
