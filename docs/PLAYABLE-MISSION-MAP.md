@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-66 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+69 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -923,6 +923,19 @@ Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M54.Antenna, M54.GohanStart, M54.GuessStart, M54.IceStart, M54.Lift, M54.Pad, M54.RoostNorth, M54.RoostSouth, M54.Start.
 
+## M55 — SKYLINE DESCENT
+
+Prerequisite: M54. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Three nodes, five minutes** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | any brother | **Off the towers** — TravelObjective: Get out of the towers and regroup |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M55.GohanStart, M55.GuessStart, M55.IceStart, M55.Regroup.
+
 ## M56 — IRON IN THE DRAIN
 
 Prerequisite: M55. Retry: full mission restart.
@@ -1101,6 +1114,33 @@ Prerequisite: M28. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: SM06.Approach, SM06.Bend, SM06.Delivery, SM06.Truck.
+
+## SM07 — BLOOD DEBT
+
+Prerequisite: M52. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Ice | **Take the foyer** — KillTargetsObjective: Ice: take the executive detail in the foyer |
+| 2 | Ice | **Settle it** — ConditionObjective: Ice: Sterling |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: SM07.Suite.
+
+## SM08 — BURNER PROTOCOL
+
+Prerequisite: M52. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Gohan | **Take the client files** — MissionInteraction: Gohan: bypass the biometric lock and copy the client files |
+| 2 | Gohan | **Burn the vault** — MissionInteraction: Gohan: run thermite along the filing cabinets |
+| 3 | Gohan | **Get out before it goes** — TravelObjective: Get out of the building |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: SM08.Exit, SM08.Floor.
 
 ## Boundaries of this audit
 

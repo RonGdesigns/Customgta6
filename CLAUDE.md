@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-66 of 79 missions have gameplay scripts (M01–M54, M56, M57, M63–M66, SM01–SM06); the rest are loaded as data
+69 of 79 missions have gameplay scripts (M01–M57, M63–M66, SM01–SM08); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M55, M58–M62, M67–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M58–M62, M67–M70, SM09, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -751,6 +751,24 @@ One trap this block re-taught: **an objective built from a list that Setup has n
 counts that list at zero.** `KillTargetsObjective`'s survivor count is captured at
 construction, so an "if the list is empty" branch written in `BuildStages` always takes the
 empty path. Read the list in the lambda and fail loudly in `Setup` instead.
+
+
+**Five stock high-end apartment interiors sit at five real downtown buildings** —
+`v_apartment_high` at (-13.08, -593.62, 93.03), (-32.17, -579.02, 82.91), (-260.88, -953.56,
+70.02), (-282.30, -954.78, 85.30) and (-460.61, -691.56, 69.88) — and they are **base map**,
+in `hw1_blimp_interior_*` ymaps with no DLC prefix. Nothing to request, nothing to swap when
+the player changes brother, so M55 really is three penthouses at once. Ask
+`MissionSites.InteriorAt` before placing anyone in one: a missing MLO is a man dropped into
+open sky at that height, and one native call is cheaper than finding out the other way.
+
+A solo has no crew, so it derives from `DesertOperation` and has **no `FixedSurfaces`** — that
+override belongs to `PreparationOperation`. The location book carries the same fact better:
+`kind = interior` and `MissionSites.Prepare` only grounds `land`. Nor does a solo have
+`Establish`; it plays its own `SceneSpec`, the way SM05 and SM06 do.
+
+**Never put `RequireAsset` on a man the mission exists to kill.** That contract fails the
+mission when the entity dies and cannot tell the intended death from a despawn, so it fails at
+the moment of success. SM07 lost a whole run to it.
 
 ## Aircraft created in the air
 

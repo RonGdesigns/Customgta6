@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 66 gameplay scripts. Future mission triggers remain design targets.
+79 written missions; 69 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -2577,7 +2577,7 @@ Then each of us gets to call a delay. Trust has to work when I can't see either 
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## M55 - SKYLINE DESCENT (future gameplay)
+## M55 - SKYLINE DESCENT (scripted)
 
 ### Intro
 
@@ -3633,7 +3633,7 @@ And you slowed down for the blind bends. That's the part I want repeated.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM07 - BLOOD DEBT (future gameplay)
+## SM07 - BLOOD DEBT (scripted)
 
 ### Intro
 
@@ -3696,7 +3696,7 @@ Aight. Come back.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 
-## SM08 - BURNER PROTOCOL (future gameplay)
+## SM08 - BURNER PROTOCOL (scripted)
 
 ### Intro
 
