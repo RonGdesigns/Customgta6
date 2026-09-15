@@ -899,3 +899,13 @@ M49.GohanStart	-3054.000	1174.000	22.000	20	land	estimate	BanhamCa / the shoulde
 M49.GuessStart	-3060.000	1168.000	22.000	20	land	estimate	Chumash / the shoulder south of the checkpoint; live survey pending
 M49.Crew	-3048.000	1168.000	22.000	20	land	estimate	BanhamCa / where the turbine Granger waits; live survey pending
 M49.South	-2860.000	1620.000	30.000	30	land	estimate	Tongva Hills / past the county line, north up the coast road; live survey pending
+M57.Start	-1520.000	-1400.000	2.500	270	land	estimate	Pacific Ocean / the Vespucci sand; the beach clutter in the archives runs x -1587..-1361 at z 0.7..3.3, so this is sand rather than surf
+M57.IceStart	-1526.000	-1406.000	2.500	270	land	estimate	Pacific Ocean / the Vespucci sand; the beach clutter in the archives runs x -1587..-1361 at z 0.7..3.3, so this is sand rather than surf
+M57.GohanStart	-1514.000	-1406.000	2.500	270	land	estimate	Pacific Ocean / the Vespucci sand; the beach clutter in the archives runs x -1587..-1361 at z 0.7..3.3, so this is sand rather than surf
+M57.GuessStart	-1520.000	-1412.000	2.500	270	land	estimate	Pacific Ocean / the Vespucci sand; the beach clutter in the archives runs x -1587..-1361 at z 0.7..3.3, so this is sand rather than surf
+M57.SkiGuess	-1640.000	-1396.000	0.000	270	water	estimate	Pacific Ocean / open water off the Vespucci sand, west of the beach edge at x -1587; the depth is checked at runtime
+M57.SkiIce	-1640.000	-1408.000	0.000	270	water	estimate	Pacific Ocean / open water off the Vespucci sand, west of the beach edge at x -1587; the depth is checked at runtime
+M57.Patrol1	-1750.000	-1300.000	60.000	200	air	estimate	Pacific Ocean / a gunship sweep line over the water north of the pier; nothing placed within 100 m
+M57.Patrol2	-1820.000	-1450.000	70.000	20	air	estimate	Pacific Ocean / a gunship sweep line out to sea; nothing placed within 130 m
+M57.Patrol3	-1700.000	-1550.000	55.000	340	air	estimate	Pacific Ocean / a gunship sweep line south of the pier; nothing placed within 100 m
+M57.Return	-1580.000	-1402.000	0.000	90	water	estimate	Pacific Ocean / the shallows the skis come back to, just off the sand
