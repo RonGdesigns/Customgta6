@@ -62,8 +62,14 @@ namespace Bloodlines.Missions.Campaign
         /// chapter is being run alone in QA with no structure at all — the authored
         /// height stands and the log says so.
         /// </summary>
-        public static Vector3 OnDeck(Vector3 authored, string what) =>
-            Core.MissionSites.OnSurface(authored, DeckHeadroom, WaterlineDeck - 1f, what);
+        /// <param name="attempts">
+        /// How many frames the probe may wait for collision. The first probe on a site pays
+        /// for the streaming; every probe after it should pass 1, because each waiting probe
+        /// stalls the script for up to a second and a Setup that stalls is a Setup with an
+        /// unmanned helicopter in the air.
+        /// </param>
+        public static Vector3 OnDeck(Vector3 authored, string what, int attempts = 8) =>
+            Core.MissionSites.OnSurface(authored, DeckHeadroom, WaterlineDeck - 1f, what, attempts);
 
         /// <summary>True for a position that is genuinely on the structure rather than beside it.</summary>
         public static bool Aboard(Vector3 point) =>

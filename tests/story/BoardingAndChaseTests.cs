@@ -334,6 +334,27 @@ public static partial class StoryTests
         Check(m45.Contains("guard.Task.GuardCurrentPosition();"), "They hold the deck instead");
         Check(m45.Contains("PaletoSite.OnDeck(post,"), "And each post is dropped onto the deck that is really under it");
 
+        // ---- Nothing slow may run between creating an airborne aircraft and the first
+        // frame that flies it. Ten waiting deck probes stalled Setup for up to ten seconds
+        // after the helicopter was created, and it flew itself into the sea — the exact
+        // failure PR #64 fixed, reintroduced by raising the guard count.
+        Check(m45.Contains("attempts: 1"),
+            "The repeated deck probes do not wait for collision the first one already paid for");
+        int guardsAt = m45.IndexOf("SpawnDeckGuards();");
+        int heliAt = m45.IndexOf("if (!SpawnHelicopter()) return false;");
+        Check(guardsAt > 0 && heliAt > guardsAt,
+            "and the aircraft is created after the slow work, not before it");
+
+        // An engine running is not a rotor turning.
+        string holdSrc = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "AircraftHold.cs"));
+        // Checked on the ignition path specifically, not anywhere in the file: LaunchAirborne
+        // has always spun blades, and the bug was the player-takeover path not doing it.
+        int ignitionAt = holdSrc.IndexOf("KeepPlayerAircraftRunning");
+        int launchAt = holdSrc.IndexOf("public static void LaunchAirborne");
+        Check(ignitionAt > 0 && launchAt > ignitionAt &&
+              holdSrc.Substring(ignitionAt, launchAt - ignitionAt).Contains("SET_HELI_BLADES_FULL_SPEED"),
+            "A helicopter the player takes over cold gets its blades spun up, not just its engine");
+
         // M48's cordon opened fire 77 m from where the crew loads in, which killed Guess
         // at the wheel before the player had control.
         Check(!m48.Contains("guard.Task.FightAgainstHatedTargets"),
