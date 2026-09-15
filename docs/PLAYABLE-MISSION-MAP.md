@@ -441,7 +441,7 @@ Prerequisite: M25. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Scramble** — EnterVehicleObjective: Guess — take off in the marked Lazer. |
 | 2 | Guess | **First spotter** — DestroyVehicleObjective: Splash the lead spotter. |
-| 3 | Guess | **The charter** — ConditionObjective: Keep the second spotter in sight while Gohan pulls the charter's call sign from his traffic. |
+| 3 | Guess | **The charter** — ConditionObjective: Guess: sit on the second spotter's wing while Gohan pulls the charter's call sign. |
 | 4 | Guess | **Second spotter** — DestroyVehicleObjective: The second one is diving for Grapeseed — kill him. |
 | 5 | Guess | **Home** — DeliverVehicleObjective: Guess: land the Lazer at McKenzie and stop. |
 
@@ -459,7 +459,7 @@ Prerequisite: M26. Retry: full mission restart.
 | 2 | Guess | **Match the Shamal** — ShadowTargetObjective: Climb to the Shamal and hold station inside 60 meters. |
 | 3 | Ice | **The locker** — MissionInteraction: Ice: take the flight ledger from the cabin locker |
 | 4 | Ice | **Terminal dive** — BailOutObjective: The pilot put her over — get out. |
-| 5 | Ice | **Sea pickup** — EnterVehicleObjective: Ice: parachute to the green boat marker, then climb aboard Gohan's dinghy. |
+| 5 | Ice | **Sea pickup** — ConditionObjective: Get Ice aboard Gohan's dinghy: glide to the boat, or switch to Gohan and bring it to him |
 | 6 | Ice | **Run the boat ashore** — TravelObjective: Ice: bring the boat in under the lighthouse |
 | 7 | Ice | **Take the ledger to the depot** — TravelObjective: Ice: drive the flight ledger to the Grapeseed depot shed |
 

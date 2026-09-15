@@ -146,8 +146,14 @@ public static partial class StoryTests
         // Ron lost the Alamo spotters the moment he passed them. A 1.5 meter cylinder is
         // a dot at the range an air chase happens at, and a 60 meter orbit is a bank a
         // jet cannot turn inside.
-        Check(M26AlamoScramble.PatrolRadius > 120f && M26AlamoScramble.PatrolRadius <= 260f,
-            "The orbit is wide enough for a jet to line up on and tight enough to fly back to");
+        // Set by what the aircraft can fly, not by how easy it is to find. A circle needs
+        // v^2/r of lateral acceleration, and a crop duster will not hold a bank much past
+        // forty degrees: 220 m at cruise is forty-nine, which is how Ron watched one spin
+        // into the lake. Finding them belongs to the tracking waypoint instead.
+        double lateral = M26AlamoScramble.PatrolSpeed * M26AlamoScramble.PatrolSpeed / M26AlamoScramble.PatrolRadius;
+        double bank = Math.Atan(lateral / 9.81) * 180.0 / Math.PI;
+        Check(bank < 40.0, "The patrol circle is one a Mammatus can hold without stalling out of it");
+        Check(M26AlamoScramble.PatrolSpeed >= 48f, "and it flies it above its stall, not just above zero");
         string m26 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M26AlamoScramble.cs"));
         Check(m26.Contains("blip.IsShortRange = false"),
             "Their blips survive the distance the chase is fought over");
@@ -227,6 +233,21 @@ public static partial class StoryTests
         string m27 = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act2", "M27FlightRisk.cs"));
         Check(m27.Contains("HoldTheDive();") && m27.Contains("protected override void OnUpdate()"),
             "And the attitude is held every frame rather than set once and hoped for");
+
+        // ---- Ron's pickup: the player may drive the boat himself rather than be told to
+        // glide to wherever it happens to be. Offered, never forced.
+        Check(m27.Contains(".AnyOf()") && !m27.Contains("new EnterVehicleObjective(\"Ice: parachute"),
+            "The pickup stage is open to either brother, so switching to Gohan is allowed");
+        Check(m27.Contains("() => IceAboard"),
+            "and it waits for Ice to be in the boat, not for the player to be");
+        Check(m27.Contains("M27_RADIO_02_GOHAN"),
+            "Gohan says he will drive over if he is not close enough");
+        Check(m27.Contains("Switch to Gohan and drive it to Ice yourself"),
+            "and the player is told he may, when the boat is not in view");
+        Check(m27.Contains("Hash.IS_SPHERE_VISIBLE"),
+            "which is decided by whether the boat is actually on screen, not by a timer");
+        Check(m27.Contains("_pickup.Update(Ctx.Crew, _dinghy,"),
+            "and when Gohan brings it, Ice is ordered aboard rather than left treading water");
 
         // ---- The clock is shared, so a mission beat and Guess's ability cannot undo
         // each other, and the slowest holder is the one that applies.

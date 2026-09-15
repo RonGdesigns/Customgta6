@@ -13,6 +13,32 @@ namespace Bloodlines.Crew
         private readonly Dictionary<CrewSlot, int> _retryAt = new Dictionary<CrewSlot, int>();
         public void Forget(CrewSlot slot) { _downedAt.Remove(slot); _retryAt.Remove(slot); }
         public void Clear() { _downedAt.Clear(); _retryAt.Clear(); }
+        /// <summary>
+        /// Who or what killed a brother, written down the first frame we notice.
+        ///
+        /// Ron reported Guess dying instantly after the Paleto heist and named the mission
+        /// he thought it was; that mission has no script and cannot start, so the guess
+        /// was wrong and so was mine. A death with no recorded cause is a bug that can
+        /// only be chased by guessing, and guessing has cost this project two wrong fixes
+        /// already. The log names the killer, the weapon and the range.
+        /// </summary>
+        private static void Report(CrewSlot slot, Ped downed)
+        {
+            if (downed == null || !downed.Exists())
+            { Logger.Warn(slot + " is down: the ped is gone, so nothing can be read off it."); return; }
+            try
+            {
+                int killer = Function.Call<int>(Hash.GET_PED_SOURCE_OF_DEATH, downed);
+                uint weapon = Function.Call<uint>(Hash.GET_PED_CAUSE_OF_DEATH, downed);
+                var player = Game.Player.Character;
+                bool byPlayer = killer != 0 && player != null && player.Exists() && killer == player.Handle;
+                Logger.Warn(slot + " is down at " + downed.Position + ": killer handle " + killer +
+                            (byPlayer ? " (the player)" : killer == 0 ? " (nothing the game will name)" : "") +
+                            ", weapon hash " + weapon + ".");
+            }
+            catch (System.Exception ex) { Logger.Error("Reading what killed " + slot, ex); }
+        }
+
         public bool TryGetDestination(CrewSlot slot, Ped downed, Ped player, bool allowed, out Vector3 point)
         {
             point = Vector3.Zero;
@@ -20,6 +46,7 @@ namespace Bloodlines.Crew
             if (!_downedAt.TryGetValue(slot, out var since))
             {
                 _downedAt[slot] = Game.GameTime;
+                Report(slot, downed);
                 GameUtils.Notify("~o~" + Protagonist.Of(slot).DisplayName + " is down. Recovery takes about 45 seconds in free roam.");
                 return false;
             }

@@ -74,6 +74,23 @@ public static partial class StoryTests
      // M45's step-off: Ice leaves the helicopter and stands on the deck. He used to be
      // asked to reach a zone the helicopter was already inside, which passed while he
      // was still strapped in 24 meters above it.
+     // M26 asks Guess to sit on the second spotter rather than wait out a timer: Ron
+     // found rolling up and doing nothing unsatisfying, and the clock only runs while he
+     // is on the wing.
+     // M27's pickup waits for Ice to be in the boat, whoever steered it there.
+     if(name=="ConditionObjective"&&m.Id=="M27")
+     {
+      var boat=((Bloodlines.Missions.Campaign.M27FlightRisk)m).Dinghy;
+      var ice=crew.PedFor(CrewSlot.Ice);
+      if(boat!=null&&boat.Exists()&&ice!=null&&!ice.IsInVehicle(boat))
+      {ice.Task.LeaveVehicle();ice.Position=boat.Position;ice.SetIntoVehicle(boat,VehicleSeat.RightFront);}
+     }
+     if(name=="ConditionObjective"&&m.Id=="M26")
+     {
+      var spotters=((Bloodlines.Missions.Campaign.M26AlamoScramble)m).Spotters;
+      if(spotters.Count>1&&spotters[1]!=null&&spotters[1].Exists())
+      {Game.Player.Character.Position=spotters[1].Position+new Vector3(20,0,0);Game.GameTime+=1000;}
+     }
      if(name=="ConditionObjective"&&m.Id=="M45")
      {
       var ice=crew.PedFor(CrewSlot.Ice);ice.Task.LeaveVehicle();
