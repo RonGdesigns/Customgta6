@@ -147,6 +147,7 @@ namespace Bloodlines.Missions
                 { "M50", () => new M50TheRedactedVault() },
                 { "M51", () => new M51BlackoutProtocol() },
                 { "M52", () => new M52JudicialStrike() },
+                { "M54", () => new M54ThePillboxRedoubt() },
                 { "M57", () => new M57VespucciFlak() },
                 { "SM04", () => new SM04DeadDropQuarry() },
                 { "SM05", () => new SM05BlackBoxEstuary() },

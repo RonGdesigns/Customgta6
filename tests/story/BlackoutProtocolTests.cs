@@ -257,6 +257,45 @@ public static partial class StoryTests
                 Path.GetFileName(file) + " does not register the DLC maps behind anyone's back");
         }
     }
+    static void PillboxRedoubtChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M54ThePillboxRedoubt.cs"));
+
+        // ---- Nothing inside the penthouse is authored. Exactly one point in that MLO has a
+        // coordinate — the arrival spot — and the Luxury room keys were never surveyed, so the
+        // three work positions are found at runtime rather than written down. This is the
+        // rule that a day of floating markers bought.
+        Check(src.Contains("World.GetSafeCoordForPed(candidate"),
+            "The work positions are snapped to walkable floor inside the interior");
+        Check(src.Contains("using the arrival point"),
+            "and a refused spot falls back to somewhere a man is definitely standing");
+        Check(!src.Contains("new Vector3(-7"),
+            "No interior coordinate is hard-coded into the mission");
+
+        // ---- The roost positions are read every frame. MultiHoldObjective copies its site
+        // list in its constructor, and BuildStages runs before the crew is upstairs, so it
+        // would have captured an empty list and completed the instant the stage opened.
+        Check(!src.Contains("new MultiHoldObjective"),
+            "The roosts are not a site list captured before the sites exist");
+        Check(src.Contains("() => Roost(0)") && src.Contains("private Vector3 Roost(int index)"),
+            "and each roost reads its position when it is drawn, never at construction");
+
+        // ---- The interior is opened by the service that owns interiors, not by hand.
+        Check(src.Contains("Ctx.Interior") && src.Contains("access.Begin("),
+            "ApartmentAccess owns the load, the fade and the entity sets");
+        Check(!src.Contains("REQUEST_IPL") && !src.Contains("DlcMaps."),
+            "and the mission does not reach past it to open an MLO itself");
+
+        // ---- The penthouse is a real residence the mod already loads, chosen by the owner
+        // in full knowledge that it doubles as a crew home.
+        Check(M54ThePillboxRedoubt.Penthouse == CrewSlot.Ice,
+            "It uses a named Eclipse penthouse rather than an invented address");
+        Check(KeyPoint("Apartment.Luxury.Entrance").Z > 50f && KeyPoint("Apartment.Luxury.Ice").Z > 150f,
+            "whose lobby and penthouse are the authored heights of a tower, not a street");
+
+        Check(src.Contains("!_elevator || !_upstairs || !_fortified"),
+            "It cannot pass without the elevator, the climb and the fortification");
+    }
     /// <summary>A location key's authored position, straight out of the shipped book.</summary>
     static Vector3 KeyPoint(string key)
     {

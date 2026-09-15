@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-59 of 79 missions have gameplay scripts (M01–M52 except M53, M57, SM01–SM06); the rest are loaded as data
+60 of 79 missions have gameplay scripts (M01–M52 except M53, M54, M57, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M53–M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M53, M55, M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -593,6 +593,28 @@ on the bunker to register it. Nothing said so, in either direction. A story test
 `Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
 
 This loads map data the game already shipped with. It does not join or enable GTA Online.
+
+## M54, and the only interior rule that matters
+
+M54 breaches the **Eclipse Towers Luxury penthouse**. The owner chose that knowing it
+doubles as a crew home: the only two penthouse interiors the installed game loads are that
+tier and the Diamond, and both are already homes, so the foreclosed flat is one the crew may
+hold the keys to. The alternative on the table was arriving on a roof by helicopter.
+
+**Inside an MLO, exactly one point is authored.** `Apartment.Luxury.<slot>` is the arrival
+spot; the `Apartment.Room.Luxury.*` keys were never surveyed. So M54's two roost positions
+and its antenna point are offsets from where the crew actually lands, snapped with
+`GetSafeCoordForPed` and falling back to the arrival point. **Never hard-code a coordinate
+inside an interior nobody has walked** — that is the rule a day of floating markers bought,
+and a story test refuses a literal `new Vector3(-7…` in that file.
+
+A mission never opens an interior itself. `Ctx.Interior` (`ApartmentAccess`) owns the load,
+the fade, the entity sets and the exit.
+
+One more trap worth naming: `MultiHoldObjective` **copies its site list in its constructor**.
+`BuildStages` runs before a mission has been anywhere, so a list filled in later is captured
+empty and the objective completes the instant its stage opens. Use interactions with
+`Func<Vector3>` positions for anything discovered at runtime.
 
 ## Aircraft created in the air
 

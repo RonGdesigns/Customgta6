@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-59 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+60 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -894,6 +894,18 @@ Prerequisite: M51. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+
+## M54 — THE PILLBOX REDOUBT
+
+Prerequisite: M53. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Hotwire the express elevator** — MissionInteraction: Guess: hotwire the private express elevator in the lobby |
+| 2 | Guess | **Forty floors up** — ConditionObjective: Ride the express elevator to the penthouse |
+| 3 | Guess | **Fortify the nest** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
 
 ## M57 — VESPUCCI FLAK
 
