@@ -74,6 +74,11 @@ namespace Bloodlines
                 Path.Combine(root, "Bloodlines.Surveyed.ini"), _data);
             _survey = new SurveyMode(_locations, Path.Combine(root, "Bloodlines.Surveyed.ini"),
                 _config.DevCaptureKey.ToString(), _config.SurveyTeleportKey.ToString());
+            // A capture is made on foot, so the surveyor measures the room at the spot
+            // before it writes one. Wired here rather than referenced inside SurveyMode,
+            // which the recovery test harness compiles without the placement helpers.
+            SurveyMode.ClearanceProbe = at => MissionSites.FreeRadius(at, MissionSites.RoomProbeMeters);
+            SurveyMode.TightRoom = MissionSites.TightRoomMeters;
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
             _dispatches = new CampaignDispatches(_state);
