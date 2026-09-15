@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-56 of 79 missions have gameplay scripts (M01–M48, M51, M52, SM01–SM06); the rest are loaded as data
+58 of 79 missions have gameplay scripts (M01–M52 except M53, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M49, M50, M53–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M53–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -522,6 +522,41 @@ rather than a coordinate, because an assassination ends when the response loses 
 The district text in `data/locations.tsv` is machine-read: City Hall's plaza is in
 **Burton** and the roof is in **Rockford Hills**, whatever the building is called. A hint
 that leads with anything else makes `validate_locations` resolve the wrong zone.
+
+## M49 and M50: derived geometry, and two bounded results
+
+**M49 does not author its checkpoint.** Roads are baked terrain, so no placed-entity
+survey can find the Great Ocean Highway. `M49.Checkpoint` is a seed; the real lane comes
+from `GameUtils.NearestRoadNode` at runtime, and the concrete, the APCs and the spotlight
+towers are all offsets from that lane and its heading. One seed can be wrong; six
+separately authored points can each be wrong on their own. A missing node is reported to
+the doctor and the seed used — a checkpoint slightly off the road is recoverable, a refused
+mission is not.
+
+The seam is a **gap left in the concrete**, not a hole punched through it. The 90-mph ram
+the bible describes is refused by `CAMPAIGN-REMAINDER` and stays refused: a barricade that
+only yields to a collision is one the player cannot fail at honestly.
+
+**M50 happens on a street.** There is no municipal archive in Rockford Hills — the zone is
+mansions — and no walkable records interior in the installed game, but the synopsis is
+already a conduit tap, so Gohan splices a real placed street cabinet. Its security is
+**contained, not killed** (`NonlethalGuards` + `SubdueTargetsObjective`): the story wants
+the crew to have been there without leaving bodies in Rockford Hills.
+
+Its result is bounded and must stay bounded: **the coordinated municipal feed is
+invalidated; local and physical copies remain, and nothing clears a wanted level.** The
+authored line says it outright — "that buys us time, not an acquittal".
+
+Three authored lines across these two describe places that do not exist — M50's vault
+sub-level with turrets and a left corridor, and M51's detonation countdown. They are not
+fired, because narrating a place the player is not standing in is worse than silence, and
+each divergence is recorded in `data/mission_gameplay.tsv`. Never edit the extraction to
+follow gameplay; an authored revision goes through `data/dialogue_edits.json`.
+
+**M53 is the one left, and it cannot be authored offline.** Not one placed entity exists
+below z = 0 under Pillbox Hill: the subway is a handful of large models whose origins sit
+at street level, and a model origin is not a floor. Every M53 coordinate has to come from
+an in-game capture.
 
 ## Aircraft created in the air
 

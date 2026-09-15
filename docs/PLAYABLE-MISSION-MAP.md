@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-56 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+58 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -831,6 +831,37 @@ Prerequisite: M47. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M47.Clear, M48.Cordon, M48.Shore, M48.South, M48.Technical.
+
+## M49 — RETURN TO THE CONCRETE
+
+Prerequisite: M48. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Come up on the line** — TravelObjective: Guess: bring the Granger up short of the checkpoint |
+| 2 | Guess | **Take the towers and the radio** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 3 | Guess | **Everyone in the Granger** — EnterVehicleObjective: All three: get into the Granger before the run<br>ConditionObjective: Nobody is left on the shoulder |
+| 4 | Guess | **Run the seam** — TravelObjective: Guess: take the Granger through the gap in the concrete |
+| 5 | Guess | **Into the county** — TravelObjective: Drive north past the county line |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M49.Checkpoint, M49.Crew, M49.South.
+
+## M50 — THE REDACTED VAULT
+
+Prerequisite: M49. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Splice the conduit** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | Gohan | **Invalidate the feed** — MissionInteraction: Gohan: push the invalidation onto the feed |
+| 3 | Gohan | **Back to the van** — EnterVehicleObjective: All three: get back in the van<br>ConditionObjective: Nobody is left on the street |
+| 4 | Guess | **Leave Rockford Hills** — TravelObjective: Guess: drive the crew clear of the block |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M50.Conduit, M50.Exit, M50.Guard, M50.Van.
 
 ## M51 — BLACKOUT PROTOCOL
 

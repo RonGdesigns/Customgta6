@@ -132,6 +132,70 @@ public static partial class StoryTests
         Check(src.Contains("SetEvidence(\"harrisonRemoved\""),
             "and the result is recorded for the missions that follow");
     }
+    static void RedactedVaultChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M50TheRedactedVault.cs"));
+
+        // ---- The splice is on a street, not in a field. There is no archive in Rockford
+        // Hills, but the synopsis is already a conduit tap, and the cabinet chosen is the one
+        // standing in the most built-up part of the zone.
+        var tap = KeyPoint("M50.Conduit");
+        var van = KeyPoint("M50.Van");
+        Check(tap.DistanceTo2D(van) > 10f && tap.DistanceTo2D(van) < 60f,
+            "The van waits near the cabinet but not on top of it");
+        Check(src.Contains("FixedSurfaces => new[] { \"M50.Conduit\" }"),
+            "The cabinet is a placed prop at its own height, not a point on the ground");
+
+        // ---- Contained, not killed. Private security outside a residential block.
+        Check(src.Contains("new SubdueTargetsObjective(") && src.Contains("new NonlethalGuards()"),
+            "The security is subdued rather than shot");
+        Check(!src.Contains("KillTargetsObjective"), "and there is no objective that asks for bodies");
+        Check(src.Contains("_contained?.Dispose();"), "and the nonlethal state is released on teardown");
+
+        // ---- The result is bounded, and has to stay bounded.
+        Check(src.Contains("local and physical copies") || src.Contains("Local copies still exist"),
+            "The feed is invalidated and nothing is erased");
+        Check(!src.Contains("WantedLevel = 0") && !src.Contains("LoseWanted"),
+            "and nothing about it clears a wanted level");
+
+        // Two authored lines describe a vault sub-level with turrets and a left corridor.
+        // That interior does not exist; narrating it would be worse than silence.
+        Check(!src.Contains(".AfterCues(\"M50_S1_01_GOHAN\")") && src.Contains("M50_S1_01_GOHAN and M50_S1_02_ICE are not fired"),
+            "The interior lines are withheld, with the reason written down");
+        Check(src.Contains("M50_S1_03_GOHAN"), "and the one that states the bounded result is fired");
+        string overlay = File.ReadAllText(Path.Combine(dataDir, "mission_gameplay.tsv"));
+        Check(overlay.Contains("M50	") && overlay.Contains("NONLETHALLY"),
+            "and the adaptation is recorded in the overlay rather than by editing the extraction");
+    }
+
+    static void ReturnToTheConcreteChecks()
+    {
+        string src = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Act3", "M49ReturnToTheConcrete.cs"));
+
+        // ---- The ram is gone. A barricade that only yields to a 90-mph collision is one
+        // the player cannot fail at honestly, and CAMPAIGN-REMAINDER refuses it outright.
+        Check(src.Contains("The ram is deliberately gone"),
+            "The checkpoint opens because the defense lost, not because the car is harder than concrete");
+        Check(src.Contains("if (i == 1) continue;"),
+            "The seam is a gap left in the concrete rather than a hole punched through it");
+
+        // ---- Roads are baked terrain, so the lane cannot be authored. It is resolved from
+        // a vehicle node and everything else is an offset from it: one seed can be wrong,
+        // where six separate authored points can each be wrong on their own.
+        Check(src.Contains("GameUtils.NearestRoadNode(seed, LaneSearch"),
+            "The lane comes from a road node at runtime");
+        Check(src.Contains("_forward = new Vector3(") && src.Contains("_right = new Vector3(_forward.Y, -_forward.X, 0f);"),
+            "and the barricade is laid out along that lane's own heading");
+        Check(src.Contains("Ctx.Doctor?.Warn(\"placement\", \"M49.Checkpoint\"") && src.Contains("_lane = seed;"),
+            "A missing node is reported and the seed used, rather than refusing the mission");
+
+        // ---- Ice comes down off the shoulder. This is the M47 and M48 bug.
+        Check(src.Contains("_boarding.Update(Ctx.Crew, CrewCar"),
+            "Ice is ordered into the Granger rather than left at his firing position");
+
+        Check(src.Contains("!_towersDown || !_jammed || !_through"),
+            "It cannot pass without the towers, the jam and the run through the seam");
+    }
     /// <summary>A location key's authored position, straight out of the shipped book.</summary>
     static Vector3 KeyPoint(string key)
     {

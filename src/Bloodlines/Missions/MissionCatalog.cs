@@ -143,6 +143,8 @@ namespace Bloodlines.Missions
                 { "M46", () => new M46PaletoVault() },
                 { "M47", () => new M47PaletoCollapse() },
                 { "M48", () => new M48TheRoadBackSouth() },
+                { "M49", () => new M49ReturnToTheConcrete() },
+                { "M50", () => new M50TheRedactedVault() },
                 { "M51", () => new M51BlackoutProtocol() },
                 { "M52", () => new M52JudicialStrike() },
                 { "SM04", () => new SM04DeadDropQuarry() },
