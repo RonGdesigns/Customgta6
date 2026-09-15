@@ -104,11 +104,13 @@ public static partial class StoryTests
         Check(!src.Contains("VehicleSeat.RightRear") && !src.Contains("BoardBrothers("),
             "and nothing asks a half-track for a fourth seat");
 
-        // ---- The bible named a vehicle the game ships. That is worth keeping honest.
+        // ---- The bible named a vehicle the game ships. Checking that against the dump is
+        // lint_missions' job, not this suite's: build/vehicles.json is fetched at run time and
+        // deliberately never committed, so reading it here passes on a developer's machine and
+        // fails in CI, which is exactly what it did.
         Check(M56IronInTheDrain.ApcModel == "scarab", "The Scarab is the model the bible names");
-        string vehicles = File.ReadAllText(Path.Combine(Repo, "build", "vehicles.json"));
-        Check(vehicles.Contains("\"scarab\"") && vehicles.Contains("\"halftrack\"") && vehicles.Contains("\"savage\""),
-            "and all three models are in the public vehicle dump");
+        Check(M56IronInTheDrain.HalftrackModel == "halftrack" && M56IronInTheDrain.ChopperModel == "savage",
+            "and the half-track and the Savage are named outright rather than built from strings");
 
         // ---- Orders on a cadence, never every frame.
         Check(src.Contains("if (Game.GameTime < _orderAt) return;") && M56IronInTheDrain.OrderMs >= 3000,
