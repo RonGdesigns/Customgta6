@@ -408,7 +408,7 @@ namespace Bloodlines.Core
                         float y = 260 + (i - top) * 80;
                         Surface(i == _selection ? "row-" + hero : "row", 964, y, 256, 76, ink);
                         string title = HubPage ? _entries[i].Title : Page == App.Crew ? (i == 3 ? "KJ" : Protagonist.Of((CrewSlot)i).Handle) : messages[i].Sender;
-                        string subtitle = HubPage ? _entries[i].Subtitle : Page == App.Crew ? (i == 3 ? "Racing / delivery" : _status((CrewSlot)i)) : messages[i].Title;
+                        string subtitle = HubPage ? _entries[i].SubtitleText : Page == App.Crew ? (i == 3 ? "Racing / delivery" : _status((CrewSlot)i)) : messages[i].Title;
                         Surface("avatar", 974, y + 10, 30, 30, ink);
                         label(title.Substring(0, 1), 981, y + 13, .29f, accent);
                         int lineY = 4;

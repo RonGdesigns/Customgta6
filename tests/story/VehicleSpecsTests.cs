@@ -17,6 +17,22 @@ public static partial class StoryTests
         // before and the work read as never done. This is the check that refuses that.
         Check(hub.Contains("VehicleSpecs.Block("),
             "The phone's vehicle pages ask for the performance block");
+
+        // ---- The page where a car is CHOSEN is a list, and a list row draws its title and its
+        // subtitle and nothing else. An entry with children can never show a body, because
+        // selecting it pushes into the folder and returns - so the first pass put the ratings
+        // somewhere the phone does not draw, and buying a car looked untouched.
+        string phone = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "CampaignPhone.cs"));
+        Check(hub.Contains("LiveSubtitle = () => \"$\" + VehiclePricing.Of(choice).ToString(\"N0\") + \" - \" +"),
+            "A car's list row carries its price and its comparison number in the subtitle");
+        Check(phone.Contains("_entries[i].SubtitleText"),
+            "and the renderer reads the live subtitle, or none of it reaches the screen");
+        Check(hub.Contains("Id = \"specs:\" + choice.Model") && hub.Contains("LiveBody = () => Showroom(choice)"),
+            "Showroom has a row of its own, so the full block is reachable rather than dead code");
+        int showroomAt = hub.IndexOf("LiveBody = () => Showroom(choice)", StringComparison.Ordinal);
+        int childrenAt = hub.IndexOf("Children = () => VehicleDestinations(choice)", StringComparison.Ordinal);
+        Check(showroomAt > childrenAt,
+            "and it is not hung off the car entry, which is the place that cannot draw a body");
         Check(floor.Contains("VehicleSpecs.Rows(") && floor.Contains("VehicleSpecs.Summary("),
             "and the Premium Deluxe floor in the world menu asks for the same ratings");
 

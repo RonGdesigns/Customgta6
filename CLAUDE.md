@@ -390,6 +390,18 @@ recorded in `data/mission_gameplay.tsv`: in M04 his Blackout is the same breaker
 beat from his own side, and in SM02 it kills the biometrics and holds the guards'
 awareness down while he taps the node.
 
+**A phone list row draws its title and its subtitle. Nothing else.** An entry with
+`Children` can never show a body at all: selecting it pushes into the folder and returns, so
+`LiveBody` on such an entry is dead code. The first attempt at vehicle specs put them exactly
+there — which is why buying a car on the phone looked untouched even though the block existed
+and was installed. Anything the player needs **while choosing** belongs in the subtitle
+(`LiveSubtitle`, computed each frame so a streaming model fills itself in); anything he opens
+for detail needs a leaf row of its own. A story test drives the real phone to both.
+
+Positional assertions on hub rows are fragile for the same reason: a test that took
+`Children().First()` broke the moment a row was inserted above it. Pick by what the row does
+(`First(e => e.Action != null)`), not by where it sits.
+
 **A car can be bought in two places, so both of them show the ratings.** `Core/VehicleSpecs`
 reads the model-level `GET_VEHICLE_MODEL_*` natives, which answer without a car in the world,
 and its `Rows` is the one place their wording and rounding live — `Block` composes them for a
