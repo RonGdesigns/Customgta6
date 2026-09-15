@@ -32,13 +32,40 @@ namespace Bloodlines.Missions
             GameUtils.Notify("Mission assets could not load. Restart this mission.");
             return false;
         }
+        /// <summary>
+        /// How far from his station a brother may already be and still walk to it. Beyond
+        /// this he is placed, because a chapter opened on its own has to put him somewhere.
+        /// </summary>
+        protected const float WalkToStationMeters = 80f;
+
+        /// <summary>
+        /// Put a brother at his post. If he is already on his feet nearby — which is what
+        /// a continuing operation means — he walks there.
+        ///
+        /// This used to set his position outright every time, and inside one continuous
+        /// heist that reads as a teleport: Ron watched Gohan climb onto the vessel at the
+        /// end of one chapter and then vanish inside at the start of the next, because the
+        /// next chapter stationed him at its own interior point. He is already aboard; the
+        /// walk is available, so take it.
+        /// </summary>
         protected void Station(Crew.CrewSlot slot, GTA.Math.Vector3 position)
         {
             var ped = Ctx.Crew.PedFor(slot);
             if (ped == null || !ped.Exists()) return;
             Ctx.Crew.CompanionAI.TakeControl(slot);
-            ped.Task.ClearAllImmediately(); ped.Position = position;
-            if (Ctx.Crew.ActiveSlot != slot) ped.Task.GuardCurrentPosition();
+            ped.Task.ClearAllImmediately();
+            // Only inside a live operation. A chapter opened on its own has to put him
+            // somewhere, and an ordinary mission stationing a brother at a specific spot
+            // — dry controls beside deep water, say — means exactly that spot.
+            bool walk = Ctx.Operation != null && !ped.IsDead && !ped.IsInVehicle() &&
+                        ped.Position.DistanceTo(position) <= WalkToStationMeters;
+            if (walk)
+            {
+                Logger.Info(Id + ": " + slot + " walks to his post rather than being moved to it.");
+                ped.Task.GoTo(position);
+            }
+            else ped.Position = position;
+            if (Ctx.Crew.ActiveSlot != slot && !walk) ped.Task.GuardCurrentPosition();
             _stationed.Add(slot);
         }
         protected void Station(Crew.CrewSlot slot, GTA.Vehicle vehicle, GTA.VehicleSeat seat)

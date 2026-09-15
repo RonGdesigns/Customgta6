@@ -283,6 +283,43 @@ public static partial class StoryTests
         Check(m45.Contains("Marker = () => _deck"), "And Ice is shown where to land, on the surface rather than above it");
         Check(m47.Contains("PaletoSite.OnDeck(At(\"M47.Trigger\")"),
             "M47's charge rail is measured the same way, since it stands on the same vessel");
+
+        // ---- The heist repairs Ron reported after playing M45 through M48.
+        // Four deck guards were spawned and he found one. They were tasked to fight the
+        // moment they were created, and a man closing on a target he cannot reach walks
+        // off a deck fifteen meters above the sea.
+        Check(M45PaletoBreach.DeckGuards >= 10, "The upper deck is held by ten men, because this is a heist");
+        Check(!m45.Contains("guard.Task.FightAgainstHatedTargets"),
+            "None of them are told to go and find somebody, which is how they went over the side");
+        Check(m45.Contains("guard.Task.GuardCurrentPosition();"), "They hold the deck instead");
+        Check(m45.Contains("PaletoSite.OnDeck(post,"), "And each post is dropped onto the deck that is really under it");
+
+        // M48's cordon opened fire 77 m from where the crew loads in, which killed Guess
+        // at the wheel before the player had control.
+        Check(!m48.Contains("guard.Task.FightAgainstHatedTargets"),
+            "The cordon does not engage a crew that has only just arrived");
+        Check(m48.Contains("guard.Task.GuardCurrentPosition();"), "It holds the roadblock until they drive into it");
+
+        // A throw out of Setup is the whole operation refusing to start, which is what Ron
+        // got after arming the charges, five chapters in.
+        Check(m47.Contains("try { return MarineSites.ResolveOrThrow(Ctx.Locations, key, 2f); }"),
+            "M47 catches the water probe instead of letting it throw the sitting away");
+        Check(m47.Contains("Afloat(key) ?? Afloat("), "It falls back to clear water and says so");
+
+        // A brother already aboard walks to his post. Setting his position was read as a
+        // teleport: Gohan climbed onto the vessel and then vanished inside.
+        string composed = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "ComposedMission.cs"));
+        Check(composed.Contains("bool walk = Ctx.Operation != null"),
+            "Inside a live operation a station is walked to, not teleported to");
+        Check(composed.Contains("WalkToStationMeters"), "And only when he is already close enough for the walk to be short");
+
+        // A point Ron surveyed on foot is walkable by demonstration. Refusing the mission
+        // when the navmesh disagrees is the tool overruling the survey, and it stopped SM06.
+        string sites = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "MissionSites.cs"));
+        Check(sites.Contains("if (surveyed)") && sites.Contains("Kept.Add(key);"),
+            "A surveyed point is kept rather than refused, and recorded as kept");
+        Check(sites.Contains("WasKeptOnTrust"),
+            "so the location test and the doctor still hear about it");
     }
 
     /// <summary>A location key's authored height, straight out of the book on disk.</summary>

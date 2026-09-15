@@ -118,7 +118,12 @@ namespace Bloodlines.Missions.Campaign
                 guard.Accuracy = 30;
                 guard.Armor = 40;
                 guard.Weapons.Give(WeaponHash.CarbineRifle, 180, true, true);
-                guard.Task.FightAgainstHatedTargets(140f);
+                // Not FightAgainstHatedTargets. The crew loads in 77 meters from this
+                // line, well inside a 140-meter engagement, so the cordon used to open
+                // fire the instant the chapter started and Guess was shot dead at the
+                // wheel before the player had control. They hold the roadblock; the fight
+                // starts when the crew drives into it.
+                guard.Task.GuardCurrentPosition();
                 _cordon.Add(Track(guard));
             }
             model.MarkAsNoLongerNeeded();

@@ -25,7 +25,13 @@ namespace Bloodlines.Missions.Campaign
     {
         public const string HelicopterModel = "annihilator";
         public const string GuardModel = "s_m_y_blackops_01";
-        public const int DeckGuards = 4;
+        /// <summary>
+        /// How many hold the upper deck. Four were spawned and Ron found one: they were
+        /// tasked to fight the moment they were created, and a man told to close on a
+        /// target he cannot reach walks off a deck fifteen meters above the sea. This is a
+        /// heist, so it is ten, and none of them go over the side.
+        /// </summary>
+        public const int DeckGuards = 10;
         /// <summary>
         /// How high above the deck Ice steps off. The hold marker is 40 meters up and
         /// the deck is at 15.5: stepping off up there is a 24-meter fall onto steel,
@@ -152,25 +158,34 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             var pad = _deck;
+            int placed = 0;
             for (int i = 0; i < DeckGuards; i++)
             {
-                // Along the deck away from the pad, and at the pad's own height.
-                // GameUtils.OnGround would have put all four of them in the water:
-                // the ground under a point 15 meters up on a vessel is the sea, and a
-                // deck detail nobody can reach is a stage that never completes.
-                var post = pad + new Vector3(-9f - i * 5f, i % 2 == 0 ? 4f : -4f, 0f);
+                // Two ranks down the deck away from the pad, spread so ten men are a
+                // detail rather than a pile, and each one dropped onto the deck that is
+                // really under him. GameUtils.OnGround would have put all of them in the
+                // water: the ground under a point fifteen meters up on a vessel is the sea.
+                var post = pad + new Vector3(-8f - (i / 2) * 7f, i % 2 == 0 ? 5f : -5f, 0f);
+                post = PaletoSite.OnDeck(post, Id + " deck post " + (i + 1));
                 var guard = World.CreatePed(model, post, 180f);
-                if (guard == null || !guard.Exists()) continue;
+                if (guard == null || !guard.Exists())
+                { Logger.Warn(Id + ": deck guard " + (i + 1) + " could not be created at " + post + "."); continue; }
+                placed++;
                 guard.RelationshipGroup = aegis;
                 guard.IsPersistent = true;
                 guard.BlockPermanentEvents = true;
                 guard.Accuracy = 35;
                 guard.Armor = 50;
                 guard.Weapons.Give(WeaponHash.CarbineRifle, 200, true, true);
-                guard.Task.FightAgainstHatedTargets(120f);
+                // They hold the deck. FightAgainstHatedTargets sends a man toward whatever
+                // he hates, and from this deck that is over the rail into the water — which
+                // is why three of the original four were gone before Ice arrived. Guarding
+                // the spot keeps them on the ship and still shooting.
+                guard.Task.GuardCurrentPosition();
                 _guards.Add(Track(guard));
             }
             model.MarkAsNoLongerNeeded();
+            Logger.Info(Id + ": " + placed + " of " + DeckGuards + " deck guards are on the upper deck.");
         }
 
         private bool GuardsDown => _guards.Count == 0 || _guards.All(g => g == null || !g.Exists() || g.IsDead);
