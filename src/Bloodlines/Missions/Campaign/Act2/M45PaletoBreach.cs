@@ -33,6 +33,21 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         public const int DeckGuards = 10;
         /// <summary>
+        /// How far down the deck the nearest guard post is from the helipad. Ron found men
+        /// standing in the landing zone: eight meters put the first rank where the
+        /// helicopter comes down, and a guard under the rotors is a guard in the way of the
+        /// mission rather than a guard defending anything.
+        /// </summary>
+        public const float PadClearance = 20f;
+        /// <summary>How many times a refused post steps back toward the pad looking for deck.</summary>
+        public const int PostRetries = 4;
+        /// <summary>How far each of those steps moves it, as a fraction of the way to the pad.</summary>
+        public const float PostStepBack = .2f;
+        /// <summary>How often a deck guard's combat order is refreshed once the fight is on.</summary>
+        public const int DeckOrderMs = 5000;
+        /// <summary>How far a deck guard will engage. The deck is about this long.</summary>
+        public const float DeckEngageRange = 70f;
+        /// <summary>
         /// How high above the deck Ice steps off. The hold marker is 40 meters up and
         /// the deck is at 15.5: stepping off up there is a 24-meter fall onto steel,
         /// which is how this chapter killed Ice every time it was opened. Five meters
@@ -53,6 +68,7 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _kraken;
         private bool _landed;
         private bool _aboard;
+        private int _deckOrderAt;
 
         public override string Id => "M45";
         public override string Title => "Paleto Deep-Sea: Breach";
@@ -169,12 +185,39 @@ namespace Bloodlines.Missions.Campaign
                 // detail rather than a pile, and each one dropped onto the deck that is
                 // really under him. GameUtils.OnGround would have put all of them in the
                 // water: the ground under a point fifteen meters up on a vessel is the sea.
-                var post = pad + new Vector3(-8f - (i / 2) * 7f, i % 2 == 0 ? 5f : -5f, 0f);
+                var post = pad + new Vector3(-PadClearance - (i / 2) * 7f, i % 2 == 0 ? 5f : -5f, 0f);
                 // One attempt, no waiting. The deck probe above already requested this
                 // collision and waited for it, and ten waiting probes here stalled Setup for
                 // up to ten seconds — long enough for the helicopter created just before them
                 // to fly itself into the sea, which is exactly what Ron saw.
-                post = PaletoSite.OnDeck(post, Id + " deck post " + (i + 1), attempts: 1);
+                //
+                // And the answer is checked rather than assumed. OnDeck hands back the
+                // authored point when it finds nothing solid, which on this vessel means a
+                // man at a height nobody verified: four of the ten did exactly that and one
+                // of them ended up inside the hull where Ron could not shoot him. A post
+                // with no deck under it is skipped. Nine guards is a thinner fight; a guard
+                // inside the ship is a mission that cannot be finished.
+                // Walk the post back toward the pad until the deck answers. A post that keeps
+                // the authored height is a man at a height nobody measured for that spot, and
+                // Ron found the consequence: four of the ten did exactly that and one ended up
+                // inside the hull where he could not be shot. Stepping in finds deck that
+                // actually exists instead of trusting a number.
+                float? deck = null;
+                for (int back = 0; back <= PostRetries && !deck.HasValue; back++)
+                {
+                    var tried = post + (pad - post) * (back * PostStepBack);
+                    deck = MissionSites.SurfaceHeight(tried, tried.Z + PaletoSite.DeckHeadroom, PaletoSite.WaterlineDeck - 1f);
+                    if (deck.HasValue) post = new Vector3(tried.X, tried.Y, deck.Value);
+                }
+                if (!deck.HasValue)
+                {
+                    // Nothing on that line answered. The pad's own height was measured by the
+                    // probe in Setup, so it is a real deck height on this deck rather than the
+                    // authored guess - the best answer left, and it is logged as a fallback.
+                    post = new Vector3(post.X, post.Y, pad.Z);
+                    Logger.Warn(Id + ": no deck answered under post " + (i + 1) + "; standing him at the pad's measured height " +
+                        pad.Z.ToString("0.00") + ". Survey the deck posts if he is in the wrong place.");
+                }
                 var guard = World.CreatePed(model, post, 180f);
                 if (guard == null || !guard.Exists())
                 { Logger.Warn(Id + ": deck guard " + (i + 1) + " could not be created at " + post + "."); continue; }
@@ -189,11 +232,64 @@ namespace Bloodlines.Missions.Campaign
                 // he hates, and from this deck that is over the rail into the water — which
                 // is why three of the original four were gone before Ice arrived. Guarding
                 // the spot keeps them on the ship and still shooting.
+                //
+                // BlockPermanentEvents stays on only until the fight starts. Ron reported
+                // ten guards who would not attack him, and this was why: a ped with
+                // permanent events blocked does not react to seeing an enemy, and unlike
+                // PreparationOperation this chapter has no GuardAwareness to order them
+                // about. M48 already clears the same flag in WakeCordon; M45 never did.
                 guard.Task.GuardCurrentPosition();
                 _guards.Add(Track(guard));
             }
             model.MarkAsNoLongerNeeded();
             Logger.Info(Id + ": " + placed + " of " + DeckGuards + " deck guards are on the upper deck.");
+        }
+
+        /// <summary>
+        /// Whether Gohan is genuinely on the structure: out of the boat, above the
+        /// waterline, and at the stern platform rather than swimming past it.
+        /// </summary>
+        private bool OnTheStructure()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists() || gohan.IsDead || gohan.IsInVehicle()) return false;
+            if (gohan.Position.Z < PaletoSite.WaterlineDeck) return false;
+            return gohan.Position.DistanceTo(At("M45.Board")) < 6f;
+        }
+
+        /// <summary>
+        /// The deck fights back. Clearing BlockPermanentEvents is what lets a guard react
+        /// to seeing somebody at all, and the order goes out on a cadence rather than every
+        /// frame: re-issuing a combat task each tick restarts it before the ped can act on
+        /// it, which is the defect behind the motionless guards in M31, M33 and M37.
+        /// </summary>
+        private void WakeDeck()
+        {
+            int woken = 0;
+            foreach (var guard in _guards)
+            {
+                if (guard == null || !guard.Exists() || guard.IsDead) continue;
+                guard.BlockPermanentEvents = false;
+                woken++;
+            }
+            _deckOrderAt = 0;
+            Logger.Info(Id + ": the deck detail is reactive now — " + woken + " of " + _guards.Count + " still standing.");
+        }
+
+        /// <summary>Keep the deck detail shooting at whoever is on their deck.</summary>
+        private void PressTheDeck()
+        {
+            if (Game.GameTime < _deckOrderAt) return;
+            _deckOrderAt = Game.GameTime + DeckOrderMs;
+            var target = Game.Player.Character;
+            if (target == null || !target.Exists() || target.IsDead) return;
+            foreach (var guard in _guards)
+            {
+                if (guard == null || !guard.Exists() || guard.IsDead) continue;
+                if (guard.Position.DistanceTo(target.Position) > DeckEngageRange) continue;
+                if (guard.IsInCombat) continue;
+                guard.Task.FightAgainst(target);
+            }
         }
 
         private bool GuardsDown => _guards.Count == 0 || _guards.All(g => g == null || !g.Exists() || g.IsDead);
@@ -215,6 +311,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Clear the upper deck",
                 new KillTargetsObjective("Ice: clear the deck detail", () => _guards))
                 .OwnedBy(CrewSlot.Ice)
+                .OnEnter(c => WakeDeck())
                 .OnExit(c =>
                 {
                     if (!GuardsDown) throw new InvalidOperationException("The deck detail is still up.");
@@ -226,16 +323,17 @@ namespace Bloodlines.Missions.Campaign
                 new TravelObjective("Gohan: take the Kraken alongside the stern platform", () => At("M45.Stern"), 12f, () => _kraken))
                 .OwnedBy(CrewSlot.Gohan);
 
+            // The condition belongs to the objective, not to an exit check behind it.
+            // A ReachZone within four meters of the boarding point completes while Gohan is
+            // still sitting in the Kraken below it, and the exit then threw — which is not a
+            // failed mission, it is a script error that ends a five-chapter sitting. Ron lost
+            // a whole run to it. Ask for the real thing up front and there is nothing left to
+            // throw about.
             yield return new MissionStage("Get Gohan aboard",
-                new ReachZoneObjective("Gohan: climb the stern platform onto the vessel", () => At("M45.Board"), 4f))
+                new ConditionObjective("Gohan: get out of the Kraken and climb onto the vessel", OnTheStructure)
+                { Marker = () => At("M45.Board"), MarkerRadius = 4f })
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(c =>
-                {
-                    var gohan = c.Crew.PedFor(CrewSlot.Gohan);
-                    if (gohan == null || gohan.IsInVehicle() || gohan.Position.Z < PaletoSite.WaterlineDeck)
-                        throw new InvalidOperationException("Gohan is not out of the water and on the structure.");
-                    _aboard = true;
-                })
+                .OnExit(c => _aboard = true)
                 .AfterCues("M45_S1_03_GOHAN");
         }
 
@@ -250,6 +348,9 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected override void OnUpdate()
         {
+            // Ten men who will not shoot are not a fight. Ordered on a cadence once the deck
+            // stage has woken them; before that they are standing at their posts.
+            if (Stage >= DeckFightStage && !GuardsDown) PressTheDeck();
             if (Stage <= InsertionStage && !IceOnDeck)
                 _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, Insertion, (int)Insertion.Z, true);
             else
@@ -259,6 +360,8 @@ namespace Bloodlines.Missions.Campaign
 
         /// <summary>The step-off stage: the last one that needs the helicopter held on a spot.</summary>
         private const int InsertionStage = 1;
+        /// <summary>The stage the deck detail becomes reactive on.</summary>
+        private const int DeckFightStage = 2;
 
         protected override void OnPassed()
         {

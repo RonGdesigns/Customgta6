@@ -25,6 +25,20 @@ namespace Bloodlines.Missions.Campaign
         public const string BlockerModel = "riot";
         public const string GuardModel = "s_m_y_blackops_01";
         public const int CordonGuards = 4;
+        /// <summary>
+        /// How far down the road the cordon stands from wherever the technical is.
+        ///
+        /// Ron surveyed the technical up onto the road — the authored point was on the pier
+        /// with no way to drive it back up — and that put it eighteen meters from the
+        /// authored roadblock, so the cordon was spawning on top of the crew. The line is
+        /// pushed along the road until it is at least this far from the truck, which keeps
+        /// working wherever either key is surveyed to next.
+        /// </summary>
+        public const float CordonStandoff = 70f;
+        /// <summary>How often the gun in the bed is told what to shoot at.</summary>
+        public const int GunOrderMs = 1500;
+        /// <summary>How far the bed gun will reach.</summary>
+        public const float GunRange = 90f;
 
         /// <summary>The stages that need all three in the truck, and only those: the
         /// transfer off the beach, and the run south once the roadblock is behind them.
@@ -49,6 +63,7 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _technical;
         private Vehicle _blocker;
         private bool _ashore;
+        private int _gunOrderAt;
         private bool _broken;
 
         public override string Id => "M48";
@@ -110,7 +125,38 @@ namespace Bloodlines.Missions.Campaign
             if (_technical == null || !_technical.Exists()) return false;
             _technical.PlaceOnGround();
             _technical.IsPersistent = true;
+            // A blip on the truck, so the thing the objectives keep naming is the thing with a
+            // marker on it. The chapter arrives in M47's boat and that boat is still the crew's
+            // ride until something says otherwise; an unmarked truck up on the road is easy to
+            // read as "go back to the vehicle you came in".
+            var mark = Track(_technical.AddBlip());
+            if (mark != null) { mark.Color = BlipColor.Orange; mark.Name = "Technical - load the ledger"; }
             return true;
+        }
+
+        /// <summary>
+        /// Where the roadblock actually stands: the authored line, pushed on down the road
+        /// toward the county line until it is a fight the crew drives into rather than a
+        /// fight they spawn inside. Derived from the two keys and the exit, so surveying
+        /// any of them keeps the separation instead of breaking it.
+        /// </summary>
+        private Vector3 CordonLine()
+        {
+            var truck = At("M48.Technical");
+            var line = At("M48.Cordon");
+            float gap = line.DistanceTo2D(truck);
+            if (gap >= CordonStandoff) return line;
+            // Down the road, which is the way out: the run south is the only direction
+            // this chapter travels in.
+            var south = At("M48.South");
+            var away = new Vector3(south.X - truck.X, south.Y - truck.Y, 0f);
+            float length = away.Length();
+            if (length < 1f) return line;
+            var moved = truck + away * (CordonStandoff / length);
+            moved = GameUtils.OnGround(new Vector3(moved.X, moved.Y, line.Z));
+            Logger.Info(Id + ": the cordon was " + (int)gap + " m from the technical; moved down the road to " +
+                moved + ", " + (int)moved.DistanceTo2D(truck) + " m out.");
+            return moved;
         }
 
         private void SpawnCordon()
@@ -118,7 +164,7 @@ namespace Bloodlines.Missions.Campaign
             var blockerModel = new Model(BlockerModel);
             if (GameUtils.RequestModel(blockerModel))
             {
-                _blocker = Track(World.CreateVehicle(blockerModel, At("M48.Cordon"), Ctx.Locations.Heading("M48.Cordon")));
+                _blocker = Track(World.CreateVehicle(blockerModel, CordonLine(), Ctx.Locations.Heading("M48.Cordon")));
                 if (_blocker != null && _blocker.Exists()) { _blocker.PlaceOnGround(); _blocker.IsPersistent = true; }
                 blockerModel.MarkAsNoLongerNeeded();
             }
@@ -126,7 +172,7 @@ namespace Bloodlines.Missions.Campaign
             if (!GameUtils.RequestModel(model)) return;
             // Deliberately not Aegis yet. See HoldingGroup.
             var holding = World.AddRelationshipGroup(HoldingGroup);
-            var line = At("M48.Cordon");
+            var line = CordonLine();
             for (int i = 0; i < CordonGuards; i++)
             {
                 var post = GameUtils.OnGround(line + new Vector3(-7f + i * 4.5f, i % 2 == 0 ? 3f : -3f, 0f));
@@ -168,6 +214,37 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info(Id + ": the cordon is hostile now — " + woken + " of " + _cordon.Count + " still standing.");
         }
 
+        /// <summary>
+        /// The gun in the bed, being used.
+        ///
+        /// Ron reported the gunner never firing from the car, and the reason is that nothing
+        /// ever told him to: a companion in a turret seat holds the seat and does not pick
+        /// targets. M35 hit this exact problem from the other side - "a gun in the bed is for
+        /// using" - and its answer was TASK_VEHICLE_SHOOT_AT_PED on a cooldown rather than
+        /// every frame. This is that, for whichever brother the player is not currently being.
+        ///
+        /// It only runs once the cordon is hostile. Before that there is nothing to shoot and
+        /// opening fire early is what used to get Guess killed at the wheel.
+        /// </summary>
+        private void WorkTheGun()
+        {
+            if (Game.GameTime < _gunOrderAt) return;
+            _gunOrderAt = Game.GameTime + GunOrderMs;
+            if (_technical == null || !_technical.Exists()) return;
+            var target = _cordon.FirstOrDefault(g => g != null && g.Exists() && !g.IsDead &&
+                g.Position.DistanceTo(_technical.Position) < GunRange);
+            if (target == null) return;
+            foreach (var hero in Protagonist.All)
+            {
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                if (ped == Game.Player.Character) continue;          // he aims for himself
+                if (!ped.IsInVehicle(_technical)) continue;
+                if (ped.SeatIndex == VehicleSeat.Driver) continue;   // the driver drives
+                Function.Call(Hash.TASK_VEHICLE_SHOOT_AT_PED, ped, target, GunRange);
+            }
+        }
+
         private bool Loaded => _technical != null && _technical.Exists() &&
             Protagonist.All.All(hero => Ctx.Crew.PedFor(hero.Slot)?.IsInVehicle(_technical) == true);
 
@@ -195,10 +272,13 @@ namespace Bloodlines.Missions.Campaign
             // brother still standing at the roadblock, and then OnPassed — the one place
             // the whole operation is recorded — would throw on the last objective of a
             // five-chapter sitting.
+            // Not AnyOf. The crew are already in the truck when the cordon drops, so "any one
+            // objective" was satisfied by the boarding check on the first frame and the drive
+            // never happened - the chapter ended at the roadblock, which is exactly what Ron
+            // reported. Both have to be true: at the county line, and everybody in the truck.
             yield return new MissionStage("Run south",
                 new TravelObjective("Drive south past the county line", () => At("M48.South"), 30f, () => _technical),
                 new ConditionObjective("Everyone rides south in the technical", () => Loaded))
-                .AnyOf()
                 .AfterCues("M48_S1_03_GOHAN");
         }
 
@@ -210,6 +290,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             int stage = Stage;
+            if (_broken || stage >= SouthStage) WorkTheGun();
             if (stage == LoadStage || stage == SouthStage)
             {
                 // Each boarding gets its own patience clock; the cordon fight in between
