@@ -117,10 +117,10 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-60 of 79 missions have gameplay scripts (M01–M52, M54, M57, SM01–SM06); the rest are loaded as data
+61 of 79 missions have gameplay scripts (M01–M54, M57, SM01–SM06); the rest are loaded as data
 with no mission script yet. The code builds clean with `--warnaserror`.
 
-Gameplay not implemented: M53, M55, M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
+Gameplay not implemented: M55, M56, M58–M70, SM07–SM09, the M55 switching prototype, interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
 voice lines.
 
@@ -553,10 +553,9 @@ fired, because narrating a place the player is not standing in is worse than sil
 each divergence is recorded in `data/mission_gameplay.tsv`. Never edit the extraction to
 follow gameplay; an authored revision goes through `data/dialogue_edits.json`.
 
-**M53 is the one left, and it cannot be authored offline.** Not one placed entity exists
-below z = 0 under Pillbox Hill: the subway is a handful of large models whose origins sit
-at street level, and a model origin is not a floor. Every M53 coordinate has to come from
-an in-game capture.
+**M53 was called unbuildable here twice, and that was a wrong test, not a wrong answer.**
+See the section below. Searching below z = 0 under Pillbox Hill finds nothing because there
+is nothing below z = 0; the metro runs at z 13, twenty meters under a street at z 31.
 
 ## Three presentation and placement rules, learned the expensive way
 
@@ -636,6 +635,43 @@ One trap worth keeping named: `MultiHoldObjective` **copies its site list in its
 constructor**. `BuildStages` runs before a mission has been anywhere, so a list filled in
 later is captured empty and the objective completes the instant its stage opens. Use
 interactions with `Func<Vector3>` positions for anything discovered at runtime.
+
+## M53, and the depth you measure from
+
+Two planning passes wrote M53 off as impossible to author offline, both on the same
+evidence: not one placed entity sits below z = 0 under Pillbox Hill. That was a correct
+reading of a question that did not matter. **Downtown street level is about z 31 and the
+metro runs at z 13** — twenty meters under the street and eighteen meters above the sea.
+The tunnel was never hidden; the search floor was in the wrong place. When a site "does not
+exist" in the archives, check what height you are searching from before believing it.
+
+What is there is a whole line: `metro_station_3_seoul` (-497.73, -673.53, 13.64),
+`metro_stat3join1` (-437.69, -675.41, 13.64) where platform becomes tunnel, ninety meters of
+straight `metro_t_*` sections whose origins are every one of them at 13.03, the bend east at
+`metro_t_stair` (-341.91, -682.70), `metro_newwalk1` (-470.15, -714.52, 22.51) for the walk
+out and `kt1_09_seoul_subway` (-490.29, -714.59, 25.97) for the way in. The run is in the
+**Downtown** zone and the platform end in **Little Seoul**; the district text is machine-read,
+so it names those and not Pillbox Hill.
+
+**A flat floor is measured once.** Every section origin on that run is at 13.03, so one
+downward probe at the carriage describes the whole tunnel and its offset moves the other
+sixteen points. Seventeen probes would be seventeen chances to fail and seconds of `Script.Wait`
+inside `Setup`, which is exactly what put M45's helicopter in the sea.
+
+**Underground, the walkable-ground query does not miss — it lies.** `Guard` accepts an answer
+up to 35 meters away, and from a tunnel twenty meters down that answer is Vespucci Boulevard,
+comfortably inside the tolerance. All eight contractors would have spawned in traffic. `Guard`
+now takes `trustPoint` and `PreparationOperation.EnemyAt` passes it; `Enemy(key)` is untouched,
+because sixty missions depend on the snap it does.
+
+**`Core/NightVision` owns the goggles the way `WorldLights` owns the lights.** One switch, no
+getter, held and released by name. It matters more than the lights did: night vision left on is
+a green screen the player cannot clear from any menu, on a save he keeps playing, so the release
+lives in `OnCleanup` where pass, failure, abort and death all pass through.
+
+The authored line counts the enemy — "sweep team of eight" — so there are eight, two squads of
+four. A spoken number is a contract. The one judgment in the placement is the three meters
+across the bore between the carriage and the crew; nobody has walked that tunnel with F11.
 
 ## Aircraft created in the air
 

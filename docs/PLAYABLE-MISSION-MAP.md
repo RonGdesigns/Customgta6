@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-60 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+61 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -894,6 +894,20 @@ Prerequisite: M51. Retry: full mission restart.
 Final gameplay dialogue drains before the pass/aftermath transition.
 
 Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+
+## M53 — SUBTERRANEAN SWEEP
+
+Prerequisite: M52. Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | as assigned | **Set the tripwires** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
+| 2 | any brother | **Clear the tunnel** — KillTargetsObjective: Take both sweep teams in the tunnel |
+| 3 | any brother | **Out through the station** — ReachZoneObjective: Get up onto the station walkway and out |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.Start, M53.Train.
 
 ## M54 — THE PILLBOX REDOUBT
 

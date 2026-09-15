@@ -18,6 +18,7 @@ def main():
     sources += ['Core/BunkerSite.cs', 'Core/CrewHomes.Bunker.cs', 'Missions/Objectives/BunkerAccessObjective.cs']
     sources += ['Core/BoundedPlacement.cs', 'Core/NonlethalGuards.cs', 'Core/MissionDoctor.cs', 'Core/PlacementContract.cs', 'Core/CargoRide.cs', 'Core/GuardAwareness.cs', 'Core/AircraftHold.cs', 'Core/CrewBoarding.cs', 'Core/VehicleSpecs.cs', 'Core/SlowMotion.cs', 'Core/TargetBlips.cs', 'Core/DlcMaps.cs']
     sources += ['Missions/MissionOperations.cs','Missions/OperationWorld.cs','Missions/ContinuousOperation.cs']
+    sources += ['Core/NightVision.cs']
     sources += ['Core/ScriptedMap.cs','Missions/PaletoWorld.cs','Missions/PaletoOperation.cs']
     sources = list(dict.fromkeys(sources))
     args += [f'"{ROOT/"src/Bloodlines"/name}"' for name in sources]
