@@ -780,7 +780,7 @@ Prerequisite: M44. Retry: full mission restart.
 | 2 | Ice | **Put Ice on the upper deck** — ConditionObjective: Ice: step off onto the upper deck |
 | 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail |
 | 4 | Gohan | **Bring the Kraken to the stern** — TravelObjective: Gohan: take the Kraken alongside the stern platform |
-| 5 | Gohan | **Get Gohan aboard** — ReachZoneObjective: Gohan: climb the stern platform onto the vessel |
+| 5 | Gohan | **Get Gohan aboard** — ConditionObjective: Gohan: get out of the Kraken and climb onto the vessel |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
