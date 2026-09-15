@@ -58,8 +58,12 @@ namespace Bloodlines.Missions.Campaign
         public bool Invalidated => _invalidated;
         public IReadOnlyList<Ped> Sentry => Opposition;
 
-        /// <summary>The cabinet is a placed prop at its own height, not a point on the ground.</summary>
-        protected override string[] FixedSurfaces => new[] { "M50.Conduit" };
+        /// <summary>
+        /// Not a fixed surface. The conduit key is where Gohan stands to work the cabinet,
+        /// and a placed prop's origin is not a floor — the same mistake that put M51's limpet
+        /// markers in the air. Ground preparation puts it on the pavement beside the cabinet.
+        /// </summary>
+        protected override string[] FixedSurfaces => new string[0];
 
         protected override bool Setup()
         {

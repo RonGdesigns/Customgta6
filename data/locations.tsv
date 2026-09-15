@@ -876,7 +876,7 @@ M52.IceStart	-650.000	-269.000	38.000	45	land	estimate	Rockford Hills / the serv
 M52.GuessStart	-650.000	-263.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
 M52.GohanStart	-650.000	-275.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 28 m clear, live survey pending
 M52.Bike	-644.000	-275.000	38.000	200	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, the superbike waits here, live survey pending
-M52.Roost	-585.000	-225.000	53.300	55	land	estimate	Rockford Hills / the roof across the plaza, reached by bh1_16_ladder_mission_fizz, 15 m above the plaza and 46 m from City Hall; archives show 11 m of clear stand at this height, live survey pending
+M52.Roost	-615.900	-240.800	53.300	60	land	estimate	Rockford Hills / the top of bh1_16_ladder_mission_fizz, the ladder Rockstar placed for a mission; the standing height is probed down onto the roof slab at runtime because a prop origin is not a floor
 M52.Harrison	-537.000	-186.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 12 m from the hall; where he comes out, live survey pending
 M52.Walk	-521.000	-226.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 55 m from the roost; where he is clear of his detail, live survey pending
 M52.Guard1	-537.000	-194.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, live survey pending

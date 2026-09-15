@@ -876,7 +876,7 @@ Prerequisite: M50. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M51.Charge, M51.Charge1, M51.Charge2, M51.Charge3, M51.Charge4, M51.Charge5, M51.Charge6, M51.Control, M51.Crew, M51.Exit, M51.Guard.
+Survey references: M51.Charge, M51.Control, M51.Crew, M51.Exit, M51.Guard.
 
 ## M52 — JUDICIAL STRIKE
 

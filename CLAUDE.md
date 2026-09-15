@@ -558,6 +558,42 @@ below z = 0 under Pillbox Hill: the subway is a handful of large models whose or
 at street level, and a model origin is not a floor. Every M53 coordinate has to come from
 an in-game capture.
 
+## Three presentation and placement rules, learned the expensive way
+
+**A placed prop's origin is not a floor.** M51 held its six limpet points and M52 its roof
+roost at the archive heights of a tank and a ladder, and both produced markers floating in
+the air that the player could not reach. A point a brother has to *stand at* belongs to
+ground preparation; `FixedSurfaces` is only for a surface the engine's walkable query would
+answer wrongly, and even then the height is probed down onto the real slab with
+`MissionSites.OnSurface` rather than trusted. The same sentence already appears in this file
+about the metro, and it was still got wrong twice.
+
+**A blip belongs to its ped.** `ped.AddBlip()` creates an independent entity that outlives
+the ped, so a dot sits over a corpse and tells the player there is still a fight. Attach
+through `Core/TargetBlips` and call its `Update` each frame; `PreparationOperation` already
+owns one as `Blips`. A story test refuses `Track(ped.AddBlip())` anywhere in the mission
+sources.
+
+**A brother's markers are his own.** A stage with parallel objectives drew every one of
+them at once, so there was no telling which marker was being asked for.
+`ComposedMission.OnUpdate` sets `ObjectiveMarkers.Suppressed` around any objective whose
+`RequiredCharacter` is not the active slot: the objective still updates, only the drawing
+waits.
+
+## DLC map data has exactly one owner
+
+Story Mode does not have the DLC map archives registered, and until one native has run,
+`REQUEST_IPL` on DLC content silently does nothing. **Always go through `Core/DlcMaps`** —
+`RequestIpl` for a map, `EnsureRegistered` before an interior.
+
+Three separate places used to call that native themselves, and the bunker's map blip ran it
+on the first frame of every session. Removing that startup call fixed a loading screen and
+broke the Paleto heist, because the cove yacht is Cayo Perico map data that had been relying
+on the bunker to register it. Nothing said so, in either direction. A story test now refuses
+`Hash.REQUEST_IPL` and the raw registration hash anywhere outside `DlcMaps`.
+
+This loads map data the game already shipped with. It does not join or enable GTA Online.
+
 ## Aircraft created in the air
 
 `World.CreateVehicle` at an altitude gives you a helicopter with stopped rotors.

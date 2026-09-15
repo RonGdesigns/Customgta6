@@ -14,6 +14,13 @@ namespace Bloodlines.Missions.Campaign
     public abstract class PreparationOperation : DesertOperation
     {
         protected readonly List<Ped> Opposition = new List<Ped>();
+        /// <summary>
+        /// The dots over this mission's hostiles. Owned here rather than added by hand,
+        /// because a blip added with AddBlip outlives the ped: Ron saw dots sitting over
+        /// corpses in mission after mission, each of which told him there was still a fight
+        /// where there was not.
+        /// </summary>
+        protected readonly TargetBlips Blips = new TargetBlips();
         protected RoleTracks Roles;
         protected Vehicle CrewCar;
         private readonly Dictionary<Ped, int> _boardingStarted = new Dictionary<Ped, int>();
@@ -89,7 +96,7 @@ namespace Bloodlines.Missions.Campaign
             // M32 and M39 both refused to start over a single post (Ron, September 13).
             if (ped == null) { Logger.Error("Could not place guard " + key + "; the encounter continues without him. Survey that key."); return null; }
             Opposition.Add(ped);
-            var blip = Track(ped.AddBlip()); blip.Color = BlipColor.Red; blip.Name = "Armed guard";
+            Blips.Attach(ped, BlipColor.Red, "Armed guard");
             return ped;
         }
         protected void Establish(string phase, string title, string reason, params Entity[] subjects)
@@ -247,6 +254,7 @@ namespace Bloodlines.Missions.Campaign
                 }
                 _wasFighting = Fighting;
                 Awareness.Update();
+                Blips.Update();
             }
             if (Game.GameTime < _orders) return;
             _orders = Game.GameTime + 2500;

@@ -51,7 +51,7 @@ namespace Bloodlines.Core
                     if (!string.IsNullOrEmpty(ipl))
                     {
                         _ownsIpl = !Function.Call<bool>(Hash.IS_IPL_ACTIVE, ipl);
-                        Function.Call(Hash.REQUEST_IPL, ipl);
+                        DlcMaps.RequestIpl(ipl);
                     }
                 }
                 ped.IsPositionFrozen = true; ped.IsInvincible = true; Game.Player.CanControlCharacter = false;
@@ -84,7 +84,7 @@ namespace Bloodlines.Core
                 {
                     if (!string.IsNullOrEmpty(_ipl) && !Function.Call<bool>(Hash.IS_IPL_ACTIVE, _ipl))
                     {
-                        Function.Call(Hash.REQUEST_IPL,_ipl);
+                        DlcMaps.RequestIpl(_ipl);
                         if(Game.GameTime-_started<1800) { Waiting("IPL streaming / room lookup"); return; }
                     }
                     if (_interior == 0)

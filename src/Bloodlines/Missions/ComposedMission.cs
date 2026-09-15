@@ -168,7 +168,17 @@ namespace Bloodlines.Missions
             MaintainAssignments(stage);
             foreach (var objective in stage.Objectives)
             {
-                if (!objective.IsFinished) objective.Update(Ctx);
+                if (objective.IsFinished) continue;
+                // A brother's markers are his own. A stage with three parallel jobs drew all
+                // of them at once — six limpet points and an interlock cabinet in M51 — so
+                // Ron could not tell which marker he was being asked to reach. The objective
+                // still updates, because progress belongs to whoever owns it; only the
+                // drawing waits until the player is that brother.
+                bool mine = !objective.RequiredCharacter.HasValue ||
+                            objective.RequiredCharacter.Value == Ctx.Crew.ActiveSlot;
+                ObjectiveMarkers.Suppressed = !mine;
+                try { objective.Update(Ctx); }
+                finally { ObjectiveMarkers.Suppressed = false; }
             }
 
             var failure = stage.FirstFailure;

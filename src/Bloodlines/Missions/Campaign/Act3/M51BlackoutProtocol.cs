@@ -62,16 +62,22 @@ namespace Bloodlines.Missions.Campaign
         public Vehicle Transport => CrewCar;
 
         /// <summary>
-        /// The charge points and the interlocks stand on placed plant units, not on
-        /// terrain. Asking the engine for walkable ground beside a tank moves the marker
-        /// off the thing the limpet goes on, which is the mistake that put M40's kits in
-        /// the water.
+        /// Nothing here is a fixed surface, and the first version of this class had all seven
+        /// listed as one.
+        ///
+        /// The reasoning was that a limpet goes on a tank, so the marker should keep the
+        /// tank's height. But the marker is not where the charge ends up — it is where Ice
+        /// has to stand to place it, and a placed prop's origin is not a floor. Holding these
+        /// at their archive heights put markers up in the air on the side of a tank, and Ron
+        /// could not reach them: "it tells Ice to reach a place that is in the air, he cannot
+        /// go up the side of the building."
+        ///
+        /// So ground preparation owns them. Every point moves to walkable ground beside its
+        /// unit, which is where a man stands to reach one. The units are seventeen meters
+        /// apart at the closest, so a correction of a stride or two cannot make two of them
+        /// ambiguous.
         /// </summary>
-        protected override string[] FixedSurfaces => new[]
-        {
-            "M51.Charge1", "M51.Charge2", "M51.Charge3",
-            "M51.Charge4", "M51.Charge5", "M51.Charge6", "M51.Control"
-        };
+        protected override string[] FixedSurfaces => new string[0];
 
         private Vector3[] Bank(int from) =>
             Enumerable.Range(from, 3).Select(i => At("M51.Charge" + i)).ToArray();

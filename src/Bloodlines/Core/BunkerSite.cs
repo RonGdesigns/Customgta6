@@ -19,11 +19,10 @@ namespace Bloodlines.Core
             Ipl = InteriorIpl, Probe = new Vector3(892.6384f,-3245.8664f,-98.265f),
             EntitySets = new[] { "Bunker_Style_A", "standard_bunker_set", "standard_security_set", "gun_wall_blocker", "gun_range_blocker_set" }
         };
-        private static bool _registered;
         /// <summary>How near the entrance the bunker's map data is worth loading.</summary>
         public const float LoadRange = 150f;
         /// <summary>Whether the DLC map registration has already happened this session.</summary>
-        public static bool Registered => _registered;
+        public static bool Registered => DlcMaps.Registered;
 
         /// <summary>
         /// Register the shipped DLC map data and ask for the bunker's exterior. This does
@@ -38,13 +37,7 @@ namespace Bloodlines.Core
         /// </summary>
         public static void LoadMaps()
         {
-            if (!_registered)
-            {
-                Function.Call((Hash)0x0888C3502DBBEEF5UL);
-                _registered = true;
-                Logger.Info("Registered the shipped DLC map data for the bunker (Story Mode; this is map data, not Online).");
-            }
-            Function.Call(Hash.REQUEST_IPL, ExteriorIpl);
+            DlcMaps.RequestIpl(ExteriorIpl);
         }
         public static bool Enter(ApartmentAccess access, LocationBook book)
         {
@@ -53,7 +46,7 @@ namespace Bloodlines.Core
             // The shipped YMAP has a trailing underscore; Story Mode registrations
             // also expose the shortened name. Keep this one HQ map registered for
             // repeat visits. The apartment service still requires a real ready room.
-            Function.Call(Hash.REQUEST_IPL, InteriorIpl.TrimEnd('_'));
+            DlcMaps.RequestIpl(InteriorIpl.TrimEnd('_'));
             return access.Begin(room.Position,residence.Ipl,true,residence.Probe,room.Heading,residence.EntitySets,
                 new[] { "Bunker_Style_B", "Bunker_Style_C", "upgrade_bunker_set", "security_upgrade", "Office_blocker_set" });
         }
