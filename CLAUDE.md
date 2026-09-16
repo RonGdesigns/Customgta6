@@ -398,12 +398,13 @@ cap per instance while boosting and puts it straight back, written only when the
 changes. It never touches `InitialDriveMaxFlatVelocity`, which is shared handling data.
 **Whether the terminal speed visibly moves is a road test, not a number to read off a file.**
 
-`Core/ExhaustFlame` is the gear-change backfire (`core` / `veh_backfire`) asked for on a
-cadence instead of once. **It must never `Script.Wait`**: it runs inside the per-frame input
-step, and `AircraftSmoke`'s wait loop — correct for a mission calling it once — would stall the
-whole mod for seconds to stream a particle asset. It asks with a zero timeout every frame and
-emits once the asset is in. Nothing loops the effect, so there is no handle to survive a failed
-exit path.
+**The exhaust flame is gone, and repeating a non-looped effect is not the way back.** Ron
+asked for continuous fire out of the pipes and pointed at the gear-change backfire as the thing
+to extend. `Core/ExhaustFlame` fired `core` / `veh_backfire` on a 70 ms cadence, and in play it
+read as flashing rather than burning — which is what a one-shot puff repeated on a timer looks
+like, at any interval, because each burst has its own fade. He asked for it removed. Anything
+that tries again needs a genuinely looped effect and an owned handle released on every exit
+path, not a faster cadence.
 
 **A source-text assertion must match a call, not a word.** Three checks in a row failed on
 their own documentation: `Contains("LaunchAirborne")`, `Contains("BoardBrothers")` and
