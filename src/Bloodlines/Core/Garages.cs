@@ -33,7 +33,17 @@ namespace Bloodlines.Core
             { "italirsx", 140000 }, { "italigto", 110000 }, { "nero", 125000 }, { "t20", 135000 },
             { "osiris", 130000 }, { "zentorno", 110000 }, { "vagner", 145000 }, { "xa21", 145000 },
             { "banshee2", 75000 }, { "tempesta", 100000 }, { "nightshark", 110000 },
-            { "insurgent", 150000 }, { "insurgent2", 120000 }, { "dune3", 85000 }, { "shotaro", 65000 }
+            { "insurgent", 150000 }, { "insurgent2", 120000 }, { "dune3", 85000 }, { "shotaro", 65000 },
+            { "khanjali", 450000 }, { "scramjet", 350000 }, { "vigilante", 375000 }, { "toreador", 280000 },
+            { "deluxo", 300000 }, { "stromberg", 220000 }, { "apc", 320000 }, { "ruiner2", 325000 },
+            { "barrage", 160000 }, { "patriot3", 125000 }, { "menacer", 140000 }, { "halftrack", 180000 },
+            { "scarab", 260000 }, { "rhino", 350000 }, { "oppressor", 220000 }, { "oppressor2", 300000 },
+            { "buffalo5", 115000 }, { "cyclone", 190000 }, { "cyclone2", 240000 }, { "tezeract", 210000 },
+            { "raiden", 95000 }, { "neon", 110000 }, { "iwagen", 85000 }, { "coureur", 75000 },
+            { "imorgon", 90000 }, { "voltic", 60000 }, { "powersurge", 45000 },
+            { "dune4", 200000 }, { "phantom2", 220000 }, { "openwheel1", 340000 }, { "openwheel2", 360000 },
+            { "sultan3", 45000 }, { "rt3000", 48000 }, { "driftfr36", 52000 }, { "vorschlaghammer", 60000 },
+            { "drifttampa", 58000 }, { "pariah", 130000 }, { "polgauntlet", 95000 }
         };
         public static int Of(StoryVehicles.Choice choice)
         {
@@ -48,6 +58,8 @@ namespace Bloodlines.Core
                 case "Planes": return 300000;
                 case "Jets": return 400000;
                 case "Special": return 350000;
+                case "Weaponized": return 250000;
+                case "Electric": return 120000;
                 default: return 40000;
             }
         }

@@ -42,6 +42,11 @@ namespace Bloodlines.Core
         public const float SlowFactor = 6f;
         /// <summary>Degrees per second at full stick deflection.</summary>
         public const float LookSpeed = 140f;
+        /// <summary>
+        /// Degrees per second a bumper pans the view. Slower than the stick on purpose:
+        /// the stick is for looking around, the bumpers are for settling on a line.
+        /// </summary>
+        public const float PanSpeed = 55f;
         /// <summary>How far the camera may get from the man it left behind.</summary>
         public const float Leash = 600f;
         /// <summary>Pitch is clamped short of straight up and down, where the math folds over.</summary>
@@ -132,28 +137,34 @@ namespace Bloodlines.Core
             if (float.IsNaN(dt) || float.IsInfinity(dt)) dt = 0f;
             dt = Math.Max(0f, Math.Min(.1f, dt));
 
-            // Look. The same two axes the dev menu already leaves enabled, so this works
-            // on a stick and on a mouse without knowing which one is in his hands.
-            _yaw -= Game.GetControlValueNormalized(GTA.Control.LookLeftRight) * LookSpeed * dt;
-            _pitch -= Game.GetControlValueNormalized(GTA.Control.LookUpDown) * LookSpeed * dt;
+            // Every read here goes through the disabled-aware accessor. The dev menu turns
+            // all control actions off and re-enables only the two stick pairs, so anything
+            // asked for with the ordinary reader comes back zero while the menu has focus —
+            // which is the whole time this camera is flying. GET_DISABLED_CONTROL_NORMAL
+            // answers whether the control is disabled or not.
+            _yaw -= Axis(GTA.Control.LookLeftRight) * LookSpeed * dt;
+            _pitch -= Axis(GTA.Control.LookUpDown) * LookSpeed * dt;
+            // Bumpers pan. Ron asked for the shoulders to carry the two movements a stick
+            // is clumsy at: a steady turn and a steady climb, held rather than nudged.
+            _yaw -= (Axis(GTA.Control.FrontendRb) - Axis(GTA.Control.FrontendLb)) * PanSpeed * dt;
             _pitch = Math.Max(-MaxPitch, Math.Min(MaxPitch, _pitch));
             _yaw = Normalize(_yaw);
 
             float speed = BaseSpeed * dt;
-            if (Game.IsControlPressed(GTA.Control.Sprint)) speed *= FastFactor;
-            if (Game.IsControlPressed(GTA.Control.Duck)) speed /= SlowFactor;
+            if (Axis(GTA.Control.Sprint) > .5f) speed *= FastFactor;
+            if (Axis(GTA.Control.Duck) > .5f) speed /= SlowFactor;
 
             var rotation = new Vector3(_pitch, 0f, _yaw);
             _camera.Rotation = rotation;
             var forward = Forward(_pitch, _yaw);
             var right = Forward(0f, _yaw - 90f);
 
-            var move = forward * -Game.GetControlValueNormalized(GTA.Control.MoveUpDown) +
-                       right * Game.GetControlValueNormalized(GTA.Control.MoveLeftRight);
-            // Straight up and down, which is the whole point for an air key: the triggers
-            // on a pad, Page Up and Page Down on the keyboard through the survey's keys.
-            move.Z += Game.GetControlValueNormalized(GTA.Control.VehicleAccelerate) -
-                      Game.GetControlValueNormalized(GTA.Control.VehicleBrake);
+            var move = forward * -Axis(GTA.Control.MoveUpDown) +
+                       right * Axis(GTA.Control.MoveLeftRight);
+            // Straight up and down, which is the whole point for an air key. The triggers
+            // are analog, so a light pull is a slow climb and a full pull is a fast one;
+            // Page Up and Page Down do the same from the keyboard.
+            move.Z += Axis(GTA.Control.FrontendRt) - Axis(GTA.Control.FrontendLt);
             move += new Vector3(0f, 0f, _climb);
             _climb = 0f;
 
@@ -172,6 +183,17 @@ namespace Bloodlines.Core
         private float _climb;
         /// <summary>One keyboard press worth of climb or descent, applied on the next frame.</summary>
         public void Climb(float amount) { if (IsFlying) _climb += amount; }
+
+        /// <summary>
+        /// One control's value, whether or not the menu has disabled it. Reading these the
+        /// ordinary way returns zero for everything the dev menu has not explicitly
+        /// re-enabled, which is every control except the two stick pairs.
+        /// </summary>
+        private static float Axis(GTA.Control control)
+        {
+            try { return Game.GetDisabledControlValueNormalized(control); }
+            catch { return 0f; }
+        }
 
         private static Vector3 Forward(float pitch, float yaw)
         {

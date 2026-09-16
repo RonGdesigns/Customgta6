@@ -52,6 +52,71 @@ namespace Bloodlines.Core
         private Ped _hiddenPlayer;
         private readonly List<HeldEntity> _held = new List<HeldEntity>();
         private Camera _camera, _previousCamera;
+        /// <summary>
+        /// A camera kept alive for the length of its hand-back to gameplay. Deleting a
+        /// camera the moment the interpolation starts is a hard cut with extra steps.
+        /// </summary>
+        private Camera _retiring;
+        private int _retireAt;
+        /// <summary>How long the view takes to ease back into the player's own camera.</summary>
+        public const int HandoffMs = 1100;
+        /// <summary>How long a shot takes to slide into the next one instead of cutting.</summary>
+        public const int ShotEaseMs = 700;
+
+        /// <summary>Where the actors are looking and what their faces are doing.</summary>
+        public ScenePerformance Performance { get; } = new ScenePerformance();
+
+        private Vector3 _shotFrom, _shotTo, _lookFrom, _lookTo;
+        private int _easeStartedAt, _easeMs;
+
+        /// <summary>
+        /// Move to a new shot by sliding rather than teleporting. Every camera move in this
+        /// class used to be an assignment to Position, which is a cut on every line of
+        /// dialogue — three men talking looked like a security-camera montage. The first
+        /// shot of a scene still arrives instantly: there is nothing to ease from.
+        /// </summary>
+        private void Frame(Vector3 position, Vector3 lookAt, bool ease = true)
+        {
+            if (_camera == null || !_camera.Exists()) return;
+            if (!ease || _easeMs == 0 && _easeStartedAt == 0)
+            {
+                _camera.Position = position;
+                _camera.PointAt(lookAt);
+                _shotFrom = _shotTo = position; _lookFrom = _lookTo = lookAt;
+                _easeStartedAt = Game.GameTime; _easeMs = 0;
+                return;
+            }
+            _shotFrom = _camera.Position; _lookFrom = _lookTo;
+            _shotTo = position; _lookTo = lookAt;
+            _easeStartedAt = Game.GameTime; _easeMs = ShotEaseMs;
+        }
+
+        /// <summary>Advance an easing shot. A tracking shot writes every frame and is not eased.</summary>
+        private void EaseShot()
+        {
+            if (_camera == null || !_camera.Exists() || _easeMs <= 0) return;
+            float t = (Game.GameTime - _easeStartedAt) / (float)_easeMs;
+            if (t >= 1f) { t = 1f; _easeMs = 0; }
+            // Smoothstep: leaves and arrives slowly, which is what a camera operator does
+            // and what a linear slide conspicuously does not.
+            float e = t * t * (3f - 2f * t);
+            _camera.Position = _shotFrom + (_shotTo - _shotFrom) * e;
+            _camera.PointAt(_lookFrom + (_lookTo - _lookFrom) * e);
+        }
+
+        /// <summary>
+        /// Delete a camera whose hand-back has finished. Called every frame by the host,
+        /// including while no scene is running, because that is when it matters.
+        /// </summary>
+        public void RetireCameras()
+        {
+            if (_retiring == null) return;
+            if (Game.GameTime < _retireAt) return;
+            var going = _retiring;
+            _retiring = null;
+            try { if (going.Exists()) going.Delete(); }
+            catch (Exception ex) { Logger.Error("Retiring a scene camera", ex); }
+        }
         private List<DialogueCue> _lines;
         private int _index, _startedAt;
         private bool _hadControl;
@@ -290,6 +355,10 @@ namespace Bloodlines.Core
                 _camera = World.CreateCamera(player.Position + new Vector3(0, -3, 2), Vector3.Zero, 48f);
                 if (_camera == null || !_camera.Exists()) throw new InvalidOperationException("Camera creation failed.");
                 World.RenderingCamera = _camera;
+                _easeStartedAt = 0; _easeMs = 0;
+                // Who is in the room. Everyone who might speak or be spoken to, so a line
+                // turns the heads of the people it is aimed at.
+                Performance.Begin(_actors.Values.Concat(_support.Values));
                 // Moving actors stay movable. Their held entry still restores the
                 // original frozen/invincible flags when the scene ends.
                 if (_blocking != null)
@@ -388,17 +457,18 @@ namespace Bloodlines.Core
                 // A side window view keeps seated actors in context without clearing their tasks.
                 var offset = actor.IsInVehicle() ? new Vector3(facing.Y * 3.8f, -facing.X * 3.8f, 1.1f)
                     : facing * 2.8f + new Vector3(0.8f, 0, 1.1f);
-                _camera.Position = actor.Position + offset;
-                _camera.PointAt(actor.Position + new Vector3(0, 0, 0.75f));
+                Frame(actor.Position + offset, actor.Position + new Vector3(0, 0, 0.75f));
                 Function.Call(Hash.SET_FOCUS_POS_AND_VEL, actor.Position.X, actor.Position.Y, actor.Position.Z, 0f, 0f, 0f);
             }
             if (_dockIntro && (_index == 1 || _index == 5 || _index == 7))
             {
                 var point = _locations.Position(_index == 1 ? "M01.RegroupPoint" : _index == 5 ? "M01.PrototypeCar" : "M01.CapoSpawn");
-                _camera.Position = point + (_index == 1 ? new Vector3(25f, 24f, 18f) : new Vector3(8f, -10f, 5f));
-                _camera.PointAt(point + new Vector3(0f, 0f, 1f));
+                Frame(point + (_index == 1 ? new Vector3(25f, 24f, 18f) : new Vector3(8f, -10f, 5f)),
+                    point + new Vector3(0f, 0f, 1f));
                 Function.Call(Hash.SET_FOCUS_POS_AND_VEL, point.X, point.Y, point.Z, 0f, 0f, 0f);
             }
+            // Everyone turns to whoever is about to speak, and he looks at one of them.
+            Performance.Speak(actor);
             _dialogue.Play(cue);
             if (_index == _lines.Count && _sceneAction != null && !_actionStarted)
             {
@@ -430,11 +500,14 @@ namespace Bloodlines.Core
                     {
                         // Tracking shot: behind and above the subject, looking through it.
                         var forward = subject is Ped mover ? mover.ForwardVector : subject is Vehicle ride ? ride.ForwardVector : new Vector3(0f, 1f, 0f);
-                        _camera.Position = subject.Position - forward * 4.5f + new Vector3(1.2f, 0f, 1.6f);
-                        _camera.PointAt(subject.Position + new Vector3(0f, 0f, 0.7f));
+                        // A tracking shot writes every frame; easing it would make the camera
+                        // lag the thing it is following.
+                        Frame(subject.Position - forward * 4.5f + new Vector3(1.2f, 0f, 1.6f),
+                            subject.Position + new Vector3(0f, 0f, 0.7f), ease: false);
                         Function.Call(Hash.SET_FOCUS_POS_AND_VEL, subject.Position.X, subject.Position.Y, subject.Position.Z, 0f, 0f, 0f);
                     }
                 }
+                EaseShot();
                 if (_actionStarted && _actionActor != null && _actionActor.Exists())
                 {
                     var point = _actionActor.Position;
@@ -502,12 +575,26 @@ namespace Bloodlines.Core
             // the player pressed; a natural end with a failed step is one too.
             if (blockingForOutcome != null && !blockingForOutcome.Succeeded && LastOutcome != SceneOutcome.Canceled) LastOutcome = SceneOutcome.Failed;
             Release("dialogue", _dialogue.Clear);
-            Release("gameplay camera", () => World.RenderingCamera = null);
+            Release("scene performance", Performance.End);
+            // The view eases back into the player's own camera instead of cutting to it.
+            // Only when nobody else owns a scripted camera: handing an interpolation to a
+            // camera another system is about to restore is how a player ends up looking at
+            // the sky. That path keeps the old hard release.
+            bool smooth = _previousCamera == null && _camera != null && _camera.Exists();
+            Release("gameplay camera", () =>
+            {
+                if (smooth) Function.Call(Hash.RENDER_SCRIPT_CAMS, false, true, HandoffMs, true, true);
+                else World.RenderingCamera = null;
+            });
             Release("previous scripted camera", () =>
             {
                 if (_previousCamera != null && _previousCamera.Exists()) World.RenderingCamera = _previousCamera;
             });
-            Release("camera delete", () => _camera?.Delete());
+            // A camera deleted mid-interpolation is a hard cut with extra steps. Keep it
+            // alive for the length of the hand-back; RetireCameras deletes it after, and
+            // the next scene forces the retirement if that never ran.
+            if (smooth) { RetireCameras(); _retiring = _camera; _retireAt = Game.GameTime + HandoffMs + 250; }
+            else Release("camera delete", () => _camera?.Delete());
             _camera = null;
             _previousCamera = null;
             Release("streaming focus", () => Function.Call(Hash.CLEAR_FOCUS));

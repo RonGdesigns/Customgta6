@@ -12,11 +12,17 @@ frozen where he was standing, and you fly.
 | --- | --- | --- |
 | Move | Left stick | WASD |
 | Look | Right stick | Mouse |
-| Up / down | RT / LT | Page Up / Page Down |
+| **Up / down** | **RT / LT** (analog) | Page Up / Page Down |
+| **Pan left / right** | **LB / RB** | Q / E |
 | Fast across a site | Hold sprint | Shift |
 | Slow onto a spot | Hold crouch | Ctrl |
 | Capture here | Capture key | F11 |
 | Put the view back | Insert | Insert |
+
+The shoulders carry the two movements a stick is clumsy at. The triggers are analog, so a
+light pull is a slow climb and a full pull a fast one — which is how you settle on a
+height for an air key. The bumpers pan the view at a steady rate, slower than the stick,
+for lining a shot up rather than looking around.
 
 A capture taken while flying records the **camera's** position and the direction it is
 looking, not the character's. A key whose kind is `land` is dropped onto the first surface

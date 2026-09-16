@@ -325,6 +325,9 @@ namespace Bloodlines
             Step("survey", _survey.Update);
             // The staged world draws its markers and its banner; it runs nothing.
             Step("staging preview", _menu.Preview.Update);
+            // A camera handed back to gameplay is deleted once the slide home is over,
+            // which is after the scene it belonged to has ended.
+            Step("scene cameras", _cutscenes.RetireCameras);
             // An aircraft the player is flying has a running engine. Planes and
             // helicopters are created cold on purpose, and nothing ever started them: a
             // jet spawned from the dev menu let Ron fire its guns and never accelerate.

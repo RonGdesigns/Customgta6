@@ -137,6 +137,18 @@ public static partial class StoryTests
             "Pitch stops short of straight up, where the math folds over");
         Check(camera.Contains("speed *= FastFactor;") && camera.Contains("speed /= SlowFactor;"),
             "There is a fast way across a site and a slow way onto a spot");
+        // The shoulders carry the two movements a stick is clumsy at: a steady climb and a
+        // steady turn, held rather than nudged.
+        Check(camera.Contains("Axis(GTA.Control.FrontendRt) - Axis(GTA.Control.FrontendLt)"),
+            "The triggers climb and descend, analog, so a light pull is a slow climb");
+        Check(camera.Contains("(Axis(GTA.Control.FrontendRb) - Axis(GTA.Control.FrontendLb)) * PanSpeed"),
+            "and the bumpers pan the view left and right");
+        // Every read has to survive the menu turning the control set off, which it does the
+        // whole time this camera is flying.
+        Check(!camera.Contains("Game.GetControlValueNormalized") && !camera.Contains("Game.IsControlPressed"),
+            "Nothing reads a control the ordinary way: the dev menu has them disabled");
+        Check(camera.Contains("Game.GetDisabledControlValueNormalized(control)"),
+            "They go through the reader that answers whether the control is disabled or not");
         Check(camera.Contains("if (_camera == null) return;") && camera.Contains("public void Release()"),
             "and releasing a camera that was never taken is safe, which is what makes it safe on teardown");
 
