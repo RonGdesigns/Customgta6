@@ -1104,3 +1104,26 @@ handing an interpolation to a camera another system is about to restore leaves t
 looking at the sky. The scene camera then outlives its own hand-back: deleting a camera
 mid-interpolation is a hard cut with extra steps, so `RetireCameras` deletes it afterward
 and the next scene forces the retirement if that never ran.
+
+## What a vehicle costs
+
+`tools/price_vehicles.py` generates the catalog's price table; `--apply` writes it into
+`Garages.cs`. **A price already in the table is an anchor and is never moved** — the tool
+only fills gaps, so a number set by hand for a story reason survives every regeneration.
+
+**A runtime performance formula was tried and measured, and it does not work.** Fitted
+against the sixty-five hand-set prices it is 40 to 45 per cent out, and the misses are
+systematic: the Virgo is $18,000 and the curve says $39,000; the Oppressor Mk II is
+$300,000 and the curve says $44,000, because its worth is that it flies and shoots. Those
+hand prices are an affordability ladder, not a performance curve, and a formula fights the
+design every time a handling file changes.
+
+The ladder is anchored to the campaign's own payouts, which the progression guide exports:
+**$55,000 across the first three missions, $345,000 by M10, $3,722,000 in total.** So
+something has to exist under $20,000, and nothing costs more than $500,000. Street sales
+are capped at `min($30,000, price)`, which makes anything above that a one-way purchase.
+
+Uniqueness is decided **per catalog page**, not per class: the phone sorts a category by
+price, and two vehicles sharing a number is two vehicles in an arbitrary order. Ties
+between two hand-set prices are left alone, because moving an anchor is the one thing the
+tool will not do.
