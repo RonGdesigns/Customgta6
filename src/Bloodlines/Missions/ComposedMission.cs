@@ -133,6 +133,14 @@ namespace Bloodlines.Missions
         /// <summary>The mission, as stages of objectives.</summary>
         protected abstract IEnumerable<MissionStage> BuildStages();
 
+        /// <summary>
+        /// Staging without starting: exactly the Setup an attempt runs, and none of the
+        /// stages, objectives or validation that follow it. This is what the scene preview
+        /// calls, and it is the same code path an attempt uses — a preview of a different
+        /// staging routine would be a preview of nothing.
+        /// </summary>
+        protected override bool OnStage() => Setup();
+
         protected override bool OnStart()
         {
             if (!Setup()) return false;

@@ -100,6 +100,12 @@ namespace Bloodlines.Missions
         public string CurrentTitle => _current?.Title ?? _currentDefinition?.Title;
 
         public MissionDefinition LastAttempted => _currentDefinition;
+        /// <summary>
+        /// The context missions run in, for the staging preview. Handing it out is safe
+        /// because the preview stages and tears down through the mission's own path; it is
+        /// not a licence to run anything.
+        /// </summary>
+        public MissionContext Context => _context;
         public bool RetryAvailable { get; private set; }
         public string LastFailureReason { get; private set; } = "";
 
