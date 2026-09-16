@@ -1045,3 +1045,31 @@ model a mission will spawn, because the location book does not know.
 `Core/RouteRibbons` draws multi-point paths from ordered keys — `M09.Convoy.01`, `.02`.
 The convention is the whole format: no second file to keep in step with `locations.tsv`.
 Nothing in the book is a route yet.
+
+## Scenes: eye contact, faces, and shots that slide
+
+`Core/ScenePerformance` is what the scenes were missing. There was not one
+`TASK_LOOK_AT_ENTITY` or facial call anywhere in `CutsceneDirector`, `SceneBlocking` or
+`SceneSteps`: three men stood facing whichever way they arrived, staring through each
+other with the neutral idle face, while the lines played. Per line, everyone within
+`LookRange` turns to the speaker, the speaker looks back at one of them — a different one
+each time — and faces carry a talking or listening mood, or one tone laid over the whole
+scene.
+
+**A look is issued once per change of speaker**, never per line and never per frame:
+re-ordering a head-track restarts it before the neck has moved, which is the same fault
+that made the guards in M31 stand still. And every face and head is released on every exit
+path, or a brother wears a scene's angry face for the rest of the session.
+
+**The camera slides.** Every shot used to be an assignment to `Camera.Position`, which is a
+cut on every line — three men talking looked like a security-camera montage. `Frame()`
+eases position and look-at on a smoothstep over `ShotEaseMs`; a tracking shot passes
+`ease: false`, because easing something that writes every frame makes the camera lag what
+it is following.
+
+**And the view is handed back rather than cut back.** `RENDER_SCRIPT_CAMS(false, true, …)`
+interpolates into the player's own camera — but only when `_previousCamera` is null, since
+handing an interpolation to a camera another system is about to restore leaves the player
+looking at the sky. The scene camera then outlives its own hand-back: deleting a camera
+mid-interpolation is a hard cut with extra steps, so `RetireCameras` deletes it afterward
+and the next scene forces the retirement if that never ran.
