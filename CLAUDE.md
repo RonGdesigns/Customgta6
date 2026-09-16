@@ -1104,3 +1104,35 @@ handing an interpolation to a camera another system is about to restore leaves t
 looking at the sky. The scene camera then outlives its own hand-back: deleting a camera
 mid-interpolation is a hard cut with extra steps, so `RetireCameras` deletes it afterward
 and the next scene forces the retirement if that never ran.
+
+## Tuning stages, and the two that do not exist
+
+`Core/VehicleStages` sells one level past the last part the game has. GTA's slots are
+fixed — engine 0 to 3, transmission and brakes 0 to 2, suspension 0 to 3 — and there is no
+top-speed slot at all, which is why no mod shop has ever offered one.
+
+**There are two stages and there will not be four.** Power and top speed have per-entity
+natives: `SET_VEHICLE_CHEAT_POWER_INCREASE` and `SET_VEHICLE_MAX_SPEED` take a handle and
+touch one car. Braking and grip have none — the SDK offers only `SET_VEHICLE_REDUCE_GRIP`
+and `SET_REDUCED_SUSPENSION_FORCE`, which take capability away. Raising either means
+writing the model's shared handling data, which reaches every car of that model in the
+world including traffic, and that is already a recorded contract. Do not add a brake or
+grip stage; add the reason to the refusal text instead.
+
+A stage belongs to **one owned car**, not a model. `GarageService.RecordFor` matches a live
+vehicle to its record by handle, the host injects that as `VehicleStages.Fitted`, and
+`WorldTuning` multiplies that car's own applied ceiling and power. It never goes near
+`InitialDriveMaxFlatVelocity`, and a test measures the distance between the two in the
+source to keep it that way.
+
+The stages live in explicit `OwnedVehicle` fields rather than in `Finish`, because
+`VehicleFinish.Capture` clears that dictionary every time the build is read off the car.
+A save written before stages existed reads as none fitted.
+
+**A raised ceiling is not a measured top speed.** The shop card says the stage is fitted in
+words rather than moving the performance bars, because those bars come from the game's own
+natives and the game does not know about it.
+
+**`Json.Int` only understands the doubles the reader produces.** Handing `FromJson` the
+dictionary `ToJson` just built reads every number as zero — a test that round-trips in
+memory proves nothing. Go through `Json.Read(Json.Write(...))`, which is what a save does.

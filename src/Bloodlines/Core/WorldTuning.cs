@@ -183,6 +183,10 @@ namespace Bloodlines.Core
         private void ApplyCeiling(Vehicle car, bool boosting)
         {
             if (!_appliedLimits.TryGetValue(car.Handle, out float applied) || applied <= 0f) return;
+            // A final drive raises this car's own ceiling and nothing else's. It multiplies
+            // the per-instance limit, never InitialDriveMaxFlatVelocity, which is shared by
+            // every car of the model including the ones traffic spawns.
+            applied *= VehicleStages.DriveFactor(VehicleStages.FittedOn(car, VehicleStages.Stage.FinalDrive));
             float want = boosting ? applied * Nitrous.SpeedMultiplier : applied;
             if (_ceilings.TryGetValue(car.Handle, out float current) && Math.Abs(current - want) < .01f) return;
             _ceilings[car.Handle] = want;
@@ -234,7 +238,9 @@ namespace Bloodlines.Core
                 }
                 float power = RampPower(_power[pair.Key], target, Game.LastFrameTime);
                 _power[pair.Key] = power;
-                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car, power * Nitrous.MultiplierFor(car));
+                Function.Call(Hash.SET_VEHICLE_CHEAT_POWER_INCREASE, car,
+                    power * Nitrous.MultiplierFor(car) *
+                    VehicleStages.PowerFactor(VehicleStages.FittedOn(car, VehicleStages.Stage.Engine)));
                 ApplyCeiling(car, Nitrous.MultiplierFor(car) > 1f);
             }
         }

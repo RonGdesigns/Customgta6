@@ -117,6 +117,18 @@ namespace Bloodlines.Core
                 ShopText(Shops.HasVehiclePreview?"Preview: green gain, red loss, nothing charged yet."
                     :"Fitted build. Cosmetic parts move no bar.",CardX+CardPad,y,.22f,Quiet);
                 y+=26f;
+                // The bars above come from the game's own natives, which know nothing about
+                // a stage. Saying so in words beats moving a bar the engine did not move.
+                var owned=Garages?.RecordFor(car);
+                int drive=VehicleStages.Level(owned,VehicleStages.Stage.FinalDrive);
+                int engine=VehicleStages.Level(owned,VehicleStages.Stage.Engine);
+                if(drive>0||engine>0)
+                {
+                    Section("TUNING STAGES",ref y);
+                    if(drive>0){ShopText("Final drive  +"+(int)(VehicleStages.DriveGain*100)+"% ceiling",CardX+CardPad,y,.23f,Paper);y+=17f;}
+                    if(engine>0){ShopText("Engine  +"+(int)(VehicleStages.PowerGain*100)+"% output",CardX+CardPad,y,.23f,Paper);y+=17f;}
+                    ShopText("Ours, not a Rockstar part. The bars above cannot see them.",CardX+CardPad,y,.21f,Quiet);y+=24f;
+                }
                 DrawFinishChips(car,ref y);
             }
             else if(_shopping.Kind==ShopKind.Weapons) DrawWeaponStats(page,ref y);

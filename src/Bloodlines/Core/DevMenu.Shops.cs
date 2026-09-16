@@ -58,6 +58,7 @@ namespace Bloodlines.Core
                 page.Add("Purchased parts",()=>"Fitted to this vehicle");
                 page.Add("Repair",()=>site.Kind==ShopKind.Guess&&_crew.ActiveSlot==CrewSlot.Guess?"Free - Guess's own work":"$"+Shops.Price(site,500),()=>Shops.Repair(site));
                 page.Add("Performance / body / interior",()=>"compatible upgrades",()=>_stack.Push(BuildShopParts(site)));
+                page.Add("Tuning stages",()=>"past the last part the shop sells",()=>_stack.Push(BuildShopStages(site)));
                 page.Add("Paint and colors",()=>"body / trim / dashboard / RGB",()=>_stack.Push(BuildShopColors(site)));
                 page.Add("Wheels and tires",()=>"street / track / Benny's / more",()=>_stack.Push(BuildWheelFamilies(site)));
                 page.Add("Lights / extras / windows / plates",()=>"compatible equipment",()=>_stack.Push(BuildShopEquipment(site)));
@@ -184,6 +185,29 @@ namespace Bloodlines.Core
         {
             var page=new Page(PartName(type)+" - preview parts");int count=Shops.ModCount(site,type);
             for(int i=-1;i<count;i++){int index=i;page.Add(Shops.ModName(site,type,i),()=>Shops.ModIndex(site,type)==index?"Fitted":"$"+Shops.Price(site,1000),()=>PreviewCar(site,()=>Shops.Fit(site,type,index)));}
+            return page;
+        }
+        /// <summary>
+        /// The two stages there are. Braking and grip are not here on purpose: no native
+        /// raises either for one car, and doing it through the model's handling data would
+        /// reach every car of that model in the world, traffic included.
+        /// </summary>
+        private Page BuildShopStages(ShopSite site)
+        {
+            var page=new Page("Tuning stages");
+            foreach(VehicleStages.Stage stage in Enum.GetValues(typeof(VehicleStages.Stage)))
+            {
+                var chosen=stage;
+                page.Add(VehicleStages.Name(chosen),()=> {
+                    var car=Shops.Car(site);
+                    var owned=Garages?.RecordFor(car);
+                    if(VehicleStages.Level(owned,chosen)>0)return "fitted";
+                    string refusal=VehicleStages.Refusal(car,owned,chosen);
+                    return refusal ?? "$"+Shops.Price(site,VehicleStages.Price(chosen));
+                },()=>Shops.FitStage(site,chosen));
+            }
+            page.Add("What a stage is",()=>"ours, not a Rockstar part");
+            page.Add("Braking and grip",()=>"no per-car native exists; see the log");
             return page;
         }
         private Page BuildShopColors(ShopSite site)
