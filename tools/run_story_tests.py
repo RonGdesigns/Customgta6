@@ -20,7 +20,7 @@ def main():
     sources += ['Missions/MissionOperations.cs','Missions/OperationWorld.cs','Missions/ContinuousOperation.cs']
     sources += ['Core/NightVision.cs']
     sources += ['Core/PaintPalette.cs']
-    sources += ['Core/ScriptedMap.cs','Missions/PaletoWorld.cs','Missions/PaletoOperation.cs']
+    sources += ['Core/ScriptedMap.cs','Core/ScriptedInterior.cs','Missions/PaletoWorld.cs','Missions/PaletoOperation.cs']
     sources = list(dict.fromkeys(sources))
     args += [f'"{ROOT/"src/Bloodlines"/name}"' for name in sources]
     main_source=(ROOT/'src/Bloodlines/BloodlinesMain.cs').read_text(encoding='utf-8')

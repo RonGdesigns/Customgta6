@@ -90,6 +90,14 @@ namespace Bloodlines.Missions.Campaign
         public static void StageCargo(MissionContext context, string key, string destination) =>
             Of(context)?.StageCargo(key, destination);
         /// <summary>
+        /// Hold the vessel's interior open. Safe to call every frame and safe with no
+        /// parent world, so a chapter opened alone in QA does not have to know.
+        /// </summary>
+        public static bool EnsureInside(MissionContext context) => Of(context)?.Inside.Ensure() == true;
+        /// <summary>Whether the interior the game loaded actually covers a point.</summary>
+        public static bool InsideCovers(MissionContext context, Vector3 point) =>
+            Of(context)?.Inside.Covers(point) == true;
+        /// <summary>
         /// Ask the geometry check what it thinks of the authored points a chapter
         /// stands on, and record each answer under the running mission.
         ///

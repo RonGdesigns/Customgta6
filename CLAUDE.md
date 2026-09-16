@@ -928,3 +928,35 @@ asked for each frame. Up and down move a row (`Page.Stride`), left and right mov
 tile, and the drawing still refuses the grid when the colors are missing — so the request
 is never a promise. A list row with a `Swatch` draws its chip beside the value, which is
 how the channel list finally says which primary the car is wearing.
+
+## September 15: the Paleto vessel, second pass
+
+**A downward probe cannot tell a deck from a cabin floor.** `MissionSites.SurfaceHeight`
+answers "something solid is under this point", which inside a hull is just as true as out
+on the open deck. The first M45 repair checked only that, and Ron still found two men
+standing inside the vessel where he could not shoot them. `MissionSites.OpenAbove` is the
+missing half: fire the probe *upward* from just above the surface, and anything it hits is
+a deckhead. Every standing point on a built structure needs both answers.
+
+**Those are two different failures and they do not get the same fallback.** A post that is
+covered the whole way out to the rail is left empty — eight men he can fight beats ten with
+two he cannot reach. A post nothing answered for *at all* is a vessel whose collision has
+not streamed, or a chapter opened alone in QA with no structure under it; leaving the deck
+empty there is a mission that cannot be completed, so he is placed at the detail's own
+measured height and the log calls the post unverified. Conflating them empties the deck in
+QA and fails the flow suite with "a required hostile failed to load".
+
+**A hostile detail gets its own surveyable key.** M45's ten men were measured backward from
+`M45.Helipad`, so moving the landing zone moved the detail with it — to the bow and off the
+front of the boat. `M45.Deck` is the detail's own anchor now. Ron asked for the arrival to
+move to the far end of the vessel because a detail standing in the open, watching a
+helicopter land and not firing on it, reads wrong however far away it is.
+
+**A scripted map is not a scripted interior.** `ScriptedMap` asks for the ymap, which places
+an MLO's shell; until the interior is pinned, the doorway into it is a wall.
+`h4_islandx_yacht_03_int` had the map request and nothing else, which is why Ron could board
+the vessel at the stern and never get inside, and why M46's first marker sat in a room he
+could not reach. `Core/ScriptedInterior` is `ApartmentAccess`'s sequence — un-disable,
+un-cap, pin, refresh, wait on `IS_INTERIOR_READY` — with the same ownership rule the map
+already keeps: put back whatever state it was found in, on every exit path. Anything that
+script-loads an interior goes through it.

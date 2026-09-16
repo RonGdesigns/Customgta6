@@ -835,7 +835,8 @@ M44.Sensor	-1712	5334	0	0	water	estimate	Derived from verified hull extents; liv
 M44.Surface	-1772	5306	0	0	water	estimate	Derived from verified hull extents; live survey pending
 M45.Approach	-1900	5250	60	45	air	estimate	Derived from verified hull extents; live survey pending
 M45.Hold	-1748	5300	40	0	air	estimate	Derived from verified hull extents; live survey pending
-M45.Helipad	-1700	5325	15.5	200	land	estimate	Derived from verified hull extents; live survey pending
+M45.Helipad	-1793	5331	15.5	90	land	estimate	Derived from verified hull extents; live survey pending
+M45.Deck	-1734	5325	15.5	270	land	estimate	Derived from verified hull extents; live survey pending
 M45.Stern	-1694	5326	0	200	water	estimate	Derived from verified hull extents; live survey pending
 M45.Board	-1697	5328	1.2	200	land	estimate	Derived from verified hull extents; live survey pending
 M46.Stairs	-1750	5332	4.89	0	land	estimate	Derived from verified hull extents; live survey pending

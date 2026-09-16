@@ -60,6 +60,8 @@ namespace Bloodlines.Missions.Campaign
             }
             if (!Paleto.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Gohan, At("M46.Stairs"), Ctx.Locations.Heading("M46.Stairs"))) return false;
 
+            // Opened alone in QA there is no M45 before this to have asked for it.
+            Paleto.EnsureInside(Ctx);
             _ledger = Track(Equipment(LedgerModel, "M46.Ledger"));
             _bonds = Track(Equipment(BondsModel, "M46.Bonds"));
             if (!RequireAssets(_ledger, _bonds)) return false;
