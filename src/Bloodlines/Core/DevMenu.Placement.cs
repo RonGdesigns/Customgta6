@@ -32,6 +32,24 @@ namespace Bloodlines.Core
             if (!_survey.Camera.IsFlying) _survey.ToggleCamera();
         }
 
+        /// <summary>
+        /// Send the survey through a mission's keys on its own and report what is there. It
+        /// opens the ordinary survey, so his usual keys still work: capture takes over from
+        /// the sweep at any point, and Escape stops both.
+        /// </summary>
+        private void StartSweep(string mission)
+        {
+            if (!CanEditPlacement()) return;
+            if (_missions.IsRunning) { GameUtils.Notify("~y~Finish or abort the running mission first."); return; }
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || player.IsDead) return;
+            _abilities.Stop(); _switching.Cancel();
+            if (_crew.IsDeployed) _crew.Dismiss();
+            if (!_survey.BeginSweep(mission)) { GameUtils.Notify("~r~" + mission + " has no placements to check."); return; }
+            if (!_survey.Camera.IsFlying) _survey.ToggleCamera();
+            Close();
+        }
+
         private int _placementOpened, _placementTick;
         private readonly ControllerNavigation _placementNavigation = new ControllerNavigation();
         public Func<bool> PlacementAllowed { get; set; }
@@ -55,6 +73,11 @@ namespace Bloodlines.Core
             page.Add("Stage this mission's world",()=>Preview.IsActive&&Preview.MissionId==mission?"staged - select again to restage":"spawn it all, run nothing",
                 ()=>StagePreview(mission));
             page.Add("Survey all - visit placements in order",()=>"teleport / adjust / save / next",()=>StartPlacement(mission,false,true));
+            // The measurement behind these two rows: 1,062 keys are estimates and most
+            // missions have about nine. Flying to all nine to find the two that are wrong is
+            // the slow half, so the tool visits them and says which two.
+            page.Add("Check every spot in this mission",()=>_survey.SweepProgress,()=>StartSweep(mission));
+            page.Add("Accept every spot that checked out",()=>_survey.SweepProgress,()=>_survey.AcceptClean());
             foreach(var item in _survey.PlacementLocations.Where(l=>l.Key.StartsWith(mission+".",StringComparison.OrdinalIgnoreCase)).OrderBy(l=>l.Key))
             {
                 var selected=item;
@@ -96,6 +119,8 @@ namespace Bloodlines.Core
             page.Add("Stand-in distance",()=>_survey.Ghost.IsShowing?_survey.Ghost.Standoff.ToString("0")+" m":"no stand-in",null,d=>_survey.Ghost.PushOut(d));
             page.Add("Stand-in facing",()=>_survey.Ghost.IsShowing?_survey.Ghost.Heading.ToString("0")+" degrees":"no stand-in",null,d=>_survey.Ghost.Turn(d*5f));
             page.Add("Place from the stand-in",()=>_survey.Ghost.IsShowing?"write where it is standing":"show the stand-in first",()=>_survey.PlaceAtGhost());
+            page.Add("Accept this spot as correct",()=>_survey.LastReading!=null&&!_survey.LastReading.Fits?"it has not checked out":"keep the coordinates, mark verified",
+                ()=>_survey.AcceptCurrent());
             page.Add("Save this placement",()=>_survey.PlacementDirty?"unsaved changes":"mark verified",()=>_survey.SavePlacement(true));
             page.Add("Save and teleport to next",()=>"capture draft, then advance",()=>_survey.SaveAndNextPlacement());
             page.Add("Next spot - keep existing",()=>"teleport without saving",()=>_survey.MovePlacement(1));

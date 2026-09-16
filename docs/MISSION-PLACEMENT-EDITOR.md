@@ -146,3 +146,24 @@ man standing at a point.
 A declared key changes nothing until it is edited: an unedited key has no count, so every
 mission keeps the size and the offsets it was authored with. Nothing here has been used in
 game yet.
+
+## September 16: the survey reads out, and checks a mission at a time
+
+**The readout.** The survey HUD now states what is at the spot the camera is looking at:
+ground above or below, headroom, clear radius, whether an interior loads, water height, the
+zone, and the nearest other key of the same mission. That last one is the site's shape,
+which an individual coordinate cannot show - M48's cordon spawned on the crew because one
+surveyed key ended up eighteen meters from another.
+
+**The capture checks the key's kind.** A land key with nothing under it, an interior key
+where no interior loads, a water key above the waterline, an air key on a deck: each is held
+for a deliberate second press rather than written quietly. It is never refused outright.
+
+**Check every spot in this mission.** The sweep teleports through a mission's keys, reads
+each one and writes `Bloodlines.Survey-Check.txt` beside the survey ini - the spots that
+need a look first. Then **Accept every spot that checked out** records those at the
+coordinates they already have, which is what having looked at them means. A spot that did
+not check out cannot be accepted; fly to it and place it.
+
+A spot that checks out is placeable. Whether it is the right place for the beat is still a
+judgment. None of this has been used in game yet.

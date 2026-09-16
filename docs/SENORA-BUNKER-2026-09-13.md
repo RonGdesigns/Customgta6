@@ -23,7 +23,7 @@ Entry requires being on foot, outside combat and free of wanted stars. Existing 
 
 ## Locations and continuity
 
-The installed Enhanced archives were read with CodeWalker without modifying any Rockstar archive. `gr_case0_bunkerclosed` contains the real entrance at approximately (848, 2993, 43). The underground `gr_grdlc_int_02` collision has solid floor near (892.6384, -3245.8664, -99.265); the player entry is approximately one metre above it. The nearby inspection point also has verified floor collision. Both documented and shortened interior IPL names are supported for registration; arrival still requires a real ready interior.
+The installed Enhanced archives were read with CodeWalker without modifying any Rockstar archive. `gr_case0_bunkerclosed` contains the real entrance at approximately (848, 2993, 43). The underground `gr_grdlc_int_02` collision has solid floor near (892.6384, -3245.8664, -99.265); the player entry is approximately one meter above it. The nearby inspection point also has verified floor collision. Both documented and shortened interior IPL names are supported for registration; arrival still requires a real ready interior.
 
 Exterior points were checked against local collision. They remain marked `estimate`, because an archive collision check does not certify gameplay pathfinding or live furniture clearance. No point is falsely marked as a personal survey.
 

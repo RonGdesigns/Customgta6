@@ -19,7 +19,7 @@
 | Cars | Comet S2 | comet6 |
 | Cars | Euros | euros |
 | Cars | Euros X32 | eurosx32 |
-| Cars | Cypher | cypher |
+| Cars | Cypher | cypher | <!-- dialect-ok: the Cypher is the game's own vehicle name -->
 | Cars | ZR350 | zr350 |
 | Cars | Remus | remus |
 | Cars | Growler | growler |

@@ -234,6 +234,22 @@ namespace Bloodlines.Core
                 return;
             }
 
+            // And whether the spot suits the kind of key it is. A land key with nothing under
+            // it, an interior key where no interior loads, a water key above the waterline: each
+            // of those shipped once and was found in game weeks later. Refused the same way a
+            // displaced capture is - one more press saves it anyway, because an author who
+            // knows better than the probe has to be able to say so.
+            var check = Read(location, taken);
+            if (!check.Fits && !Confirming(location.Key))
+            {
+                _confirmKey = location.Key;
+                _confirmUntil = Game.GameTime + ConfirmWindowMs;
+                GameUtils.Notify("~o~" + location.Key + " is a '" + location.Kind + "' key.~s~\n" + check.Complaint +
+                    "\nPress " + _captureKey + " again within " + (ConfirmWindowMs / 1000) + "s to save it here anyway.");
+                Logger.Warn("Held a survey capture of " + location.Key + " at " + taken + ": " + check.Complaint);
+                return;
+            }
+
             float room = Clearance(taken);
             _book.Record(location.Key, taken, facing);
             _captured.Add(location.Key);
@@ -393,20 +409,32 @@ namespace Bloodlines.Core
                 }
                 catch { CancelTeleport(); throw; }
             }
+            // After the teleport block, so a sweep that is waiting on collision sees the
+            // same answer the manual teleport does rather than a frame-old one.
+            SweepStep();
             var player = Game.Player.Character;
             if (player == null || !player.Exists()) return;
             if (IsEditing) { DrawPlacement(); return; }
             GameUtils.DrawObjectiveMarker(location.Position, Color.FromArgb(120, 232, 168, 56), 1.2f);
             float distance = player.Position.DistanceTo(location.Position);
-            new ContainerElement(new PointF(40f, 480f), new SizeF(580f, 108f), Color.FromArgb(225, 18, 20, 24)).Draw();
+            new ContainerElement(new PointF(40f, 480f), new SizeF(700f, 152f), Color.FromArgb(225, 18, 20, 24)).Draw();
             new TextElement("Survey " + (_index + 1) + "/" + _queue.Count + " - " + location.Key,
                 new PointF(50f, 487f), 0.32f, Color.White).Draw();
             new TextElement(location.DistrictHint + " | " + location.Kind + " | " + location.Status,
                 new PointF(50f, 513f), 0.27f, Color.Gold).Draw();
             new TextElement((int)distance + "m away | target Z " + location.Position.Z.ToString("0.0", CultureInfo.InvariantCulture),
                 new PointF(50f, 537f), 0.27f, Color.White).Draw();
+            // What is actually at the spot he is looking at. The survey used to say the key,
+            // the district and a target height and nothing about whether a man could stand
+            // there - which is the one question every placement bug of the last month turned
+            // out to be.
+            var reading = Reading(location, Camera.IsFlying ? Camera.Position : location.Position);
+            new TextElement(reading.Hud(), new PointF(50f, 561f), 0.25f,
+                reading.Fits ? Color.FromArgb(255, 150, 230, 160) : Color.FromArgb(255, 245, 170, 80)).Draw();
+            if (!reading.Fits)
+                new TextElement(reading.Complaint, new PointF(50f, 583f), 0.24f, Color.FromArgb(255, 245, 170, 80)).Draw();
             new TextElement(_teleportKey + " teleport | " + _captureKey + " capture | End skip | Home previous",
-                new PointF(50f, 561f), 0.27f, Color.White).Draw();
+                new PointF(50f, 605f), 0.27f, Color.White).Draw();
         }
 
         public bool Write()
