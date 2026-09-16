@@ -85,6 +85,11 @@ namespace Bloodlines
             // the way a map editor drops what you place. Air, water and interior keys keep
             // the height they were flown to; that is the whole reason for flying.
             SurveyMode.SurfaceProbe = (at, reach) => MissionSites.SurfaceHeight(at, at.Z, at.Z - reach);
+            // Where the tuning loop reads a car's stages, and where the shop finds the
+            // record to write one to. Both go through the garage, which is the only thing
+            // that knows which live car is which owned one.
+            VehicleStages.Fitted = (vehicle, stage) => _garages.StageOn(vehicle, stage);
+            _shops.OwnedRecord = vehicle => _garages.RecordFor(vehicle);
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
             _dispatches = new CampaignDispatches(_state);

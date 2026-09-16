@@ -267,6 +267,24 @@ namespace Bloodlines.Core
         public IEnumerable<OwnedVehicle> Parked(GarageSite site) => _state.Vehicles.Where(v => string.Equals(v.Garage, site.Id, StringComparison.OrdinalIgnoreCase));
         public int Used(GarageSite site) => Parked(site).Count();
         public bool HasFreeSlot(GarageSite site) => Owned(site) && Used(site) < site.Capacity;
+        /// <summary>
+        /// The owned record for a car that is out in the world, matched by handle. This is
+        /// what lets a stage belong to one car instead of to a model.
+        /// </summary>
+        public OwnedVehicle RecordFor(Vehicle vehicle)
+        {
+            if (vehicle == null || !vehicle.Exists()) return null;
+            foreach (var pair in _out)
+            {
+                if (pair.Value == null || !pair.Value.Exists() || pair.Value.Handle != vehicle.Handle) continue;
+                return _state.Vehicles.FirstOrDefault(v => v.Id == pair.Key);
+            }
+            return null;
+        }
+        /// <summary>How many levels of a stage this live car is carrying, for the tuning loop.</summary>
+        public int StageOn(Vehicle vehicle, VehicleStages.Stage stage) =>
+            VehicleStages.Level(RecordFor(vehicle), stage);
+
         public bool IsOut(OwnedVehicle car) => car != null && _out.TryGetValue(car.Id, out var vehicle) && vehicle != null && vehicle.Exists();
         public Vehicle OutVehicle(OwnedVehicle car) => car != null && _out.TryGetValue(car.Id, out var vehicle) && vehicle != null && vehicle.Exists() ? vehicle : null;
         public Vector3? Position(GarageSite site) => site == null ? (Vector3?)null : _locations.Get(site.Key)?.Position;

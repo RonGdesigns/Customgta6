@@ -121,11 +121,16 @@ namespace Bloodlines.Missions.Campaign
         private IEnumerable<Ped> Wave(int index)
         {
             _wavesSeen = Math.Max(_wavesSeen, index);
-            var post = At("M70.Wave" + Math.Min(Math.Max(index, 1), Waves));
+            string key = "M70.Wave" + Math.Min(Math.Max(index, 1), Waves);
+            var post = At(key);
+            // Sized from the key, the same as M60's block: the apron is wide enough that
+            // how many commandos come across it is a dial worth having.
+            int men = MissionPlacement.Count(Ctx.Locations, key, PerWave);
             var wave = new List<Ped>();
-            for (int i = 0; i < PerWave; i++)
+            for (int i = 0; i < men; i++)
             {
-                var ped = Guard(post + new Vector3(i * WaveSpread, i % 2 * WaveSpread, 0f));
+                var ped = Guard(MissionPlacement.PointFor(Ctx.Locations, key, i,
+                    post + new Vector3(i * WaveSpread, i % 2 * WaveSpread, 0f)));
                 if (ped == null) continue;
                 Opposition.Add(ped);
                 Blips.Attach(ped, BlipColor.Red, "PMC commando");

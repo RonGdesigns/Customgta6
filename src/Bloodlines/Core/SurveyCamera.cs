@@ -51,6 +51,8 @@ namespace Bloodlines.Core
         public const float Leash = 600f;
         /// <summary>Pitch is clamped short of straight up and down, where the math folds over.</summary>
         public const float MaxPitch = 88f;
+        /// <summary>How far back along its own line of sight the camera parks from a point it is sent to.</summary>
+        public const float Standoff = 12f;
 
         private Camera _camera;
         private float _pitch, _yaw;
@@ -178,6 +180,46 @@ namespace Bloodlines.Core
             // Build the world where the camera is looking, not where the man is standing.
             try { Function.Call(Hash.SET_FOCUS_POS_AND_VEL, next.X, next.Y, next.Z, 0f, 0f, 0f); }
             catch (Exception ex) { Logger.Error("Focusing the survey camera", ex); }
+        }
+
+        /// <summary>
+        /// Send the flying camera to a point, parked back along its own line of sight so the
+        /// point is in frame rather than inside the lens, and take the streaming focus with
+        /// it.
+        ///
+        /// **This is what makes the teleport work while the camera is up.** The teleport
+        /// moves the man; the camera is a separate entity and stayed looking at where he
+        /// used to be, so from behind it nothing happened at all. Worse, the focus stayed
+        /// there too, and the teleport waits on collision loading around the man — which,
+        /// with the focus a mile away, never came, so after four seconds it gave up and put
+        /// him back. Two failures reading as one: the key he asked for, unvisited.
+        /// </summary>
+        public bool MoveTo(Vector3 target)
+        {
+            if (!IsFlying) return false;
+            try
+            {
+                var at = target - Forward(_pitch, _yaw) * Standoff;
+                // Looking upward puts the standoff below the target, which underground or
+                // on a deck is inside the floor. Never park below what was asked for.
+                if (at.Z < target.Z) at = new Vector3(at.X, at.Y, target.Z + 1f);
+                _camera.Position = at;
+                Function.Call(Hash.SET_FOCUS_POS_AND_VEL, at.X, at.Y, at.Z, 0f, 0f, 0f);
+                return true;
+            }
+            catch (Exception ex) { Logger.Error("Sending the survey camera to a point", ex); return false; }
+        }
+
+        /// <summary>Put the camera back where it was, for a teleport that had to roll back.</summary>
+        public void ReturnTo(Vector3 at)
+        {
+            if (!IsFlying) return;
+            try
+            {
+                _camera.Position = at;
+                Function.Call(Hash.SET_FOCUS_POS_AND_VEL, at.X, at.Y, at.Z, 0f, 0f, 0f);
+            }
+            catch (Exception ex) { Logger.Error("Returning the survey camera", ex); }
         }
 
         private float _climb;

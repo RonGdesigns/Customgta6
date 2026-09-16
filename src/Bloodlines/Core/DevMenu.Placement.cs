@@ -58,7 +58,8 @@ namespace Bloodlines.Core
             foreach(var item in _survey.PlacementLocations.Where(l=>l.Key.StartsWith(mission+".",StringComparison.OrdinalIgnoreCase)).OrderBy(l=>l.Key))
             {
                 var selected=item;
-                page.Add(MissionPlacement.Label(selected),()=>MissionPlacement.HasGroup(selected.Key)?"position / radius / count":"position / facing",
+                page.Add(MissionPlacement.Label(selected),()=>MissionPlacement.HasRadius(selected.Key)?"position / radius / count"
+                    :MissionPlacement.HasGroup(selected.Key)?"position / facing / count":"position / facing",
                     ()=>_stack.Push(BuildPlacementActions(selected)));
             }
             return page;
@@ -101,8 +102,17 @@ namespace Bloodlines.Core
             page.Add("Previous spot",()=>"teleport back",()=>_survey.MovePlacement(-1));
             page.Add("Facing",()=>_survey.Draft?.Heading.ToString("0")+" degrees",null,d=>_survey.AdjustPlacement(0,0,d*5f));
             page.Add("Height",()=>_survey.Draft?.Position.Z.ToString("0.00")+"m",null,d=>_survey.AdjustPlacement(0,0,0,d*.1f));
-            page.Add("Enemy radius",()=>_survey.Draft!=null&&MissionPlacement.HasGroup(_survey.Draft.Key)?_survey.Draft.SpawnRadius.ToString("0.0")+"m":"not a group",null,d=>_survey.AdjustPlacement(d,0,0));
-            page.Add("Enemy count",()=>_survey.Draft!=null&&MissionPlacement.HasGroup(_survey.Draft.Key)?_survey.Draft.SpawnCount.ToString():"not a group",null,d=>_survey.AdjustPlacement(0,d,0));
+            // The old answer, 'not a group', was a dead end: it named a state without saying what the key
+            // was instead, so a row that did nothing looked like a broken row. These say
+            // which of the three a key actually is - a detail he can size, a detail whose
+            // shape belongs to the mission, or one man standing at a point.
+            page.Add("Enemy radius",()=>_survey.Draft==null?"no draft"
+                :MissionPlacement.HasRadius(_survey.Draft.Key)?_survey.Draft.SpawnRadius.ToString("0.0")+"m"
+                :MissionPlacement.HasGroup(_survey.Draft.Key)?"the mission lays this detail out"
+                :"one man at this point",null,d=>_survey.AdjustPlacement(d,0,0));
+            page.Add("Enemy count",()=>_survey.Draft==null?"no draft"
+                :MissionPlacement.HasGroup(_survey.Draft.Key)?_survey.Draft.SpawnCount+" men"
+                :"one man at this point",null,d=>_survey.AdjustPlacement(0,d,0));
             page.Add("Discard unsaved changes",()=>"restore this spot's saved values",()=>_survey.ResetPlacementDraft());
             page.Add("Finish survey",()=>"saved changes are kept",()=>{_survey.Stop();_stack.Pop();});
             return page;

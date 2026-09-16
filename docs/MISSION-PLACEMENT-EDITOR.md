@@ -127,3 +127,22 @@ file and no second format — a route is points that happen to be numbered, so e
 that reads the location book reads routes for free. Survey them like any other key and the
 connecting line is drawn while you are in that mission's survey or staging preview: amber
 while any leg is still an estimate, green once every leg has been walked.
+
+## September 16: the two faults Ron found editing M60
+
+**Teleport in fly mode.** The teleport moved the character and left the camera behind, and
+the camera holds the streaming focus, so the collision the teleport waits on loaded around
+neither of them and the four-second gate rolled it back. It now sends the camera to the
+destination one standoff back along its own line of sight - never below the point, which
+underground or on a deck is inside the floor - and a rollback returns the camera too.
+
+**Enemy count and radius.** Only two keys were ever declared as groups, so the count row
+answered "not a group" everywhere else. `MissionPlacement.Groups` is now one table, and
+M60's and M70's waves, M63's nests and M45's deck detail are in it. The rows say which of
+three things a key is: a detail the editor sizes and arranges, a detail the editor sizes
+while the mission arranges it (M45's deck, whose posts are probed for a deckhead), or one
+man standing at a point.
+
+A declared key changes nothing until it is edited: an unedited key has no count, so every
+mission keeps the size and the offsets it was authored with. Nothing here has been used in
+game yet.

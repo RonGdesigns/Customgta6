@@ -82,6 +82,25 @@ namespace Bloodlines.Core
             switch(channel){case 0:return car.Mods.PrimaryColor;case 1:return car.Mods.SecondaryColor;case 2:return car.Mods.PearlescentColor;
                 case 3:return car.Mods.RimColor;case 4:return car.Mods.TrimColor;default:return car.Mods.DashboardColor;}
         }
+        /// <summary>
+        /// Fit a stage: ours, not the game's, so it is recorded against the owned car
+        /// rather than written into a mod slot. Refused with a reason when the game's own
+        /// top part is not on yet - a stage is the step after the shop runs out.
+        /// </summary>
+        public Func<Vehicle, OwnedVehicle> OwnedRecord;
+        public bool FitStage(ShopSite site, VehicleStages.Stage stage)
+        {
+            var car = Car(site);
+            var owned = OwnedRecord?.Invoke(car);
+            string refusal = VehicleStages.Refusal(car, owned, stage);
+            if (refusal != null) { GameUtils.Notify("~y~" + refusal); return false; }
+            if (VehicleStages.Level(owned, stage) > 0) { GameUtils.Notify("~y~Already fitted."); return false; }
+            return Purchase(site, Price(site, VehicleStages.Price(stage)), () =>
+            {
+                VehicleStages.Set(owned, stage, 1);
+                return VehicleStages.Level(owned, stage) == 1;
+            });
+        }
         public bool PaintChannel(ShopSite site,int channel,VehicleColor color) => Purchase(site,Price(site,400),()=> {
             var car=Car(site);if(car==null||channel<0||channel>5)return false;
             bool custom=channel==0?car.Mods.IsPrimaryColorCustom:channel==1&&car.Mods.IsSecondaryColorCustom;

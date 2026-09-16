@@ -1105,6 +1105,37 @@ looking at the sky. The scene camera then outlives its own hand-back: deleting a
 mid-interpolation is a hard cut with extra steps, so `RetireCameras` deletes it afterward
 and the next scene forces the retirement if that never ran.
 
+## Tuning stages, and the two that do not exist
+
+`Core/VehicleStages` sells one level past the last part the game has. GTA's slots are
+fixed — engine 0 to 3, transmission and brakes 0 to 2, suspension 0 to 3 — and there is no
+top-speed slot at all, which is why no mod shop has ever offered one.
+
+**There are two stages and there will not be four.** Power and top speed have per-entity
+natives: `SET_VEHICLE_CHEAT_POWER_INCREASE` and `SET_VEHICLE_MAX_SPEED` take a handle and
+touch one car. Braking and grip have none — the SDK offers only `SET_VEHICLE_REDUCE_GRIP`
+and `SET_REDUCED_SUSPENSION_FORCE`, which take capability away. Raising either means
+writing the model's shared handling data, which reaches every car of that model in the
+world including traffic, and that is already a recorded contract. Do not add a brake or
+grip stage; add the reason to the refusal text instead.
+
+A stage belongs to **one owned car**, not a model. `GarageService.RecordFor` matches a live
+vehicle to its record by handle, the host injects that as `VehicleStages.Fitted`, and
+`WorldTuning` multiplies that car's own applied ceiling and power. It never goes near
+`InitialDriveMaxFlatVelocity`, and a test measures the distance between the two in the
+source to keep it that way.
+
+The stages live in explicit `OwnedVehicle` fields rather than in `Finish`, because
+`VehicleFinish.Capture` clears that dictionary every time the build is read off the car.
+A save written before stages existed reads as none fitted.
+
+**A raised ceiling is not a measured top speed.** The shop card says the stage is fitted in
+words rather than moving the performance bars, because those bars come from the game's own
+natives and the game does not know about it.
+
+**`Json.Int` only understands the doubles the reader produces.** Handing `FromJson` the
+dictionary `ToJson` just built reads every number as zero — a test that round-trips in
+memory proves nothing. Go through `Json.Read(Json.Write(...))`, which is what a save does.
 ## What a vehicle costs
 
 `tools/price_vehicles.py` generates the catalog's price table; `--apply` writes it into
@@ -1127,3 +1158,47 @@ Uniqueness is decided **per catalog page**, not per class: the phone sorts a cat
 price, and two vehicles sharing a number is two vehicles in an arbitrary order. Ties
 between two hand-set prices are left alone, because moving an anchor is the one thing the
 tool will not do.
+
+## The placement editor, after Ron used it
+
+Two faults, both found by editing M60.
+
+**A teleport has to take the camera.** `SurveyMode.TeleportToCurrent` moves the man; the
+survey camera is a separate entity and stayed where it was, so in fly mode the key he asked
+for never appeared and nothing looked like it had happened. The second half is worse and
+was the actual timeout: the camera holds the streaming focus with
+`SET_FOCUS_POS_AND_VEL`, and the teleport waits on `HAS_COLLISION_LOADED_AROUND_ENTITY`
+for the man — so with the focus still back at the old view, the destination never streamed,
+the four-second gate expired and it rolled him back. `SurveyCamera.MoveTo` parks the camera
+one standoff back along its own line of sight, never below the point, and takes the focus
+with it; `ReturnTo` puts it back when the teleport rolls back. **Anything that moves the man
+while the camera is up has to move the camera, or it has not moved anything he can see.**
+
+**A group is declared in a table, and the table is the contract.** `MissionPlacement.HasGroup`
+was `key == "M05.LightCrew" || key == "M03.DepotGate"` — two keys out of one thousand and
+ninety-one, so the editor's enemy-count row answered "not a group" on everything Ron tried
+and he reasonably concluded the grouping was broken. `MissionPlacement.Groups` is one
+dictionary of every key whose detail can be sized, the way `MissionOperations` is one table
+of operations, and a story test holds it against the missions that read it so the next
+detail cannot be written and forgotten.
+
+Three rules that came out of wiring it:
+
+ * **A declared key changes nothing until it is edited.** An unedited key has no count, so
+   `HasFormation` is false and the mission falls back to the constant it was authored with.
+   `MissionPlacement.PointFor` is the same idea for position: the edited formation when the
+   key has one, and the exact offset the mission wrote when it does not. That is what makes
+   adding a row to the table safe on an unsurveyed campaign.
+ * **A radius of zero means the spread is the mission's own.** M45's deck detail stands in
+   ranks across the beam and probes every post for a deckhead, because a downward probe
+   cannot tell a deck from the cabin floor under it. Its count is editable and its shape is
+   not, and the editor draws no ring and no dots for it — a circle it would not stand in is
+   the editor promising a placement it does not make.
+ * **A detail laid out as `index * spacing` is a queue, not a position.** Four missions each
+   reached for that on their own. `MissionPlacement.GroupPoint` is a sunflower spiral that
+   fills a circle evenly at any count, and it is now the one place that layout lives.
+
+M60's and M70's waves, M63's nests and M45's deck detail read their size from their keys.
+The posts in M49, M55, M64, M65, SM07 and SM08 deliberately do not: those come from a
+runtime road node or from `MazeBank.Nearby` inside an interior nobody has walked, so there
+is no surveyable key for the editor to put a number on.

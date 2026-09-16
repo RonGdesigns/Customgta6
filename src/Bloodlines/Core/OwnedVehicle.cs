@@ -28,6 +28,12 @@ namespace Bloodlines.Core
         public bool Stolen, InShop;
         public int PrimaryColor = -1, SecondaryColor = -1, Livery = -1, WheelType = -1, WindowTint = -1;
         public bool TiresReinforced;
+        /// <summary>
+        /// Tuning past the last part the game sells, one level each. Explicit fields rather
+        /// than entries in <see cref="Finish"/>, because VehicleFinish.Capture clears that
+        /// dictionary every time the build is read off the car and would take these with it.
+        /// </summary>
+        public int StageDrive, StagePower;
         public string Plate = "";
         public readonly Dictionary<string, int> Finish = new Dictionary<string, int>();
         public readonly Dictionary<int, int> Mods = new Dictionary<int, int>();
@@ -38,6 +44,7 @@ namespace Bloodlines.Core
             { "owner", Owner }, { "price", Price }, { "stolen", Stolen }, { "inShop", InShop },
             { "primary", PrimaryColor }, { "secondary", SecondaryColor }, { "livery", Livery },
             { "wheelType", WheelType }, { "tint", WindowTint }, { "reinforcedTires", TiresReinforced }, { "plate", Plate },
+            { "stageDrive", StageDrive }, { "stagePower", StagePower },
             { "finish", Finish.ToDictionary(p => p.Key, p => (object)p.Value) },
             { "mods", Mods.ToDictionary(p => p.Key.ToString(), p => (object)p.Value) }
         };
@@ -52,7 +59,9 @@ namespace Bloodlines.Core
                 Stolen = Json.Bool(map, "stolen"), InShop = Json.Bool(map, "inShop"),
                 PrimaryColor = Json.Int(map, "primary", -1), SecondaryColor = Json.Int(map, "secondary", -1), Livery = Json.Int(map, "livery", -1),
                 WheelType = Json.Int(map, "wheelType", -1), WindowTint = Json.Int(map, "tint", -1),
-                TiresReinforced = Json.Bool(map, "reinforcedTires"), Plate = Json.String(map, "plate")
+                TiresReinforced = Json.Bool(map, "reinforcedTires"), Plate = Json.String(map, "plate"),
+                // Absent in a save written before stages existed, which reads as none fitted.
+                StageDrive = Json.Int(map, "stageDrive"), StagePower = Json.Int(map, "stagePower")
             };
             long hash = 0;
             if (map.TryGetValue("hash", out var raw) && raw != null) long.TryParse(raw.ToString(), out hash);

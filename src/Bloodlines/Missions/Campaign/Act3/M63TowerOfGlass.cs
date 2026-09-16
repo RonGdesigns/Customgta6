@@ -98,9 +98,14 @@ namespace Bloodlines.Missions.Campaign
             foreach (var key in NestKeys())
             {
                 var post = Deck(key);
-                for (int i = 0; i < PerNest; i++)
+                int men = MissionPlacement.Count(Ctx.Locations, key, PerNest);
+                for (int i = 0; i < men; i++)
                 {
-                    var ped = EnemyAt(post + new Vector3(i * 2.5f, i % 2 * 2f, 0f), key);
+                    // Sized from the nest key. The deck offset is already in `post`, and
+                    // PointFor returns the authored offset unless the key has been edited,
+                    // so an unsurveyed plaza puts the same two men in the same places.
+                    var ped = EnemyAt(MissionPlacement.PointFor(Ctx.Locations, key, i,
+                        post + new Vector3(i * 2.5f, i % 2 * 2f, 0f)), key);
                     if (ped != null) _nestCrews.Add(ped);
                 }
             }

@@ -47,7 +47,13 @@ namespace Bloodlines.Core
             if (Current == null || IsTeleporting) return;
             Draft = CopyPlacement(Current);
             if (MissionPlacement.HasGroup(Draft.Key) && !MissionPlacement.HasFormation(Draft))
-            { Draft.SpawnRadius = MissionPlacement.DefaultRadius(Draft.Key); Draft.SpawnCount = MissionPlacement.DefaultCount(Draft.Key); }
+            {
+                Draft.SpawnCount = MissionPlacement.DefaultCount(Draft.Key);
+                // A key whose spread is the mission's own gets no radius written into it.
+                // A number the editor draws and the mission never reads is the editor
+                // promising a placement it does not make.
+                if (MissionPlacement.HasRadius(Draft.Key)) Draft.SpawnRadius = MissionPlacement.DefaultRadius(Draft.Key);
+            }
             _draftOrigin = CopyPlacement(Draft);
         }
         public bool MovePlacement(int delta, bool teleport = true)
@@ -81,7 +87,11 @@ namespace Bloodlines.Core
         {
             if (!IsEditing || IsTeleporting) return;
             if (MissionPlacement.HasGroup(Draft.Key))
-            { Draft.SpawnRadius=MissionPlacement.ClampRadius(Draft.SpawnRadius+radiusDelta);Draft.SpawnCount=MissionPlacement.ClampCount(Draft.SpawnCount+countDelta); }
+            {
+                Draft.SpawnCount=MissionPlacement.ClampCount(Draft.SpawnCount+countDelta);
+                if (MissionPlacement.HasRadius(Draft.Key))
+                    Draft.SpawnRadius=MissionPlacement.ClampRadius(Draft.SpawnRadius+radiusDelta);
+            }
             Draft.Heading = (Draft.Heading + headingDelta) % 360f;
             if (Draft.Heading < 0f) Draft.Heading += 360f;
             Draft.Position += new Vector3(0f,0f,heightDelta);
@@ -118,14 +128,18 @@ namespace Bloodlines.Core
         {
             var p = Draft.Position;
             bool group = MissionPlacement.HasGroup(Draft.Key);
-            float radius = group ? Draft.SpawnRadius : 1f;
+            // Only a key whose spread is ours draws a ring and a dot per man. For a detail
+            // the mission arranges itself, the count is real and the circle would be a
+            // picture of a formation nobody is going to stand in.
+            bool spread = MissionPlacement.HasRadius(Draft.Key);
+            float radius = spread ? MissionPlacement.ClampRadius(Draft.SpawnRadius) : 1f;
             for (int i=0;i<48;i++)
             {
                 double a=i*Math.PI/24,b=(i+1)*Math.PI/24;
                 Function.Call(Hash.DRAW_LINE,p.X+(float)Math.Cos(a)*radius,p.Y+(float)Math.Sin(a)*radius,p.Z+.12f,
                     p.X+(float)Math.Cos(b)*radius,p.Y+(float)Math.Sin(b)*radius,p.Z+.12f,255,185,45,230);
             }
-            if (group) for (int i=0;i<Draft.SpawnCount;i++)
+            if (spread) for (int i=0;i<Draft.SpawnCount;i++)
                 GameUtils.DrawObjectiveMarker(MissionPlacement.GroupPoint(Draft,i),Color.FromArgb(150,255,90,60),.35f);
             GameUtils.DrawObjectiveMarker(p,Color.Gold,.6f);
             double angle=Draft.Heading*Math.PI/180;
@@ -134,7 +148,9 @@ namespace Bloodlines.Core
             new ContainerElement(new PointF(40,435),new SizeF(650,158),Color.FromArgb(225,18,20,24)).Draw();
             new TextElement("Placement "+(_index+1)+"/"+_queue.Count+": "+MissionPlacement.Label(Draft),new PointF(50,441),.32f,Color.White).Draw();
             new TextElement(Draft.Key+" | heading "+Draft.Heading.ToString("0")+" | Z "+p.Z.ToString("0.00"),new PointF(50,468),.27f,Color.Gold).Draw();
-            new TextElement(group ? "Radius "+radius.ToString("0.0")+"m | "+Draft.SpawnCount+" enemies (dots preview placement)" : "Point / facing preview. No enemy-count override for this item.",new PointF(50,492),.26f,Color.White).Draw();
+            new TextElement(spread ? "Radius "+radius.ToString("0.0")+"m | "+Draft.SpawnCount+" enemies (dots preview placement)"
+                : group ? Draft.SpawnCount+" men | the mission lays this detail out from this point"
+                : "Point / facing preview. One man stands at this key.",new PointF(50,492),.26f,Color.White).Draw();
             new TextElement("X: place here | A: save | B: cancel | F7: visit saved spot",new PointF(50,516),.26f,Color.White).Draw();
             new TextElement("Hold RT/LT: radius | D-pad Up/Down: count | Left/Right: turn",new PointF(50,540),.26f,Color.White).Draw();
             new TextElement("Keyboard: Space place | Enter save | Esc cancel | +/- radius | PgUp/Dn height",new PointF(50,564),.25f,Color.White).Draw();

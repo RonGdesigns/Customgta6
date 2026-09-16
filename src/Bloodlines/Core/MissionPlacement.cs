@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using GTA.Math;
 
 namespace Bloodlines.Core
@@ -6,19 +7,110 @@ namespace Bloodlines.Core
     /// <summary>Explicitly wired spawn controls, shared by the editor and mission scripts.</summary>
     public static class MissionPlacement
     {
-        public static bool HasGroup(string key) => key == "M05.LightCrew" || key == "M03.DepotGate";
-        public static int DefaultCount(string key) => key == "M05.LightCrew" ? 4 : 10;
-        public static float DefaultRadius(string key) => key == "M05.LightCrew" ? 6f : 30f;
+        /// <summary>
+        /// A key that carries a detail rather than one man: how many stand there, and how
+        /// wide the editor may spread them. A radius of zero means the mission lays its own
+        /// men out and only the count is ours to set.
+        /// </summary>
+        public struct Group
+        {
+            public int Count;
+            public float Radius;
+            public Group(int count, float radius) { Count = count; Radius = radius; }
+        }
+
+        /// <summary>
+        /// Every key whose detail the placement editor can size, with what the mission uses
+        /// until somebody sizes it.
+        ///
+        /// **This table is the contract, and it used to be two names in an expression.**
+        /// Ron went to set the wave sizes in M60, found the enemy-count row answering "not
+        /// a group", and said the obvious thing: he had never seen anything that *was* in a
+        /// group. Two keys out of one thousand and ninety-one were, because the test was
+        /// <c>key == "M05.LightCrew" || key == "M03.DepotGate"</c> and nothing ever added a
+        /// third. One table can be added to; an expression buried in a predicate is found
+        /// only by the person it fails in game.
+        ///
+        /// A key belongs here when a mission reads its size through <see cref="Count"/>,
+        /// and a story test holds the two lists against each other so the next detail
+        /// cannot be written into a mission and forgotten here.
+        ///
+        /// **A declared key changes nothing until it is edited.** An unedited key has no
+        /// count at all, so <see cref="HasFormation"/> is false, the mission falls back to
+        /// the constant it was authored with, and the numbers below are only what the
+        /// editor offers as a starting point.
+        /// </summary>
+        private static readonly Dictionary<string, Group> Groups =
+            new Dictionary<string, Group>(StringComparer.OrdinalIgnoreCase)
+        {
+            // The two that were wired by hand. Unchanged, including their defaults.
+            { "M03.DepotGate", new Group(10, 30f) },
+            { "M05.LightCrew", new Group(4, 6f) },
+            // Three waves onto the Davis block and three onto the LSIA apron. A wave is the
+            // plainest case there is for an editable size: how many arrive is its whole shape.
+            { "M60.Wave1", new Group(5, 7f) },
+            { "M60.Wave2", new Group(5, 7f) },
+            { "M60.Wave3", new Group(5, 7f) },
+            { "M70.Wave1", new Group(6, 8f) },
+            { "M70.Wave2", new Group(6, 8f) },
+            { "M70.Wave3", new Group(6, 8f) },
+            // Two to a nest on the Maze Bank plaza deck.
+            { "M63.Nest1", new Group(2, 3f) },
+            { "M63.Nest2", new Group(2, 3f) },
+            { "M63.Nest3", new Group(2, 3f) },
+            // The Paleto deck detail stands in ranks across the beam and probes every post
+            // for a deckhead over it, because a downward probe cannot tell a deck from the
+            // cabin floor under it. That layout is the mission's and a circle would undo it,
+            // so the count is editable here and the spread is not.
+            { "M45.Deck", new Group(10, 0f) },
+        };
+
+        public static bool HasGroup(string key) => key != null && Groups.ContainsKey(key);
+        /// <summary>Whether the spread is the editor's to set, or the mission's own business.</summary>
+        public static bool HasRadius(string key)
+        {
+            Group group;
+            return key != null && Groups.TryGetValue(key, out group) && group.Radius > 0f;
+        }
+        /// <summary>Every declared key, for the report and for the test that checks this table.</summary>
+        public static IEnumerable<string> Declared => Groups.Keys;
+        public static int DefaultCount(string key)
+        {
+            Group group;
+            return key != null && Groups.TryGetValue(key, out group) ? group.Count : 1;
+        }
+        public static float DefaultRadius(string key)
+        {
+            Group group;
+            return key != null && Groups.TryGetValue(key, out group) && group.Radius > 0f ? group.Radius : 6f;
+        }
         public static int ClampCount(int count) => Math.Max(1, Math.Min(16, count));
         public static float ClampRadius(float radius) => float.IsNaN(radius) || float.IsInfinity(radius) ? 6f : Math.Max(1f, Math.Min(60f, radius));
         public static bool HasFormation(MissionLocation location) => location != null && HasGroup(location.Key) && location.SpawnCount > 0;
-        public static int Count(LocationBook book, string key, int fallback) => HasFormation(book.Get(key)) ? ClampCount(book.Get(key).SpawnCount) : fallback;
-        public static Vector3 GroupPoint(MissionLocation location, int index)
+        public static int Count(LocationBook book, string key, int fallback) => HasFormation(book?.Get(key)) ? ClampCount(book.Get(key).SpawnCount) : fallback;
+        /// <summary>
+        /// Where the nth man of a detail stands: the edited formation when the key has one
+        /// whose spread is ours, and the position the mission authored when it does not. A
+        /// detail keeps exactly the shape it was written with until he edits the key.
+        /// </summary>
+        public static Vector3 PointFor(LocationBook book, string key, int index, Vector3 authored)
         {
-            int count = ClampCount(location.SpawnCount);
-            float radius = ClampRadius(location.SpawnRadius) * (float)Math.Sqrt((index + .5f) / count);
-            double angle = index * 2.3999632297 + location.Heading * Math.PI / 180;
-            return location.Position + new Vector3((float)Math.Cos(angle) * radius, (float)Math.Sin(angle) * radius, 0f);
+            var formation = book?.Get(key);
+            return HasRadius(key) && HasFormation(formation) ? GroupPoint(formation, index) : authored;
+        }
+        public static Vector3 GroupPoint(MissionLocation location, int index) =>
+            GroupPoint(location.Position, location.Heading, index, ClampCount(location.SpawnCount), ClampRadius(location.SpawnRadius));
+        /// <summary>
+        /// A sunflower spiral out from the point, which fills a circle evenly at any count.
+        /// The alternative every mission reached for on its own - index times a spacing -
+        /// puts a detail in a diagonal line, which is a queue rather than a position.
+        /// </summary>
+        public static Vector3 GroupPoint(Vector3 center, float heading, int index, int count, float radius)
+        {
+            count = ClampCount(count);
+            float reach = ClampRadius(radius) * (float)Math.Sqrt((Math.Max(0, index) + .5f) / count);
+            double angle = index * 2.3999632297 + heading * Math.PI / 180;
+            return center + new Vector3((float)Math.Cos(angle) * reach, (float)Math.Sin(angle) * reach, 0f);
         }
         public static Vector3 Position(LocationBook book, string key, Vector3 fallback)
         {
