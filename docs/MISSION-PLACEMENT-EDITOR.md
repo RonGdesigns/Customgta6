@@ -2,6 +2,36 @@
 
 Open **F8 / debug menu > Survey coordinates > Mission placement editor**. Pick a mission (or a shared location group), then a named item. You can preview its position, place it at your current position, or visit it with the existing collision-checked teleport. Abort an active mission first. Changes apply when you start the next attempt; they do not move actors during a live mission or cutscene.
 
+## The free camera
+
+Press **Insert** (configurable as `SurveyCamera`) while a survey or the placement editor
+is open, or pick **Free camera** in the menu. The view lifts off the character, who stays
+frozen where he was standing, and you fly.
+
+| Action | Controller | Keyboard |
+| --- | --- | --- |
+| Move | Left stick | WASD |
+| Look | Right stick | Mouse |
+| Up / down | RT / LT | Page Up / Page Down |
+| Fast across a site | Hold sprint | Shift |
+| Slow onto a spot | Hold crouch | Ctrl |
+| Capture here | Capture key | F11 |
+| Put the view back | Insert | Insert |
+
+A capture taken while flying records the **camera's** position and the direction it is
+looking, not the character's. A key whose kind is `land` is dropped onto the first surface
+under the camera, which is what makes placing a marker on a roof or a deck a matter of
+looking down at it. A key whose kind is `air`, `water`, `channel`, `interior` or
+`underground` keeps exactly the height it was flown to — a helicopter hold is supposed to
+be in the air, and pulling it to the sea floor would be worse than the estimate it
+replaced.
+
+Two things worth knowing. The camera is leashed to 600 m from the character, because the
+game only streams so far and a point captured past that is a point over ground that does
+not exist yet; the focus follows the camera so the world builds where you are looking. And
+the camera is released on every exit — finishing the survey, dying, teardown — so a script
+camera can never be left rendering.
+
 ## Controls
 
 Select a mission, then **Survey all - visit placements in order** to review every

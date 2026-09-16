@@ -93,10 +93,17 @@ public static partial class StoryTests
         // ---- And the capture path actually consults both, rather than recording whatever
         // the player was standing on.
         string survey = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Core", "SurveyMode.cs"));
-        Check(survey.Contains("LocationBook.Displaced(location, player.Position)"),
+        // The capture reads one point, whether he walked to it or flew the camera to it,
+        // and both guards run on that point rather than on wherever the man happens to be.
+        Check(survey.Contains("LocationBook.Displaced(location, taken)"),
             "A capture is checked against where its key belongs before it is written");
-        Check(survey.Contains("float room = Clearance(player.Position);"),
+        Check(survey.Contains("float room = Clearance(taken);"),
             "And the room at that spot is measured before the capture is written");
+        Check(survey.Contains("var taken = CapturePoint(location, out float dropped, out bool flown);") &&
+              survey.Contains("if (!flown) return Game.Player.Character.Position;"),
+            "That point is the camera's when it is flying and the player's when it is not");
+        Check(survey.Contains("!string.Equals(location?.Kind, \"land\", StringComparison.OrdinalIgnoreCase)) return point;"),
+            "and only a key that stands on the ground is dropped onto the surface under the camera");
         string entry = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "BloodlinesMain.cs"));
         Check(entry.Contains("SurveyMode.ClearanceProbe = at => MissionSites.FreeRadius(at, MissionSites.RoomProbeMeters);") &&
               entry.Contains("SurveyMode.TightRoom = MissionSites.TightRoomMeters;"),

@@ -53,6 +53,10 @@ namespace Bloodlines.Missions
             var ped = Ctx.Crew.PedFor(slot);
             if (ped == null || !ped.Exists()) return;
             Ctx.Crew.CompanionAI.TakeControl(slot);
+            // Parked with nothing to do is exactly what this is, and saying so is what
+            // stops him standing there like a prop for the rest of the chapter. A mission
+            // that gives him real work calls TakeControl itself and never registers him.
+            Ctx.Crew.CompanionAI.Presence.StandBy(slot);
             ped.Task.ClearAllImmediately();
             // Only inside a live operation. A chapter opened on its own has to put him
             // somewhere, and an ordinary mission stationing a brother at a specific spot

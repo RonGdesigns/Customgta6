@@ -46,6 +46,13 @@ namespace Bloodlines.Core
         /// </summary>
         public static Func<Vector3, float> ClearanceProbe;
         /// <summary>
+        /// Looks down from a point for the first surface under it, for a land key captured
+        /// from the air. Injected at startup beside <see cref="ClearanceProbe"/> rather
+        /// than called directly, so the survey stays testable without the whole
+        /// site-probing module behind it. Null means no drop: the point stands as flown.
+        /// </summary>
+        public static Func<Vector3, float, float?> SurfaceProbe;
+        /// <summary>
         /// Under this much room no vehicle the campaign spawns will fit. Set from
         /// MissionSites at startup, where the number lives; the default here only has to
         /// be sane for a harness that compiles this file on its own.
@@ -68,6 +75,35 @@ namespace Bloodlines.Core
             _captureKey = captureKey;
             _teleportKey = teleportKey;
         }
+
+        /// <summary>
+        /// The free camera. A capture reads it instead of the ped while it is up, which
+        /// is the difference between surveying a helicopter hold and not surveying it.
+        /// </summary>
+        public SurveyCamera Camera { get; } = new SurveyCamera();
+
+        /// <summary>
+        /// Where the next capture comes from, and whether it was flown to or walked to.
+        /// A point captured from the air for a key that stands on the ground is dropped
+        /// onto the first surface under it, the way a map editor drops what you place:
+        /// the whole point of flying is that he is looking at the spot from above it.
+        /// </summary>
+        private Vector3 CapturePoint(MissionLocation location, out float dropped, out bool flown)
+        {
+            dropped = 0f; flown = Camera.IsFlying;
+            if (!flown) return Game.Player.Character.Position;
+            var point = Camera.Position;
+            if (!string.Equals(location?.Kind, "land", StringComparison.OrdinalIgnoreCase)) return point;
+            // Air, water, channel, interior and underground keys are taken exactly where
+            // the camera is. They are the ones that have no ground to sit on, and pulling
+            // them down to the sea floor would be worse than the estimate.
+            float? surface = SurfaceProbe != null ? SurfaceProbe(point, CameraDrop) : null;
+            if (!surface.HasValue) return point;
+            dropped = point.Z - surface.Value;
+            return new Vector3(point.X, point.Y, surface.Value);
+        }
+        /// <summary>How far under the camera a land capture will look for ground.</summary>
+        public const float CameraDrop = 120f;
 
         public bool IsActive { get; private set; }
         public static bool IsSurveyRunning { get; private set; }
@@ -106,6 +142,15 @@ namespace Bloodlines.Core
         /// <summary>The folder the survey ini lives in; other survey files go beside it.</summary>
         public string OutputDirectory => Path.GetDirectoryName(_outputPath);
 
+        /// <summary>Lift or drop the free camera, and say which it did.</summary>
+        public bool ToggleCamera()
+        {
+            if (Camera.IsFlying) { Camera.Release(); GameUtils.Notify("~y~Survey camera down.~s~ Captures come from where you stand again."); return false; }
+            if (!Camera.Take()) { GameUtils.Notify("~r~The survey camera could not be created."); return false; }
+            GameUtils.Notify("~g~Survey camera up.~s~ Fly it and capture from where you are looking.");
+            return true;
+        }
+
         public void Stop()
         {
             bool wasActive = IsActive;
@@ -113,6 +158,7 @@ namespace Bloodlines.Core
             Draft = null;
             CancelTeleport();
             IsActive = IsSurveyRunning = false;
+            Camera.Release();
             GameUtils.SafeDelete(_destination);
             _destination = null;
             if (wasActive && !wasEditing && Write()) GameUtils.Notify("~g~Survey saved.~s~ Captures will load next session.");
@@ -126,35 +172,40 @@ namespace Bloodlines.Core
             _lastCaptureFrame = Game.GameTime;
             var player = Game.Player.Character;
             if (player == null || !player.Exists() || player.IsDead) return;
-            // Capture the surface under the avatar, not the vehicle's model origin.
-            if (player.IsInVehicle())
+            // Capture the surface under the avatar, not the vehicle's model origin. This
+            // does not apply to the camera: it is not standing anywhere, and where the man
+            // happens to be sitting while he flies it is beside the point.
+            if (!Camera.IsFlying && player.IsInVehicle())
             {
                 GameUtils.Subtitle("~y~Exit the vehicle and stand on the intended spot to capture it.", 3500);
                 return;
             }
+            var taken = CapturePoint(location, out float dropped, out bool flown);
+            float facing = flown ? Camera.Heading : player.Heading;
             // A capture is made on foot, and a man fits where a truck does not. The two
             // things Ron cannot see from where he is standing get measured for him:
             // whether this is even the right part of the map, and how much room is here.
-            float away = LocationBook.FlatDistance(player.Position, location.Authored);
-            if (LocationBook.Displaced(location, player.Position) && !Confirming(location.Key))
+            float away = LocationBook.FlatDistance(taken, location.Authored);
+            if (LocationBook.Displaced(location, taken) && !Confirming(location.Key))
             {
                 _confirmKey = location.Key;
                 _confirmUntil = Game.GameTime + ConfirmWindowMs;
                 GameUtils.Notify("~r~" + location.Key + " belongs " + (int)away + " m from here.~s~\n" +
                     "That reads as the wrong key rather than a correction. Press " + _captureKey +
                     " again within " + (ConfirmWindowMs / 1000) + "s to save it here anyway.");
-                Logger.Warn("Refused a survey capture of " + location.Key + " at " + player.Position + ": " +
+                Logger.Warn("Refused a survey capture of " + location.Key + " at " + taken + ": " +
                             (int)away + " m from where that key belongs. Waiting for a deliberate confirmation.");
                 return;
             }
 
-            float room = Clearance(player.Position);
-            _book.Record(location.Key, player.Position, player.Heading);
+            float room = Clearance(taken);
+            _book.Record(location.Key, taken, facing);
             _captured.Add(location.Key);
             if (!Write()) return;
             _confirmKey = null;
-            Logger.Info("Surveyed " + location.Key + " = " + player.Position + " heading " + player.Heading +
-                        "; " + room.ToString("0.0") + " m of clear room, " + (int)away + " m from the authored point.");
+            Logger.Info("Surveyed " + location.Key + " = " + taken + " heading " + facing.ToString("0.0") +
+                        "; " + room.ToString("0.0") + " m of clear room, " + (int)away + " m from the authored point" +
+                        (flown ? ", flown" + (dropped > .05f ? " and dropped " + dropped.ToString("0.0") + " m onto the surface" : "") : "") + ".");
             if (room < TightRoom)
             {
                 GameUtils.Notify("~o~Saved " + location.Key + "~s~ with only " + room.ToString("0.0") +
@@ -256,6 +307,9 @@ namespace Bloodlines.Core
 
         public void Update()
         {
+            // The camera flies whenever it is up, including while the placement menu has
+            // focus: moving the view is how he chooses the spot the menu will save.
+            Camera.Update();
             var location = Current;
             if (location == null) return;
             if (IsTeleporting)

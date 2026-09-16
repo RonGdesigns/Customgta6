@@ -55,7 +55,11 @@ namespace Bloodlines.Core
             var page = new Page("Placement survey - " + (_survey.Draft?.Key.Split('.')[0] ?? ""));
             page.Add("Current placement",()=>_survey.PlacementProgress,null);
             page.Add("Teleport to this spot",()=>"menu stays open",()=>_survey.TeleportToCurrent());
-            page.Add("Place at my position",()=>"walk to the correct spot first",()=>_survey.PlaceAtPlayer());
+            // The camera is the fast way to place anything that is not at head height on
+            // walkable ground: a hold forty meters up, a roost with no stair, a deck.
+            page.Add("Free camera",()=>_survey.Camera.IsFlying?"flying - "+_config.SurveyCameraKey+" to land":"fly to the spot - "+_config.SurveyCameraKey,
+                ()=>_survey.ToggleCamera());
+            page.Add("Place at my position",()=>_survey.Camera.IsFlying?"uses the camera, dropped onto the surface":"walk to the correct spot first",()=>_survey.PlaceAtPlayer());
             page.Add("Save this placement",()=>_survey.PlacementDirty?"unsaved changes":"mark verified",()=>_survey.SavePlacement(true));
             page.Add("Save and teleport to next",()=>"capture draft, then advance",()=>_survey.SaveAndNextPlacement());
             page.Add("Next spot - keep existing",()=>"teleport without saving",()=>_survey.MovePlacement(1));

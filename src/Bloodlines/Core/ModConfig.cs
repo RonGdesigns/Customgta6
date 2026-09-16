@@ -33,6 +33,12 @@ namespace Bloodlines.Core
         public Keys DeployCrewKey { get; private set; } = Keys.F10;
         public Keys DevMenuKey { get; private set; } = Keys.F8;
         public Keys SurveyTeleportKey { get; private set; } = Keys.F7;
+        /// <summary>
+        /// Lifts the free camera while surveying. Insert, because F6 through F11 are all
+        /// spoken for and this one has to be reachable without leaving the other hand on
+        /// the movement keys.
+        /// </summary>
+        public Keys SurveyCameraKey { get; private set; } = Keys.Insert;
 
         /// <summary>Companions are damage-capped rather than invincible; 0 disables the cap.</summary>
         public int CompanionHealthFloor { get; private set; } = 150;
@@ -154,6 +160,7 @@ namespace Bloodlines.Core
             config.DeployCrewKey = ReadKey(settings, "DeployCrew", config.DeployCrewKey);
             config.DevMenuKey = ReadKey(settings, "DevMenu", config.DevMenuKey);
             config.SurveyTeleportKey = ReadKey(settings, "SurveyTeleport", config.SurveyTeleportKey);
+            config.SurveyCameraKey = ReadKey(settings, "SurveyCamera", config.SurveyCameraKey);
             config.ControllerSwitchEnabled = settings.GetValue<bool>("Keys", "ControllerSwitch", config.ControllerSwitchEnabled);
             config.SuppressVanillaSwitch = settings.GetValue<bool>("Keys", "SuppressVanillaSwitch", config.SuppressVanillaSwitch);
 
