@@ -1046,6 +1046,37 @@ model a mission will spawn, because the location book does not know.
 The convention is the whole format: no second file to keep in step with `locations.tsv`.
 Nothing in the book is a route yet.
 
+## The instrument objectives
+
+Ninety-two of this campaign's beats are `MissionInteraction` — walk here, hold the button,
+watch a bar fill — across fifty-nine of seventy-nine missions. The campaign audit's verdict
+was right: Bloodlines does not need more shooting, it needs fewer beats where the player
+watches a progress bar. Read its fifteen suggested minigames together and they are three
+shapes, not fifteen designs, and two of the three already existed.
+
+`Missions/Objectives/InstrumentObjectives.cs` holds the two new ones.
+
+**`GaugeObjective`** is M11's dyno with the Granger taken out of it: a value, a band, a
+hold. `Drift` is what separates a setpoint you can let go of from a job you keep your hand
+on. **`AlignObjective`** is the other half — an optimum the player is never shown, a
+control that moves toward it, and a signal that says warmer or colder. Its `Target` is
+asked every frame, so the answer may move.
+
+**Input is injected**, defaulting to the throttle-and-brake pair M11 has always used. That
+is what makes them testable: a test drives the needle instead of pretending to hold a
+trigger. **Neither can fail a mission** — overshooting costs time, never a sitting — and a
+test refuses `Fail(` anywhere in that file.
+
+The third shape needs no new code: `TechnicalChoiceObjective` has existed since M28 and is
+used by exactly one mission. Every "give the player a choice that changes what happens
+next" in the audit is that class plus authoring.
+
+**A stage index in a condition is a bug waiting for an edit.** M07 read `Stage == 2` to
+decide whether its parachute could be walked over. Inserting one stage earlier in the
+mission silently turned the collection off, and the mission still passed every check that
+did not walk that far. Ask the real question — the chute exists only while that stage is
+open, because that stage's `OnEnter` drops it.
+
 ## Scenes: eye contact, faces, and shots that slide
 
 `Core/ScenePerformance` is what the scenes were missing. There was not one

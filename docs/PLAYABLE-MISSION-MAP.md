@@ -493,7 +493,7 @@ Prerequisite: M28. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Survey the transfer depot** — ReachZoneObjective: Guess: reach the yellow rail-depot entrance. The fuel will leave by road. |
 | 2 | Ice | **Secure the loading valve** — KillTargetsObjective: Ice: clear the five red guards. Keep the tanker intact. |
-| 3 | Ice | **Transfer the fuel** — MissionInteraction: Ice: use the laptop on the marked transfer table to fill the coupled tanker |
+| 3 | Ice | **Transfer the fuel** — GaugeObjective: Ice: work the valve with RT / LT. Hold the line between  |
 | 4 | Guess | **Take the tractor** — EnterVehicleObjective: Guess: take the orange-marked Phantom tractor attached to the fuel tanker. The brothers will ride or follow in another car. |
 | 5 | Guess | **Fuel for the bunker** — DeliverVehicleObjective: Guess: deliver the Phantom AND its tanker to the bunker. Reconnect if you detach it. |
 | 6 | Guess | **Unload the reserves** — MissionInteraction: Guess: keep the rig stopped at the bunker and start unloading the fuel reserves |

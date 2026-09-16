@@ -315,7 +315,12 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            if (Stage == 2 && !_chuteGiven && !Ctx.Cutscenes.IsActive)
+            // The chute exists only while the roof stage is open, because that stage's
+            // OnEnter is what drops it. Asking whether it is there is the same question as
+            // "are we on the roof" and cannot go stale: this used to read Stage == 2, and
+            // inserting one stage earlier in the mission silently turned the walk-over
+            // collection off. A stage index in a condition is a bug waiting for an edit.
+            if (_chute != null && _chute.Exists() && !_chuteGiven && !Ctx.Cutscenes.IsActive)
             {
                 GameUtils.DrawObjectiveMarker(_chuteSpot, System.Drawing.Color.Yellow, 0.7f);
                 // Draw the pickup and keep its location in the HUD without replacing
