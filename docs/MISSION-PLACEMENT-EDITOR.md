@@ -81,3 +81,43 @@ Begin with M05: place Ice's cliff start, the generator-crew circle, Mateo's boat
 ## Validation
 
 Automated checks exercise draft isolation, cancellation, save failure, reload, undo, limits, circle points, and preservation of dynamic defaults. Mission integration checks exercise edited M05/M03 guard counts, kill-objective advancement, individual crate position/facing, M03 enemy-car routes and M06 convoy routes/unloading. The production build validates the controller/native API bindings. Live camera, collision and controller feel require an in-game test.
+
+## Staging a whole mission
+
+**F8 > Survey coordinates > Mission placement editor > pick a mission > Stage this mission's
+world.** The mission's own `Setup` runs and nothing else: no stages, no objectives, no
+timers, no progression, no rewards. The vehicles, crates and guards stand where that
+mission would put them, pacified, and the survey camera comes up on the same key press so
+you can fly around the layout immediately.
+
+Closing the dev menu closes the staged world with it. The teardown is the **mission's own
+`Cleanup`** — the path every attempt already uses — so a preview cannot leave a second
+Cargobob standing for the real attempt to collide with. Any brother the staging deployed is
+taken out of a staged vehicle and put back where he was standing.
+
+It also writes **`scripts/Bloodlines/Bloodlines.Staging.txt`**: every entity that was
+staged, with its position, heading, and the nearest authored key. Anything marked
+`derived — no key within 12 m` is a position the mission computed at runtime — M18's rear
+work point off the hauler's dimensions, M45's probed deck height — which no data file
+contains and nobody could previously see.
+
+## The stand-in
+
+With the camera up, **Stand-in** hangs a translucent person, car, truck, helicopter or boat
+in front of the view (left/right cycles the shape; the key's kind picks a sensible one to
+start). Fly it into place, adjust **Stand-in distance** and **Stand-in facing**, then
+**Place from the stand-in** writes the draft. A `land` key drops onto the surface under it;
+air, water and interior keys keep the height they were flown to.
+
+It is a *shape*, not the exact model a mission spawns — nothing in the location book says
+which vehicle belongs at a key. It answers the question that actually goes wrong: does
+something roughly this size fit here, level, facing that way. For the real article, stage
+the mission.
+
+## Routes
+
+A route is **ordered keys**: `M09.Convoy.01`, `M09.Convoy.02`, `M09.Convoy.03`. No second
+file and no second format — a route is points that happen to be numbered, so every tool
+that reads the location book reads routes for free. Survey them like any other key and the
+connecting line is drawn while you are in that mission's survey or staging preview: amber
+while any leg is still an estimate, green once every leg has been walked.

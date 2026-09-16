@@ -8,6 +8,30 @@ namespace Bloodlines.Core
 {
     public sealed partial class DevMenu
     {
+        /// <summary>A mission's world, staged and standing still. Owned here, ticked by the host.</summary>
+        public ScenePreview Preview { get; } = new ScenePreview();
+
+        /// <summary>
+        /// Stage a mission, then open its survey with the camera already up. The three
+        /// things he needs to fix a placement arrive together: the world as the mission
+        /// builds it, the list of that mission's keys, and a way to fly to them.
+        /// </summary>
+        private void StagePreview(string missionId)
+        {
+            if (_missions.IsRunning) { GameUtils.Notify("~y~Finish or abort the running mission first."); return; }
+            var definition = _catalog.All.FirstOrDefault(d => string.Equals(d.Id, missionId, StringComparison.OrdinalIgnoreCase));
+            if (definition == null) { GameUtils.Notify("~r~No mission script for " + missionId + "."); return; }
+            if (!Preview.Open(definition, _missions.Context, _survey.Book, _survey.OutputDirectory))
+            {
+                GameUtils.Notify("~r~" + (Preview.Refusal ?? "The scene could not be staged."));
+                return;
+            }
+            GameUtils.Notify("~g~" + missionId + " staged.~s~ Nothing is running. " +
+                (Preview.ReportPath != null ? "Wrote Bloodlines.Staging.txt." : ""));
+            StartPlacement(missionId, false, true);
+            if (!_survey.Camera.IsFlying) _survey.ToggleCamera();
+        }
+
         private int _placementOpened, _placementTick;
         private readonly ControllerNavigation _placementNavigation = new ControllerNavigation();
         public Func<bool> PlacementAllowed { get; set; }
@@ -15,6 +39,7 @@ namespace Bloodlines.Core
         {
             var page = new Page("Mission placement editor");
             page.Add("Undo last saved placement",()=>_survey.CanUndoPlacement?"available":"none",()=>{if(CanEditPlacement())_survey.UndoPlacement();});
+            page.Add("Close staging preview",()=>Preview.IsActive?"open: "+Preview.MissionId:"nothing staged",()=>Preview.Close());
             foreach (var group in _survey.PlacementLocations.GroupBy(l=>l.Key.Split('.')[0]).OrderBy(g=>g.Key))
             {
                 string mission=group.Key;
@@ -25,6 +50,10 @@ namespace Bloodlines.Core
         private Page BuildPlacementItems(string mission)
         {
             var page = new Page(mission+" - select a placement");
+            // Stage the whole mission and look at it, instead of checking one key at a
+            // time by playing the mission that uses it.
+            page.Add("Stage this mission's world",()=>Preview.IsActive&&Preview.MissionId==mission?"staged - select again to restage":"spawn it all, run nothing",
+                ()=>StagePreview(mission));
             page.Add("Survey all - visit placements in order",()=>"teleport / adjust / save / next",()=>StartPlacement(mission,false,true));
             foreach(var item in _survey.PlacementLocations.Where(l=>l.Key.StartsWith(mission+".",StringComparison.OrdinalIgnoreCase)).OrderBy(l=>l.Key))
             {
@@ -60,6 +89,12 @@ namespace Bloodlines.Core
             page.Add("Free camera",()=>_survey.Camera.IsFlying?"flying - "+_config.SurveyCameraKey+" to land":"fly to the spot - "+_config.SurveyCameraKey,
                 ()=>_survey.ToggleCamera());
             page.Add("Place at my position",()=>_survey.Camera.IsFlying?"uses the camera, dropped onto the surface":"walk to the correct spot first",()=>_survey.PlaceAtPlayer());
+            // Fly the thing itself into place rather than the empty point.
+            page.Add("Stand-in",()=>_survey.Ghost.IsShowing?_survey.Ghost.Current+" - "+_survey.Ghost.Standoff.ToString("0")+"m out":"off - select to show",
+                ()=>_survey.ToggleGhost(),d=>{if(_survey.Ghost.IsShowing)_survey.Ghost.Cycle(d);});
+            page.Add("Stand-in distance",()=>_survey.Ghost.IsShowing?_survey.Ghost.Standoff.ToString("0")+" m":"no stand-in",null,d=>_survey.Ghost.PushOut(d));
+            page.Add("Stand-in facing",()=>_survey.Ghost.IsShowing?_survey.Ghost.Heading.ToString("0")+" degrees":"no stand-in",null,d=>_survey.Ghost.Turn(d*5f));
+            page.Add("Place from the stand-in",()=>_survey.Ghost.IsShowing?"write where it is standing":"show the stand-in first",()=>_survey.PlaceAtGhost());
             page.Add("Save this placement",()=>_survey.PlacementDirty?"unsaved changes":"mark verified",()=>_survey.SavePlacement(true));
             page.Add("Save and teleport to next",()=>"capture draft, then advance",()=>_survey.SaveAndNextPlacement());
             page.Add("Next spot - keep existing",()=>"teleport without saving",()=>_survey.MovePlacement(1));

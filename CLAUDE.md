@@ -1017,3 +1017,31 @@ after it returns.
 mission that would not start until every point was surveyed would mean no campaign. The
 prefix form is used for one thing only — `ProgressLabel`, the placement editor's mission
 list, which is now the survey to-do list ("12 locations, none surveyed").
+
+## Staging a mission without running it
+
+`Core/ScenePreview` runs a mission's `Setup` and stops. `ComposedMission.OnStage() =>
+Setup()` is the seam; `Mission.StageForPreview` never sets `Status` to Running, so `Tick`
+refuses it and no objective can advance.
+
+**The preview owns nothing.** The obvious design is a parallel entity pool the preview
+deletes on the way out, and that is a second owner for the same peds — the exact class of
+bug this project keeps finding. The mission tracks its own staging as it always does and
+closing the preview calls the mission's own `Cleanup`, the path every attempt and every
+teardown test already covers. The one addition is `Disembark`: teardown deliberately hands
+back a vehicle a brother is sitting in rather than deleting it under him, which is right
+for a mission that just passed and a leak here, so the crew come out of staged vehicles
+first and are put back where they were standing.
+
+It writes `Bloodlines.Staging.txt` — every staged entity with its position and the nearest
+authored key. A line reading `derived — no key within 12 m` is a runtime-computed position
+(M18's rear work point, M45's probed deck) that no data file holds.
+
+`Core/PlacementGhost` hangs a translucent stand-in in front of the survey camera. **Not a
+3D gizmo**: a script menu has no mouse cursor over the world, so axis handles would be
+decoration over the same key-by-key adjustment. It is a *shape*, never a claim about which
+model a mission will spawn, because the location book does not know.
+
+`Core/RouteRibbons` draws multi-point paths from ordered keys — `M09.Convoy.01`, `.02`.
+The convention is the whole format: no second file to keep in step with `locations.tsv`.
+Nothing in the book is a route yet.

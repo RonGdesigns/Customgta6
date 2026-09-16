@@ -74,6 +74,9 @@ namespace Bloodlines.Core
 
         public void Close()
         {
+            // The staged world goes away with the tool that staged it. Leaving it standing
+            // would put a second Cargobob in front of the real attempt.
+            Preview.Close();
             Shops?.CancelVehiclePreview();
             _shopping = null; GameUtils.MenuNotice = null;
             IsOpen = false;

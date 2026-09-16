@@ -83,6 +83,37 @@ namespace Bloodlines.Core
         /// is the difference between surveying a helicopter hold and not surveying it.
         /// </summary>
         public SurveyCamera Camera { get; } = new SurveyCamera();
+        /// <summary>The translucent stand-in that rides the camera while placing.</summary>
+        public PlacementGhost Ghost { get; } = new PlacementGhost();
+
+        /// <summary>
+        /// Show or hide the stand-in. It needs the camera: hanging a ghost in front of a
+        /// man standing on the ground would put it in the wall he is facing.
+        /// </summary>
+        public bool ToggleGhost()
+        {
+            if (Ghost.IsShowing) { Ghost.Hide(); GameUtils.Notify("~y~Ghost off."); return false; }
+            if (!Camera.IsFlying && !ToggleCamera()) return false;
+            var here = IsEditing ? Draft : Current;
+            if (!Ghost.Show(PlacementGhost.ShapeFor(here?.Kind), here?.Heading ?? 0f))
+            { GameUtils.Notify("~r~The stand-in could not be created."); return false; }
+            GameUtils.Notify("~g~Ghost on.~s~ Fly it into place, then save the placement.");
+            return true;
+        }
+
+        /// <summary>
+        /// Take the placement from the stand-in. The one motion that replaces walk,
+        /// capture, adjust height, adjust facing, save.
+        /// </summary>
+        public bool PlaceAtGhost()
+        {
+            if (!IsEditing || Draft == null || !Ghost.IsShowing) return false;
+            Draft.Position = Ghost.Commit(Draft.Kind, out float dropped);
+            Draft.Heading = Ghost.Heading;
+            GameUtils.Notify("~g~Placed from the stand-in" +
+                (dropped > .05f ? ", dropped " + dropped.ToString("0.0") + " m onto the surface" : "") + ".");
+            return true;
+        }
 
         /// <summary>
         /// Where the next capture comes from, and whether it was flown to or walked to.
@@ -160,6 +191,7 @@ namespace Bloodlines.Core
             Draft = null;
             CancelTeleport();
             IsActive = IsSurveyRunning = false;
+            Ghost.Hide();
             Camera.Release();
             GameUtils.SafeDelete(_destination);
             _destination = null;
@@ -312,6 +344,14 @@ namespace Bloodlines.Core
             // The camera flies whenever it is up, including while the placement menu has
             // focus: moving the view is how he chooses the spot the menu will save.
             Camera.Update();
+            Ghost.Update(Camera);
+            // Any numbered keys in the mission being surveyed are a path; draw it.
+            if (IsActive && Current != null)
+            {
+                int dot = Current.Key.IndexOf('.');
+                var viewer = Camera.IsFlying ? Camera.Position : (Game.Player.Character?.Position ?? Current.Position);
+                if (dot > 0) RouteRibbons.Draw(_book, Current.Key.Substring(0, dot), viewer);
+            }
             var location = Current;
             if (location == null) return;
             if (IsTeleporting)

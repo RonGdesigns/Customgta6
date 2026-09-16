@@ -100,6 +100,40 @@ namespace Bloodlines.Missions
             return true;
         }
 
+        /// <summary>
+        /// Stage this mission's world and stop there: no stages, no objectives, no
+        /// progression. <see cref="Status"/> is deliberately left alone, so
+        /// <see cref="Tick"/> refuses to run it even if something calls it.
+        ///
+        /// Teardown is the ordinary <see cref="Cleanup"/>. A preview owns nothing of its
+        /// own — a parallel pool would be a second owner for the same peds, which is the
+        /// class of bug this project keeps finding.
+        /// </summary>
+        public bool StageForPreview(MissionContext context)
+        {
+            Ctx = context;
+            _cleaned = false;
+            Stage = 0;
+            StageStartedAt = Game.GameTime;
+            FailReason = null;
+            try { return OnStage(); }
+            catch (Exception ex)
+            {
+                Logger.Error("Mission " + Id + " threw while staging for a preview", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// The staging half of starting. A plain mission has no such half and stages by
+        /// starting normally; <see cref="ComposedMission"/> overrides this with its Setup,
+        /// which is the part that places the world.
+        /// </summary>
+        protected virtual bool OnStage() => OnStart();
+
+        /// <summary>Everything this mission has staged, for a preview to pacify and list.</summary>
+        public IEnumerable<Entity> Staged => _entities;
+
         public void Tick()
         {
             if (Status != MissionStatus.Running) return;
