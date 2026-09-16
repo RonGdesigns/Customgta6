@@ -12,8 +12,8 @@ public static partial class StoryTests
  static void ExpansionChecks()
  {
   Reset();var vehicles=new StoryVehicles();var player=Game.Player.Character;
-  Check(StoryVehicles.Catalog.Length==118&&StoryVehicles.Catalog.Select(v=>v.Model).Distinct().Count()==118,"Expanded vehicle catalog has 118 distinct models, the jets, the jetpack, the Oppressors and the newer cars among them");
-  Check(StoryVehicles.Catalog.Select(v=>v.Category).Distinct().Count()==8,"Vehicle browsing separates 8 transport categories");
+   Check(StoryVehicles.Catalog.Length==202&&StoryVehicles.Catalog.Select(v=>v.Model).Distinct().Count()==202,"Expanded vehicle catalog has 202 distinct models, tuners, weaponized, electric and stunt pools among them");
+   Check(StoryVehicles.Catalog.Select(v=>v.Category).Distinct().Count()==10,"Vehicle browsing separates 10 transport categories");
   player.Position=new Vector3(100,100,0);var boat=StoryVehicles.Catalog.First(v=>v.Model=="longfin");World.WaterAvailable=false;
   Check(!vehicles.Spawn(boat)&&World.Vehicles.Count==0,"Boat request refuses dry land without creating an entity");
   World.WaterAvailable=true;Check(vehicles.Spawn(boat)&&World.Vehicles.Last().Model.IsBoat,"Boat request uses a water footprint");vehicles.Clear();
