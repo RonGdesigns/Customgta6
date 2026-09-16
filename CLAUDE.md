@@ -960,3 +960,41 @@ could not reach. `Core/ScriptedInterior` is `ApartmentAccess`'s sequence — un-
 un-cap, pin, refresh, wait on `IS_INTERIOR_READY` — with the same ownership rule the map
 already keeps: put back whatever state it was found in, on every exit path. Anything that
 script-loads an interior goes through it.
+
+## September 15: surveying from the air, and brothers who are not props
+
+**A coordinate is placed by looking at it now, not by walking a man to it.**
+`Core/SurveyCamera` lifts the view off the character — who stays frozen where he stood —
+and flies. `Insert` by default, or the **Free camera** row in the placement editor. A
+capture while flying records the camera's position and facing; a `land` key is dropped
+onto the first surface under it, and `air`, `water`, `channel`, `interior` and
+`underground` keys keep the height they were flown to. That distinction is the point: the
+reason 1,061 of 1,091 keys are still estimates is that half of them are places a man
+cannot stand.
+
+Its three rules: **give the view back on every exit path** (a script camera left rendering
+is a game nobody can play, and `Release` is safe when nothing was taken); **stream where it
+is looking** with `SET_FOCUS_POS_AND_VEL`, because collision loads around the player and a
+point captured 200 m away otherwise probes as nothing; and **leave the man alone** — frozen
+where he was, and a man somebody else froze is not thawed on the way out.
+
+`SurveyMode.SurfaceProbe` is injected at startup beside `ClearanceProbe` rather than calling
+`MissionSites` directly, so the survey stays in the thin regression build.
+
+**`Station` parked a brother and never spoke to him again.** It calls `TakeControl`, which
+tells the companion controller to keep its hands off, then clears his tasks and walks him to
+his post — and that is the last thing that ever happens to him. Ron reported the symptom:
+teammates standing stagnant for most of a mission. `Crew/CompanionPresence` fills that
+silence, and **ambience only ever replaces standing still**. Three ways in, all decided by
+the caller: a mission registers a parked brother through `StandBy`, the controller animates
+a slot it is itself holding (which used to get a bare `GuardCurrentPosition` forever), and a
+follower settles only while the man he is with has stopped walking. A mission that hands a
+brother real work never registers him, so nothing here can overwrite a scripted task.
+
+A posture is issued **once**, on a change of mood or a stale order — the same rule
+`GuardAwareness` enforces for hostiles, for the same reason. Hostiles within 50 m, or a
+leader already in a fight, means the guard stance; nobody smokes next to a firefight.
+A scenario that will not start where he is standing — leaning needs a wall — is caught by
+`IS_PED_USING_ANY_SCENARIO` after two and a half seconds and replaced with a stance that
+works anywhere, because a posture that silently refused leaves him exactly as stagnant as
+before.

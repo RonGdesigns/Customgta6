@@ -63,6 +63,16 @@ namespace Bloodlines.Core
         {
             var player = Game.Player.Character;
             if (!IsEditing || IsTeleporting || player == null || !player.Exists() || player.IsDead) return;
+            // Where he is looking from, if he is flying. The editor's own row says "place
+            // at my position", and while the camera is up that position is the camera's:
+            // it is the thing he has been moving to choose the spot.
+            if (Camera.IsFlying)
+            {
+                Draft.Position = CapturePoint(Draft, out float dropped, out bool _);
+                Draft.Heading = Camera.Heading;
+                if (dropped > .05f) GameUtils.Notify("~g~Dropped " + dropped.ToString("0.0") + " m onto the surface under the camera.");
+                return;
+            }
             Entity source = player.CurrentVehicle != null ? (Entity)player.CurrentVehicle : player;
             Draft.Position = source.Position;
             Draft.Heading = source.Heading;

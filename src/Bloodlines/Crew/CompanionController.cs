@@ -84,6 +84,12 @@ namespace Bloodlines.Crew
             }
         }
         public CompanionLife Life { get; } = new CompanionLife();
+        /// <summary>
+        /// What a brother does while he is standing by. Only ever animates a slot a
+        /// mission has registered through StandBy, or one this controller is itself
+        /// holding, so a scripted task can never be overwritten by ambience.
+        /// </summary>
+        public CompanionPresence Presence { get; } = new CompanionPresence();
         public MilitaryResponse Military { get; }
         private bool _independent = true;
         private bool _rideAlong = true;
@@ -164,6 +170,7 @@ namespace Bloodlines.Crew
         public void TakeControl(CrewSlot slot)
         {
             Life.Suspend(slot);
+            Presence.Release(slot);
             Driver.Forget(slot);
             Convoy.Forget(slot);
             _scripted.Add(slot);
@@ -173,12 +180,14 @@ namespace Bloodlines.Crew
         public void ReleaseControl(CrewSlot slot)
         {
             _scripted.Remove(slot);
+            Presence.Release(slot);
             SetState(slot, CompanionState.Follow);
         }
 
         public void ReleaseAll()
         {
             _scripted.Clear();
+            Presence.Clear();
             Driver.Clear();
             Convoy.Clear();
             RequireSharedVehicle = false;
@@ -237,7 +246,23 @@ namespace Bloodlines.Crew
                         _stateSince[slot] = Game.GameTime;
                     }
                     break;
+                case CompanionState.Hold:
+                    Presence.IsCrewMember = IsCrewMember;
+                    if (!companion.IsInVehicle()) Presence.Update(slot, companion, leader, true);
+                    break;
+                case CompanionState.Scripted:
+                    // Only reaches a slot a mission registered as standing by. Station does
+                    // that; a mission handing a brother real work does not, and this is
+                    // then a no-op for him.
+                    Presence.IsCrewMember = IsCrewMember;
+                    if (Presence.IsStandingBy(slot)) Presence.Update(slot, companion, leader, true);
+                    break;
                 case CompanionState.Follow:
+                    Presence.IsCrewMember = IsCrewMember;
+                    // A follower settles only while the man he is with is standing still,
+                    // and the moment the leader walks off Presence hands him back and the
+                    // follow task is re-issued below.
+                    if (!companion.IsInVehicle() && Presence.Update(slot, companion, leader, false)) break;
                     if (StateAge(slot) > 8000)
                     {
                         Apply(slot, state, companion, leader);
@@ -359,8 +384,15 @@ namespace Bloodlines.Crew
                     // task implicitly orders a passenger to leave after a handover.
                     if (!companion.IsInVehicle())
                     {
-                        companion.Task.ClearAll();
-                        companion.Task.GuardCurrentPosition();
+                        Presence.IsCrewMember = IsCrewMember;
+                        // A man holding a position for ten minutes is the thing Ron
+                        // reported. Standing guard is still the fallback; it is no longer
+                        // the only thing that ever happens to him.
+                        if (!Presence.Update(slot, companion, leader, true))
+                        {
+                            companion.Task.ClearAll();
+                            companion.Task.GuardCurrentPosition();
+                        }
                     }
                     companion.AlwaysKeepTask = true;
                     break;

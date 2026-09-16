@@ -108,6 +108,12 @@ namespace Bloodlines.Core
             if (!IsOpen || _stack.Count == 0) return false;
             if (_survey.IsActive)
             {
+                // The camera owns up and down while it is flying. Page Up and Page Down
+                // page the list the rest of the time; climbing is what they are for here,
+                // and a survey with the camera up is not a list being read.
+                if (key == _config.SurveyCameraKey) { _survey.ToggleCamera(); return true; }
+                if (_survey.Camera.IsFlying && key == Keys.PageUp) { _survey.Camera.Climb(1f); return true; }
+                if (_survey.Camera.IsFlying && key == Keys.PageDown) { _survey.Camera.Climb(-1f); return true; }
                 if (key == _config.SurveyTeleportKey) { _survey.TeleportToCurrent(); return true; }
                 if (key == _config.DevCaptureKey) { _survey.Capture(); return true; }
                 if (key == Keys.End) { _survey.Next(); return true; }

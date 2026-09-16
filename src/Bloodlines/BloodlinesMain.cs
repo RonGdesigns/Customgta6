@@ -81,6 +81,10 @@ namespace Bloodlines
             // which the recovery test harness compiles without the placement helpers.
             SurveyMode.ClearanceProbe = at => MissionSites.FreeRadius(at, MissionSites.RoomProbeMeters);
             SurveyMode.TightRoom = MissionSites.TightRoomMeters;
+            // A land key flown to from above is dropped onto the surface under the camera,
+            // the way a map editor drops what you place. Air, water and interior keys keep
+            // the height they were flown to; that is the whole reason for flying.
+            SurveyMode.SurfaceProbe = (at, reach) => MissionSites.SurfaceHeight(at, at.Z, at.Z - reach);
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
             _dispatches = new CampaignDispatches(_state);
@@ -487,7 +491,12 @@ namespace Bloodlines
         private bool HandleGameplayKey(Keys key)
         {
             if (_menu.HandlePlacementKey(key)) return true;
-            if (_survey.IsEditing && key != _config.DevCaptureKey && key != _config.SurveyTeleportKey) return true;
+            // The camera keys reach the survey the same way the capture and teleport keys
+             // do; swallowing them here is what would make the camera unusable from inside
+             // the placement editor, which is the place it is most needed.
+            if (_survey.IsEditing && key != _config.DevCaptureKey && key != _config.SurveyTeleportKey &&
+                key != _config.SurveyCameraKey && !(_survey.Camera.IsFlying && (key == Keys.PageUp || key == Keys.PageDown)))
+                return true;
             if (_homes.Apartment.Inside || _homes.Apartment.Busy) return true;
             if (key == _config.SwitchIceKey) { _switching.TrySwitch(CrewSlot.Ice); return true; }
             if (key == _config.SwitchGohanKey) { _switching.TrySwitch(CrewSlot.Gohan); return true; }
