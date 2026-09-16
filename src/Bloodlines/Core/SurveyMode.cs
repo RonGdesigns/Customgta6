@@ -16,6 +16,8 @@ namespace Bloodlines.Core
     public sealed partial class SurveyMode
     {
         private readonly LocationBook _book;
+        /// <summary>The book being surveyed, so a menu can report progress against it.</summary>
+        public LocationBook Book => _book;
         private readonly string _outputPath;
         private readonly string _captureKey;
         private readonly string _teleportKey;

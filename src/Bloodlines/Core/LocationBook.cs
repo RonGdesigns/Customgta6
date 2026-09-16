@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using GTA;
 using GTA.Math;
@@ -60,6 +61,22 @@ namespace Bloodlines.Core
             new Dictionary<string, MissionLocation>(StringComparer.OrdinalIgnoreCase);
 
         public IEnumerable<MissionLocation> All => _locations.Values;
+
+        private readonly HashSet<string> _used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
+        /// Start recording which keys get looked up. Called when a mission begins, so the
+        /// pre-flight report is the list of points that mission really stands on rather
+        /// than everything whose name starts with its id - shared homes, bunkers and
+        /// apartment rooms belong to whoever uses them.
+        /// </summary>
+        public void BeginUse() { _used.Clear(); }
+        /// <summary>The keys looked up since <see cref="BeginUse"/>, in book order.</summary>
+        public IEnumerable<MissionLocation> Used =>
+            All.Where(l => _used.Contains(l.Key)).OrderBy(l => l.Key, StringComparer.Ordinal);
+        /// <summary>Of those, the ones nobody has ever stood on and checked.</summary>
+        public IEnumerable<MissionLocation> Unverified =>
+            Used.Where(l => l.Status == LocationStatus.Estimate);
+        private void Note(string key) { if (!string.IsNullOrEmpty(key)) _used.Add(key); }
 
         public int Count => _locations.Count;
 
@@ -208,6 +225,9 @@ namespace Bloodlines.Core
 
         public MissionLocation Get(string key)
         {
+            // Every mission's At() comes through here, which is what makes this the one
+            // place that knows what a mission is standing on.
+            Note(key);
             return _locations.TryGetValue(key, out var location) ? location : null;
         }
 
