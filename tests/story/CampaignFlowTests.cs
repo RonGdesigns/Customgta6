@@ -48,6 +48,15 @@ public static partial class StoryTests
    {
     if(c.Cutscenes.IsActive){c.Cutscenes.Skip();if(c.Cutscenes.LastRequired&&c.Cutscenes.LastOutcome==SceneOutcome.Failed)throw new Exception(m.Id+" required scene failed in flow harness");continue;}
     var stage=flow[m.CurrentStage];
+    // The instrument objectives are worked, not waited out, and the same way whichever
+    // mission they turn up in: hold the throttle until the needle is in the band, then let
+    // go. Decided for the stage rather than per objective - a Protect sharing the stage
+    // would otherwise release the throttle the gauge just asked for - and by type, so the
+    // next mission to adopt one needs no case of its own.
+    var gauge=stage.Objectives.OfType<Bloodlines.Missions.Objectives.GaugeObjective>().FirstOrDefault(o=>!o.IsFinished);
+    var align=stage.Objectives.OfType<Bloodlines.Missions.Objectives.AlignObjective>().FirstOrDefault(o=>!o.IsFinished);
+    GTA.Native.Function.Held[(Control)71]=(gauge!=null&&!gauge.InBand)||(align!=null&&!align.Locked);
+    GTA.Native.Function.Held[(Control)72]=false;
     foreach(var objective in stage.Objectives.Where(o=>!o.IsFinished))
     {
      if(objective.RequiredCharacter.HasValue&&!objective.IsPassive)Use(crew,objective.RequiredCharacter.Value);

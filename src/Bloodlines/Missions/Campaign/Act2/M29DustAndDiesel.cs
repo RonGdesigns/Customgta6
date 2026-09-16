@@ -10,6 +10,16 @@ namespace Bloodlines.Missions.Campaign
 {
     public sealed class M29DustAndDiesel : DesertOperation
     {
+        /// <summary>
+        /// The band the transfer line has to be held in, and for how long. It drifts down
+        /// on its own, so this is a hand kept on a valve rather than a button held: too
+        /// little and nothing moves, too much and the coupling complains. Overshooting
+        /// costs seconds, never the mission - a fuel run that can be failed by a needle is
+        /// a fuel run nobody attempts twice.
+        /// </summary>
+        public const float TransferLow = 6f, TransferHigh = 9f;
+        public const int TransferSeconds = 12;
+
         public override string Id => "M29";public override string Title=>"Dust & Diesel";
         private Vehicle _truck,_trailer;private List<Ped> _guards;
         private Prop _controls, _panel;
@@ -57,7 +67,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Survey the transfer depot",new ReachZoneObjective("Guess: reach the yellow rail-depot entrance. The fuel will leave by road.",()=>At("M29.Cover"),10)).OwnedBy(CrewSlot.Guess)
                 .OnExit(c=>_roles.For(CrewSlot.Guess).Approach(_truck.Position+new Vector3(3,0,0),At("M29.Cover")));
             yield return new MissionStage("Secure the loading valve",new KillTargetsObjective("Ice: clear the five red guards. Keep the tanker intact.",()=>_guards),new ProtectObjective("",()=>_trailer,"The fuel tanker was destroyed.")).OwnedBy(CrewSlot.Ice).OnEnter(c=>Attack(_guards)).AfterCues("M29_S1_01_GUESS");
-            yield return new MissionStage("Transfer the fuel",new MissionInteraction("Ice: use the laptop on the marked transfer table to fill the coupled tanker",()=>At("M29.Valve"),12,animation:MissionInteraction.ReachInside),new ProtectObjective("",()=>_trailer,"The tanker was lost before loading finished.")).OwnedBy(CrewSlot.Ice)
+            yield return new MissionStage("Transfer the fuel",new GaugeObjective("Ice: work the valve with RT / LT. Hold the line between "+TransferLow+" and "+TransferHigh+" bar.",TransferLow,TransferHigh,TransferSeconds){Start=0f,Maximum=12f,Rate=4f,Drift=1.6f,Unit="bar"},new ProtectObjective("",()=>_trailer,"The tanker was lost before loading finished.")).OwnedBy(CrewSlot.Ice)
                 .OnEnter(c=>_roles.For(CrewSlot.Gohan).Observe(At("M29.Approach"),At("M29.Approach")))
                 .OnExit(c=>{_fuelLoaded=true;Radio("ICE","Transfer complete. The tanker is full. Guess, take the tractor; Gohan, watch the road.","M29_FILLED");}).AfterCues("M29_S1_02_ICE");
             yield return new MissionStage("Take the tractor",new EnterVehicleObjective("Guess: take the orange-marked Phantom tractor attached to the fuel tanker. The brothers will ride or follow in another car.",()=>_truck,VehicleSeat.Driver)).OwnedBy(CrewSlot.Guess).OnEnter(c=>{_roles.Release();c.Crew.CompanionsHoldPosition=false;c.Crew.CompanionAI.ReleaseAll();c.Crew.AssignCompanionAI();});
