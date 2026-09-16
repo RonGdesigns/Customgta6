@@ -14,7 +14,7 @@ Gohan begins aboard the Kraken in separately authored, footprint-validated water
 
 ### M13
 
-Ice starts on the water scooter in the open marina basin. Three stationary fuel tugs follow the diagonal channel, separated by more than a hull length; all nine points of each model-sized footprint must have five metres of water. Plant beside each hull, escape the alarm launch to the slipway, board the Granger and detonate. The launch and alarm entry have open-water positions; dock workers remain at explicit posts. Failed water preflight names the exact key and refuses a land spawn.
+Ice starts on the water scooter in the open marina basin. Three stationary fuel tugs follow the diagonal channel, separated by more than a hull length; all nine points of each model-sized footprint must have five meters of water. Plant beside each hull, escape the alarm launch to the slipway, board the Granger and detonate. The launch and alarm entry have open-water positions; dock workers remain at explicit posts. Failed water preflight names the exact key and refuses a land spawn.
 
 ### M14
 
@@ -26,7 +26,7 @@ Reach the maintenance access at a visible service office on the port apron. Ice 
 
 ### M16
 
-The crew starts together in its car on the Great Ocean Highway bridge outside Zancudo. Ice approaches and clears the hangar; the Cargobob stands at a collision-checked centre position facing the open mouth. After switching to Guess, Ice starts boarding while Guess approaches. Gohan takes the car by road. A stopped empty passenger seat has an eight-second recovery if Ice cannot finish his entry. Projectile clearing around this helicopter covers departure only: it ends at 1.1 km from the hangar, after 90 seconds, or upon reaching the pursuit-loss stage. The vanilla armybase script is not terminated; wanted pursuit continues. Cleanup restores the previous wanted maximum.
+The crew starts together in its car on the Great Ocean Highway bridge outside Zancudo. Ice approaches and clears the hangar; the Cargobob stands at a collision-checked center position facing the open mouth. After switching to Guess, Ice starts boarding while Guess approaches. Gohan takes the car by road. A stopped empty passenger seat has an eight-second recovery if Ice cannot finish his entry. Projectile clearing around this helicopter covers departure only: it ends at 1.1 km from the hangar, after 90 seconds, or upon reaching the pursuit-loss stage. The vanilla armybase script is not terminated; wanted pursuit continues. Cleanup restores the previous wanted maximum.
 
 ### M17
 
@@ -34,11 +34,11 @@ The Kraken starts afloat beside a reachable Elysian quay workshop. Gohan prepare
 
 ### M18
 
-Gohan drives the Kraken from its own water spawn to the channel mark. Guess flies the Cargobob from its separate staging origin to a clear apron, gets out and installs the visible jammer crate. Ice drives the hauler roughly 300 metres, parks, and loads the marked launcher crate using an interruptible animation. Mounts must attach successfully to count. Inactive brothers retain mission ownership and parked vehicles hold their places; selecting them releases their vehicle for control. The final radio check boards Guess and Ice into their own vehicles before the shots. Cleanup releases ownership and all mission-owned vehicle freezes.
+Gohan drives the Kraken from its own water spawn to the channel mark. Guess flies the Cargobob from its separate staging origin to a clear apron, gets out and installs the visible jammer crate. Ice drives the hauler roughly 300 meters, parks, and loads the marked launcher crate using an interruptible animation. Mounts must attach successfully to count. Inactive brothers retain mission ownership and parked vehicles hold their places; selecting them releases their vehicle for control. The final radio check boards Guess and Ice into their own vehicles before the shots. Cleanup releases ownership and all mission-owned vehicle freezes.
 
 ## Placement evidence and limits
 
-The read-only CodeWalker passes inspected the installed Enhanced collision archive, water bounds and model bounds. Failed candidates were replaced before packaging: shallow marina edges, a crate under a workbench, and containers inside helicopter footprints. The selected M16 hangar centre has about 29 metres to its closest sampled wall and an open southwest mouth. The final tug checks use their actual 7.2 by 19.1 metre half-footprints, rotated with the channel; every sampled point is deeper than five metres. Marine runtime preflight remains enabled. The reader output stays under build/codewalker-harbor25-* and is not distributed with the mod.
+The read-only CodeWalker passes inspected the installed Enhanced collision archive, water bounds and model bounds. Failed candidates were replaced before packaging: shallow marina edges, a crate under a workbench, and containers inside helicopter footprints. The selected M16 hangar center has about 29 meters to its closest sampled wall and an open southwest mouth. The final tug checks use their actual 7.2 by 19.1 meter half-footprints, rotated with the channel; every sampled point is deeper than five meters. Marine runtime preflight remains enabled. The reader output stays under build/codewalker-harbor25-* and is not distributed with the mod.
 
 Positions remain marked estimate until an in-game survey. Static collision checks cannot prove streamed navmesh, animations, GTA vehicle handling or AI in a live playthrough. The Survey all menu automatically lists the new Kraken spawns, patrol routes, guard posts, work positions and staging vehicle origins. M11 and M17 benches also have explicit prop controls. Attached parts follow their vehicle; those are attachment offsets rather than free-standing map placements. This pass covers the reported harbor missions, not an assertion that every prop throughout the unfinished campaign is already editable.
 

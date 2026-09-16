@@ -85,6 +85,8 @@ namespace Bloodlines
             // the way a map editor drops what you place. Air, water and interior keys keep
             // the height they were flown to; that is the whole reason for flying.
             SurveyMode.SurfaceProbe = (at, reach) => MissionSites.SurfaceHeight(at, at.Z, at.Z - reach);
+            SurveyMode.HeadroomProbe = (at, height) => MissionSites.OpenAbove(at, height);
+            SurveyMode.InteriorProbe = at => MissionSites.InteriorAt(at);
             // Where the tuning loop reads a car's stages, and where the shop finds the
             // record to write one to. Both go through the garage, which is the only thing
             // that knows which live car is which owned one.

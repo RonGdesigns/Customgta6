@@ -4,7 +4,7 @@ The installed fix25 build failed twice at M13.BargeOne (-960, -1660), inside Spa
 
 ## Changes
 
-- Estimated barge positions can search within 30 metres in 10-metre rings, checking the complete rotated hull footprint and five metres of water. Personal surveyed positions remain fixed.
+- Estimated barge positions can search within 30 meters in 10-meter rings, checking the complete rotated hull footprint and five meters of water. Personal surveyed positions remain fixed.
 - All three hull footprints are reserved and checked before any fuel boats are created. Nearby recovery cannot overlap another barge. Failure at a later site rolls earlier adjustments back so repeated attempts cannot keep moving the first boat away.
 - A failed full-footprint check yields for streaming and retries up to three times; seeing the center seabed alone no longer skips that retry.
 - Logs report actual model bounds, failed sample position, water/floor elevations, required depth, or the obstructed segment. Those details will identify any remaining live rejection.
@@ -12,7 +12,7 @@ The installed fix25 build failed twice at M13.BargeOne (-960, -1660), inside Spa
 
 ## Verification and next playtest
 
-The read-only map check still finds approximately nine metres of water at the first barge center. Extracted tug drawable bounds are min (-5.141756, -16.78415, -3.719979), max (5.141756, 14.29196, 10.97245). Static map results do not establish live native clearance.
+The read-only map check still finds approximately nine meters of water at the first barge center. Extracted tug drawable bounds are min (-5.141756, -16.78415, -3.719979), max (5.141756, 14.29196, 10.97245). Static map results do not establish live native clearance.
 
 The production DLL compiles; 2,237 story/runtime checks and 189 general checks pass. Regression scenarios cover a blocked estimate that relocates, fixed surveyed positions, blocked water that remains rejected, delayed full-footprint streaming, hull separation, transactional failure, and specific diagnostics. Mission lint reports no errors; location validation reports 0 of 295 flagged.
 

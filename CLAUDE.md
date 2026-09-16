@@ -1202,3 +1202,51 @@ M60's and M70's waves, M63's nests and M45's deck detail read their size from th
 The posts in M49, M55, M64, M65, SM07 and SM08 deliberately do not: those come from a
 runtime road node or from `MazeBank.Nearby` inside an interior nobody has walked, so there
 is no surveyable key for the editor to put a number on.
+
+## The survey says what it sees, and checks a mission at a time
+
+The backlog was measured before any of this was built, and the measurement is the reason
+for its shape: **1,062 of 1,091 keys are estimates, but 282 of those are SM03's race route
+and the rest are a median of nine per mission.** Forty-two of eighty-five missions have
+eight or fewer. So the cost was never the total — it was judging nine spots one at a time
+with nothing on screen saying whether any of them was already right.
+
+`Core/SurveyReading` is what the probes can say about a point, judged against the `kind` of
+the key it belongs to. **Every branch in it is a bug this campaign shipped and found weeks
+later in game**: a land key with nothing under it (M40's hull kits under the pier), one with
+a deckhead on it (M45's two men inside the hull), an interior key where no interior loads
+(M55, filed unbuildable twice), an air key a meter off a deck, an underground key with open
+sky over it (M53's search floor in the wrong place).
+
+Three rules it keeps:
+
+ * **Not measured is not the same as measured and found nothing.** A null probe has to read
+   as "did not look", and the first version of this conflated them — which called every
+   point in the harness broken and failed a suite that had nothing wrong with it. Each
+   reading carries whether the probe ran at all.
+ * **A complaint is never a refusal.** An estimate is usually close enough to play, the same
+   reason `PlacementPreflight` only ever warns. A capture that contradicts its own key waits
+   for a deliberate second press — the same gate a displaced capture already used — because
+   an author who knows better than a ray has to be able to say so.
+ * **Judging is separate from probing.** `SurveyReading` holds numbers somebody else
+   measured and decides what they mean, so the decision is tested without a game running.
+   `SurveyMode.Read` gathers them through injected delegates, the way `SurfaceProbe` and
+   `ClearanceProbe` already were.
+
+**The sweep drives the ordinary teleport rather than a traversal of its own.** `BeginSweep`
+opens the normal survey queue and supplies the presses; each key is read once its teleport
+has landed and the collision has had `SweepDwellMs` to settle. Collision loads around the
+focus and the man, so a point read from where he happens to be standing reads as nothing —
+the teleport already moves both, waits properly and gives up cleanly when the terrain never
+arrives. A second path through the same problem would be a second set of the same mistakes.
+It writes `Bloodlines.Survey-Check.txt` beside the survey ini: the spots that need a look
+first, then everything checked.
+
+**Accepting in place is a capture that does not move the point.** The camera survey was
+already a coordinate placed by looking at it rather than by standing on it, so a spot he has
+looked at and found right is surveyed and the status stops calling it a guess. `AcceptClean`
+does that for everything the last sweep passed. It refuses a spot that did not check out,
+because recording one of those as verified is recording a guess as a measurement.
+
+**A spot that checks out is placeable, not correct.** Whether it is the right place for the
+beat is a judgment no probe makes, and the report says so in its own header.

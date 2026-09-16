@@ -10,6 +10,7 @@ public static partial class RegressionTests
  static void PlacementEditorChecks(string root)
  {
   FlyModeTeleportChecks(root);
+  SweepChecks(root);
   Reset();string dir=Path.Combine(root,"placement");Directory.CreateDirectory(dir);
   File.WriteAllText(Path.Combine(dir,"locations.tsv"),"key\tx\ty\tz\theading\tkind\tstatus\tdistrict_hint\nM05.LightCrew\t100\t200\t10\t90\tland\testimate\tbeach\nM03.DepotGate\t200\t300\t20\t0\tland\testimate\tyard\nM03.HaulerSpawn\t200\t300\t20\t0\tland\testimate\ttruck\nM06.AlleyHold\t300\t400\t30\t0\tland\testimate\talley\n");
   string path=Path.Combine(dir,"survey.ini");var book=LocationBook.Load(dir,Path.Combine(dir,"none.ini"));var editor=new SurveyMode(book,path);
@@ -109,5 +110,87 @@ public static partial class RegressionTests
   Check(editor.Camera.Position.DistanceTo(away)<.01f,"and the view with him");
   editor.Stop();
   Check(!editor.Camera.IsFlying,"Finishing the survey lands the camera");
+ }
+
+ /// <summary>
+ /// The sweep, and accepting a spot in place. 1,062 of 1,091 keys are estimates and the
+ /// median mission has nine of them, so the slow half is flying to all nine to find the two
+ /// that are wrong. This visits them and says which two.
+ /// </summary>
+ static void SweepChecks(string root)
+ {
+  Reset();string dir=Path.Combine(root,"sweep");Directory.CreateDirectory(dir);
+  File.WriteAllText(Path.Combine(dir,"locations.tsv"),"key\tx\ty\tz\theading\tkind\tstatus\tdistrict_hint\nM60.Ally1\t100\t-1820\t21\t0\tland\testimate\tDavis\nM60.Wave1\t110\t-1830\t21\t180\tland\testimate\tDavis\nM60.Wave2\t60\t-1870\t20\t140\tland\testimate\tDavis\n");
+  var book=LocationBook.Load(dir,Path.Combine(dir,"none.ini"));
+  string ini=Path.Combine(dir,"survey.ini");
+  var editor=new SurveyMode(book,ini);
+  Game.Player.Character.Position=new Vector3(100,-1815,21);
+  GameplayCamera.Position=new Vector3(100,-1815,31);GameplayCamera.Rotation=new Vector3(-40,0,0);
+  Game.GameTime=200000;World.CollisionReady=true;GTA.Native.Function.ZoneName="DAVIS";GTA.Native.Function.WaterHeight=null;
+
+  // ---- The probes, injected the way the host injects them. Two of the three spots are
+  // standing on the street; M60.Wave2 has a deckhead a meter over it, which is the fault
+  // that put two of M45's men inside the hull.
+  SurveyMode.SurfaceProbe=(at,reach)=>at.Z-0.3f;
+  SurveyMode.HeadroomProbe=(at,height)=>!(Math.Abs(at.X-60f)<1f&&height>1f);
+  SurveyMode.InteriorProbe=at=>false;
+  SurveyMode.ClearanceProbe=at=>18f;
+
+  var clean=editor.Read(book.Get("M60.Wave1"),book.Position("M60.Wave1"));
+  Check(clean.Fits&&clean.Zone=="DAVIS","A reading gathers the probes and the zone");
+  Check(clean.NearestKey=="Ally1","and names the nearest key of the same mission");
+  Check(!editor.Read(book.Get("M60.Wave2"),book.Position("M60.Wave2")).Fits,
+   "A spot with a deckhead a meter over it does not check out");
+
+  // ---- The sweep itself. It teleports through the keys, so each frame is one step.
+  Check(editor.BeginSweep("M60")&&editor.IsSweeping,"The sweep opens on a mission");
+  Check(editor.Camera.IsFlying||editor.ToggleCamera(),"with the camera available");
+  for(int i=0;i<80&&editor.IsSweeping;i++){Game.GameTime+=300;editor.Update();}
+  Check(!editor.IsSweeping,"and finishes on its own");
+  Check(editor.SweepResults.Count()==3,"having read every spot in the mission");
+  Check(editor.SweepResults.Count(r=>!r.Fits)==1,"with exactly the one that needs a look flagged");
+  Check(editor.SweepResults.First(r=>!r.Fits).Key=="M60.Wave2","and it is the right one");
+  Check(File.Exists(Path.Combine(dir,"Bloodlines.Survey-Check.txt")),"A worklist is written beside the survey ini");
+  string report=File.ReadAllText(Path.Combine(dir,"Bloodlines.Survey-Check.txt"));
+  Check(report.Contains("M60.Wave2")&&report.Contains("CHECK"),"naming the spot to visit");
+  Check(report.Contains("still yours to say"),
+   "and saying plainly that placeable is not the same as the right place for the beat");
+
+  // ---- Accepting in place. A capture that does not move the point, which is what having
+  // looked at it actually means.
+  int taken=editor.AcceptClean();
+  Check(taken==2,"Every spot that checked out is accepted where it is");
+  Check(book.Get("M60.Wave1").Status==LocationStatus.Surveyed,"and stops being called a guess");
+  Check(book.Get("M60.Wave2").Status!=LocationStatus.Surveyed,"while the one that did not is left alone");
+  Check(book.Position("M60.Wave1")==new Vector3(110,-1830,21),"Accepting moves nothing");
+  Check(File.ReadAllText(ini).Contains("M60.Wave1"),"and it is written to the survey file");
+  Check(editor.AcceptClean()==0,"Accepting twice takes nothing the second time");
+
+  // ---- And the one spot that did not check out cannot be accepted by pressing the same row.
+  editor.Start(new[]{"M60.Wave2"});
+  Check(!editor.AcceptCurrent(),"A spot that has not checked out is refused in place");
+  Check(book.Get("M60.Wave2").Status!=LocationStatus.Surveyed,"and stays an estimate");
+  SurveyMode.HeadroomProbe=(at,height)=>true;
+  Check(editor.AcceptCurrent(),"Once it reads clean it can be accepted");
+  Check(book.Get("M60.Wave2").Status==LocationStatus.Surveyed,"and it is recorded");
+
+  // ---- A capture that contradicts its own key holds for a second press rather than
+  // writing quietly. The kind is the thing nothing used to check.
+  Reset();Game.GameTime=400000;
+  File.WriteAllText(Path.Combine(dir,"locations.tsv"),"key\tx\ty\tz\theading\tkind\tstatus\tdistrict_hint\nM45.Approach\t-1600\t5300\t60\t0\tair\testimate\tPaleto Cove\n");
+  var air=LocationBook.Load(dir,Path.Combine(dir,"none2.ini"));
+  var second=new SurveyMode(air,Path.Combine(dir,"survey2.ini"));
+  SurveyMode.SurfaceProbe=(at,reach)=>at.Z-1f;   // standing on something: not an air spawn
+  SurveyMode.HeadroomProbe=(at,height)=>true;
+  second.Start("M45");
+  Game.Player.Character.Position=new Vector3(-1600,5300,60);
+  second.Capture();
+  Check(air.Get("M45.Approach").Status!=LocationStatus.Surveyed,
+   "An air key captured a meter off the deck is held rather than written");
+  Game.GameTime+=1000;second.Capture();
+  Check(air.Get("M45.Approach").Status==LocationStatus.Surveyed,
+   "and a deliberate second press saves it anyway, because the author may know better than the probe");
+
+  SurveyMode.SurfaceProbe=null;SurveyMode.HeadroomProbe=null;SurveyMode.InteriorProbe=null;SurveyMode.ClearanceProbe=null;
  }
 }
