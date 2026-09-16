@@ -50,9 +50,14 @@ public static partial class StoryTests
   int cash=state.CashOnHand;int sale=VehiclePricing.Sale(kept);
   Check(garages.Sell(kept)&&state.Vehicles.Count==1&&state.CashOnHand==cash+sale&&!drop.Present,"Selling pays half the car's value, clears the bay and takes the car off the street");
   // The dealer delivers to a garage with a bay.
-  var choice=StoryVehicles.Catalog.First(v=>v.Model=="sultanrs");state.CashOnHand=100000;
-  Check(garages.BuyFromDealer(choice,lot)&&state.Vehicles.Count==2&&state.Vehicles.Last().ModelName=="sultanrs"&&state.Vehicles.Last().Garage==lot.Id&&!state.Vehicles.Last().Stolen&&state.CashOnHand==100000-VehiclePricing.Of(choice),"A dealer purchase records the car in the chosen garage and charges the crew");
+  // Funded from the car's own price rather than a round number: this checks the
+  // purchase mechanism, and it should not start failing because a price moved.
+  var choice=StoryVehicles.Catalog.First(v=>v.Model=="sultanrs");int funds=VehiclePricing.Of(choice)+25000;state.CashOnHand=funds;
+  Check(garages.BuyFromDealer(choice,lot)&&state.Vehicles.Count==2&&state.Vehicles.Last().ModelName=="sultanrs"&&state.Vehicles.Last().Garage==lot.Id&&!state.Vehicles.Last().Stolen&&state.CashOnHand==funds-VehiclePricing.Of(choice),"A dealer purchase records the car in the chosen garage and charges the crew");
   Check(!garages.BuyFromDealer(choice,lot),"A full garage takes no delivery");
+  // Topped up first, or the second refusal would be an empty wallet rather than a
+  // full bay, and this line would pass for the wrong reason.
+  state.CashOnHand=VehiclePricing.Of(choice)*3;
   Check(garages.BuyFromDealer(choice,bay)&&!garages.BuyFromDealer(choice,bay),"The free street bay holds one car");
   state.CashOnHand=100;Check(!garages.BuyFromDealer(choice,GarageService.Sites.First(s=>s.Id=="bay-ice")),"No cash, no car");
   garages.Tag(state.Vehicles.Last(),CrewSlot.Ice);
