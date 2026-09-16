@@ -184,6 +184,9 @@ namespace Bloodlines.Missions
             // A chapter of an operation is never played on its own: the parent takes
             // over and this script becomes its first phase. QA can still run one alone.
             if (!_standalonePhase) mission = MissionOperations.CreateFor(definition.Id, _state) ?? mission;
+            // From here until the report below, every key the mission looks up is noted,
+            // so the pre-flight can name the points this attempt actually stands on.
+            _context.Locations?.BeginUse();
             if (!mission.Begin(_context))
             {
                 _state.DiscardAttempt();
@@ -192,6 +195,12 @@ namespace Bloodlines.Missions
                 GameUtils.Notify("~r~" + definition.Id + " failed to start. Check Bloodlines.log.");
                 return false;
             }
+
+            // What it is standing on, and how much of that nobody has ever checked. A
+            // warning, never a refusal: an estimate is usually close enough to play, and a
+            // mission that refused to start until every point was surveyed would mean no
+            // campaign at all.
+            PlacementPreflight.Run(_context.Locations, _context.Doctor, definition.Id);
 
             _current = mission;
             _currentDefinition = definition;

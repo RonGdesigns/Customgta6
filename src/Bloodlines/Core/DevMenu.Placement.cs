@@ -18,7 +18,7 @@ namespace Bloodlines.Core
             foreach (var group in _survey.PlacementLocations.GroupBy(l=>l.Key.Split('.')[0]).OrderBy(g=>g.Key))
             {
                 string mission=group.Key;
-                page.Add(mission,()=>group.Count()+" locations",()=>_stack.Push(BuildPlacementItems(mission)));
+                page.Add(mission,()=>PlacementPreflight.ProgressLabel(_survey.Book,mission),()=>_stack.Push(BuildPlacementItems(mission)));
             }
             return page;
         }

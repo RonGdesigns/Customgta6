@@ -998,3 +998,22 @@ A scenario that will not start where he is standing — leaning needs a wall —
 `IS_PED_USING_ANY_SCENARIO` after two and a half seconds and replaced with a stance that
 works anywhere, because a posture that silently refused leaves him exactly as stagnant as
 before.
+
+## The pre-flight placement report
+
+`Core/PlacementPreflight` says, when a mission begins, which of the points it is about to
+stand on have never been surveyed — by name, in the log and in the mission doctor. The
+`status` column has existed as long as the location book has and only the offline linter
+ever read it; 1,061 of 1,091 keys are estimates, every Act 3 key without exception, and
+every placement fault of the last week was one of them going unmentioned.
+
+It reports the keys the mission **used**, recorded through `LocationBook.Get` — the one
+choke point every mission's `At()` funnels into — rather than the ones whose name starts
+with its id. A prefix scan misses every shared point, which is exactly the kind of place
+two missions disagree about. `BeginUse()` is called before `mission.Begin`; the report runs
+after it returns.
+
+**It is a warning, never a refusal.** An estimate is usually close enough to play, and a
+mission that would not start until every point was surveyed would mean no campaign. The
+prefix form is used for one thing only — `ProgressLabel`, the placement editor's mission
+list, which is now the survey to-do list ("12 locations, none surveyed").
