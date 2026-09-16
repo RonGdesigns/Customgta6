@@ -57,9 +57,6 @@ namespace Bloodlines.Core
             if (held && moving && bottle.Charge > 0f)
             {
                 _boosted = car; bottle.Charge = Math.Max(0f, bottle.Charge - dt / BoostSeconds); bottle.LastUsed = Game.GameTime;
-                // Fire out of the pipes for as long as he holds it. Stop calling and it
-                // stops; there is no handle to leak and nothing to tear down.
-                ExhaustFlame.Hold(car);
             }
             else if (!held && Game.GameTime - bottle.LastUsed >= 2000)
                 bottle.Charge = Math.Min(1f, bottle.Charge + dt / RechargeSeconds);
@@ -69,6 +66,6 @@ namespace Bloodlines.Core
             new GTA.UI.TextElement("NITRO " + (int)(Charge * 100) + "% | " + (Boosting ? "BOOST" : held && Charge <= 0 ? "Release to recharge" : Controls),
                 new PointF(24, 530), .27f, Boosting ? Color.Cyan : Color.White).Draw();
         }
-        public void Reset() { _boosted = null; _bottles.Clear(); Charge = 1f; ExhaustFlame.Reset(); }
+        public void Reset() { _boosted = null; _bottles.Clear(); Charge = 1f; }
     }
 }
