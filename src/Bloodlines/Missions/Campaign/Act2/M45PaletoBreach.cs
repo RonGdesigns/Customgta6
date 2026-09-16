@@ -220,9 +220,14 @@ namespace Bloodlines.Missions.Campaign
             if (hub.DistanceTo2D(_deck) < DetailStandoff)
                 Logger.Warn(Id + ": the deck detail stands " + hub.DistanceTo2D(_deck).ToString("0.0") +
                     " m from where Ice steps off. Survey M45.Deck and M45.Helipad apart, or the detail is standing in the landing zone again.");
-            int ranks = Math.Max(1, DeckGuards / 2);
+            // The count comes off M45.Deck when he has set one. The spread does not: these
+            // men stand in ranks across the beam and every post is probed for a deckhead
+            // over it, so a circle laid out by the editor would undo the fix that stopped
+            // two of them ending up inside the hull.
+            int guards = MissionPlacement.Count(Ctx.Locations, "M45.Deck", DeckGuards);
+            int ranks = Math.Max(1, guards / 2);
             int placed = 0, empty = 0, unverified = 0;
-            for (int i = 0; i < DeckGuards; i++)
+            for (int i = 0; i < guards; i++)
             {
                 // Ranks along the vessel either side of the detail's own key, two men to a
                 // rank off each beam, so ten men are a detail rather than a pile.

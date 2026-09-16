@@ -1136,3 +1136,69 @@ natives and the game does not know about it.
 **`Json.Int` only understands the doubles the reader produces.** Handing `FromJson` the
 dictionary `ToJson` just built reads every number as zero — a test that round-trips in
 memory proves nothing. Go through `Json.Read(Json.Write(...))`, which is what a save does.
+## What a vehicle costs
+
+`tools/price_vehicles.py` generates the catalog's price table; `--apply` writes it into
+`Garages.cs`. **A price already in the table is an anchor and is never moved** — the tool
+only fills gaps, so a number set by hand for a story reason survives every regeneration.
+
+**A runtime performance formula was tried and measured, and it does not work.** Fitted
+against the sixty-five hand-set prices it is 40 to 45 per cent out, and the misses are
+systematic: the Virgo is $18,000 and the curve says $39,000; the Oppressor Mk II is
+$300,000 and the curve says $44,000, because its worth is that it flies and shoots. Those
+hand prices are an affordability ladder, not a performance curve, and a formula fights the
+design every time a handling file changes.
+
+The ladder is anchored to the campaign's own payouts, which the progression guide exports:
+**$55,000 across the first three missions, $345,000 by M10, $3,722,000 in total.** So
+something has to exist under $20,000, and nothing costs more than $500,000. Street sales
+are capped at `min($30,000, price)`, which makes anything above that a one-way purchase.
+
+Uniqueness is decided **per catalog page**, not per class: the phone sorts a category by
+price, and two vehicles sharing a number is two vehicles in an arbitrary order. Ties
+between two hand-set prices are left alone, because moving an anchor is the one thing the
+tool will not do.
+
+## The placement editor, after Ron used it
+
+Two faults, both found by editing M60.
+
+**A teleport has to take the camera.** `SurveyMode.TeleportToCurrent` moves the man; the
+survey camera is a separate entity and stayed where it was, so in fly mode the key he asked
+for never appeared and nothing looked like it had happened. The second half is worse and
+was the actual timeout: the camera holds the streaming focus with
+`SET_FOCUS_POS_AND_VEL`, and the teleport waits on `HAS_COLLISION_LOADED_AROUND_ENTITY`
+for the man — so with the focus still back at the old view, the destination never streamed,
+the four-second gate expired and it rolled him back. `SurveyCamera.MoveTo` parks the camera
+one standoff back along its own line of sight, never below the point, and takes the focus
+with it; `ReturnTo` puts it back when the teleport rolls back. **Anything that moves the man
+while the camera is up has to move the camera, or it has not moved anything he can see.**
+
+**A group is declared in a table, and the table is the contract.** `MissionPlacement.HasGroup`
+was `key == "M05.LightCrew" || key == "M03.DepotGate"` — two keys out of one thousand and
+ninety-one, so the editor's enemy-count row answered "not a group" on everything Ron tried
+and he reasonably concluded the grouping was broken. `MissionPlacement.Groups` is one
+dictionary of every key whose detail can be sized, the way `MissionOperations` is one table
+of operations, and a story test holds it against the missions that read it so the next
+detail cannot be written and forgotten.
+
+Three rules that came out of wiring it:
+
+ * **A declared key changes nothing until it is edited.** An unedited key has no count, so
+   `HasFormation` is false and the mission falls back to the constant it was authored with.
+   `MissionPlacement.PointFor` is the same idea for position: the edited formation when the
+   key has one, and the exact offset the mission wrote when it does not. That is what makes
+   adding a row to the table safe on an unsurveyed campaign.
+ * **A radius of zero means the spread is the mission's own.** M45's deck detail stands in
+   ranks across the beam and probes every post for a deckhead, because a downward probe
+   cannot tell a deck from the cabin floor under it. Its count is editable and its shape is
+   not, and the editor draws no ring and no dots for it — a circle it would not stand in is
+   the editor promising a placement it does not make.
+ * **A detail laid out as `index * spacing` is a queue, not a position.** Four missions each
+   reached for that on their own. `MissionPlacement.GroupPoint` is a sunflower spiral that
+   fills a circle evenly at any count, and it is now the one place that layout lives.
+
+M60's and M70's waves, M63's nests and M45's deck detail read their size from their keys.
+The posts in M49, M55, M64, M65, SM07 and SM08 deliberately do not: those come from a
+runtime road node or from `MazeBank.Nearby` inside an interior nobody has walked, so there
+is no surveyable key for the editor to put a number on.

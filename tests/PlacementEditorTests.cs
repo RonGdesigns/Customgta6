@@ -9,6 +9,7 @@ public static partial class RegressionTests
 {
  static void PlacementEditorChecks(string root)
  {
+  FlyModeTeleportChecks(root);
   Reset();string dir=Path.Combine(root,"placement");Directory.CreateDirectory(dir);
   File.WriteAllText(Path.Combine(dir,"locations.tsv"),"key\tx\ty\tz\theading\tkind\tstatus\tdistrict_hint\nM05.LightCrew\t100\t200\t10\t90\tland\testimate\tbeach\nM03.DepotGate\t200\t300\t20\t0\tland\testimate\tyard\nM03.HaulerSpawn\t200\t300\t20\t0\tland\testimate\ttruck\nM06.AlleyHold\t300\t400\t30\t0\tland\testimate\talley\n");
   string path=Path.Combine(dir,"survey.ini");var book=LocationBook.Load(dir,Path.Combine(dir,"none.ini"));var editor=new SurveyMode(book,path);
@@ -47,5 +48,66 @@ public static partial class RegressionTests
   editor.TeleportToCurrent();Check(editor.IsEditing&&!editor.MovePlacement(1,false),"Teleport retains editing state and blocks navigation until complete");editor.CancelTeleport();
   editor.Stop();
   Check(File.Exists(path+".bak"),"Replacing a saved placement keeps the prior survey file as a backup");
+ }
+
+ /// <summary>
+ /// The teleport, with the survey camera up. Ron reported it plainly: in fly mode it does
+ /// not teleport. Two faults reading as one - the camera is a separate entity and stayed
+ /// looking at where he had been standing, and it holds the streaming focus, so the
+ /// collision this teleport waits on loaded nowhere near the man and the four-second
+ /// timeout put him back.
+ /// </summary>
+ static void FlyModeTeleportChecks(string root)
+ {
+  Reset();string dir=Path.Combine(root,"flyteleport");Directory.CreateDirectory(dir);
+  File.WriteAllText(Path.Combine(dir,"locations.tsv"),"key\tx\ty\tz\theading\tkind\tstatus\tdistrict_hint\nM60.Wave1\t110\t-1830\t21\t180\tland\testimate\tDavis\nM60.Wave2\t60\t-1870\t20\t140\tland\testimate\tDavis\n");
+  var book=LocationBook.Load(dir,Path.Combine(dir,"none.ini"));
+  var editor=new SurveyMode(book,Path.Combine(dir,"survey.ini"));
+  Game.Player.Character.Position=new Vector3(0,0,30);
+  GameplayCamera.Position=new Vector3(0,0,40);GameplayCamera.Rotation=new Vector3(-30,0,0);
+
+  // ---- The camera on its own: sent to a point, it arrives looking at it rather than
+  // inside it, and never below it - underground or on a deck, below is the floor.
+  var flying=new SurveyCamera();
+  Check(!flying.MoveTo(new Vector3(100,100,20)),"A camera that is not up cannot be sent anywhere");
+  Check(flying.Take(),"The survey camera comes up");
+  var target=new Vector3(120,-40,18);
+  Check(flying.MoveTo(target),"and can be sent to a key");
+  Check(flying.Position.DistanceTo(target)<=SurveyCamera.Standoff+.01f,"It arrives within the standoff of the point, not on top of it");
+  Check(flying.Position.Z>=target.Z,"and never below it");
+  var parked=flying.Position;flying.ReturnTo(parked+new Vector3(5,0,0));
+  Check(Math.Abs(flying.Position.X-(parked.X+5f))<.01f,"and it can be put back where it was");
+  flying.Release();Check(!flying.IsFlying,"The view goes back");
+
+  // ---- And through the survey, which is where the fault was.
+  Check(editor.BeginPlacement("M60.Wave1"),"A wave opens in the placement editor");
+  Check(editor.ToggleCamera()&&editor.Camera.IsFlying,"with the camera up");
+  var before=editor.Camera.Position;
+  var key=book.Position("M60.Wave1");
+  World.CollisionReady=false;Game.GameTime=100000;
+  editor.TeleportToCurrent();
+  Check(editor.IsTeleporting,"The teleport starts");
+  Check(editor.Camera.Position!=before,"and the camera goes with it rather than staying where he was");
+  Check(editor.Camera.Position.DistanceTo(key)<=SurveyCamera.Standoff+.01f,"looking at the key it was sent to");
+  World.CollisionReady=true;Game.GameTime+=400;editor.Update();
+  Check(!editor.IsTeleporting,"It lands once the destination has collision");
+  Check(Game.Player.Character.Position.DistanceTo(key)<2f,"with the man at the key");
+  Check(editor.Camera.Position.DistanceTo(key)<=SurveyCamera.Standoff+.01f,"and the camera still on it");
+
+  // ---- A rollback undoes both. A camera left at a destination he was not moved to is
+  // outside its own leash, looking at somewhere he is not. The camera is flown off the key
+  // first, within the leash, so there is something for the rollback to restore.
+  Game.Player.Character.Position=new Vector3(90,-1810,20);
+  editor.Camera.ReturnTo(new Vector3(70,-1800,44));
+  var away=editor.Camera.Position;var stood=Game.Player.Character.Position;
+  World.CollisionReady=false;Game.GameTime+=1000;
+  editor.TeleportToCurrent();
+  Check(editor.Camera.Position!=away,"A second teleport moves the camera again");
+  Game.GameTime+=5000;editor.Update();
+  Check(!editor.IsTeleporting,"Terrain that never loads gives up");
+  Check(Game.Player.Character.Position.DistanceTo(stood)<.01f,"and puts the man back");
+  Check(editor.Camera.Position.DistanceTo(away)<.01f,"and the view with him");
+  editor.Stop();
+  Check(!editor.Camera.IsFlying,"Finishing the survey lands the camera");
  }
 }

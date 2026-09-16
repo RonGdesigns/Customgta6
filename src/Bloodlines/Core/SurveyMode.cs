@@ -142,6 +142,8 @@ namespace Bloodlines.Core
         public static bool IsSurveyRunning { get; private set; }
         public static bool OwnsCaptureKey => IsSurveyRunning || _lastCaptureFrame == Game.GameTime;
         public bool IsTeleporting => _moving != null;
+        /// <summary>Where the flying camera was before a teleport took it, so a rollback can undo both.</summary>
+        private Vector3? _cameraFrom;
         public MissionLocation Current => IsActive && _index >= 0 && _index < _queue.Count ? _queue[_index] : null;
 
         public void Start(string missionPrefix = null)
@@ -307,6 +309,14 @@ namespace Bloodlines.Core
                 moving.Position = p + new Vector3(0f, 0f, 0.5f);
                 moving.Heading = Current.Heading;
                 moving.Velocity = Vector3.Zero;
+                // A capture in fly mode reads the camera, so the camera is the thing that has
+                // to arrive. Left behind it looks at where he was standing, which is a
+                // teleport that appears not to have happened - and it holds the streaming
+                // focus, so the collision this teleport is waiting on never loads and the
+                // whole thing rolls back. Ron reported the symptom: in fly mode it does not
+                // teleport.
+                _cameraFrom = Camera.IsFlying ? Camera.Position : (Vector3?)null;
+                if (_cameraFrom.HasValue) Camera.MoveTo(p);
             }
             catch { CancelTeleport(); throw; }
         }
@@ -322,6 +332,11 @@ namespace Bloodlines.Core
             var player = _movingPlayer;
             _moving = null;
             _movingPlayer = null;
+            // The view goes back with the man. Leaving it at a destination he was not moved
+            // to is a camera outside its own leash, looking at somewhere he is not.
+            var cameraFrom = _cameraFrom;
+            _cameraFrom = null;
+            if (rollback && cameraFrom.HasValue) Camera.ReturnTo(cameraFrom.Value);
             try
             {
                 if (moving != null && moving.Exists())
