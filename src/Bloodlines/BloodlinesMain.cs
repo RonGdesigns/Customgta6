@@ -87,11 +87,6 @@ namespace Bloodlines
             SurveyMode.SurfaceProbe = (at, reach) => MissionSites.SurfaceHeight(at, at.Z, at.Z - reach);
             SurveyMode.HeadroomProbe = (at, height) => MissionSites.OpenAbove(at, height);
             SurveyMode.InteriorProbe = at => MissionSites.InteriorAt(at);
-            // Where the tuning loop reads a car's stages, and where the shop finds the
-            // record to write one to. Both go through the garage, which is the only thing
-            // that knows which live car is which owned one.
-            VehicleStages.Fitted = (vehicle, stage) => _garages.StageOn(vehicle, stage);
-            _shops.OwnedRecord = vehicle => _garages.RecordFor(vehicle);
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
             _dispatches = new CampaignDispatches(_state);
@@ -139,6 +134,17 @@ namespace Bloodlines
             context.Garages = _garages;
             _garages.Allowed = _shops.Allowed;
             _garages.OpenMenu = _menu.OpenGarage; _menu.Garages = _garages;
+            // Where the tuning loop reads a car's stages, and where the shop finds the
+            // record to write one to. Both go through the garage, which is the only thing
+            // that knows which live car is which owned one.
+            //
+            // These sit AFTER the shop and the garage exist. The first version put them
+            // forty lines up, beside the survey probes, where _shops was still null - and
+            // the constructor threw, the main script never instantiated, and Ron loaded a
+            // game with no campaign in it. A source check on this file now refuses any
+            // field dereferenced before the line that constructs it.
+            VehicleStages.Fitted = (vehicle, stage) => _garages.StageOn(vehicle, stage);
+            _shops.OwnedRecord = vehicle => _garages.RecordFor(vehicle);
             _homes.OpenMenu = _menu.OpenHomePage;
             _homes.OpenWardrobe = _menu.OpenWardrobe;
             _menu.StartPoint = _missionMarkers.StartPoint;
