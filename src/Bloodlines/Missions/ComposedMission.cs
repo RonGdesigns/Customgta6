@@ -119,6 +119,9 @@ namespace Bloodlines.Missions
         }
 
         protected IReadOnlyList<MissionStage> Stages => _stages;
+        /// <summary>The live stage's objectives, for a HUD that draws state rather than a sentence.</summary>
+        public IReadOnlyList<Objective> CurrentStageObjectives => CurrentStageOrNull()?.Objectives;
+        public string CurrentStageName => CurrentStageOrNull()?.Name;
 
         /// <summary>Spawn the world. Return false to reject the start.</summary>
         protected abstract bool Setup();

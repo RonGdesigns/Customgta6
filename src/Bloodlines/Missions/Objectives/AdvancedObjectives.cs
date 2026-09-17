@@ -306,6 +306,7 @@ namespace Bloodlines.Missions.Objectives
         }
 
         public int Remaining => _sites.Count - _done.Count;
+        public int Total => _sites.Count;
         /// <summary>Called with the site index when a site's hold completes: a part fitted, a charge set.</summary>
         public Action<int> SiteDone { get; set; }
         public string Animation { get; set; }

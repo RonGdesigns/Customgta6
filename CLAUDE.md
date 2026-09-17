@@ -1288,3 +1288,34 @@ nothing about streaming.
 a harness, and a field dereferenced before the line that builds it took the whole campaign
 out of the game (PR #93). `HostConstructorChecks` refuses that ordering, lambda bodies
 excepted.
+
+## The interface pass: HUD state, a results card, the car page, a title card
+
+See `docs/INTERFACE-2026-09-17.md`. The rules worth keeping:
+
+**Two things cannot share the subtitle slot.** `TimerObjective` pushed its clock as a
+subtitle and `ComposedMission` pushes the objective text into the same slot every tick, so
+M55's five-minute clock never showed. Anything with a number to show belongs in
+`Core/MissionHud`, which composes a `Frame` from `MissionManager.CurrentObjectives` each
+tick and draws it; never push a second subtitle from an objective.
+
+**The HUD is read, never stored.** `MissionHud.Compose` is pure over the running mission -
+the owning brother, the distance, the gauge, the timer - and a test reads the `Frame` with
+no screen. Add a kind of progress by teaching `Describe`, not by writing state anywhere.
+
+**One color per brother, everywhere.** `Core/CrewColors` holds the phone's three accents
+and the HUD, the title card and the results card draw from it. A story test holds the
+phone's literals to those values.
+
+**A kill is credited, never scored.** `Core/MissionTally` attributes a hostile's death to
+whoever was in play when it was noticed, reading only from `Mission.Staged`; it holds no
+entities. `Passed` carries the `Result`, the panel draws it, and a failed attempt is dropped.
+
+**A phone page can draw a picture and bars.** `PhoneEntry.Art` names a `phone-<name>.png`
+in the ui folder and `PhoneEntry.LiveBars` yields label and fill; the reading pane draws
+them above the text through the sprite and box callbacks the home screen already uses.
+Silhouettes are one per catalog class (`VehicleSpecs.ArtFor`), never one per model.
+
+**A card is cued when gameplay begins, not over the briefing.** `MissionManager.Started`
+fires from `BeginGameplay`, after the scene, and the presentation caps a frame at a quarter
+second - a test that jumps five seconds in one frame has skipped nothing.

@@ -41,6 +41,17 @@ namespace Bloodlines.Core
         /// subtitle captured once would stay "reading ratings" forever.
         /// </summary>
         public Func<string> LiveSubtitle;
+        /// <summary>
+        /// A picture at the top of the reading pane - "car-cars", "car-boats" - drawn from
+        /// the ui folder by the same sprite path the home screen uses. Null for the plain
+        /// page every other entry is.
+        /// </summary>
+        public string Art;
+        /// <summary>
+        /// Bars under the picture, label and fill, asked for each frame so a model still
+        /// streaming in fills them a moment after the page opens. Null for no bars.
+        /// </summary>
+        public Func<IList<KeyValuePair<string, float>>> LiveBars;
         /// <summary>What to actually show. Never null, so a missing body is still a sentence.</summary>
         public string Text => LiveBody != null ? LiveBody() : Body;
         /// <summary>What the list row shows under the title.</summary>
@@ -145,7 +156,7 @@ namespace Bloodlines.Core
         /// </summary>
         private string Showroom(StoryVehicles.Choice choice) =>
             choice.Name + "\n$" + VehiclePricing.Of(choice).ToString("N0") + "\n" + choice.Category +
-            "\n\n" + VehicleSpecs.Block(new Model(choice.Model)) +
+            "\n\n" + VehicleSpecs.Facts(new Model(choice.Model)) +
             "\n\nChoose a garage to store it in.";
 
         private PhoneEntry RecoveryFolder() => new PhoneEntry { Id = "recovery", Title = "Recover vehicle", Subtitle = "Return an owned car to its garage", Children = Recoveries };
@@ -177,15 +188,21 @@ namespace Bloodlines.Core
             // Showroom used to hang off the car entry itself, where it could never be drawn.
             // It is a row now: no children and no action, so opening it shows the reading pane
             // with the full ratings, and the garages below it still take the money.
+            // The car page draws the class silhouette and the four ratings as bars above the
+            // text; the text carries only what a bar cannot, so nothing is said twice.
             var rows = new List<PhoneEntry> { new PhoneEntry {
                 Id = "specs:" + choice.Model, Title = "Performance",
                 LiveSubtitle = () => VehicleSpecs.Summary(new Model(choice.Model)),
+                Art = VehicleSpecs.ArtFor(choice.Category),
+                LiveBars = () => VehicleSpecs.Fractions(new Model(choice.Model)),
                 LiveBody = () => Showroom(choice) } };
             rows.AddRange(_garages.OwnedSites.Select(site => new PhoneEntry {
                 Id = "buy:" + choice.Model + ":" + site.Id, Title = site.Name, Subtitle = _garages.Summary(site),
+                Art = VehicleSpecs.ArtFor(choice.Category),
+                LiveBars = () => VehicleSpecs.Fractions(new Model(choice.Model)),
                 LiveBody = () => choice.Name + "\n$" + price.ToString("N0") + "\n\nStore at: " + site.Name + "\nBays: " + _garages.Used(site) + "/" + site.Capacity +
                     "\nCrew funds: $" + _state.CashOnHand.ToString("N0") +
-                    "\n\n" + VehicleSpecs.Block(new Model(choice.Model)) +
+                    "\n\n" + VehicleSpecs.Facts(new Model(choice.Model)) +
                     "\n\nPurchase stores the car here. Collect it at the garage or request KJ in the Garage app. Delivery does not spawn it beside you.",
                 Button = "Purchase vehicle", Quote = choice.Model + ":" + price + ":" + site.Id + ":" + _garages.Used(site) + ":" + _state.NextVehicleId,
                 Action = () => {

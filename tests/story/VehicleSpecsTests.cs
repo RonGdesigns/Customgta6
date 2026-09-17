@@ -16,8 +16,12 @@ public static partial class StoryTests
         // ---- There are two places to buy a car and both have to show the ratings. The first
         // pass wired only the phone, so walking into the dealership looked exactly as it had
         // before and the work read as never done. This is the check that refuses that.
-        Check(hub.Contains("VehicleSpecs.Block("),
-            "The phone's vehicle pages ask for the performance block");
+        // The car page draws the ratings as bars above the text now, and the text carries
+        // only what a bar cannot: the mph, the seats, the built figures.
+        Check(hub.Contains("LiveBars = () => VehicleSpecs.Fractions(new Model(choice.Model))") && hub.Contains("VehicleSpecs.Facts("),
+            "The phone's vehicle pages draw the ratings as bars and say the rest in words");
+        Check(!hub.Contains("VehicleSpecs.Block("),
+            "and no longer print the same ratings a second time as text bars");
 
         // ---- The page where a car is CHOSEN is a list, and a list row draws its title and its
         // subtitle and nothing else. An entry with children can never show a body, because

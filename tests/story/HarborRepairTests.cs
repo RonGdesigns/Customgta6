@@ -99,7 +99,7 @@ public static partial class StoryTests
         Check(!presentation.ScorePlaying&&Function.Calls.Any(x=>x.Item1==Hash.TRIGGER_MUSIC_EVENT&&(string)x.Item2[0]=="DHP1_STOP"),"Entering a car stops only the mission score we own");
         Game.Player.Character.Task.LeaveVehicle();presentation.QueuePassed("The Port Heist");presentation.Update(false,true);Game.GameTime+=9000;presentation.Update(false,true);
         Check(presentation.BannerQueued,"The success panel waits while aftermath owns the screen");
-        for(int i=0;i<25;i++){Game.GameTime+=250;presentation.Update(false,false);}
+        for(int i=0;i<MissionPresentation.PassedMs/250+2;i++){Game.GameTime+=250;presentation.Update(false,false);}
         Check(!presentation.BannerQueued,"The centered success banner expires without freezing gameplay");
         Check((int)MissionPresentation.StartSprite(false,false)==381&&(int)MissionPresentation.StartSprite(true,false)==76&&(int)MissionPresentation.StartSprite(false,true)==428,"Mission starts use stock B, S and H letter sprites, not generic circles");
         Reset();Function.ScoreAvailable=false;presentation=new MissionPresentation(new ModConfig());

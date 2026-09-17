@@ -144,6 +144,34 @@ namespace Bloodlines.Core
                     " / braking " + Percent(ratings.BuiltBraking));
         }
 
+        /// <summary>The four ratings as fractions, for a page that draws them as bars. Empty while the model is not readable.</summary>
+        public static IList<KeyValuePair<string, float>> Fractions(Model model)
+        {
+            var bars = new List<KeyValuePair<string, float>>();
+            var ratings = Of(model);
+            if (ratings == null) return bars;
+            bars.Add(new KeyValuePair<string, float>("Top speed", ratings.SpeedFraction));
+            bars.Add(new KeyValuePair<string, float>("Acceleration", ratings.Acceleration));
+            bars.Add(new KeyValuePair<string, float>("Braking", ratings.Braking));
+            bars.Add(new KeyValuePair<string, float>("Traction", ratings.Traction));
+            return bars;
+        }
+
+        /// <summary>The rows a bar cannot carry - the speed in mph, the seats, the built figures - for the text under the bars.</summary>
+        public static string Facts(Model model)
+        {
+            var rows = Rows(model).Where(row => !row.Value.StartsWith("[")).ToList();
+            if (rows.Count == 0) return "PERFORMANCE\nReading the model's ratings. Give it a moment.";
+            var text = new StringBuilder("PERFORMANCE\n");
+            foreach (var row in rows) text.Append(row.Key.PadRight(14)).Append(' ').Append(row.Value).Append('\n');
+            text.Append("Game ratings for the stock model, not a road test.");
+            return text.ToString();
+        }
+
+        /// <summary>The silhouette for a catalog category: "car-cars", "car-off-road". One per class, not per model.</summary>
+        public static string ArtFor(string category) =>
+            "car-" + (category ?? "cars").Trim().ToLowerInvariant().Replace(' ', '-');
+
         /// <summary>The row labels in the order Rows yields them, for a page that lays its rows
         /// out before the model has answered and fills the values in as they come.</summary>
         public static readonly string[] Labels = { "Top speed", "Acceleration", "Braking", "Traction", "Est. top speed", "Seats", "Fully built" };
