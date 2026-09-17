@@ -46,6 +46,18 @@ namespace Bloodlines.Missions.Campaign
     /// canal"; the nearest canal is eight hundred meters from a ninety-meter roof, which is not
     /// a glide. They leave by the regroup instead and the divergence is in
     /// `data/mission_gameplay.tsv`.
+    ///
+    /// **There is no door out of a blimp interior.** Those ymaps are the apartments the game
+    /// shows through the windows from the air; they have floors and walls and no way down,
+    /// which Ron found by finishing the job and being unable to leave (September 17). The
+    /// way out is a service elevator: an interaction at each brother's own arrival point
+    /// that takes everybody to street level at the foot of his tower. The street is not
+    /// authored - nobody knows which side of the tower the sidewalk is on - it is found at
+    /// runtime under the suite's own x and y (<see cref="StreetBelow"/>).
+    ///
+    /// And every suite has security now, not only Ice's. Ron's note: "we should have
+    /// enemies spawn for all the homies". Ice's four are the authored count; Gohan and
+    /// Guess each get three, so the terminal and the vault are taken under fire.
     /// </summary>
     public sealed class M55SkylineDescent : PreparationOperation
     {
@@ -53,6 +65,12 @@ namespace Bloodlines.Missions.Campaign
         public const int WindowSeconds = 300;
         /// <summary>Executive guards in Ice's penthouse, because his line counts four.</summary>
         public const int SuiteGuards = 4;
+        /// <summary>Security on the other two nodes. Not authored; three each is a fight, not a wall.</summary>
+        public const int TerminalGuards = 3, VaultGuards = 3;
+        /// <summary>How long the service elevator takes.</summary>
+        public const int ElevatorSeconds = 3;
+        /// <summary>Where street level is guessed to be when nothing solid answers under a tower.</summary>
+        public const float StreetGuessZ = 31f;
         /// <summary>How long the terminal and the vault take.</summary>
         public const int TerminalSeconds = 9;
         public const int VaultSeconds = 11;
@@ -69,6 +87,8 @@ namespace Bloodlines.Missions.Campaign
         };
 
         private readonly List<Ped> _suiteGuards = new List<Ped>();
+        private readonly List<Ped> _terminalGuards = new List<Ped>();
+        private readonly List<Ped> _vaultGuards = new List<Ped>();
         private Vector3 _terminal, _vault;
         private bool _placed, _suiteClear, _terminalDone, _vaultDone;
 
@@ -85,6 +105,10 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Guess has the secondary ledger.</summary>
         public bool VaultDone => _vaultDone;
         public IReadOnlyList<Ped> SuiteGuardCrew => _suiteGuards;
+        public IReadOnlyList<Ped> TerminalGuardCrew => _terminalGuards;
+        public IReadOnlyList<Ped> VaultGuardCrew => _vaultGuards;
+        /// <summary>Where each brother came out at the bottom of his tower, once the elevator has run.</summary>
+        public readonly Dictionary<CrewSlot, Vector3> StreetExits = new Dictionary<CrewSlot, Vector3>();
 
         /// <summary>
         /// Every penthouse key is seventy to ninety meters up inside a building, so the
@@ -111,16 +135,12 @@ namespace Bloodlines.Missions.Campaign
             foreach (var pair in Suites) Station(pair.Key, At(pair.Value));
             _placed = true;
 
-            var iceAt = At("M55.IceStart");
-            for (int i = 0; i < SuiteGuards; i++)
+            Security(At("M55.IceStart"), SuiteGuards, "suite", _suiteGuards);
+            Security(At("M55.GohanStart"), TerminalGuards, "terminal", _terminalGuards);
+            Security(At("M55.GuessStart"), VaultGuards, "vault", _vaultGuards);
+            if (_suiteGuards.Count == 0 || _terminalGuards.Count == 0 || _vaultGuards.Count == 0)
             {
-                var post = MazeBank.Nearby(iceAt, 45.0 + i * 90.0, SuiteSpread, Id + " suite guard " + (i + 1));
-                var ped = EnemyAt(post, "M55 suite post " + (i + 1));
-                if (ped != null) _suiteGuards.Add(ped);
-            }
-            if (_suiteGuards.Count == 0)
-            {
-                Logger.Error(Id + ": no executive guard could be placed in the first penthouse.");
+                Logger.Error(Id + ": a penthouse has no security at all; nothing to suppress there.");
                 GameUtils.Notify("~r~The penthouse security could not be placed. See Bloodlines.log.");
                 return false;
             }
@@ -134,6 +154,56 @@ namespace Bloodlines.Missions.Campaign
             return true;
         }
 
+        /// <summary>A detail of <paramref name="count"/> around a brother's arrival, spread on the compass.</summary>
+        private void Security(Vector3 around, int count, string where, List<Ped> into)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var post = MazeBank.Nearby(around, 45.0 + i * (360.0 / count), SuiteSpread, Id + " " + where + " guard " + (i + 1));
+                var ped = EnemyAt(post, "M55 " + where + " post " + (i + 1));
+                if (ped != null) into.Add(ped);
+            }
+        }
+
+        /// <summary>
+        /// Street level at the foot of a tower, found rather than authored. A downward probe
+        /// from just under the suite finds whatever the building stands on; the nearest
+        /// sidewalk to that is where a man comes out of a lobby. Nothing found at all keeps
+        /// the x and y and guesses the downtown street height, and says so.
+        /// </summary>
+        public static Vector3 StreetBelow(Vector3 suite, string what)
+        {
+            float? slab = MissionSites.SurfaceHeight(suite, suite.Z - 3f, -5f);
+            var foot = new Vector3(suite.X, suite.Y, slab ?? StreetGuessZ);
+            if (!slab.HasValue) Logger.Warn(what + ": nothing solid under the tower; guessing street level at " + StreetGuessZ);
+            var sidewalk = World.GetSafeCoordForPed(foot, true, 0);
+            if (sidewalk == Vector3.Zero || sidewalk.DistanceTo(foot) > 60f) sidewalk = World.GetNextPositionOnStreet(foot);
+            if (sidewalk == Vector3.Zero) { Logger.Warn(what + ": no sidewalk or street near the tower foot; using it as is."); return foot; }
+            return sidewalk;
+        }
+
+        /// <summary>Everybody out at the bottom of his own tower. Runs once, when the elevator stage ends.</summary>
+        private void Descend()
+        {
+            GameUtils.FadeOut(300);
+            var player = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+            foreach (var pair in Suites)
+            {
+                var ped = Ctx.Crew.PedFor(pair.Key);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                var exit = StreetBelow(At(pair.Value), Id + " " + pair.Key + " exit");
+                StreetExits[pair.Key] = exit;
+                ped.Task.ClearAllImmediately();
+                GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_COLLISION_AT_COORD, exit.X, exit.Y, exit.Z);
+                ped.Position = exit;
+                if (player != null && player.Exists() && ped.Handle != player.Handle && player.Position.DistanceTo(exit) > FarPlacement.Meters)
+                    FarPlacement.Keep(ped, "came out of his tower " + (int)player.Position.DistanceTo(exit) + " m from the player");
+                if (pair.Key != Ctx.Crew.ActiveSlot) ped.Task.GuardCurrentPosition();
+                Logger.Info(Id + ": " + pair.Key + " is at street level at " + exit);
+            }
+            GameUtils.FadeIn(600);
+        }
+
         protected override IEnumerable<MissionStage> BuildStages()
         {
             // One stage, three brothers, three jobs and one clock. Parallel objectives with
@@ -141,6 +211,10 @@ namespace Bloodlines.Missions.Campaign
             // dispatcher only demands a switch when the brother he holds has nothing left.
             var suite = new KillTargetsObjective("Ice: suppress the executive guards in the suite",
                 () => _suiteGuards) { RequiredCharacter = CrewSlot.Ice };
+            var terminalSecurity = new KillTargetsObjective("Gohan: put down the terminal security",
+                () => _terminalGuards) { RequiredCharacter = CrewSlot.Gohan };
+            var vaultSecurity = new KillTargetsObjective("Guess: put down the vault security",
+                () => _vaultGuards) { RequiredCharacter = CrewSlot.Guess };
             var terminal = new MissionInteraction("Gohan: bypass the offshore escrow terminal",
                 () => _terminal, TerminalSeconds, 2.5f, animation: MissionInteraction.ReachInside)
             { RequiredCharacter = CrewSlot.Gohan };
@@ -150,10 +224,19 @@ namespace Bloodlines.Missions.Campaign
             var clock = new TimerObjective(WindowSeconds,
                 "The five minutes ran out and the other two nodes locked. All three have to land inside the window.");
 
-            yield return new MissionStage("Three nodes, five minutes", suite, terminal, vault, clock)
+            yield return new MissionStage("Three nodes, five minutes", suite, terminalSecurity, vaultSecurity, terminal, vault, clock)
                 .OnExit(c => Compromised())
                 .WithCues("M55_S1_01_ICE")
                 .AfterCues("M55_S1_02_GOHAN", "M55_S1_03_GUESS");
+
+            // The way down. A blimp interior has no door, so each brother's own arrival point
+            // is his service elevator; whichever one runs first takes everybody to the street.
+            yield return new MissionStage("Down to the street",
+                new MissionInteraction("Ice: take the service elevator down", () => At("M55.IceStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Ice },
+                new MissionInteraction("Gohan: take the service elevator down", () => At("M55.GohanStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Gohan },
+                new MissionInteraction("Guess: take the service elevator down", () => At("M55.GuessStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Guess })
+                .AnyOf()
+                .OnExit(c => Descend());
 
             // M55_S1_04_ICE calls a parachute descent to the canal. The nearest canal is eight
             // hundred meters from a ninety-meter roof, so it is not fired; they regroup instead.

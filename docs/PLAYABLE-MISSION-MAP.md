@@ -930,7 +930,8 @@ Prerequisite: M54. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | as assigned | **Three nodes, five minutes** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 2 | any brother | **Off the towers** — TravelObjective: Get out of the towers and regroup |
+| 2 | Ice | **Down to the street** — MissionInteraction: Ice: take the service elevator down<br>MissionInteraction: Gohan: take the service elevator down<br>MissionInteraction: Guess: take the service elevator down |
+| 3 | any brother | **Off the towers** — TravelObjective: Get out of the towers and regroup |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

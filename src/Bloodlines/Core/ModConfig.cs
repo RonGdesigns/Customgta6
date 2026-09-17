@@ -39,6 +39,14 @@ namespace Bloodlines.Core
         /// the movement keys.
         /// </summary>
         public Keys SurveyCameraKey { get; private set; } = Keys.Insert;
+        /// <summary>
+        /// Hold to open the crew order strip, release to send. G: reachable from the
+        /// movement keys with the other hand still on the mouse, and bound by nothing else
+        /// here. On a pad it is a hold of d-pad left, past a tap.
+        /// </summary>
+        public Keys CrewOrdersKey { get; private set; } = Keys.G;
+        public bool CrewOrdersEnabled { get; private set; } = true;
+        public bool ControllerOrdersEnabled { get; private set; } = true;
 
         /// <summary>Companions are damage-capped rather than invincible; 0 disables the cap.</summary>
         public int CompanionHealthFloor { get; private set; } = 150;
@@ -161,6 +169,9 @@ namespace Bloodlines.Core
             config.DevMenuKey = ReadKey(settings, "DevMenu", config.DevMenuKey);
             config.SurveyTeleportKey = ReadKey(settings, "SurveyTeleport", config.SurveyTeleportKey);
             config.SurveyCameraKey = ReadKey(settings, "SurveyCamera", config.SurveyCameraKey);
+            config.CrewOrdersKey = ReadKey(settings, "CrewOrders", config.CrewOrdersKey);
+            config.CrewOrdersEnabled = settings.GetValue<bool>("Keys", "CrewOrdersEnabled", config.CrewOrdersEnabled);
+            config.ControllerOrdersEnabled = settings.GetValue<bool>("Keys", "ControllerOrders", config.ControllerOrdersEnabled);
             config.ControllerSwitchEnabled = settings.GetValue<bool>("Keys", "ControllerSwitch", config.ControllerSwitchEnabled);
             config.SuppressVanillaSwitch = settings.GetValue<bool>("Keys", "SuppressVanillaSwitch", config.SuppressVanillaSwitch);
 

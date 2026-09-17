@@ -58,6 +58,9 @@ namespace Bloodlines
         private bool _sceneWasActive, _gameplayWasRunning;
         private CrewSlot? _controllerSelection;
         private bool _controllerWheelHeld;
+        // The quick order strip: hold a key or d-pad left, pick, release. Free roam only.
+        private readonly CrewOrderStrip _orders = new CrewOrderStrip();
+        private bool _ordersKeyHeld;
 
         public BloodlinesMain()
         {
@@ -176,6 +179,8 @@ namespace Bloodlines
                 return "Supplier mission start marked.";
             };
             _phone.Hub = _hub;
+            _orders.HasWaypoint = () => { var waypoint = World.WaypointBlip; return waypoint != null && waypoint.Exists(); };
+            _orders.Sent = (slot, text) => _hub.Log(Protagonist.Of(slot).Handle, "Crew order", text);
             _garages.OnActivity = (title, body) => _hub.Log("Garage / KJ", title, body);
             _vans.Purchased = (name, cost) => _hub.Log("Crew fleet", "Vehicle purchased", name + " - $" + cost.ToString("N0") + ".");
             _shops.Purchased = (shop, cost) => _hub.Log(shop, "Purchase receipt", "$" + cost.ToString("N0") + " paid. Crew balance: $" + _state.CashOnHand.ToString("N0") + ".");
@@ -194,10 +199,50 @@ namespace Bloodlines
                         ", start a mission with " + _config.MissionStartKey + ".");
         }
 
+        /// <summary>The order strip is a free-roam instrument: nothing else may own the screen or the crew.</summary>
+        private bool OrdersAvailable() => _config.CrewOrdersEnabled && _crew.IsDeployed && !_missions.IsRunning && !_death.IsHandling &&
+            !_cutscenes.IsActive && !_survey.IsActive && !_prologue.IsActive && !_switching.IsSwitching &&
+            !_homes.Apartment.Inside && !_homes.Apartment.Busy && !_menu.IsOpen && !_characterWheel.IsOpen &&
+            !CampaignPhone.BlocksGameplayInput && !Game.IsPaused &&
+            Game.Player.Character != null && Game.Player.Character.Exists() && !Game.Player.Character.IsDead;
+
+        /// <summary>
+        /// The strip's controller gesture and its drawing. A pad opens it by holding d-pad
+        /// left past a tap - the radio wheel's button in a vehicle, which is why the hold
+        /// threshold exists and why the control is disabled only once the strip is up.
+        /// The keyboard path runs through OnKeyDown and OnKeyUp; while the key is held the
+        /// pad path stays out of it, or releasing nothing would send the order.
+        /// </summary>
+        private void HandleCrewOrders()
+        {
+            if (!OrdersAvailable())
+            {
+                if (_orders.IsOpen) _orders.Close();
+                _orders.HandlePad(false, 0f, 0f, _crew);
+                _orders.Draw(_crew);
+                return;
+            }
+            if (_orders.IsOpen)
+            {
+                Game.DisableControlThisFrame(GTA.Control.VehicleRadioWheel);
+                Game.DisableControlThisFrame(GTA.Control.LookLeftRight);
+                Game.DisableControlThisFrame(GTA.Control.LookUpDown);
+                Game.DisableControlThisFrame(GTA.Control.Attack);
+                Game.DisableControlThisFrame(GTA.Control.VehicleExit);
+            }
+            if (!_ordersKeyHeld)
+            {
+                bool held = _config.ControllerOrdersEnabled && Game.LastInputMethod == InputMethod.GamePad &&
+                            ControllerInput.Pressed(GTA.Control.VehicleRadioWheel) && !ControllerInput.Pressed(GTA.Control.CharacterWheel);
+                _orders.HandlePad(held, ControllerInput.Axis(GTA.Control.LookLeftRight), ControllerInput.Axis(GTA.Control.LookUpDown), _crew);
+            }
+            _orders.Draw(_crew);
+        }
+
         private bool PhoneAvailable() => _crew.IsDeployed && !_menu.IsOpen && !_survey.IsActive &&
             !_cutscenes.IsActive && !_prologue.IsActive && !_death.IsHandling && !_homes.Apartment.Busy &&
             !_homes.Apartment.Inside && !_characterWheel.IsOpen && !_switching.IsSwitching &&
-            !_missions.RequiredSwitch.HasValue && !Game.IsPaused &&
+            !_missions.RequiredSwitch.HasValue && !Game.IsPaused && !_orders.IsOpen &&
             Game.Player.Character != null && Game.Player.Character.Exists() && !Game.Player.Character.IsDead;
 
         private string PhoneContact(CrewSlot slot)
@@ -352,6 +397,7 @@ namespace Bloodlines
             // The HUD: heading, whose beat, how far, the objective, its rules, its progress
             // and any clock - drawn from the running mission rather than from one string.
             if (_missions.IsRunning && !_menu.IsOpen) MissionHud.Draw(_missions, _crew);
+            Step("crew orders", HandleCrewOrders);
             if (!CampaignPhone.BlocksGameplayInput) Step("controller switch", HandleControllerSwitch);
             Step("abort hold", HandleAbortHold);
             Step("mission handoff", () => _handoff.Update(_crew, _missions.IsRunning ? _missions.RequiredSwitch : null));
@@ -471,6 +517,21 @@ namespace Bloodlines
                 return;
             }
             if (_phone.IsOpen && e.KeyCode == Keys.R) { _phone.Arrange(); return; }
+            if (_orders.IsOpen)
+            {
+                if (e.KeyCode == Keys.Up) _orders.Move(MenuDirection.Up, _crew);
+                else if (e.KeyCode == Keys.Down) _orders.Move(MenuDirection.Down, _crew);
+                else if (e.KeyCode == Keys.Left) _orders.Move(MenuDirection.Left, _crew);
+                else if (e.KeyCode == Keys.Right) _orders.Move(MenuDirection.Right, _crew);
+                return;
+            }
+            if (e.KeyCode == _config.CrewOrdersKey && _config.CrewOrdersEnabled)
+            {
+                if (_ordersKeyHeld) return;
+                _ordersKeyHeld = true;
+                if (OrdersAvailable()) _orders.Open(_crew);
+                return;
+            }
             if (CampaignPhone.BlocksGameplayInput) return;
             if (_homes.Apartment.Busy) return;
             if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
@@ -555,6 +616,11 @@ namespace Bloodlines
         private void OnKeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == _config.PhoneKey) _phoneKeyHeld = false;
+            if (e.KeyCode == _config.CrewOrdersKey)
+            {
+                _ordersKeyHeld = false;
+                if (_orders.IsOpen) Step("send crew order", () => _orders.Send(_crew));
+            }
             if (e.KeyCode == _config.AbortKey) _abortHeldSince = 0;
         }
 
