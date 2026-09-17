@@ -94,7 +94,9 @@ namespace Bloodlines.Missions.Campaign
             // The six points are reviewed rather than trusted: they came out of the
             // archives, nobody has walked the yard, and a limpet marker inside a tank is
             // the same failure as M43's invisible laptop.
-            foreach (var key in FixedSurfaces) Paleto.Review(Ctx, PlacementContract.Interaction(key));
+            // FixedSurfaces is empty here on purpose (see above), so this names the six
+            // points itself; iterating FixedSurfaces reviewed nothing.
+            for (int i = 1; i <= 6; i++) Paleto.Review(Ctx, PlacementContract.Interaction("M51.Charge" + i));
 
             Establish("approach", "Six on the banks, and nothing lit tonight",
                 "Ice takes the west bank and Guess the east while Gohan locks the failovers out. The charges stay armed: the dark is for downtown, not for Palmer-Taylor.",

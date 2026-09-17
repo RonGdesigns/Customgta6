@@ -68,7 +68,15 @@ namespace Bloodlines.Missions
                 Logger.Info(Id + ": " + slot + " walks to his post rather than being moved to it.");
                 ped.Task.GoTo(position);
             }
-            else ped.Position = position;
+            else
+            {
+                var player = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+                ped.Position = position;
+                // Moved somewhere the player is not - M55 stations two brothers in penthouses
+                // 450 m from the first - the world has to be built under him there.
+                if (player != null && player.Exists() && player.Position.DistanceTo(position) > Core.FarPlacement.Meters)
+                    Core.FarPlacement.Keep(ped, "stationed " + (int)player.Position.DistanceTo(position) + " m from the player");
+            }
             if (Ctx.Crew.ActiveSlot != slot && !walk) ped.Task.GuardCurrentPosition();
             _stationed.Add(slot);
         }

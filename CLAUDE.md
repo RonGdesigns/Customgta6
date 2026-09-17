@@ -1250,3 +1250,41 @@ because recording one of those as verified is recording a guess as a measurement
 
 **A spot that checks out is placeable, not correct.** Whether it is the right place for the
 beat is a judgment no probe makes, and the report says so in its own header.
+
+## The Act III audit, and the walker that never walked it
+
+**Every main mission from M49 derives from `PreparationOperation`, and the flow walker
+aborted every `PreparationOperation` before its first stage** - on the grounds that M31 to
+M40 had dedicated walkthroughs, which M49 to M70 never got. So no Act III mission had ever
+been driven through its beats, even in the harness, and the walker's own Act III hooks were
+dead code. The walker drives M49 onward now, producing each condition beat rather than
+faking it, and **all 22 reach Pass through real objective updates**. See
+`docs/ACT3-AUDIT-2026-09-17.md` for the three defects that were hiding behind the skip.
+
+Three rules out of it:
+
+ * **`AnyOf()` on a stage of targets is a stage that ends on the first one.** M57's three
+   gunships were three `DestroyVehicleObjective`s under `AnyOf`, and `OnPassed` then threw
+   about the two still flying - a script error, not a failure. If every target has to fall,
+   do not write `AnyOf`, and never assert in `OnPassed` what the stage already guarantees.
+ * **`RequireAsset` fails on death, so never put it on a man the mission ends by killing.**
+   The file already said this about SM07; M65 had it on Vance. The check for "dead before the
+   biometrics" belongs in `OnUpdate` with its own reason, which is where it was all along.
+ * **`Enemy(key)` snaps to walkable ground, and over water that is the shore.** M61's four
+   divers stood on the quay. A man who belongs in the water is resolved through
+   `MarineSites` and created with `EnemyAt`, the way M53 places men the navmesh would move.
+
+`Core/FarPlacement` keeps collision loaded around a brother created or stationed more than
+150 m from the player (Ice on the sign in M59, the penthouses in M55). It never freezes him.
+
+**A request is not a load.** `VehicleSpecs.Of` requested a model and released it in the
+same call, every frame, so the phone's car rows read "reading ratings" forever: the release
+canceled the request before it landed. Keep a request open until what it was for has been
+read, and expect the harness stand-in to stream synchronously unless told otherwise -
+`Model.StreamsNextFrame` is that switch, and a check that passes with it off has proved
+nothing about streaming.
+
+**The host constructor is checked as text.** It is a `GTA.Script`, nothing instantiates it in
+a harness, and a field dereferenced before the line that builds it took the whole campaign
+out of the game (PR #93). `HostConstructorChecks` refuses that ordering, lambda bodies
+excepted.

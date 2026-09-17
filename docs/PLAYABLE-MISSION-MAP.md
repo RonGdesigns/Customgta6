@@ -1019,7 +1019,7 @@ Prerequisite: M60. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M61.Diver, M61.Surface, M61.Wreck.
+Survey references: M61.Diver, M61.Diver1, M61.Diver2, M61.Diver3, M61.Diver4, M61.Surface, M61.Wreck.
 
 ## M62 — STEEL HORIZON
 

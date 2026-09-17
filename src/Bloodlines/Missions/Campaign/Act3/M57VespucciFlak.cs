@@ -75,9 +75,14 @@ namespace Bloodlines.Missions.Campaign
             RequireAsset(_iceSki, "Ice's ski was destroyed.");
 
             for (int i = 1; i <= Gunships; i++) SpawnGunship("M57.Patrol" + i);
-            if (_gunships.Count == 0)
+            // All three or none. The stage below asks for every one of them by index, and a
+            // gunship that never spawned is a null target that fails the objective on its
+            // first update - so two gunships in the air was a mission that failed the moment
+            // the fight began, with a message about a vehicle that did not load.
+            if (_gunships.Count != Gunships)
             {
-                Logger.Error(Id + ": no gunship could be put in the air; there is nothing to shoot down.");
+                Logger.Error(Id + ": " + _gunships.Count + " of " + Gunships + " gunships could be put in the air. Refusing to start.");
+                GameUtils.Notify("~r~The Aegis gunships could not all be placed. See Bloodlines.log.");
                 return false;
             }
 
@@ -164,8 +169,11 @@ namespace Bloodlines.Missions.Campaign
                 kills.Add(new DestroyVehicleObjective("Shoot down the Aegis gunships — " + Gunships + " over the beach",
                     () => index < _gunships.Count ? _gunships[index] : null).ByAnyone());
             }
+            // Every one of them. This stage carried AnyOf, so the first gunship down ended it,
+            // the crew was sent back to the sand with two still flying, and OnPassed then threw
+            // "all three have to be down" - which is a script error and the end of the
+            // attempt, not a failed mission.
             yield return new MissionStage("Put them in the water", kills.ToArray())
-                .AnyOf()
                 .AfterCues("M57_S1_02_ICE");
 
             yield return new MissionStage("Back to the sand",
@@ -176,8 +184,8 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnPassed()
         {
-            if (_gunships.Any(g => g != null && g.Exists() && g.IsDriveable))
-                throw new InvalidOperationException("All three gunships have to be down.");
+            // The stage cannot close with one flying, so there is nothing to assert here - and a
+            // throw in OnPassed is a script error, not a failure the player can read.
             Release(_guessSki);
             Release(_iceSki);
         }

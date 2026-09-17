@@ -116,12 +116,14 @@ namespace Bloodlines.Core
         {
             var page = new Page(choice.Name + " - deliver to");
             // The full ratings before he commits, from the same Rows the phone page uses.
-            // A model still streaming in yields nothing rather than a row of zeroes.
+            // The rows are fixed and their values are asked for each frame: a page built
+            // while the model was still streaming used to add no rows at all, and there was
+            // nothing left to fill in when the ratings arrived a frame later.
             page.Add("PERFORMANCE", () => VehicleSpecs.Summary(new Model(choice.Model)));
-            foreach (var row in VehicleSpecs.Rows(new Model(choice.Model)))
+            foreach (var label in VehicleSpecs.Labels)
             {
-                var spec = row;
-                page.Add("  " + spec.Key, () => spec.Value);
+                var key = label;
+                page.Add("  " + key, () => VehicleSpecs.Value(new Model(choice.Model), key) ?? "reading");
             }
             page.Add("Crew cash", () => "$" + _state.CashOnHand.ToString("N0"));
             if (Garages == null) return page;

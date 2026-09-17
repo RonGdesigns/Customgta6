@@ -106,7 +106,10 @@ namespace Bloodlines.Missions.Campaign
             _vance.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             Opposition.Add(_vance);
             Blips.Attach(_vance, BlipColor.Red, "Colonel Vance");
-            RequireAsset(_vance, "Colonel Vance is gone. The escrow cannot be opened without him.");
+            // No RequireAsset on him. That contract fails the mission the moment the entity is
+            // dead, and the last stage is Ice killing him - so it failed at the moment of
+            // success, the way SM07 once did. The one rule that matters, dead before the
+            // biometrics, is enforced in OnUpdate with its own reason.
 
             for (int i = 0; i < Bodyguards; i++)
             {
