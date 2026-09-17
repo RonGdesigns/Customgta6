@@ -421,10 +421,30 @@ namespace Bloodlines.Core
                 else
                 {
                     Surface("reading", 964, 260, 256, 304, ink);
-                    var lines = Lines(); _scroll = Math.Min(_scroll, Math.Max(0, lines.Count - 12));
-                    for (int i = _scroll; i < Math.Min(lines.Count, _scroll + 12); i++)
-                        label(lines[i], 978, 272 + (i - _scroll) * 23, .27f, white);
-                    if (lines.Count > 12) label("D-PAD Scroll  " + (_scroll + 1) + "-" + Math.Min(lines.Count, _scroll + 12) + " / " + lines.Count, 978, 545, .19f, muted);
+                    // A picture and bars first, when the entry has them: the car page's
+                    // class silhouette and its four ratings drawn as fills rather than as
+                    // [=====.....] text. The text starts under whatever was drawn.
+                    float textTop = 272;
+                    var entry = HubPage ? Entry : null;
+                    if (entry?.Art != null && sprite != null && sprite(entry.Art, 978, 266, 228, 72)) textTop += 76;
+                    var bars = entry?.LiveBars?.Invoke();
+                    if (bars != null && bars.Count > 0)
+                    {
+                        foreach (var bar in bars)
+                        {
+                            label(bar.Key, 978, textTop - 3, .19f, muted);
+                            box(1062, textTop + 2, 144, 8, Color.FromArgb(40, 44, 52));
+                            float fill = Math.Max(0f, Math.Min(1f, bar.Value));
+                            if (fill > 0f) box(1062, textTop + 2, 144 * fill, 8, accent);
+                            textTop += 17;
+                        }
+                        textTop += 6;
+                    }
+                    int visible = Math.Max(3, (int)((564 - textTop) / 23));
+                    var lines = Lines(); _scroll = Math.Min(_scroll, Math.Max(0, lines.Count - visible));
+                    for (int i = _scroll; i < Math.Min(lines.Count, _scroll + visible); i++)
+                        label(lines[i], 978, textTop + (i - _scroll) * 23, .27f, white);
+                    if (lines.Count > visible) label("D-PAD Scroll  " + (_scroll + 1) + "-" + Math.Min(lines.Count, _scroll + visible) + " / " + lines.Count, 978, 545, .19f, muted);
                     if (Page == App.Job || (HubPage && (Entry?.Action != null || Entry?.ArrangeHome == true)) || (HubPage && _notice.Length > 0))
                     {
                         Surface("button-" + hero, 966, 575, 250, 36, accent);

@@ -554,6 +554,10 @@ namespace Bloodlines.Missions.Objectives
         }
 
         public int Remaining => Math.Max(0, _seconds - (Game.GameTime - _startedAt) / 1000);
+        public int Total => _seconds;
+        /// <summary>Whether the HUD should draw this clock. It used to be pushed as a subtitle,
+        /// and the objective text is pushed into that same slot every tick, so it never showed.</summary>
+        public bool ShowsClock => _showClock;
 
         public override void Enter(MissionContext context)
         {
@@ -569,10 +573,9 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
-            if (_showClock)
-            {
-                GameUtils.Subtitle("~s~" + remaining / 60 + ":" + (remaining % 60).ToString("00"), 400);
-            }
+            // Drawn by MissionHud as a bar with the time on it. Pushing it here as a subtitle
+            // lost every frame to ComposedMission's objective subtitle, which is why M55's five
+            // minutes were invisible.
         }
     }
 

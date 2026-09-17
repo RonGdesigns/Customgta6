@@ -121,6 +121,7 @@ namespace Bloodlines
             _missions.BeforeGameplay = () => { if (_crew.IsDeployed) StandDown(); };
             _presentation = new MissionPresentation(_config);
             _missions.Passed += _presentation.QueuePassed;
+            _missions.Started += _presentation.QueueTitle;
             _missionMarkers = new MissionMarkers(_catalog, _state, _missions, _locations, dataDirectory, _config.MissionStartKey.ToString());
             _death = new DeathController(_config, _crew, _missions, _abilities, _switching, _dialogue);
             _menu = new DevMenu(_config, _crew, _switching, _abilities, _missions, _catalog,
@@ -348,10 +349,9 @@ namespace Bloodlines
             Step("mission markers", () => _missionMarkers.Update(_menu.IsOpen || CampaignPhone.BlocksGameplayInput || _prologue.IsActive));
             if (!_menu.IsOpen && !CampaignPhone.BlocksGameplayInput && _missionMarkers.Nearby != null && Game.IsControlJustPressed(GTA.Control.Context))
                 StartMission(_missionMarkers.Nearby);
-            if (_missions.IsRunning && !_menu.IsOpen)
-                new GTA.UI.TextElement(_missions.LastAttempted.Id + " | " + _missions.CurrentTitle,
-                    new System.Drawing.PointF(24, 74), .28f, System.Drawing.Color.White).Draw();
-            if (_missions.IsRunning && !_menu.IsOpen) MissionObjectiveHud.Draw(_missions.CurrentObjective);
+            // The HUD: heading, whose beat, how far, the objective, its rules, its progress
+            // and any clock - drawn from the running mission rather than from one string.
+            if (_missions.IsRunning && !_menu.IsOpen) MissionHud.Draw(_missions, _crew);
             if (!CampaignPhone.BlocksGameplayInput) Step("controller switch", HandleControllerSwitch);
             Step("abort hold", HandleAbortHold);
             Step("mission handoff", () => _handoff.Update(_crew, _missions.IsRunning ? _missions.RequiredSwitch : null));

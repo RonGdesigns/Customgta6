@@ -29,7 +29,15 @@ namespace Bloodlines.Missions
         }
 
         public MissionCatalog Catalog => _catalog;
-        public event System.Action<string> Passed;
+        /// <summary>A mission passed, with what the attempt came to.</summary>
+        public event System.Action<string, Core.MissionTally.Result> Passed;
+        /// <summary>Gameplay has begun for a mission: the title card's cue.</summary>
+        public event System.Action<MissionDefinition> Started;
+        /// <summary>What the running attempt is adding up to.</summary>
+        public Core.MissionTally Tally { get; } = new Core.MissionTally();
+        /// <summary>The live stage's objectives and name, for the HUD. Null outside a composed mission.</summary>
+        public System.Collections.Generic.IReadOnlyList<Objectives.Objective> CurrentObjectives => (_current as ComposedMission)?.CurrentStageObjectives;
+        public string CurrentStageName => (_current as ComposedMission)?.CurrentStageName;
         public System.Action BeforeGameplay { get; set; }
 
         /// <summary>Stage of the running mission, or -1. Used by the dev menu.</summary>
@@ -103,7 +111,7 @@ namespace Bloodlines.Missions
         /// <summary>
         /// The context missions run in, for the staging preview. Handing it out is safe
         /// because the preview stages and tears down through the mission's own path; it is
-        /// not a licence to run anything.
+        /// not a license to run anything.
         /// </summary>
         public MissionContext Context => _context;
         public bool RetryAvailable { get; private set; }
@@ -210,6 +218,9 @@ namespace Bloodlines.Missions
 
             _current = mission;
             _currentDefinition = definition;
+            Tally.Begin(definition.Id, mission.Title, _state.CashOnHand);
+            try { Started?.Invoke(definition); }
+            catch (System.Exception e) { Logger.Error("Mission title card failed; gameplay continues.", e); }
             // Gameplay owns the player from here. A hand-off that arrived with
             // control off (the prologue's cut to the dock: the briefing captured
             // "off" behind the fade and restored it faithfully) must not leave the
@@ -297,6 +308,7 @@ namespace Bloodlines.Missions
 
             if (_current.Status == MissionStatus.Running)
             {
+                Tally.Update(_current, _context.Crew);
                 _current.Tick();
                 return;
             }
@@ -318,7 +330,9 @@ namespace Bloodlines.Missions
                     }
                     else
                     {
-                        try { Passed?.Invoke(_current.Title); }
+                        bool first = cashBefore != _state.CashOnHand || !_state.IsComplete(_currentDefinition.Id);
+                        var result = Tally.Finish(_state.CashOnHand, _state.CompletedCount, _catalog.All.Count, first);
+                        try { Passed?.Invoke(_current.Title, result); }
                         catch (System.Exception e) { Logger.Error("Mission passed presentation failed; completion remains committed.", e); }
                         GameUtils.Notify("~g~MISSION PASSED~s~ — " + _current.Title);
                         GameUtils.Subtitle("~g~" + (_current is ContinuousOperation ? _current.Title : _currentDefinition.Id) + " complete. " +
@@ -327,6 +341,7 @@ namespace Bloodlines.Missions
                     break;
 
                 case MissionStatus.Failed:
+                    Tally.Discard();
                     LastFailureReason = _current.FailReason ?? "Mission failed.";
                     RetryAvailable = true;
                     GameUtils.Notify("~r~MISSION FAILED~s~ — " + (_current.FailReason ?? "unknown"));
