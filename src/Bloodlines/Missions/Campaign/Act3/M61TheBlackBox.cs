@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -41,6 +42,12 @@ namespace Bloodlines.Missions.Campaign
         public const int CutSeconds = 14;
         /// <summary>How deep the water has to be before anything is put in it.</summary>
         public const float RequiredDepth = 6f;
+        /// <summary>Water a diver is put into has to be at least this deep under him.</summary>
+        public const float DiverDepth = 1.5f;
+        /// <summary>How long a frogman may stay under. The default is a drowning in a minute.</summary>
+        public const float DiverAirSeconds = 600f;
+        /// <summary>The swim task's speed: a diver making way, not a man treading water.</summary>
+        public const float DiverSpeed = 2f;
         /// <summary>Where the campaign records the access codes are the crew's.</summary>
         public const string ServerEvidence = "aegisCommandServer";
 
@@ -66,7 +73,8 @@ namespace Bloodlines.Missions.Campaign
             if (!BeginCrew(CrewSlot.Gohan)) return false;
 
             // A water key that is dry is a mission that cannot start.
-            if (!MissionSites.Water(Ctx.Locations, "M61.Wreck", "M61.Surface"))
+            if (!MissionSites.Water(Ctx.Locations, "M61.Wreck", "M61.Surface",
+                    "M61.Diver1", "M61.Diver2", "M61.Diver3", "M61.Diver4"))
             {
                 GameUtils.Notify("~r~The port basin did not check out. See Bloodlines.log.");
                 return false;
@@ -85,11 +93,32 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 1; i <= Frogmen; i++)
             {
-                var ped = Enemy("M61.Diver" + i);
-                if (ped != null) _frogmen.Add(ped);
+                string key = "M61.Diver" + i;
+                // In the water, not on the quay. Enemy(key) asks the engine for walkable ground
+                // and over the basin that answer is the dock within thirty-five meters: four
+                // demolition divers standing on the moorings with rifles. The key is resolved
+                // to the water surface the way the wreck's is, and the man is created there
+                // and told to make for the wreck under his own power.
+                Vector3 surface;
+                try { surface = MarineSites.ResolveOrThrow(Ctx.Locations, key, DiverDepth, 1f, 1f); }
+                catch (InvalidOperationException ex)
+                { Logger.Warn(Id + ": " + key + " did not resolve to water: " + ex.Message); continue; }
+                var ped = EnemyAt(surface, key);
+                if (ped == null) continue;
+                Function.Call(Hash.SET_PED_MAX_TIME_UNDERWATER, ped, DiverAirSeconds);
+                var wreckAt = _wreck.Position;
+                Function.Call(Hash.TASK_GO_TO_COORD_ANY_MEANS, ped, wreckAt.X, wreckAt.Y, wreckAt.Z,
+                    DiverSpeed, 0, false, 786603, -1f);
+                _frogmen.Add(ped);
             }
             if (_frogmen.Count == 0)
-                Logger.Warn(Id + ": no Aegis frogman could be placed; the dive is unopposed.");
+            {
+                // An unopposed dive is not this mission. Four keys all refusing means the basin
+                // did not stream, which is a retry rather than a walk-through.
+                Logger.Error(Id + ": no Aegis frogman could be put in the water.");
+                GameUtils.Notify("~r~The Aegis divers could not be placed. See Bloodlines.log.");
+                return false;
+            }
 
             Establish("approach", "Whatever is still on that bridge",
                 "The command gunship went into the basin with its tactical server aboard. Aegis has demolition divers on the way to scuttle it, which means the crew has until they get there.",

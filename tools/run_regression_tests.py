@@ -24,7 +24,7 @@ def main():
     args = ['/nologo','/nostdlib+','/target:exe','/langversion:9.0','/warnaserror+',f'/out:"{output}"']
     for name in ['mscorlib.dll','System.dll','System.Core.dll','System.Drawing.dll']:
         args.append(f'/reference:"{framework/name}"')
-    production = ['Core/MissionPlacement.cs','Core/SurveyMode.Placement.cs','Core/SurveyMode.Check.cs','Core/SurveyReading.cs','Crew/CrewDriving.cs','Crew/CompanionRecovery.cs','Crew/CrewDurability.cs','Crew/MilitaryResponse.cs','Crew/CompanionLife.cs','Crew/PersonalWanted.cs','Crew/CompanionConvoy.cs','Crew/CompanionController.cs','Crew/CompanionPresence.cs','Crew/CompanionDriver.cs','Crew/DeathController.cs','Crew/RecoveryMobility.cs','Core/SurveyMode.cs','Core/SurveyCamera.cs','Core/PlacementGhost.cs','Core/RouteRibbons.cs','Core/LocationBook.cs','Core/DataTable.cs','Missions/Objectives/Objective.cs']
+    production = ['Core/MissionPlacement.cs','Core/SurveyMode.Placement.cs','Core/SurveyMode.Check.cs','Core/SurveyReading.cs','Core/FarPlacement.cs','Crew/CrewDriving.cs','Crew/CompanionRecovery.cs','Crew/CrewDurability.cs','Crew/MilitaryResponse.cs','Crew/CompanionLife.cs','Crew/PersonalWanted.cs','Crew/CompanionConvoy.cs','Crew/CompanionController.cs','Crew/CompanionPresence.cs','Crew/CompanionDriver.cs','Crew/DeathController.cs','Crew/RecoveryMobility.cs','Core/SurveyMode.cs','Core/SurveyCamera.cs','Core/PlacementGhost.cs','Core/RouteRibbons.cs','Core/LocationBook.cs','Core/DataTable.cs','Missions/Objectives/Objective.cs']
     roster=(ROOT/'src/Bloodlines/Crew/CrewRoster.cs').read_text(encoding='utf-8')
     first=roster.index('        public void SetActive(CrewSlot slot)');last=roster.index('        public void AssignCompanionAI()',first)
     handover=BUILD/'RosterHandover.cs'

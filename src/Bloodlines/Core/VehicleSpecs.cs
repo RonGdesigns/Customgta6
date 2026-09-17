@@ -51,39 +51,47 @@ namespace Bloodlines.Core
         }
 
         private static readonly Dictionary<int, Ratings> Known = new Dictionary<int, Ratings>();
+        /// <summary>Models this class has asked the engine for and not yet handed back.</summary>
+        private static readonly HashSet<int> Requested = new HashSet<int>();
 
         /// <summary>
-        /// The model's ratings, or null while it is still streaming in. The natives read
-        /// the model's own data, so the model has to be in memory: it is asked for, read
-        /// once, cached, and handed straight back to the engine. Nothing waits — a caller
-        /// that gets null says so and asks again next frame.
+        /// The model's ratings, or null while they are not readable yet. A caller that gets
+        /// null says so and asks again next frame.
+        ///
+        /// **The first version requested the model and released it in the same call, every
+        /// frame.** <c>Request()</c> is a request, not a load: the engine streams the model
+        /// in over the frames that follow, and <c>MarkAsNoLongerNeeded()</c> on the way out
+        /// of the same call canceled it before it ever arrived. So the ratings were never
+        /// readable, the phone's every car row said "reading ratings" for as long as Ron
+        /// looked at it, and the harness passed because its stand-in streams synchronously.
+        /// The stand-in streams like the engine now, and this keeps the request open until
+        /// the ratings have actually been read.
+        ///
+        /// The natives are asked by hash first. They read handling data, which does not
+        /// need the model streamed, so most cars answer without a request at all.
         /// </summary>
         public static Ratings Of(Model model)
         {
             if (!model.IsValid || !model.IsVehicle) return null;
             if (Known.TryGetValue(model.Hash, out var cached)) return cached;
-
-            bool ours = false;
             try
             {
-                if (!model.IsLoaded) { model.Request(); ours = true; }
-                if (!model.IsLoaded) return null;
-
-                var ratings = new Ratings
+                var ratings = Read(model);
+                if (ratings == null)
                 {
-                    TopSpeed = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ESTIMATED_MAX_SPEED, model.Hash),
-                    Acceleration = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ACCELERATION, model.Hash),
-                    Braking = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_BRAKING, model.Hash),
-                    Traction = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_TRACTION, model.Hash) / 3f,
-                    BuiltAcceleration = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ACCELERATION_MAX_MODS, model.Hash),
-                    BuiltBraking = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_BRAKING_MAX_MODS, model.Hash),
-                    Seats = Function.Call<int>(Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS, model.Hash)
-                };
-                // A model that answers zero to everything has not really answered. Do not
-                // cache that, or a car is permanently listed as having no engine.
-                if (ratings.TopSpeed <= 0f && ratings.Acceleration <= 0f) return null;
+                    // Nothing by hash. Ask for the model, once, and keep the request open;
+                    // whichever later frame finds it loaded reads it and hands it back.
+                    if (!model.IsLoaded)
+                    {
+                        if (!Requested.Contains(model.Hash)) { model.Request(); Requested.Add(model.Hash); }
+                        return null;
+                    }
+                    ratings = Read(model);
+                    if (ratings == null) return null;
+                }
                 if (Known.Count >= 512) Known.Clear();
                 Known[model.Hash] = ratings;
+                if (Requested.Remove(model.Hash)) model.MarkAsNoLongerNeeded();
                 return ratings;
             }
             catch (Exception ex)
@@ -91,8 +99,27 @@ namespace Bloodlines.Core
                 Logger.Warn("Model ratings unavailable for " + model.Hash + ": " + ex.Message);
                 return null;
             }
-            finally { if (ours) model.MarkAsNoLongerNeeded(); }
         }
+
+        /// <summary>The natives, or null when they answer zero to everything: that is a model
+        /// that has not really answered, and caching it lists a car as having no engine.</summary>
+        private static Ratings Read(Model model)
+        {
+            var ratings = new Ratings
+            {
+                TopSpeed = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ESTIMATED_MAX_SPEED, model.Hash),
+                Acceleration = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ACCELERATION, model.Hash),
+                Braking = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_BRAKING, model.Hash),
+                Traction = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_TRACTION, model.Hash) / 3f,
+                BuiltAcceleration = Function.Call<float>(Hash.GET_VEHICLE_MODEL_ACCELERATION_MAX_MODS, model.Hash),
+                BuiltBraking = Function.Call<float>(Hash.GET_VEHICLE_MODEL_MAX_BRAKING_MAX_MODS, model.Hash),
+                Seats = Function.Call<int>(Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS, model.Hash)
+            };
+            return ratings.TopSpeed <= 0f && ratings.Acceleration <= 0f ? null : ratings;
+        }
+
+        /// <summary>Forget everything read, for a harness that changes what the engine answers.</summary>
+        public static void Forget() { Known.Clear(); Requested.Clear(); }
 
         /// <summary>
         /// The ratings as label/value pairs, which is the one place their wording and their
@@ -115,6 +142,17 @@ namespace Bloodlines.Core
             if (ratings.Upgradable)
                 yield return Pair("Fully built", "accel " + Percent(ratings.BuiltAcceleration) +
                     " / braking " + Percent(ratings.BuiltBraking));
+        }
+
+        /// <summary>The row labels in the order Rows yields them, for a page that lays its rows
+        /// out before the model has answered and fills the values in as they come.</summary>
+        public static readonly string[] Labels = { "Top speed", "Acceleration", "Braking", "Traction", "Est. top speed", "Seats", "Fully built" };
+
+        /// <summary>One row's value now, or null while the model is not readable or the row does not apply.</summary>
+        public static string Value(Model model, string label)
+        {
+            foreach (var row in Rows(model)) if (row.Key == label) return row.Value;
+            return null;
         }
 
         /// <summary>

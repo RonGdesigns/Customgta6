@@ -237,6 +237,10 @@ namespace Bloodlines.Crew
 
                 ConfigurePed(ped, protagonist);
                 _peds[protagonist.Slot] = ped;
+                PedPlacement leadAt;
+                if (protagonist.Slot != startAs && placements.TryGetValue(startAs, out leadAt) &&
+                    placement.Position.DistanceTo(leadAt.Position) > Core.FarPlacement.Meters)
+                    Core.FarPlacement.Keep(ped, "placed " + (int)placement.Position.DistanceTo(leadAt.Position) + " m from the player");
             }
 
             ActiveSlot = startAs;

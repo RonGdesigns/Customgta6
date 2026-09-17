@@ -30,6 +30,9 @@ public static partial class StoryTests
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
+   // The tower missions open an MLO through the apartment access service, the way the host
+   // wires it; without one MazeBank.Enter refuses and the lift beat never opens.
+   c.Interior=new ApartmentAccess(crew);
    if(m.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
    if(m.Id=="M23")World.CollisionReady=true;
    if(m.Id=="M10")GameUtils.RoadAvailable=true; if(m.Id=="SM02")World.CollisionReady=true;
@@ -43,7 +46,7 @@ public static partial class StoryTests
    var flow=Flow(m);var cueIds=flow.SelectMany(s=>s.EntryCues.Concat(s.ExitCues)).ToArray();
    Check(cueIds.Length==cueIds.Distinct().Count()&&cueIds.All(id=>c.Data.Cue(id)!=null),m.Id+" uses unique, valid dialogue cues at gameplay events");
    // M31-M40 have dedicated physical custody, boarding, convoy and marine walkthroughs.
-   if(m is Bloodlines.Missions.Campaign.PreparationOperation){m.Abort();Check(m.Status==MissionStatus.Aborted,m.Id+" supports clean abort before its dedicated walkthrough");continue;}
+   if(m is Bloodlines.Missions.Campaign.PreparationOperation&&!(m.Id.StartsWith("M")&&int.Parse(m.Id.Substring(1))>=49)){m.Abort();Check(m.Status==MissionStatus.Aborted,m.Id+" supports clean abort before its dedicated walkthrough");continue;}
    for(int tick=0;tick<800&&m.Status==MissionStatus.Running;tick++)
    {
     if(c.Cutscenes.IsActive){c.Cutscenes.Skip();if(c.Cutscenes.LastRequired&&c.Cutscenes.LastOutcome==SceneOutcome.Failed)throw new Exception(m.Id+" required scene failed in flow harness");continue;}
@@ -144,7 +147,9 @@ public static partial class StoryTests
       var sterling=((Bloodlines.Missions.Campaign.SM07BloodDebt)m).Sterling;
       if(sterling!=null)sterling.IsDead=true;
      }
-     if(name=="ConditionObjective"&&m.Id=="M65")
+     // Only on the beat that asks for it. M65's first condition is the lift, and killing
+     // Vance there is exactly what the mission's own rule fails - as it should.
+     if(name=="ConditionObjective"&&m.Id=="M65"&&objective.Label.Contains("take Vance"))
      {
       var vance=((Bloodlines.Missions.Campaign.M65ExecutivePrivilege)m).Vance;
       if(vance!=null)vance.IsDead=true;
@@ -152,6 +157,23 @@ public static partial class StoryTests
      if(name=="ConditionObjective"&&m.Id=="M66")
       Game.Player.Character.Position=Bloodlines.Missions.Campaign.MazeBank.Roof
        -new Vector3(0,0,Bloodlines.Missions.Campaign.M66TheSpireEvacuation.JumpedBelow+20f);
+     // The rest of Act III. Every main mission from M49 derives from PreparationOperation
+     // and the walker used to abort all of them before their first stage, so none of these
+     // beats had ever been driven - which is where M57's first-kill stage and M65's
+     // fail-on-success hid. A beat is satisfied by producing its state, never by faking it.
+     if(name=="ConditionObjective"&&m.Id=="M49")
+      foreach(var tower in ((Bloodlines.Missions.Campaign.M49ReturnToTheConcrete)m).Towers) if(tower!=null)tower.IsDead=true;
+     if(name=="ConditionObjective"&&m.Id=="M52")
+     {
+      var strike=(Bloodlines.Missions.Campaign.M52JudicialStrike)m;
+      if(objective.Label.Contains("hold until")) strike.Harrison.Position=c.Locations.Position("M52.Walk");
+      else if(strike.Harrison!=null) strike.Harrison.IsDead=true;
+     }
+     if(name=="ConditionObjective"&&m.Id=="M54")
+     {
+      var heli=((Bloodlines.Missions.Campaign.M54ThePillboxRedoubt)m).Helicopter;
+      if(heli!=null){crew.PedFor(CrewSlot.Ice).SetIntoVehicle(heli,VehicleSeat.LeftRear);crew.PedFor(CrewSlot.Gohan).SetIntoVehicle(heli,VehicleSeat.RightRear);}
+     }
 
      // A travel leg is finished by actually being there, in the named vehicle, stopped.
      if(name=="TravelObjective") PositionActor(c,objective,Field<Func<Vector3>>(objective,"_destination")(),Field<Func<Vehicle>>(objective,"_vehicle")?.Invoke());
