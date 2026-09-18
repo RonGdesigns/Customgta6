@@ -1407,3 +1407,36 @@ in the source.
 **A source assertion must not depend on line endings.** A check written the day before
 matched a literal `\n` inside a source file, so it passed in one worktree and failed in the
 next. Strip the endings, or match with a pattern.
+
+## Crew driving: the speed is the car's, and a getaway is the engine's flee mission
+
+See `docs/CREW-DRIVING-2026-09-18.md`. Ron: "make them drive a little bit faster and a
+little bit better and with a little bit more intent... if I tell them take the wheel they
+should just drive when police is on them."
+
+**A flat commanded speed is a slow order once the world's ceilings are doubled.** The
+brothers held 40 to 60 m/s, numbers from when every car ran to its stock redline;
+`WorldTuning` lifts every ceiling to twice that, so the same order now reads as a man not
+trying. `CrewDriving.Speed(slot, urgent, vehicle)` is a share of the car's own
+`GET_VEHICLE_ESTIMATED_MAX_SPEED`, Guess highest, with the old flat numbers kept as a floor.
+The SM03 rivals got the same rule the day before, for the same reason.
+
+**The escape style is a different style, not a faster one.** `CrewDriving.EscapeFlags`
+allows the wrong side of the road and the map's shortcut links; the everyday
+`TrafficFlags` does not. A driver with the police on him who will not cross a median is not
+escaping. `SET_DRIVER_RACING_MODIFIER` is the engine's own dial for corner commitment and
+is on only when the drive is urgent.
+
+**Intent is the engine's `Flee` vehicle mission aimed at the nearest officer**, not a point
+700 m ahead on the road. It applies with the police on the car, the player aboard in any
+seat but the wheel, and nowhere in particular to be: a mission destination or a map
+waypoint is still driven to, at escape pace, because "drive to my waypoint" under pursuit
+means exactly that. A flee task is held for `FleeRefreshMs` against the same officer
+rather than re-issued every review, which is the `KeepDriving` rule again; and when the
+heat drops the task is replaced, because a flee task left running is a driver fleeing an
+empty road.
+
+**A relationship group is read through the native in code both harnesses compile.** The
+story stand-in's `RelationshipGroup` is an `int` and the thin one's is a struct with a
+`Hash`; `GET_PED_RELATIONSHIP_GROUP_HASH` is the one spelling that compiles in both and is
+what the engine says anyway.
