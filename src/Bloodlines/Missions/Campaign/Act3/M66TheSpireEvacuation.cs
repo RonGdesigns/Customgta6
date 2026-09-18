@@ -31,7 +31,7 @@ namespace Bloodlines.Missions.Campaign
     /// and no placed-entity survey can locate a freeway lane — that is M49's problem exactly.
     /// `M66.Landing` is a seed near the Del Perro connector and the real lane comes from
     /// <c>GameUtils.NearestRoadNode</c> at runtime. A missing node is reported and the seed
-    /// used: a landing zone slightly off the tarmac is recoverable, a refused mission is not.
+    /// used: a landing zone slightly off the asphalt is recoverable, a refused mission is not.
     ///
     /// Ice's line names the Arcadius towers on the way down. They are real and they are on the
     /// line: the Arcadius block is at (-139, -629), between this roof and Del Perro.

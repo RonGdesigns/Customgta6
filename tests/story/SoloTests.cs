@@ -58,9 +58,9 @@ public static partial class StoryTests
   Use(crew,CrewSlot.Guess);Game.Player.Character.Position=personal.Position;Game.Player.Character.SetIntoVehicle(personal,VehicleSeat.Driver);
   s3=new SM03MidnightDrift();Check(s3.Begin(c)&&s3.Coupe==personal&&s3.KJ!=null&&s3.Prize==null,"SM03 uses the actual owned car and spawns no cargo on its tail");
   Interact(s3,c,CrewSlot.Guess,c.Locations.Position("SM03.StartLine"),3,true);Check(s3.CurrentStage==1,"Ready-up starts one sprint");
-  var route=c.Locations.All.Where(l=>l.Key.StartsWith("SM03.Sprint",StringComparison.Ordinal)).OrderBy(l=>l.Key).ToArray();
-  Check(route.Length==278&&route.Last().Position.Z>750f,"The connected road route reaches the mountain summit");
-  foreach(var gate in route){s3.Coupe.Position=gate.Position;Game.Player.Character.Position=gate.Position;s3.Tick();}
+  var route=s3.Route.Gates;
+  Check(route.Count>16&&route.Count<60&&route[route.Count-1].Z>750f,"The built road-and-trail route reaches the mountain summit in a few dozen gates");
+  foreach(var gate in route){s3.Coupe.Position=gate;Game.Player.Character.Position=gate;s3.Tick();}
   c.Dialogue.Clear();s3.Tick();Check(s3.Status==MissionStatus.Passed&&s3.PrizeHome&&c.State.CargoAt("racePrize")=="SM03.Summit"&&!s3.GunsShown,"Winning finishes at the summit without a cargo delivery or surprise gunfight");
   s3.Cleanup();Check(personal.Exists(),"Cleanup preserves the player's personal car");
   var scenes=File.ReadAllLines(Path.Combine(dataDir,"scenes.tsv"));
