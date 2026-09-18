@@ -513,284 +513,40 @@ M16.TankEntry2	-2180.000	3100.000	32.800	0	land	estimate	Road-resolved armor app
 M13.AlarmSpawn2	-960.000	-1660.000	0.000	315	water	estimate	La Puerta channel; water and seabed sampled; runtime full-hull clearance
 SM03.RivalGrid1	561.741	-1704.342	29.013	51.66665989090137	land	estimate	Grid behind player on start street
 SM03.RivalGrid2	567.232	-1708.683	29.013	51.66665989090137	land	estimate	Grid behind player on start street
-SM03.Sprint001	524.000	-1674.500	28.881	0	land	estimate	Rancho / offline connected road graph
-SM03.Sprint002	487.250	-1643.500	28.819	0	land	estimate	Rancho / offline connected road graph
-SM03.Sprint003	451.250	-1613.500	28.913	0	land	estimate	Rancho / offline connected road graph
-SM03.Sprint004	416.750	-1584.500	28.913	0	land	estimate	Rancho / offline connected road graph
-SM03.Sprint005	380.000	-1553.500	28.913	0	land	estimate	Rancho / offline connected road graph
-SM03.Sprint006	321.500	-1513.250	28.913	0	land	estimate	Davis / offline connected road graph
-SM03.Sprint007	290.500	-1478.500	28.913	0	land	estimate	Davis / offline connected road graph
-SM03.Sprint008	253.750	-1447.500	28.913	0	land	estimate	Davis / offline connected road graph
-SM03.Sprint009	216.250	-1420.500	28.913	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint010	181.750	-1392.750	28.881	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint011	199.000	-1351.750	28.913	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint012	215.250	-1297.250	28.913	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint013	222.500	-1245.250	28.913	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint014	226.250	-1190.500	28.913	0	land	estimate	Strawberry / offline connected road graph
-SM03.Sprint015	213.000	-1145.250	28.944	0	land	estimate	Mission Row / offline connected road graph
-SM03.Sprint016	219.250	-1094.750	28.944	0	land	estimate	Mission Row / offline connected road graph
-SM03.Sprint017	222.250	-1040.500	28.944	0	land	estimate	Mission Row / offline connected road graph
-SM03.Sprint018	245.250	-998.250	28.913	0	land	estimate	Legion Square / offline connected road graph
-SM03.Sprint019	255.500	-946.000	28.944	0	land	estimate	Legion Square / offline connected road graph
-SM03.Sprint020	278.750	-906.250	28.600	0	land	estimate	Mission Row / offline connected road graph
-SM03.Sprint021	288.250	-856.000	28.819	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint022	305.250	-807.750	28.913	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint023	321.500	-761.000	28.913	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint024	338.000	-714.000	28.913	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint025	356.000	-667.000	28.913	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint026	379.250	-615.750	28.600	0	land	estimate	Textile City / offline connected road graph
-SM03.Sprint027	407.000	-573.000	28.350	0	land	estimate	Downtown / offline connected road graph
-SM03.Sprint028	477.750	-488.250	27.881	0	land	estimate	Vinewood / offline connected road graph
-SM03.Sprint029	543.000	-401.750	32.006	0	land	estimate	East Vinewood / offline connected road graph
-SM03.Sprint030	605.000	-315.750	37.569	0	land	estimate	East Vinewood / offline connected road graph
-SM03.Sprint031	662.750	-225.750	43.475	0	land	estimate	East Vinewood / offline connected road graph
-SM03.Sprint032	711.500	-140.500	50.538	0	land	estimate	East Vinewood / offline connected road graph
-SM03.Sprint033	756.000	-54.500	58.319	0	land	estimate	East Vinewood / offline connected road graph
-SM03.Sprint034	808.750	33.500	64.850	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint035	870.500	120.250	70.725	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint036	932.500	197.750	76.194	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint037	998.750	276.500	81.694	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint038	1065.250	345.250	83.006	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint039	1140.000	422.250	83.038	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint040	1215.500	498.000	81.038	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint041	1291.750	573.000	80.100	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint042	1361.750	639.500	80.038	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint043	1429.000	717.000	77.725	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint044	1484.750	795.750	76.694	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint045	1533.750	879.000	76.975	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint046	1574.750	966.250	78.100	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint047	1611.000	1062.000	80.381	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint048	1640.750	1153.750	83.475	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint049	1666.750	1252.750	85.038	0	land	estimate	Vinewood Hills / offline connected road graph
-SM03.Sprint050	1686.750	1347.000	86.975	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint051	1707.750	1465.250	84.850	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint052	1725.500	1565.000	84.131	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint053	1742.500	1659.500	82.975	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint054	1760.500	1754.000	81.288	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint055	1781.750	1847.750	79.506	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint056	1803.500	1941.250	77.756	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint057	1821.750	2035.500	74.881	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint058	1834.500	2130.500	69.663	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint059	1849.000	2225.000	62.350	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint060	1878.000	2329.000	55.913	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint061	1919.000	2428.750	54.163	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint062	1968.000	2511.250	54.163	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint063	2030.750	2584.000	53.944	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint064	2105.250	2651.750	50.788	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint065	2183.750	2716.750	46.944	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint066	2273.500	2786.750	42.694	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint067	2350.000	2844.750	40.319	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint068	2439.000	2916.000	40.038	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint069	2512.000	2979.000	41.069	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint070	2587.250	3048.750	44.600	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint071	2652.500	3121.000	49.475	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint072	2714.750	3211.000	53.756	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint073	2765.500	3307.500	55.663	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint074	2804.250	3396.250	55.506	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint075	2740.250	3312.500	55.631	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint076	2690.250	3218.500	53.569	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint077	2625.750	3127.500	48.881	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint078	2580.500	3080.750	45.506	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint079	2542.750	3052.000	43.225	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint080	2499.250	3023.000	41.819	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint081	2457.750	3000.000	42.288	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint082	2415.500	2977.500	46.256	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint083	2374.750	2952.250	48.850	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint084	2403.750	2915.500	48.913	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint085	2433.500	2878.000	48.788	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint086	2467.250	2892.500	47.163	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint087	2497.500	2929.250	42.538	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint088	2526.500	2967.500	41.506	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint089	2556.000	3005.250	42.288	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint090	2625.000	3088.500	47.350	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint091	2685.000	3165.000	51.881	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint092	2735.750	3248.000	54.788	0	land	estimate	Grand Senora Desert / offline connected road graph
-SM03.Sprint093	2782.750	3346.250	55.756	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint094	2825.250	3445.750	55.006	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint095	2861.500	3535.000	53.569	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint096	2891.750	3626.250	52.225	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint097	2919.250	3729.000	52.256	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint098	2940.750	3836.750	52.131	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint099	2940.750	3934.750	51.569	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint100	2926.250	4031.250	50.788	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint101	2901.250	4125.000	50.069	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint102	2864.750	4234.250	49.663	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint103	2833.000	4332.250	49.631	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint104	2801.750	4435.500	48.131	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint105	2768.750	4553.750	45.631	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint106	2741.000	4666.250	44.069	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint107	2714.250	4787.000	44.131	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint108	2693.250	4880.750	44.256	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint109	2670.250	4986.250	44.381	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint110	2650.250	5080.500	44.413	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint111	2621.250	5190.750	44.350	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint112	2590.250	5294.750	44.225	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint113	2561.250	5392.500	44.131	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint114	2528.250	5495.250	44.225	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint115	2492.500	5591.500	44.475	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint116	2444.500	5702.250	44.819	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint117	2394.000	5799.000	45.663	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint118	2331.750	5892.000	47.413	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint119	2272.000	5970.000	49.694	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint120	2204.250	6044.750	51.694	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint121	2118.250	6086.750	50.881	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint122	2044.500	6147.750	48.569	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint123	1996.000	6229.750	46.163	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint124	1949.000	6313.000	43.600	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint125	1864.500	6356.000	40.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint126	1769.500	6369.000	37.256	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint127	1676.000	6388.500	30.256	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint128	1559.000	6430.500	23.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint129	1607.250	6390.750	26.756	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint130	1707.750	6355.250	33.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint131	1801.750	6337.500	37.725	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint132	1893.250	6312.250	41.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint133	1946.500	6234.000	43.694	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint134	1987.500	6147.500	46.163	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint135	2053.500	6078.000	48.256	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint136	2129.000	6018.000	50.756	0	land	estimate	Braddock Tunnel / offline connected road graph
-SM03.Sprint137	2218.500	5946.250	50.225	0	land	estimate	Braddock Tunnel / offline connected road graph
-SM03.Sprint138	2290.000	5875.000	47.788	0	land	estimate	Braddock Tunnel / offline connected road graph
-SM03.Sprint139	2363.000	5782.500	45.788	0	land	estimate	Braddock Tunnel / offline connected road graph
-SM03.Sprint140	2417.000	5689.750	44.850	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint141	2459.750	5598.250	44.506	0	land	estimate	Braddock Pass / offline connected road graph
-SM03.Sprint142	2495.250	5509.500	44.288	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint143	2529.000	5407.500	44.131	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint144	2556.500	5303.250	44.225	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint145	2583.750	5199.000	44.350	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint146	2591.750	5139.250	44.319	0	land	estimate	Mount Gordo / offline connected road graph
-SM03.Sprint147	2578.750	5099.250	44.381	0	land	estimate	San Chianski Mountain Range / offline connected road graph
-SM03.Sprint148	2530.000	5088.750	43.631	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint149	2485.000	5102.750	45.069	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint150	2443.250	5126.750	46.569	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint151	2401.500	5152.750	47.069	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint152	2373.750	5114.750	47.069	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint153	2340.250	5080.750	45.600	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint154	2302.000	5042.750	44.069	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint155	2261.500	5002.250	42.288	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint156	2223.500	4964.000	41.194	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint157	2182.500	4923.000	40.381	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint158	2189.250	4890.000	41.631	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint159	2199.000	4840.750	44.444	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint160	2190.250	4793.750	43.069	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint161	2180.500	4748.750	40.725	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint162	2126.750	4746.000	40.788	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint163	2083.500	4704.500	40.788	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint164	2049.500	4670.750	40.788	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint165	2015.250	4637.000	40.788	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint166	1963.500	4602.500	39.881	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint167	1913.500	4589.500	37.694	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint168	1868.750	4582.250	35.913	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint169	1821.250	4575.250	35.756	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint170	1773.500	4571.000	37.381	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint171	1729.750	4570.750	39.663	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint172	1680.000	4571.250	41.788	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint173	1633.250	4571.500	44.288	0	land	estimate	Grapeseed / offline connected road graph
-SM03.Sprint174	1585.750	4570.000	47.538	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint175	1540.500	4559.250	50.944	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint176	1504.750	4528.500	53.100	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint177	1466.250	4504.250	50.850	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint178	1417.750	4492.500	50.350	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint179	1368.750	4497.750	55.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint180	1329.000	4472.250	61.381	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint181	1285.000	4469.250	61.006	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint182	1230.250	4465.500	53.381	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint183	1190.500	4435.750	57.163	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint184	1143.000	4419.750	61.819	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint185	1095.750	4432.750	62.350	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint186	1056.500	4451.250	54.600	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint187	1011.750	4457.750	51.038	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint188	963.750	4462.750	50.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint189	919.750	4472.000	50.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint190	875.250	4485.750	52.350	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint191	834.000	4504.750	53.756	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint192	813.000	4466.250	52.319	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint193	824.500	4420.500	52.131	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint194	840.750	4364.500	51.631	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint195	856.250	4311.250	51.038	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint196	864.500	4264.500	50.444	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint197	849.250	4226.750	50.288	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint198	805.250	4231.750	52.256	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint199	756.000	4224.500	50.194	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint200	706.250	4218.250	50.538	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint201	659.250	4219.000	52.538	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint202	608.500	4231.500	53.319	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint203	560.000	4247.250	53.038	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint204	513.500	4276.250	53.069	0	land	estimate	Alamo Sea / offline connected road graph
-SM03.Sprint205	492.500	4325.250	56.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint206	470.250	4362.000	61.663	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint207	418.500	4375.250	62.694	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint208	390.250	4415.000	62.163	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint209	371.000	4458.000	62.381	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint210	337.250	4498.750	61.569	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint211	291.500	4515.750	62.600	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint212	251.500	4498.250	66.225	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint213	221.250	4462.000	69.038	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint214	187.250	4425.500	73.506	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint215	151.500	4434.000	77.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint216	114.750	4467.500	83.194	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint217	101.750	4513.500	89.381	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint218	87.500	4558.000	95.913	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint219	46.250	4543.750	101.100	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint220	5.000	4525.250	106.850	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint221	-35.500	4550.250	117.038	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint222	-74.250	4575.250	122.725	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint223	-116.750	4601.500	123.225	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint224	-153.250	4634.000	126.725	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint225	-186.000	4667.250	130.288	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint226	-226.750	4706.250	134.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint227	-263.750	4739.750	137.038	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint228	-303.500	4774.500	139.631	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint229	-346.250	4809.750	141.913	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint230	-382.750	4839.750	143.475	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint231	-444.750	4887.000	145.319	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint232	-496.500	4929.750	146.756	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint233	-557.000	4979.000	146.694	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint234	-598.500	5008.750	142.256	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint235	-596.000	5055.250	136.913	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint236	-573.000	5056.500	133.038	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint237	-527.500	5031.750	131.131	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint238	-499.000	4994.500	141.475	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint239	-466.250	4959.250	153.256	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint240	-428.750	4932.000	171.913	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint241	-391.000	4909.000	191.163	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint242	-364.500	4934.500	197.006	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint243	-357.750	4981.500	206.819	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint244	-323.750	4988.000	231.131	0	land	estimate	Chiliad Mountain State Wilderness / offline connected road graph
-SM03.Sprint245	-290.750	4962.750	251.694	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint246	-266.000	4935.500	278.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint247	-236.750	4911.250	304.538	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint248	-199.750	4899.500	323.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint249	-156.750	4907.000	340.350	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint250	-120.750	4923.500	363.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint251	-84.000	4940.500	383.663	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint252	-59.500	4972.250	396.913	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint253	-41.500	5005.750	415.194	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint254	-5.250	5012.250	439.725	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint255	18.250	5038.750	453.256	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint256	51.500	5041.250	460.131	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint257	83.000	5014.250	460.944	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint258	93.500	5050.000	479.100	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint259	98.750	5086.000	502.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint260	115.750	5125.750	515.881	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint261	118.750	5170.500	527.569	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint262	122.000	5213.750	539.163	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint263	136.000	5199.250	548.069	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint264	163.750	5198.250	567.006	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint265	189.500	5231.750	582.850	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint266	223.000	5248.500	600.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint267	226.250	5283.750	616.506	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint268	248.750	5320.000	624.319	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint269	280.500	5351.000	632.225	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint270	311.000	5383.750	644.413	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint271	326.750	5423.250	661.475	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint272	353.750	5454.000	683.350	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint273	373.250	5487.750	707.944	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint274	405.250	5505.000	730.006	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint275	445.500	5511.000	752.725	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint276	485.000	5523.250	776.913	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint277	502.750	5561.500	781.819	0	land	estimate	Mount Chiliad / offline connected road graph
-SM03.Sprint278	506.750	5565.500	782.038	0	land	estimate	Mount Chiliad / offline connected road graph
+SM03.Leg01	226.250	-1190.500	28.913	0	land	estimate	Strawberry / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg02	477.750	-488.250	27.881	0	land	estimate	Vinewood / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg03	711.500	-140.500	50.538	0	land	estimate	East Vinewood / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg04	1065.250	345.250	83.006	0	land	estimate	Vinewood Hills / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg05	1533.750	879.000	76.975	0	land	estimate	Vinewood Hills / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg06	1707.750	1465.250	84.850	0	land	estimate	Grand Senora Desert / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg07	1821.750	2035.500	74.881	0	land	estimate	Grand Senora Desert / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg08	2105.250	2651.750	50.788	0	land	estimate	Grand Senora Desert / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg09	2499.250	3023.000	41.819	0	land	estimate	Grand Senora Desert / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg10	2891.750	3626.250	52.225	0	land	estimate	San Chianski Mountain Range / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg11	2901.250	4125.000	50.069	0	land	estimate	San Chianski Mountain Range / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg12	2714.250	4787.000	44.131	0	land	estimate	San Chianski Mountain Range / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg13	2199.000	4840.750	44.444	0	land	estimate	Grapeseed / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg14	1773.500	4571.000	37.381	0	land	estimate	Grapeseed / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg15	1368.750	4497.750	55.475	0	land	estimate	Mount Chiliad / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg16	824.500	4420.500	52.131	0	land	estimate	Mount Chiliad / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg17	390.250	4415.000	62.163	0	land	estimate	Mount Chiliad / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg18	-226.750	4706.250	134.069	0	land	estimate	Mount Chiliad / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Leg19	-364.500	4934.500	197.006	0	land	estimate	Chiliad Mountain State Wilderness / one gate of KJ's northbound sprint; the corridor is the shortest chain through the road-graph positions the old 278-gate route wandered over, and each gate is snapped to the nearest vehicle node at runtime, so the authored height is a seed rather than a lane
+SM03.Trail01	-323.750	4988.000	231.131	0	land	estimate	Chiliad Mountain State Wilderness / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail02	-266.000	4935.500	278.881	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail03	-199.750	4899.500	323.881	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail04	-120.750	4923.500	363.069	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail05	-59.500	4972.250	396.913	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail06	-5.250	5012.250	439.725	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail07	51.500	5041.250	460.131	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail08	98.750	5086.000	502.069	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail09	118.750	5170.500	527.569	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail10	189.500	5231.750	582.850	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail11	226.250	5283.750	616.506	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail12	280.500	5351.000	632.225	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail13	326.750	5423.250	661.475	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail14	373.250	5487.750	707.944	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
+SM03.Trail15	445.500	5511.000	752.725	0	land	estimate	Mount Chiliad / one gate of the Chiliad climb; trail geometry off the road graph and deliberately NOT snapped to a vehicle node, because the nearest node to a mountain trail is the road at the bottom of it
 SM03.Summit	506.750	5565.500	781.438	0	land	estimate	Chiliad summit trail finish; connected vehicle-node graph
 M23.ArrivalCar	846	2956	46.619	0	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending
 M23.Guard01	838	2982	44.408	180	land	estimate	Grand Senora Desert bunker - installed Enhanced collision checked; live survey pending

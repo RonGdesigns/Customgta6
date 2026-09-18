@@ -1187,11 +1187,11 @@ Prerequisite: M03. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Ready on the grid** — MissionInteraction: Guess: ready up in your own car to start the northbound sprint |
-| 2 | Guess | **Freeway to Chiliad** — RaceCheckpointObjective: Guess: beat both rivals to the summit. Follow the street, freeway and mountain trail gates. |
+| 2 | Guess | **North to Chiliad** — RaceCheckpointObjective: Guess: beat both rivals to the summit. Run the gates north, then climb the trail. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM03.RivalGrid, SM03.Sprint, SM03.StartLine, SM03.Summit.
+Survey references: SM03.Leg, SM03.RivalGrid, SM03.StartLine, SM03.Summit, SM03.Trail.
 
 ## SM04 — DEAD DROP QUARRY
 
