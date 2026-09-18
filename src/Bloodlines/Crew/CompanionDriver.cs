@@ -18,7 +18,11 @@ namespace Bloodlines.Crew
             public Vector3 Anchor;
             public int NextCheck;
             public bool Started, Arrived, Rendezvous, Urgent, Holding;
+            /// <summary>The officer he is fleeing from, while the police are on the car.</summary>
+            public Ped Fleeing; public int NextFleeTask;
         }
+        /// <summary>A flee task is held at least this long before it is re-issued for a nearer officer.</summary>
+        public const int FleeRefreshMs = 5000;
         private readonly Dictionary<CrewSlot, Trip> _trips = new Dictionary<CrewSlot, Trip>();
         public Func<CrewSlot, Vehicle, Vector3?> MissionDestination { get; set; }
         public Func<Vehicle, Vector3?> FollowDestination { get; set; }
@@ -84,7 +88,7 @@ namespace Bloodlines.Crew
                 {
                     CrewDriving.Configure(ped, trip.Slot, trip.Urgent);
                     Function.Call(Hash.TASK_VEHICLE_FOLLOW, ped, trip.Vehicle, active.CurrentVehicle,
-                        CrewDriving.Speed(trip.Slot, trip.Urgent), CrewDriving.TrafficFlags, 12);
+                        CrewDriving.Speed(trip.Slot, trip.Urgent, trip.Vehicle), trip.Urgent ? CrewDriving.EscapeFlags : CrewDriving.TrafficFlags, 12);
                     trip.FollowVehicle = target; trip.NextFollowTask = Game.GameTime + 12000; trip.Started = true;
                 }
                 return;
@@ -98,6 +102,30 @@ namespace Bloodlines.Crew
             }
             if (!destination.HasValue) destination = FollowDestination?.Invoke(trip.Vehicle);
             var model = trip.Vehicle.Model;
+            // Ron, September 18: "if I tell them take the wheel they should just drive when
+            // police is on them and you're not the driver. Have them drive like they have
+            // intent." Intent is the engine's own flee mission, pointed at the nearest
+            // officer: it picks a direction away from him rather than a point ahead on the
+            // road. Only with nowhere in particular to be - a mission destination or a map
+            // waypoint is still driven to, at escape pace and in the escape style.
+            bool pursued = Game.Player.WantedLevel > 0 && active != null && active.Exists() && active.IsInVehicle(trip.Vehicle) &&
+                           (model.IsCar || model.IsBike) && !destination.HasValue && !trip.Rendezvous;
+            var officer = pursued ? CrewDriving.NearestPolice(ped, CrewDriving.PoliceSearchMeters) : null;
+            if (officer != null)
+            {
+                bool sameOfficer = trip.Fleeing != null && trip.Fleeing.Exists() && trip.Fleeing.Handle == officer.Handle;
+                if (trip.Started && sameOfficer && !urgencyChanged && Game.GameTime < trip.NextFleeTask) return;
+                CrewDriving.Configure(ped, trip.Slot, true);
+                ped.Task.StartVehicleMission(trip.Vehicle, officer, VehicleMissionType.Flee,
+                    CrewDriving.Speed(trip.Slot, true, trip.Vehicle), (VehicleDrivingFlags)CrewDriving.EscapeFlags, 10f, 30f, true);
+                trip.Fleeing = officer; trip.NextFleeTask = Game.GameTime + FleeRefreshMs;
+                trip.Started = true; trip.Destination = null; trip.Arrived = false;
+                Logger.Debug("Companion driver " + ped.Handle + " fleeing officer " + officer.Handle + " at " + (int)CrewDriving.Speed(trip.Slot, true, trip.Vehicle) + " m/s.");
+                return;
+            }
+            // Not fleeing any more: whatever comes next has to be issued, because the flee
+            // task would otherwise keep running against an officer who has lost interest.
+            if (trip.Fleeing != null) { trip.Fleeing = null; trip.Started = false; }
             if (trip.Urgent && (model.IsCar || model.IsBike) && (!destination.HasValue || GameUtils.IsWithinFlat(trip.Vehicle.Position, destination.Value, 20f)))
                 destination = trip.Urgent && trip.Destination.HasValue && !GameUtils.IsWithinFlat(trip.Vehicle.Position, trip.Destination.Value, 30f) ? trip.Destination : (Vector3?)World.GetNextPositionOnStreet(trip.Vehicle.Position + trip.Vehicle.ForwardVector * 700f);
             bool changed = urgencyChanged || destination.HasValue != trip.Destination.HasValue ||
@@ -188,9 +216,11 @@ namespace Bloodlines.Crew
                     10f, (VehicleDrivingFlags)786603, 12f, (BoatMissionFlags)7);
             }
             else if (trip.Destination.HasValue)
-                ped.Task.DriveTo(vehicle, target, 8f, trip.Arrived && !trip.Urgent ? 6f : CrewDriving.Speed(trip.Slot, trip.Urgent), (DrivingStyle)CrewDriving.TrafficFlags);
+                ped.Task.DriveTo(vehicle, target, 8f, trip.Arrived && !trip.Urgent ? 6f : CrewDriving.Speed(trip.Slot, trip.Urgent, vehicle),
+                    (DrivingStyle)(trip.Urgent ? CrewDriving.EscapeFlags : CrewDriving.TrafficFlags));
             else
-                ped.Task.CruiseWithVehicle(vehicle, CrewDriving.Speed(trip.Slot, trip.Urgent), (DrivingStyle)CrewDriving.TrafficFlags);
+                ped.Task.CruiseWithVehicle(vehicle, CrewDriving.Speed(trip.Slot, trip.Urgent, vehicle),
+                    (DrivingStyle)(trip.Urgent ? CrewDriving.EscapeFlags : CrewDriving.TrafficFlags));
             Logger.Debug("Companion driver " + ped.Handle + (trip.Destination.HasValue ? " navigating to " + target : " continuing cautiously"));
         }
     }
