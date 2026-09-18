@@ -17,13 +17,15 @@ namespace Bloodlines.Crew
             public Vector3? Destination;
             public Vector3 Anchor;
             public int NextCheck;
-            public bool Started, Arrived, Rendezvous, Urgent;
+            public bool Started, Arrived, Rendezvous, Urgent, Holding;
         }
         private readonly Dictionary<CrewSlot, Trip> _trips = new Dictionary<CrewSlot, Trip>();
         public Func<CrewSlot, Vehicle, Vector3?> MissionDestination { get; set; }
         public Func<Vehicle, Vector3?> FollowDestination { get; set; }
         public Func<Vehicle, bool> IsRendezvous { get; set; }
         public Func<Vehicle, bool> HasBoardingPassengers { get; set; }
+        /// <summary>Hold the vehicle still this check: an order to pull over, or the player out beside it.</summary>
+        public Func<CrewSlot, Vehicle, bool> HoldStill { get; set; }
         public void Arm(CrewSlot slot, Ped ped)
         {
             var vehicle = ped?.CurrentVehicle;
@@ -56,6 +58,14 @@ namespace Bloodlines.Crew
                 trip.Started = false;
                 return;
             }
+            if (HoldStill != null && HoldStill(slot, trip.Vehicle))
+            {
+                // The same brake the boarding wait uses, re-issued each check while it holds.
+                Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, ped, trip.Vehicle, 27, 1500);
+                trip.Holding = true; trip.Started = false;
+                return;
+            }
+            trip.Holding = false;
             var active = Game.Player.Character;
             bool urgent = ped.IsInCombat || (active != null && (active.IsInVehicle(trip.Vehicle) || IsRendezvous?.Invoke(trip.Vehicle) == true) && (Game.Player.WantedLevel > 0 || active.IsInCombat));
             if (!urgent)

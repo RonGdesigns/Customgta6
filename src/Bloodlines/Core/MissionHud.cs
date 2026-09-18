@@ -27,7 +27,11 @@ namespace Bloodlines.Core
     /// </summary>
     public static class MissionHud
     {
-        public const float Left = 24f, Top = 74f, Width = 560f;
+        // Ron's first look at it: too big, taking up too much of the screen, the
+        // information solid. Every size here is about two thirds of what it was.
+        public const float Left = 24f, Top = 74f, Width = 400f;
+        public const int WrapColumns = 56;
+        public const float HeadingScale = .21f, ChipScale = .21f, ObjectiveScale = .24f, SmallScale = .18f, TimerScale = .23f;
         /// <summary>A timer this close to running out is drawn in red.</summary>
         public const int UrgentSeconds = 30;
 
@@ -132,45 +136,45 @@ namespace Bloodlines.Core
             var frame = Compose(missions, crew);
             if (frame.Heading.Length == 0 && frame.Objective.Length == 0) return;
 
-            var lines = MissionObjectiveHud.Wrap(frame.Objective, 62).Take(3).ToList();
+            var lines = MissionObjectiveHud.Wrap(frame.Objective, WrapColumns).Take(3).ToList();
             float y = Top;
-            float height = 22f + (frame.OwnerSlot.HasValue ? 24f : 0f) + lines.Count * 23f +
-                           (frame.Rules.Count > 0 ? 18f : 0f) + (frame.ProgressFraction >= 0f ? 22f : 0f) + (frame.TimerFraction >= 0f ? 24f : 0f) + 10f;
-            new ContainerElement(new PointF(Left - 8f, y - 6f), new SizeF(Width, height), Panel).Draw();
+            float height = 17f + (frame.OwnerSlot.HasValue ? 18f : 0f) + lines.Count * 18f +
+                           (frame.Rules.Count > 0 ? 14f : 0f) + (frame.ProgressFraction >= 0f ? 17f : 0f) + (frame.TimerFraction >= 0f ? 18f : 0f) + 6f;
+            new ContainerElement(new PointF(Left - 6f, y - 4f), new SizeF(Width, height), Panel).Draw();
 
-            new TextElement(frame.Heading, new PointF(Left, y), .27f, Color.White).Draw();
-            y += 22f;
+            new TextElement(frame.Heading, new PointF(Left, y), HeadingScale, Color.White).Draw();
+            y += 17f;
 
             if (frame.OwnerSlot.HasValue)
             {
                 // A chip in his color and his name, so a glance says whose beat this is.
-                new ContainerElement(new PointF(Left, y + 3f), new SizeF(12f, 12f), CrewColors.Of(frame.OwnerSlot.Value)).Draw();
-                new TextElement(frame.Owner, new PointF(Left + 18f, y), .26f, CrewColors.Of(frame.OwnerSlot.Value)).Draw();
+                new ContainerElement(new PointF(Left, y + 3f), new SizeF(9f, 9f), CrewColors.Of(frame.OwnerSlot.Value)).Draw();
+                new TextElement(frame.Owner, new PointF(Left + 14f, y), ChipScale, CrewColors.Of(frame.OwnerSlot.Value)).Draw();
                 if (frame.Distance.Length > 0)
-                    new TextElement(frame.Distance, new PointF(Left + Width - 24f, y), .26f, Muted) { Alignment = Alignment.Right }.Draw();
-                y += 24f;
+                    new TextElement(frame.Distance, new PointF(Left + Width - 18f, y), ChipScale, Muted) { Alignment = Alignment.Right }.Draw();
+                y += 18f;
             }
 
             foreach (var line in lines)
             {
-                new TextElement(line, new PointF(Left, y), .29f, Objective).Draw();
-                y += 23f;
+                new TextElement(line, new PointF(Left, y), ObjectiveScale, Objective).Draw();
+                y += 18f;
             }
             if (frame.Rules.Count > 0)
             {
-                new TextElement(string.Join("   ", frame.Rules.ToArray()), new PointF(Left, y), .22f, Muted).Draw();
-                y += 18f;
+                new TextElement(string.Join("   ", frame.Rules.ToArray()), new PointF(Left, y), SmallScale, Muted).Draw();
+                y += 14f;
             }
             if (frame.ProgressFraction >= 0f)
             {
-                Bar(Left, y + 6f, Width - 40f, 8f, frame.ProgressFraction, frame.Progress.Contains("band") || frame.Progress.Contains("locked") ? Good : Objective);
-                new TextElement(frame.Progress, new PointF(Left + Width - 24f, y - 2f), .22f, Muted) { Alignment = Alignment.Right }.Draw();
-                y += 22f;
+                Bar(Left, y + 5f, Width - 30f, 5f, frame.ProgressFraction, frame.Progress.Contains("band") || frame.Progress.Contains("locked") ? Good : Objective);
+                new TextElement(frame.Progress, new PointF(Left + Width - 18f, y - 2f), SmallScale, Muted) { Alignment = Alignment.Right }.Draw();
+                y += 17f;
             }
             if (frame.TimerFraction >= 0f)
             {
-                Bar(Left, y + 8f, Width - 40f, 8f, frame.TimerFraction, frame.TimerUrgent ? Urgent : Color.White);
-                new TextElement(frame.Timer, new PointF(Left + Width - 24f, y - 2f), .30f, frame.TimerUrgent ? Urgent : Color.White) { Alignment = Alignment.Right }.Draw();
+                Bar(Left, y + 6f, Width - 30f, 5f, frame.TimerFraction, frame.TimerUrgent ? Urgent : Color.White);
+                new TextElement(frame.Timer, new PointF(Left + Width - 18f, y - 2f), TimerScale, frame.TimerUrgent ? Urgent : Color.White) { Alignment = Alignment.Right }.Draw();
             }
         }
 

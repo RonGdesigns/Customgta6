@@ -157,6 +157,7 @@ Bloodlines uses a lot of keys, and so do trainers. These are the likely clashes:
 | `Caps Lock` | special ability | some ability and sprint mods |
 | `F11` | survey capture | a few map/teleport mods |
 | `[` / `]` | checkpoint commit / restore (Insert would reload every script through ScriptHookVDotNet) | — |
+| `G` (hold) | crew orders: hold, pick a brother and an order, release. On a pad, hold d-pad left past a tap. | some trainers bind G to a vehicle spawn |
 
 ### No numpad
 

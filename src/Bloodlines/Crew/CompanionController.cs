@@ -78,7 +78,7 @@ namespace Bloodlines.Crew
             set
             {
                 if (value == _missionActive) return;
-                if (value) { Life.Clear(); _separatedByRecovery.Clear(); }
+                if (value) { Life.Clear(); _separatedByRecovery.Clear(); ClearOrders(); }
                 Military.Clear();
                 _missionActive = value;
             }
@@ -96,7 +96,7 @@ namespace Bloodlines.Crew
         public bool RideAlong
         {
             get => _rideAlong;
-            set { if (_rideAlong == value && _travelChoices.Count == 0) return; _travelChoices.Clear(); _rideAlong = value; Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _boarding.Clear(); }
+            set { if (_rideAlong == value && _travelChoices.Count == 0) return; _travelChoices.Clear(); _rideAlong = value; ClearOrders(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _boarding.Clear(); }
         }
         private readonly Dictionary<CrewSlot, bool> _travelChoices = new Dictionary<CrewSlot, bool>();
         public bool RidesAlong(CrewSlot slot) => _travelChoices.TryGetValue(slot, out var ride) ? ride : _rideAlong;
@@ -120,7 +120,7 @@ namespace Bloodlines.Crew
         public bool IndependentFreeRoam
         {
             get => _independent;
-            set { _separatedByRecovery.Clear(); if (value == _independent && _hangouts.Count == 0 && _travelChoices.Count == 0) return; _hangouts.Clear(); _travelChoices.Clear(); _independent = value; Life.Clear(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _threats.Clear(); _lastScan.Clear(); _boarding.Clear(); }
+            set { _separatedByRecovery.Clear(); if (value == _independent && _hangouts.Count == 0 && _travelChoices.Count == 0) return; _hangouts.Clear(); _travelChoices.Clear(); _independent = value; ClearOrders(); Life.Clear(); Driver.Clear(); Convoy.Clear(); _states.Clear(); _stateSince.Clear(); _threats.Clear(); _lastScan.Clear(); _boarding.Clear(); }
         }
         public CompanionConvoy Convoy { get; } = new CompanionConvoy();
         public CompanionDriver Driver { get; } = new CompanionDriver();
@@ -135,6 +135,25 @@ namespace Bloodlines.Crew
         private readonly Dictionary<CrewSlot, Boarding> _boarding = new Dictionary<CrewSlot, Boarding>();
         private sealed class Boarding { public Vehicle Vehicle; public VehicleSeat Seat; }
 
+        // ---- Standing orders (Ron, September 17: "a way to command our partners").
+        private readonly Dictionary<CrewSlot, CrewOrder> _orders = new Dictionary<CrewSlot, CrewOrder>();
+        private readonly Dictionary<CrewSlot, Vehicle> _orderVehicles = new Dictionary<CrewSlot, Vehicle>();
+        private Ped _leader; private int _leaderAfootSince, _leaderRidingSince, _leaderLastVehicle;
+        /// <summary>
+        /// How long a seated brother sits tight while the player is on foot beside the
+        /// vehicle. Stepping out of the driver's seat to walk around to the gun bed is a
+        /// seat change, not a departure, and the driver used to bail out the moment the
+        /// player's feet touched the ground.
+        /// </summary>
+        public const int SeatShuffleMs = 8000;
+        public const float SeatShuffleMeters = 10f;
+        /// <summary>
+        /// The player riding in a seat that is not the driver's, for this long, wants a
+        /// driver. Shorter than this is the engine shuffling him across from the passenger
+        /// door, and a brother sent for the wheel then would arrive to find it taken.
+        /// </summary>
+        public const int WantsDriverMs = 1500;
+
         public CompanionController(ModConfig config)
         {
             _config = config;
@@ -146,6 +165,148 @@ namespace Bloodlines.Crew
                     if (request.Vehicle.Handle == vehicle.Handle && vehicle.IsSeatFree(request.Seat)) return true;
                 return false;
             };
+            // An ordered driver holds the vehicle still when told to, and while the player
+            // is out of it beside it. A convoy driver has no order and is never held.
+            Driver.HoldStill = (slot, vehicle) =>
+            {
+                var order = OrderOf(slot);
+                if (order == CrewOrder.PullOver || order == CrewOrder.GetOut || order == CrewOrder.HoldHere) return true;
+                bool leaderAboard = _leader != null && _leader.Exists() && _leader.IsInVehicle(vehicle);
+                if (order != CrewOrder.None && order != CrewOrder.DriveToWaypoint && !leaderAboard) return true;
+                return LeaderStepping(vehicle, _leader);
+            };
+        }
+
+        /// <summary>The standing order this brother is on, if any.</summary>
+        public CrewOrder OrderOf(CrewSlot slot) => _orders.TryGetValue(slot, out var order) ? order : CrewOrder.None;
+        /// <summary>The vehicle a vehicle order is about.</summary>
+        public Vehicle OrderVehicle(CrewSlot slot) => _orderVehicles.TryGetValue(slot, out var vehicle) && vehicle != null && vehicle.Exists() ? vehicle : null;
+        public bool HasOrders => _orders.Count > 0;
+
+        /// <summary>
+        /// Give a brother an order. Every order is also an invitation - a man told to do
+        /// something is with you - so the two that change the hangout are applied here and
+        /// clear, and the rest stand until they are satisfied or replaced. Refused inside
+        /// a mission, a hold, a required shared ride or while a script owns him, the same
+        /// gates a phone hangout has.
+        /// </summary>
+        public bool Order(CrewSlot slot, CrewOrder order, Vehicle subject)
+        {
+            if (order == CrewOrder.None) { ClearOrder(slot); return true; }
+            if (MissionActive || HoldPosition || RequireSharedVehicle || _scripted.Contains(slot)) return false;
+            if (CrewOrders.AboutVehicle(order) && (subject == null || !subject.Exists())) return false;
+            if (order == CrewOrder.OwnThing) { ClearOrder(slot); return SetHangout(slot, false); }
+            if (!SetHangout(slot, true)) return false;
+            if (order == CrewOrder.FollowMe) { ClearOrder(slot); return true; }
+            _orders[slot] = order;
+            if (CrewOrders.AboutVehicle(order)) _orderVehicles[slot] = subject; else _orderVehicles.Remove(slot);
+            _boarding.Remove(slot);
+            if (!CrewOrders.HoldsWheel(order)) Driver.Forget(slot);
+            Convoy.Forget(slot);
+            Refresh(slot);
+            Logger.Info(Protagonist.Of(slot).Handle + " ordered: " + CrewOrders.Label(order));
+            return true;
+        }
+        public void ClearOrder(CrewSlot slot) { _orders.Remove(slot); _orderVehicles.Remove(slot); }
+        public void ClearOrders() { _orders.Clear(); _orderVehicles.Clear(); }
+
+        /// <summary>
+        /// The player is on foot beside a vehicle he was just in: changing seats, not leaving.
+        /// It has to be the vehicle he was last seen in; a player walking up to a brother's
+        /// car for a reunion was never in it, and the driver gets out to meet him as before.
+        /// </summary>
+        private bool LeaderStepping(Vehicle vehicle, Ped leader)
+        {
+            if (vehicle == null || !vehicle.Exists() || leader == null || !leader.Exists() || leader.IsInVehicle()) return false;
+            if (vehicle.Handle != _leaderLastVehicle) return false;
+            if (_leaderAfootSince == 0 || Game.GameTime - _leaderAfootSince > SeatShuffleMs) return false;
+            return vehicle.Position.DistanceTo(leader.Position) <= SeatShuffleMeters;
+        }
+
+        /// <summary>The player has settled into a seat that is not the driver's.</summary>
+        private bool LeaderWantsDriver(Vehicle vehicle, Ped leader)
+        {
+            if (vehicle == null || !vehicle.Exists() || leader == null || !leader.Exists() || !leader.IsInVehicle(vehicle)) return false;
+            if (vehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == leader.Handle) return false;
+            return _leaderRidingSince != 0 && Game.GameTime - _leaderRidingSince >= WantsDriverMs;
+        }
+
+        /// <summary>The vehicle a boarding is about: the ordered one, else the player's.</summary>
+        private Vehicle TargetVehicle(CrewSlot slot, Ped leader)
+        {
+            if (CrewOrders.AboutVehicle(OrderOf(slot)))
+            {
+                var ordered = OrderVehicle(slot);
+                if (ordered != null) return ordered;
+            }
+            return leader?.CurrentVehicle;
+        }
+
+        /// <summary>
+        /// What a standing order says he should be doing this tick, or null when the order
+        /// has nothing to add and the ordinary decision applies. Orders that are satisfied
+        /// clear themselves here.
+        /// </summary>
+        private CompanionState? DecideOrdered(CrewSlot slot, Ped companion, Ped leader)
+        {
+            var order = OrderOf(slot);
+            if (order == CrewOrder.None || MissionActive) return null;
+            var vehicle = OrderVehicle(slot);
+            if (CrewOrders.AboutVehicle(order) && (vehicle == null || !vehicle.IsDriveable)) { ClearOrder(slot); return null; }
+            bool aboard = vehicle != null && companion.IsInVehicle(vehicle);
+            bool driving = aboard && vehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle;
+            bool leaderAboard = vehicle != null && leader != null && leader.Exists() && leader.IsInVehicle(vehicle);
+            var ride = companion.CurrentVehicle;
+            bool safeToLeave = ride != null && ride.Exists() && !ride.IsInAir && ride.HeightAboveGround < 3f && ride.Speed < 2f;
+            bool rideDriver = ride != null && ride.Exists() && ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle;
+            switch (order)
+            {
+                case CrewOrder.HoldHere:
+                    if (companion.IsInVehicle())
+                    {
+                        // Stop first if he is driving, then get out; a passenger waits for the stop.
+                        if (safeToLeave) return CompanionState.Disembarking;
+                        if (rideDriver) { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                        return CompanionState.Vehicle;
+                    }
+                    return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Hold;
+                case CrewOrder.GetOut:
+                    if (!aboard) { _orders[slot] = CrewOrder.HoldHere; _orderVehicles.Remove(slot); return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Hold; }
+                    if (safeToLeave) return CompanionState.Disembarking;
+                    if (driving) { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                    return CompanionState.Vehicle;
+                case CrewOrder.GetIn:
+                    if (aboard)
+                    {
+                        // With the player aboard too the ordinary shared-ride rules take over.
+                        if (leaderAboard) { ClearOrder(slot); return null; }
+                        return FindThreat(slot, companion, leader) != null && !driving ? CompanionState.Combat : CompanionState.Vehicle;
+                    }
+                    if (HasSeatFor(slot, vehicle, companion, leader)) return CompanionState.Vehicle;
+                    ClearOrder(slot); return null;
+                case CrewOrder.ManTheGun:
+                    if (aboard && CrewOrders.IsTurretSeat(vehicle, companion.SeatIndex))
+                    {
+                        if (leaderAboard) { ClearOrder(slot); return null; }
+                        return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Vehicle;
+                    }
+                    // In the wrong seat: out at the next safe moment and round to the gun.
+                    if (aboard) return safeToLeave ? CompanionState.Disembarking : CompanionState.Vehicle;
+                    if (CrewOrders.FreeTurretSeat(vehicle) != VehicleSeat.None) return CompanionState.Vehicle;
+                    ClearOrder(slot); return null;
+                case CrewOrder.TakeTheWheel:
+                case CrewOrder.DriveToWaypoint:
+                case CrewOrder.PullOver:
+                    if (driving) { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                    if (aboard) return safeToLeave ? CompanionState.Disembarking : CompanionState.Vehicle;
+                    if (vehicle.IsSeatFree(VehicleSeat.Driver)) return CompanionState.Vehicle;
+                    // Somebody has the wheel. The player taking it back ends the order; anyone
+                    // else, and the order stands until the seat opens.
+                    var holder = vehicle.GetPedOnSeat(VehicleSeat.Driver);
+                    if (holder != null && leader != null && holder.Handle == leader.Handle) { ClearOrder(slot); return null; }
+                    return CompanionState.Follow;
+            }
+            return null;
         }
 
         /// <summary>Companions hold position instead of following (split-approach missions).</summary>
@@ -173,6 +334,7 @@ namespace Bloodlines.Crew
             Presence.Release(slot);
             Driver.Forget(slot);
             Convoy.Forget(slot);
+            ClearOrder(slot);
             _scripted.Add(slot);
             SetState(slot, CompanionState.Scripted);
         }
@@ -188,6 +350,7 @@ namespace Bloodlines.Crew
         {
             _scripted.Clear();
             Presence.Clear();
+            ClearOrders();
             Driver.Clear();
             Convoy.Clear();
             RequireSharedVehicle = false;
@@ -196,6 +359,17 @@ namespace Bloodlines.Crew
         public void Update(CrewSlot slot, Ped companion, Ped leader)
         {
             if (companion == null || !companion.Exists()) return;
+            if (leader != null && leader.Exists())
+            {
+                // Two clocks on the player: how long he has been on foot, and how long he
+                // has been riding in a seat that is not the driver's.
+                if (_leader == null || !_leader.Exists() || _leader.Handle != leader.Handle) { _leaderAfootSince = 0; _leaderRidingSince = 0; _leaderLastVehicle = 0; }
+                _leader = leader;
+                if (leader.IsInVehicle()) { _leaderAfootSince = 0; _leaderLastVehicle = leader.CurrentVehicle.Handle; }
+                else if (_leaderAfootSince == 0) _leaderAfootSince = Game.GameTime;
+                bool riding = leader.IsInVehicle() && leader.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle != leader.Handle;
+                if (!riding) _leaderRidingSince = 0; else if (_leaderRidingSince == 0) _leaderRidingSince = Game.GameTime;
+            }
 
             // Stop an already-running native combat task if its victim became the
             // player or another crew member after a switch/respawn.
@@ -281,6 +455,8 @@ namespace Bloodlines.Crew
             // Separate approach actors must not board the leader's car or abandon
             // their assignment because another character starts a fight.
             if (HoldPosition) return CompanionState.Hold;
+            var ordered = DecideOrdered(slot, companion, leader);
+            if (ordered.HasValue) return ordered.Value;
             // An individually dismissed or separate-car companion leaves only after a safe stop.
             // Normal independent companions still keep an existing shared ride.
             if (!MissionActive && !RequireSharedVehicle && ((_hangouts.TryGetValue(slot, out var hanging) && !hanging) ||
@@ -296,6 +472,14 @@ namespace Bloodlines.Crew
             if (leader != null && leader.Exists() && leader.IsInVehicle() && companion.IsInVehicle(leader.CurrentVehicle))
             {
                 if (leader.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
+                { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
+                return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Vehicle;
+            }
+            // The player out of the vehicle and still beside it is changing seats, not
+            // leaving. Nobody gets out; the driver holds still (Driver.HoldStill).
+            if (!MissionActive && companion.IsInVehicle() && LeaderStepping(companion.CurrentVehicle, leader))
+            {
+                if (companion.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle)
                 { if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion); return CompanionState.Driving; }
                 return FindThreat(slot, companion, leader) != null ? CompanionState.Combat : CompanionState.Vehicle;
             }
@@ -316,7 +500,7 @@ namespace Bloodlines.Crew
                 return CompanionState.Combat;
             if (!MissionActive && IsHangingOut(slot) && !RequireSharedVehicle && !companion.IsInVehicle() &&
                 leader != null && leader.Exists() && leader.IsInVehicle() &&
-                (!RidesAlong(slot) || !HasSeatFor(slot, leader.CurrentVehicle, companion))) return CompanionState.Convoy;
+                (!RidesAlong(slot) || !HasSeatFor(slot, leader.CurrentVehicle, companion, leader))) return CompanionState.Convoy;
             if (!MissionActive && !RequireSharedVehicle && IsHangingOut(slot) && leader != null && leader.Exists())
             {
                 if (StateOf(slot) == CompanionState.Disembarking && companion.IsInVehicle() && StateAge(slot) < 15000) return CompanionState.Disembarking;
@@ -325,7 +509,8 @@ namespace Bloodlines.Crew
                 {
                     bool canLeave = (vehicle.Model.IsCar || vehicle.Model.IsBike || vehicle.Model.IsHelicopter) &&
                         !vehicle.IsInAir && vehicle.HeightAboveGround < 3f && vehicle.Speed < 2f;
-                    if (!leader.IsInVehicle() && canLeave && companion.Position.DistanceTo(leader.Position) < 65f)
+                    if (!leader.IsInVehicle() && canLeave && companion.Position.DistanceTo(leader.Position) < 65f &&
+                        !LeaderStepping(vehicle, leader) && !CrewOrders.HoldsWheel(OrderOf(slot)))
                     { Driver.Forget(slot); return CompanionState.Disembarking; }
                     if (!Driver.Owns(slot, companion)) Driver.Arm(slot, companion);
                     return CompanionState.Driving;
@@ -341,7 +526,7 @@ namespace Bloodlines.Crew
             if (leader != null && leader.Exists() && leader.IsInVehicle())
             {
                 var vehicle = leader.CurrentVehicle;
-                if (vehicle != null && vehicle.Exists() && HasSeatFor(slot, vehicle, companion)) return CompanionState.Vehicle;
+                if (vehicle != null && vehicle.Exists() && HasSeatFor(slot, vehicle, companion, leader)) return CompanionState.Vehicle;
             }
 
             if (FindThreat(slot, companion, leader) != null) return CompanionState.Combat;
@@ -469,9 +654,9 @@ namespace Bloodlines.Crew
 
         private void BoardVehicle(CrewSlot slot, Ped companion, Ped leader)
         {
-            var vehicle = leader?.CurrentVehicle;
+            var vehicle = TargetVehicle(slot, leader);
             if (vehicle == null || !vehicle.Exists() || companion.IsInVehicle(vehicle)) return;
-            var seat = FreeSeat(slot, vehicle, companion);
+            var seat = FreeSeat(slot, vehicle, companion, leader);
             if (seat == VehicleSeat.None) return;
             _boarding[slot] = new Boarding { Vehicle = vehicle, Seat = seat };
             _stateSince[slot] = Game.GameTime;
@@ -491,7 +676,7 @@ namespace Bloodlines.Crew
 
         private void MaintainVehicle(CrewSlot slot, Ped companion, Ped leader)
         {
-            var vehicle = leader?.CurrentVehicle;
+            var vehicle = TargetVehicle(slot, leader);
             if (vehicle == null || !vehicle.Exists()) return;
             if (companion.IsInVehicle(vehicle)) { _boarding.Remove(slot); return; }
             if (!_boarding.TryGetValue(slot, out var request) || request.Vehicle.Handle != vehicle.Handle ||
@@ -547,24 +732,43 @@ namespace Bloodlines.Crew
             companion.Heading = leader.Heading;
         }
 
-        private bool HasSeatFor(CrewSlot slot, Vehicle vehicle, Ped companion)
+        private bool HasSeatFor(CrewSlot slot, Vehicle vehicle, Ped companion, Ped leader)
         {
-            return companion.IsInVehicle(vehicle) || FreeSeat(slot, vehicle, companion) != VehicleSeat.None;
+            return companion.IsInVehicle(vehicle) || FreeSeat(slot, vehicle, companion, leader) != VehicleSeat.None;
         }
 
-        private VehicleSeat FreeSeat(CrewSlot slot, Vehicle vehicle, Ped companion)
+        private bool Reserved(CrewSlot slot, Vehicle vehicle, VehicleSeat seat)
         {
+            foreach (var pair in _boarding)
+                if (pair.Key != slot && pair.Value.Vehicle.Handle == vehicle.Handle && pair.Value.Seat == seat)
+                    return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Which seat a boarding brother takes. It used to be the lowest free index, which
+        /// is never the driver's seat (index minus one) and always the turret last (the
+        /// highest): Ron's gunner seat stayed empty while two brothers sat in the cab. Now:
+        /// the seat his order names, or nothing; the wheel when the player has settled into
+        /// another seat; then a turret before a plain passenger seat, because a gun in the
+        /// bed is for using; then the rest by index.
+        /// </summary>
+        private VehicleSeat FreeSeat(CrewSlot slot, Vehicle vehicle, Ped companion, Ped leader)
+        {
+            var order = OrderOf(slot);
+            var named = CrewOrders.HoldsWheel(order) ? VehicleSeat.Driver
+                      : order == CrewOrder.ManTheGun ? CrewOrders.FreeTurretSeat(vehicle) : VehicleSeat.None;
+            if (named != VehicleSeat.None) return vehicle.IsSeatFree(named) && !Reserved(slot, vehicle, named) ? named : VehicleSeat.None;
+            if (LeaderWantsDriver(vehicle, leader) && vehicle.IsSeatFree(VehicleSeat.Driver) && !Reserved(slot, vehicle, VehicleSeat.Driver))
+                return VehicleSeat.Driver;
             int capacity = Function.Call<int>(Hash.GET_VEHICLE_MAX_NUMBER_OF_PASSENGERS, vehicle);
-            for (int i = 0; i < capacity; i++)
-            {
-                var seat = (VehicleSeat)i;
-                if (!vehicle.IsSeatFree(seat)) continue;
-                bool reserved = false;
-                foreach (var pair in _boarding)
-                    if (pair.Key != slot && pair.Value.Vehicle.Handle == vehicle.Handle && pair.Value.Seat == seat)
-                        reserved = true;
-                if (!reserved) return seat;
-            }
+            for (int pass = 0; pass < 2; pass++)
+                for (int i = 0; i < capacity; i++)
+                {
+                    var seat = (VehicleSeat)i;
+                    if (!vehicle.IsSeatFree(seat) || Reserved(slot, vehicle, seat)) continue;
+                    if (CrewOrders.IsTurretSeat(vehicle, seat) == (pass == 0)) return seat;
+                }
             return VehicleSeat.None;
         }
 

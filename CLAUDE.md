@@ -1319,3 +1319,43 @@ Silhouettes are one per catalog class (`VehicleSpecs.ArtFor`), never one per mod
 **A card is cued when gameplay begins, not over the briefing.** `MissionManager.Started`
 fires from `BeginGameplay`, after the scene, and the presentation caps a frame at a quarter
 second - a test that jumps five seconds in one frame has skipped nothing.
+
+## Crew orders, and the two seat rules behind Ron's truck
+
+See `docs/CREW-ORDERS-2026-09-17.md`. Ron got into a truck's driver's seat and both brothers
+took the cab, never the gun; he switched into the gun seat and the driver got out. Neither
+was a missing feature:
+
+**The seat picker took the lowest free index.** The driver's seat is index minus one and
+was never in the loop, so no brother could take the wheel of the player's vehicle; the
+turret is the highest index and was always the last seat filled. `FreeSeat` now takes the
+seat an order names or nothing, then the wheel when the player has settled into another
+seat (`WantsDriverMs`, because shorter is the engine shuffling him across), then a turret
+before a plain seat, then the rest. `IS_TURRET_SEAT` says which seats are guns; never a
+seat number.
+
+**A player on foot beside the vehicle he was just in is changing seats, not leaving.** The
+driver used to get out the moment the player's feet touched the ground. For `SeatShuffleMs`
+within `SeatShuffleMeters` of the vehicle he was last seen in, the driver holds still
+(`CompanionDriver.HoldStill`) and passengers keep their seats. It has to be the vehicle he
+was last in: a player walking up to a brother's car for a reunion was never in it, and the
+first version of this grace broke that test.
+
+**An order is a standing thing in the controller, and every order is an invitation.**
+`CompanionController.Order` stores it; `DecideOrdered` answers it first, before the
+hangout rules, and clears it when it is satisfied. It is refused by the same gates a phone
+hangout is - a mission, a hold, a required shared ride, a script that owns him - and a
+mission starting clears every order. `Core/CrewOrderStrip` is only the hold-pick-release
+gesture and the echo; it decides nothing about what an order means, and asks
+`CrewOrders.Available` every frame because the answer changes as he moves.
+
+**The pad opens it on a hold of d-pad left, past a tap.** That is the radio wheel's button
+in a vehicle; the hold threshold is what keeps a tap for the game, and the control is
+disabled only once the strip is up. The keyboard path runs through key-down and key-up,
+and while the key is held the pad path stays out of it, or releasing nothing would send.
+
+**A blimp interior has no door.** M55's penthouses are the apartments the game shows through
+the windows from the air; Ron finished the job and could not leave. Each brother's arrival
+point is his service elevator, and the street under a tower is found at runtime
+(`StreetBelow`), because nobody knows which side of it the sidewalk is on. Every suite has
+security now, not only Ice's.

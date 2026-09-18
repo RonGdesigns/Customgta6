@@ -69,6 +69,12 @@ Blocked frames (a scene, the phone, the death handler) hold it rather than burni
 4 (a crew strip) and 6 (dispatch toasts) are in `docs/ACT3-AUDIT-2026-09-17.md`'s proposal
 and were not chosen this pass.
 
+## Later the same day
+
+Ron's first look at the HUD: too big, taking up too much of the screen, the information
+solid. Every size in it is about two thirds of the first pass now (400 wide, text .18 to
+.24); see `docs/CREW-ORDERS-2026-09-17.md`.
+
 ## Live questions
 
 Nobody has seen any of this on a screen. The HUD's panel height is computed from its lines;
