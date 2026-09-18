@@ -1359,3 +1359,51 @@ the windows from the air; Ron finished the job and could not leave. Each brother
 point is his service elevator, and the street under a tower is found at runtime
 (`StreetBelow`), because nobody knows which side of it the sidewalk is on. Every suite has
 security now, not only Ice's.
+
+## SM03's sprint: a measured loop, and rivals who were obeying a slow order
+
+See `docs/SM03-SPRINT-2026-09-17.md`. Ron reported the race looped instead of running at the
+mountain, and that the rivals were no challenge. Both were true and both had causes that were
+not the obvious ones.
+
+**A route complaint is measurable, so measure it before redesigning.** 278 gates covered
+18.97 km to travel 7.27 km of straight line; 69 of them moved away from the finish; the run
+entered the Mount Chiliad zone four separate times with a Braddock Tunnel round trip in
+between, and the climb was the last 8% of the list. That is the loop, in numbers, and the
+same numbers say when it is gone: 34 gates, 12.00 km, not one gate further from the finish
+than the gate before it.
+
+**The corridor was cut out of the data that was already there.** Every one of those 278 keys
+was a real road position off the offline graph, so the direct route is the shortest chain
+through that same set: join any pair within a shortcut radius, refuse a join whose grade
+would be a cliff, take the shortest path. Where the old route passed near itself the
+shortcut exists and the loop is cut. Nothing was authored that was not already in the file,
+and 244 estimate keys left the survey backlog with it (1,091 keys to 847).
+
+**A race route is seeds plus runtime lanes, and a trail is not a lane.** `Core/RaceRoute` is
+M49's answer applied to a race: roads are baked terrain, so each drivable gate is snapped to
+the nearest vehicle node when the game is running. A **trail** gate is passed through
+untouched, because the nearest node to a point halfway up Chiliad is the road at the bottom
+of the mountain, and snapping there would not correct the climb, it would delete it. A node
+further from the finish than the gate before it is refused outright: a correction may not
+reintroduce the doubling back the route was rebuilt to remove. No node at all is a warning
+and the seed is used, the way `PlacementPreflight` only ever warns.
+
+**An AI driver that is not a challenge is usually obeying a slow order.** The rivals' ability
+was already `1.0`, the engine's maximum, so there was nothing to raise. They were commanded a
+flat 39 m/s on a route where the player's car runs to twice its stock redline, because
+`WorldTuning` lifts every ceiling in the world including theirs. The speed comes from the
+car's own `GET_VEHICLE_ESTIMATED_MAX_SPEED` now, they drive the player's model with the
+performance parts fitted, and aggressiveness is at 1.0.
+
+**`Core/RacePacing` is bounded rubber-banding, and it only writes the commanded speed.** A
+trailing rival is helped up to 1.35x, a runaway leader eases to 0.85x, both over a 400 m
+band, both logged. It never touches `SET_VEHICLE_CHEAT_POWER_INCREASE` or the entity speed
+cap: `WorldTuning` owns those per car, a second writer on them is the double-ownership bug
+this project keeps finding, and it is not needed because a car whose ceiling is already
+doubled can reach any speed this asks for. A story test measures the distance between the two
+in the source.
+
+**A source assertion must not depend on line endings.** A check written the day before
+matched a literal `\n` inside a source file, so it passed in one worktree and failed in the
+next. Strip the endings, or match with a pattern.

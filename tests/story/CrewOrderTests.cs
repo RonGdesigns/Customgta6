@@ -97,7 +97,11 @@ public static partial class StoryTests
             "Every penthouse has security: the authored four for Ice, three each for the other two");
         Check(m55.Contains("() => _terminalGuards) { RequiredCharacter = CrewSlot.Gohan }") && m55.Contains("() => _vaultGuards) { RequiredCharacter = CrewSlot.Guess }"),
             "and each brother is asked to put his own down");
-        Check(m55.Split(new[] { "take the service elevator down" }, StringSplitOptions.None).Length == 4 && m55.Contains(".AnyOf()\n                .OnExit(c => Descend());"),
+        // Matched with the line endings taken out: a source assertion that depends on
+        // CRLF against LF passes in one checkout and fails in the next, which it did.
+        string m55Flat = m55.Replace("\r", "").Replace("\n", " ");
+        Check(m55.Split(new[] { "take the service elevator down" }, StringSplitOptions.None).Length == 4 &&
+              System.Text.RegularExpressions.Regex.IsMatch(m55Flat, @"\.AnyOf\(\)\s*\.OnExit\(c => Descend\(\)\);"),
             "Each brother has a service elevator at his arrival point; the first one taken puts everybody on the street");
         Check(!m55.Contains("Script.Wait("), "The descent waits on nothing inside a tick");
         World.SafeCoordHandler = p => new Vector3(p.X + 12f, p.Y - 3f, 31.2f);

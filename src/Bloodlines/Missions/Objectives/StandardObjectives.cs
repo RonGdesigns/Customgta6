@@ -589,6 +589,11 @@ namespace Bloodlines.Missions.Objectives
         private int _index;
         private int _lap = 1;
 
+        /// <summary>The gate the player is driving at. Read so a mission can pace opponents against him.</summary>
+        public int NextCheckpoint => _index;
+        /// <summary>How many gates the route has.</summary>
+        public int CheckpointCount => _checkpoints.Count;
+
         private readonly Func<Vehicle> _vehicle;
         public RaceCheckpointObjective(string label, IList<Vector3> checkpoints, float radius = 12f, int laps = 1, Func<Vehicle> vehicle = null)
             : base(label)
