@@ -34,9 +34,15 @@ namespace Bloodlines.Missions.Campaign
     /// nothing to raise. What made them slow was the order: a flat 39 m/s, about 87 mph, while
     /// the player's car runs to twice its stock redline because <see cref="WorldTuning"/> lifts
     /// every ceiling in the world, theirs included. They were obeying a slow instruction in a
-    /// fixed Elegy while Ron arrived in whatever he had built. They drive **his model** now,
-    /// with the performance parts fitted, at a speed taken from the car's own capability, with
-    /// the bounded correction in <see cref="RacePacing"/> keeping the race close at both ends.
+    /// fixed Elegy while Ron arrived in whatever he had built. They drive at a speed taken from
+    /// their own car's capability now, with the performance parts fitted and the bounded
+    /// correction in <see cref="RacePacing"/> keeping the race close at both ends.
+    ///
+    /// **They drive KJ's cars, never the player's.** The first pass at this matched the grid by
+    /// handing both rivals the player's own model, and Ron said no: "I definitely don't want
+    /// them to have my car." <see cref="RivalGrid"/> is KJ's own roster, and he fields the two
+    /// whose model top speed sits closest to whatever the player turned up in, with that model
+    /// excluded so a coincidence cannot put them in it either.
     ///
     /// **The gates on the mountain are not snapped to a road.** <see cref="RaceRoute"/> puts
     /// every drivable gate onto the nearest real lane at runtime, which is the M49 answer to
@@ -62,6 +68,7 @@ namespace Bloodlines.Missions.Campaign
         private readonly float[] _commanded = new float[2];
         private readonly Vector3[] _last = new Vector3[2];
         private Ped _kj;
+        private List<string> _grid=new List<string>();
         private Vehicle _coupe;
         private Vector3 _start;
         private RaceRoute.Route _route;
@@ -77,6 +84,8 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>The route the sprint is actually run on, once it has been built.</summary>
         public RaceRoute.Route Route => _route;
         public IReadOnlyList<Vehicle> RivalCars => _rivalCars;
+        /// <summary>Which of KJ's cars this attempt put on the grid.</summary>
+        public IReadOnlyList<string> Grid => _grid;
         /// <summary>What each rival was last told to drive at, for the doctor and the tests.</summary>
         public float CommandedSpeed(int rival) => rival >= 0 && rival < _commanded.Length ? _commanded[rival] : 0f;
 
@@ -112,7 +121,7 @@ namespace Bloodlines.Missions.Campaign
             Game.Player.Character.SetIntoVehicle(_coupe,VehicleSeat.Driver);
             SpawnGrid();
             if(_kj==null||!_kj.Exists()||_rivals.Count!=2)return false;
-            Radio("KJ","Your car, your setup, and I put the boys in the same thing so nobody argues after. North out of the city, then the Chiliad trail to the top. First one up takes twenty-five grand and the transmission deal.","SM03_SPRINT_KJ");
+            Radio("KJ","Your car, your setup. I put the boys in whatever of mine can live with it, so don't come crying either way. North out of the city, then the Chiliad trail to the top. First one up takes twenty-five grand and the transmission deal.","SM03_SPRINT_KJ");
             return true;
         }
         protected override IEnumerable<MissionStage> BuildStages()
@@ -135,14 +144,18 @@ namespace Bloodlines.Missions.Campaign
         private void SpawnGrid()
         {
             var kjModel=new Model("a_m_y_stbla_02");var rivalModel=new Model("g_m_y_salvaboss_01");
-            var carModel=_coupe.Model;
-            if(!GameUtils.RequestModel(carModel)){carModel=new Model("elegy2");Logger.Warn(Id+": the player's model would not load for the rivals; using the stock Elegy grid.");}
-            if(!GameUtils.RequestModel(kjModel)||!GameUtils.RequestModel(rivalModel)||!GameUtils.RequestModel(carModel))return;
+            // KJ's own cars, the two closest in capability to the one the player brought, and
+            // never the one he brought. A roster entry that will not stream is skipped rather
+            // than substituted, because the next one down the list is already a near match.
+            _grid=RivalGrid.For(2,_coupe.Model);
+            if(!GameUtils.RequestModel(kjModel)||!GameUtils.RequestModel(rivalModel))return;
             var side=new Vector3(_coupe.ForwardVector.Y,-_coupe.ForwardVector.X,0f);
             _kj=Track(World.CreatePed(kjModel,_start+side*6f, _coupe.Heading+90f));
             if(_kj!=null&&_kj.Exists()){_kj.IsPersistent=true;_kj.IsInvincible=true;_kj.BlockPermanentEvents=true;_kj.RelationshipGroup=Ctx.Crew.CrewGroup;_kj.Task.StandStill(-1);}
             for(int i=0;i<2;i++)
             {
+                Model carModel;
+                if(!RivalCar(i,out carModel))continue;
                 var point=MissionPlacement.Position(Ctx.Locations,"SM03.RivalGrid"+(i+1),_start-_coupe.ForwardVector*(7f+i*6f));
                 var car=Track(World.CreateVehicle(carModel,point,_coupe.Heading));var driver=Track(World.CreatePed(rivalModel,point,_coupe.Heading));
                 if(car==null||!car.Exists()||driver==null||!driver.Exists())continue;
@@ -155,7 +168,31 @@ namespace Bloodlines.Missions.Campaign
                 Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES,driver,2,false);
                 _rivalCars.Add(car);_rivals.Add(driver);var blip=Track(car.AddBlip());blip.Color=BlipColor.Red;blip.Name="Sprint rival "+(i+1);
             }
-            kjModel.MarkAsNoLongerNeeded();rivalModel.MarkAsNoLongerNeeded();carModel.MarkAsNoLongerNeeded();
+            kjModel.MarkAsNoLongerNeeded();rivalModel.MarkAsNoLongerNeeded();
+            foreach(var name in _grid){var spent=new Model(name);spent.MarkAsNoLongerNeeded();}
+        }
+
+        /// <summary>
+        /// The model for rival <paramref name="i"/>, streamed. Walks down KJ's shortlist from
+        /// that position, so a car that will not load costs the grid its first choice and not
+        /// a car: the next entry is the next closest match by construction.
+        /// </summary>
+        private bool RivalCar(int i,out Model chosen)
+        {
+            for(int at=i;at<_grid.Count;at++)
+            {
+                chosen=new Model(_grid[at]);
+                if(GameUtils.RequestModel(chosen))return true;
+                Logger.Warn(Id+": "+_grid[at]+" would not stream for the grid; trying the next of KJ's cars.");
+            }
+            foreach(var name in RivalGrid.Roster)
+            {
+                chosen=new Model(name);
+                if(GameUtils.RequestModel(chosen))return true;
+            }
+            Logger.Error(Id+": none of KJ's cars would stream.");
+            chosen=new Model("elegy2");
+            return false;
         }
 
         /// <summary>

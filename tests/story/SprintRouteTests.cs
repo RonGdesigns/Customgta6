@@ -120,8 +120,14 @@ public static partial class StoryTests
         Check(sprint.Begin(context), "The sprint starts on an owned car");
         Check(sprint.Route != null && sprint.Route.IsUsable, "and builds its route at runtime rather than reading one list of gates");
         Check(sprint.RivalCars.Count == 2, "Two rivals are on the grid");
-        Check(sprint.RivalCars.All(r => r.Model.Hash == car.Model.Hash),
-            "and they drive the player's own model, so a built car is not racing two stock ones");
+        // Ron's correction: a fair grid, never his car. This is the check that refuses the
+        // first version of it, which handed both rivals the model he turned up in.
+        Check(sprint.RivalCars.All(r => r.Model.Hash != car.Model.Hash),
+            "and not one of them is in the player's own car, whatever the matching says");
+        Check(sprint.RivalCars.Select(r => r.Model.Hash).Distinct().Count() == sprint.RivalCars.Count,
+            "The two of them are two different cars rather than a mirrored pair");
+        Check(sprint.Grid.Count == 2 && sprint.Grid.All(m => RivalGrid.Roster.Contains(m)),
+            "Both come off KJ's own roster");
         Check(context.Doctor.Lines(40).Any(l => l.Contains("gates") && l.Contains("real lane")),
             "The doctor carries how much of the route landed on a real lane, so a bad run says so in the log");
 
@@ -146,6 +152,8 @@ public static partial class StoryTests
         // ---- The old flat order and the old prefix must not survive anywhere.
         string source = File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Campaign", "Solo", "SM03MidnightDrift.cs"));
         Check(!source.Contains("SM03.Sprint"), "The mission no longer reads the wandering gate prefix");
+        Check(source.Contains("RivalGrid.For(2,_coupe.Model)") && !source.Contains("var carModel=_coupe.Model;"),
+            "The grid is picked from KJ's roster against the player's car rather than cloned from it");
         Check(!source.Contains("target.Z>200f?20f:39f"), "and the flat two-speed order is gone");
         Check(source.Contains("SET_DRIVE_TASK_CRUISE_SPEED"),
             "The pace is trimmed through the cruise speed, so a rival is not re-tasked every review and made to hesitate");
