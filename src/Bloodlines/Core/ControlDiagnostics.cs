@@ -36,6 +36,7 @@ namespace Bloodlines.Core
                 line += " gate=" + (gate != null && gate.IsWaiting ? "waiting" : "open");
                 if (crew != null && crew.IsDeployed) line += " companion=" + crew.CompanionAI.StateOf(crew.ActiveSlot);
                 line += " scene=" + (scenes != null ? (scenes.IsActive ? "active" : scenes.LastOutcome.ToString()) : "none");
+                if (scenes != null) line += " camera=" + scenes.CameraReport();
                 if (homes != null) line += " apartment=" + (homes.Apartment.Busy ? "busy" : homes.Apartment.Inside ? "inside" : "no");
                 line += " collision=" + Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, player);
                 return Log(line);

@@ -68,13 +68,19 @@ namespace Bloodlines.Core
         public sealed class Choice
         {
             public readonly string Model,Name; public readonly int Price;
-            public Choice(string model,string name,int price){Model=model;Name=name;Price=price;}
+            /// <summary>Armored or weaponized: the crew car that takes fire, or returns it.</summary>
+            public readonly bool Hardened;
+            public Choice(string model,string name,int price,bool hardened=false){Model=model;Name=name;Price=price;Hardened=hardened;}
         }
+        // Ron, September 22: the armored and weaponized crew cars should cost more. They sat
+        // at the dealer's price for the same model, so the fleet's hardened cars were no
+        // dearer than buying one for yourself; they carry about a third on top now. The
+        // plain cars are unchanged.
         public static readonly Choice[] FleetChoices={
             new Choice("granger","Granger",0),new Choice("baller2","Baller",40000),
-            new Choice("schafter2","Schafter",38000),new Choice("kuruma2","Armored Kuruma",80000),
-            new Choice("buffalo4","Buffalo STX",100000),new Choice("jubilee","Jubilee",90000),
-            new Choice("nightshark","Nightshark",110000),new Choice("insurgent2","Insurgent",120000)};
+            new Choice("schafter2","Schafter",38000),new Choice("kuruma2","Armored Kuruma",105000,true),
+            new Choice("buffalo4","Buffalo STX",130000,true),new Choice("jubilee","Jubilee",120000,true),
+            new Choice("nightshark","Nightshark",150000,true),new Choice("insurgent2","Insurgent",160000,true)};
         private static OwnedVehicle Clone(OwnedVehicle source)
         {
             var copy=new OwnedVehicle{PrimaryColor=source.PrimaryColor,SecondaryColor=source.SecondaryColor,Livery=source.Livery,

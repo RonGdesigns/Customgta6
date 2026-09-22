@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using Bloodlines.Core;
 using Bloodlines.Crew;
@@ -24,7 +25,15 @@ namespace Bloodlines.Abilities
     /// </summary>
     public sealed class ThermalPulse : Ability
     {
-        private const float ScanRadius = 60f;
+        /// <summary>How far every body is outlined, the crew's own and bystanders included.</summary>
+        public const float ScanRadius = 60f;
+        /// <summary>
+        /// How far a hostile is marked. Ice is the long gun: in M05 the generator crew is about
+        /// 270 m below his perch, and a sight that outlined nobody past 60 m was a sight he
+        /// could not use on that job (Ron, September 22). Beyond the scan radius only people
+        /// who want him dead are marked, so a city block does not turn into a field of cones.
+        /// </summary>
+        public const float SniperRadius = 300f;
 
         public override CrewSlot Slot => CrewSlot.Ice;
         public override string Name => "Thermal Pulse";
@@ -37,20 +46,25 @@ namespace Bloodlines.Abilities
 
         public override void Update(Ped player)
         {
-            foreach (var ped in World.GetNearbyPeds(player, ScanRadius))
+            foreach (var ped in World.GetNearbyPeds(player, SniperRadius))
             {
                 if (ped == null || !ped.Exists() || ped.IsDead) continue;
                 if (ped.Handle == player.Handle) continue;
 
                 bool hostile = ped.GetRelationshipWithPed(player) == Relationship.Hate;
+                float away = ped.Position.DistanceTo(player.Position);
+                if (!hostile && away > ScanRadius) continue;
+                // A marker the size of a hand is invisible at 270 m, scope or no scope. It
+                // grows with range so it reads at the same size on screen.
+                float size = 0.35f * Math.Max(1f, away / 40f);
 
                 // Chevron over every tracked body: red for hostile, cool gray for
                 // civilians, so a breach can be planned without shooting the crew.
                 World.DrawMarker(
                     MarkerType.UpsideDownCone,
-                    ped.Position + new Vector3(0f, 0f, 1.25f),
+                    ped.Position + new Vector3(0f, 0f, 0.9f + size),
                     Vector3.Zero, Vector3.Zero,
-                    new Vector3(0.35f, 0.35f, 0.35f),
+                    new Vector3(size, size, size),
                     hostile ? Color.FromArgb(190, 224, 74, 62) : Color.FromArgb(140, 150, 168, 186),
                     false, false, false, null, null, false);
             }

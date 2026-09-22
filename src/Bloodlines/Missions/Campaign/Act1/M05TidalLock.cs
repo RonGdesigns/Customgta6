@@ -55,6 +55,13 @@ namespace Bloodlines.Missions.Campaign
         private readonly Dictionary<MissionLocation, Vector3> _originalLocations = new Dictionary<MissionLocation, Vector3>();
         private bool _locationNoticeShown;
         public IReadOnlyList<string> UnverifiedLocations => _unverifiedLocations;
+        /// <summary>While Gohan takes Mateo aboard, Guess keeps the dinghy beside Mateo's boat.</summary>
+        private bool _holdingAlongside, _dinghyAnchored, _mateoAnchored;
+        private int _nextAlongsideOrder;
+        /// <summary>How close Guess brings the dinghy before he cuts the engine and drops anchor.</summary>
+        public const float AlongsideMeters = 12f;
+        public bool HoldingAlongside => _holdingAlongside;
+        public bool DinghyAnchored => _dinghyAnchored;
 
         public override string Id => "M05";
         public override string Title => "Tidal Lock";
@@ -188,7 +195,7 @@ namespace Bloodlines.Missions.Campaign
                     new KillTargetsObjective("Ice — take the generator crew off the cave mouth.",
                         () => _lightCrew))
                 .OwnedBy(CrewSlot.Ice)
-                .OnEnter(context => Say("M05_S1_01_ICE"));
+                .OnEnter(context => { Say("M05_S1_01_ICE"); ExplainThermal(); });
 
             yield return new MissionStage("Light the cove",
                     new BoatSignalFlare(() => _dinghy))
@@ -221,7 +228,11 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Take him aboard",
                     new MissionInteraction("Gohan: take Mateo aboard the stopped dinghy. Press E / D-pad Right", () => MateoPosition(), 2, 20f, () => _dinghy, stopVehicle: true))
                 .OwnedBy(CrewSlot.Gohan)
-                .OnExit(context => PlayAccount());
+                // Ron, September 22: a boat will not sit still in that sea, and the moment he
+                // switched to Gohan nobody was steering it. Mateo's boat is anchored, and
+                // Guess brings the dinghy alongside and anchors it while Gohan does the work.
+                .OnEnter(context => BeginAlongside())
+                .OnExit(context => { _holdingAlongside = false; PlayAccount(); });
 
             yield return new MissionStage("Mateo's account", new DialogueFinishedObjective("Hold the dinghy. Mateo is aboard."))
                 .AnyBrother()
@@ -233,10 +244,104 @@ namespace Bloodlines.Missions.Campaign
                     if (_mateo != null && _mateo.Exists() && _dinghy != null && _dinghy.Exists() && !_mateo.IsInVehicle(_dinghy)) _mateo.SetIntoVehicle(_dinghy, VehicleSeat.LeftRear);
                     /* Awarded once by CampaignState.MarkComplete after the mission passes. */
                     GameUtils.Subtitle("~y~Aegis built this. All of it. Mateo's word is a lead, not proof.", 6000);
+                    // The boats are his again to drive away in.
+                    WeighAnchors();
                 });
         }
 
         // ---------- beats ----------
+
+        /// <summary>
+        /// Ron, September 22: say what Ice's ability does here and how to use it. Thermal
+        /// Pulse is the see-through sight, and a storm at 03:30 over a beach under a cliff is
+        /// exactly where a marksman needs it.
+        /// </summary>
+        private void ExplainThermal()
+        {
+            foreach (string line in ThermalBriefing(Ctx.Config)) GameUtils.Notify(line);
+        }
+
+        /// <summary>What the player is told about Thermal Pulse on the cliff, with his own key in it.</summary>
+        public static string[] ThermalBriefing(ModConfig config)
+        {
+            string key = config != null ? KeyName(config.AbilityKey.ToString()) : "Caps Lock";
+            float seconds = config != null ? config.AbilityDuration : 8f;
+            return new[]
+            {
+                "~b~Ice's ability: Thermal Pulse.~s~ Heat vision through the rain and the dark, with a red marker over every armed man in range - the whole generator crew from this cliff.",
+                "~b~To use it:~s~ press " + key + ", or click both sticks (L3 + R3) on a controller. It runs about " +
+                    seconds.ToString("0") + " seconds, then refills; press again to turn it off early. Scope in with the rifle while it is on.",
+            };
+        }
+
+        /// <summary>A key as it is printed on the keyboard rather than as the enum spells it.</summary>
+        public static string KeyName(string key)
+        {
+            switch (key ?? "")
+            {
+                case "Capital": case "CapsLock": return "Caps Lock";
+                case "Oemtilde": case "Oem3": return "the tilde key";
+                case "Menu": case "LMenu": return "Alt";
+                case "": return "Caps Lock";
+                default: return key;
+            }
+        }
+
+        private void BeginAlongside()
+        {
+            _holdingAlongside = true;
+            _nextAlongsideOrder = 0;
+            SetAnchor(_mateoBoat, true, ref _mateoAnchored);
+        }
+
+        /// <summary>
+        /// Every frame while Mateo is being taken aboard: when the player is not at the wheel,
+        /// Guess closes to <see cref="AlongsideMeters"/> and anchors. A route to a boat that is
+        /// already anchored does not move, so he is given it again only on a slow refresh,
+        /// never every frame - that restarts the drive before he can make any way.
+        /// </summary>
+        private void KeepAlongside()
+        {
+            if (!_holdingAlongside || _dinghy == null || !_dinghy.Exists() || _mateoBoat == null || !_mateoBoat.Exists()) return;
+            var player = Game.Player.Character;
+            var driver = _dinghy.GetPedOnSeat(VehicleSeat.Driver);
+            if (driver == null || !driver.Exists() || driver.IsDead) return;
+            // The player at the wheel steers it himself, and an anchor would fight him.
+            if (player != null && driver.Handle == player.Handle) { SetAnchor(_dinghy, false, ref _dinghyAnchored); return; }
+            if (GameUtils.IsWithinFlat(_dinghy.Position, _mateoBoat.Position, AlongsideMeters))
+            {
+                if (_dinghyAnchored) return;
+                driver.Task.ClearAll();
+                Function.Call(Hash.SET_VEHICLE_FORWARD_SPEED, _dinghy, 0f);
+                SetAnchor(_dinghy, true, ref _dinghyAnchored);
+                Logger.Info("M05: Guess has the dinghy alongside Mateo's boat and anchored.");
+                return;
+            }
+            SetAnchor(_dinghy, false, ref _dinghyAnchored);
+            if (Game.GameTime < _nextAlongsideOrder) return;
+            _nextAlongsideOrder = Game.GameTime + 6000;
+            driver.Task.StartBoatMission(_dinghy, _mateoBoat.Position, VehicleMissionType.GoTo, 8f, (VehicleDrivingFlags)786603, AlongsideMeters - 4f, (BoatMissionFlags)7);
+        }
+
+        /// <summary>Drop or weigh a boat's anchor, remembering which so cleanup lifts only what this mission dropped.</summary>
+        private static void SetAnchor(Vehicle boat, bool down, ref bool anchored)
+        {
+            if (boat == null || !boat.Exists() || anchored == down) return;
+            try
+            {
+                if (down && !Function.Call<bool>(Hash.CAN_ANCHOR_BOAT_HERE, boat)) return;
+                Function.Call(Hash.SET_BOAT_ANCHOR, boat, down);
+                anchored = down;
+            }
+            catch (Exception ex) { Logger.Warn("M05 could not " + (down ? "anchor" : "weigh the anchor of") + " a boat: " + ex.Message); }
+        }
+
+        private void WeighAnchors()
+        {
+            _holdingAlongside = false;
+            SetAnchor(_dinghy, false, ref _dinghyAnchored);
+            SetAnchor(_mateoBoat, false, ref _mateoAnchored);
+        }
 
         /// <summary>The cove before anyone moves: from the perch, from the dinghy, his boat at the cave mouth.</summary>
         private void PlayShore()
@@ -301,7 +406,7 @@ namespace Bloodlines.Missions.Campaign
         {
 
             if(_weatherOwned&&Game.GameTime>=_weatherAt){Function.Call(Hash.SET_DEEP_OCEAN_SCALER,1.65f);_weatherAt=Game.GameTime+2000;}
-            if(!Ctx.Cutscenes.IsActive) MaintainChase();
+            if(!Ctx.Cutscenes.IsActive) { MaintainChase(); KeepAlongside(); }
             base.OnUpdate();
             _roles?.Update();
             ShowLocationNotice();
@@ -449,6 +554,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             if(_weatherOwned){Function.Call(Hash.SET_DEEP_OCEAN_SCALER,_previousSwell);World.Weather=_previousWeather;_weatherOwned=false;}
+            WeighAnchors();
             foreach (var pair in _originalLocations) pair.Key.Position = pair.Value;
             _originalLocations.Clear();
             _roles?.Release();

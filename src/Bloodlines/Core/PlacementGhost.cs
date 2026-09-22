@@ -56,6 +56,16 @@ namespace Bloodlines.Core
 
         public bool IsShowing => _entity != null && _entity.Exists();
         public Shape Current => _shape;
+        /// <summary>
+        /// Set while the stand-in is the real model of something being added to a mission,
+        /// rather than a shape. There the model is known, because the author just chose it,
+        /// so showing the actual article is the honest answer instead of a guess.
+        /// </summary>
+        public string Adopted { get; private set; }
+        /// <summary>What the menu should call it.</summary>
+        public string Describe => Adopted != null
+            ? (Adopted.StartsWith("prop_", StringComparison.OrdinalIgnoreCase) ? Adopted.Substring(5) : Adopted).Replace('_', ' ')
+            : _shape.ToString();
         public float Standoff => _standoff;
         /// <summary>Where it is, for a caller about to write a placement.</summary>
         public Vector3 Position => IsShowing ? _entity.Position : Vector3.Zero;
@@ -70,6 +80,20 @@ namespace Bloodlines.Core
                 case "water": case "channel": return Shape.Boat;
                 default: return Shape.Person;
             }
+        }
+
+        /// <summary>
+        /// Hang an entity somebody else created in front of the camera instead of a shape:
+        /// the man, vehicle or prop an author is about to add. The ghost owns it from here
+        /// and deletes it when it is hidden or replaced.
+        /// </summary>
+        public bool Adopt(Entity entity, string model, float heading)
+        {
+            Hide();
+            if (entity == null || !entity.Exists()) return false;
+            _entity = entity; _heading = heading; Adopted = model;
+            try { Pacify(); return true; }
+            catch (Exception ex) { Logger.Error("Adopting a placement stand-in", ex); Hide(); return false; }
         }
 
         public void Cycle(int delta)
@@ -112,16 +136,22 @@ namespace Bloodlines.Core
                     ? (Entity)World.CreatePed(model, at, _heading)
                     : World.CreateVehicle(model, at, _heading);
                 if (_entity == null || !_entity.Exists()) { _entity = null; return false; }
-                // Seen through, walked through, and immune to whatever it is hovering over.
-                Function.Call(Hash.SET_ENTITY_ALPHA, _entity, Alpha, false);
-                _entity.IsCollisionEnabled = false;
-                _entity.IsPositionFrozen = true;
-                if (_entity is Ped ped) { ped.IsInvincible = true; ped.BlockPermanentEvents = true; ped.Task.StandStill(-1); }
-                if (_entity is Vehicle vehicle) { vehicle.IsInvincible = true; vehicle.IsEngineRunning = false; }
+                Pacify();
                 return true;
             }
             catch (Exception ex) { Logger.Error("Creating the placement ghost", ex); Hide(); return false; }
             finally { model.MarkAsNoLongerNeeded(); }
+        }
+
+        /// <summary>Seen through, walked through, and immune to whatever it is hovering over.</summary>
+        private void Pacify()
+        {
+            Function.Call(Hash.SET_ENTITY_ALPHA, _entity, Alpha, false);
+            _entity.IsCollisionEnabled = false;
+            _entity.IsPositionFrozen = true;
+            _entity.Heading = _heading;
+            if (_entity is Ped ped) { ped.IsInvincible = true; ped.BlockPermanentEvents = true; ped.Task.StandStill(-1); }
+            if (_entity is Vehicle vehicle) { vehicle.IsInvincible = true; vehicle.IsEngineRunning = false; }
         }
 
         /// <summary>Hang it in front of the camera. Called every frame while it is up.</summary>
@@ -157,6 +187,7 @@ namespace Bloodlines.Core
 
         public void Hide()
         {
+            Adopted = null;
             if (_entity == null) return;
             GameUtils.SafeDelete(_entity);
             _entity = null;

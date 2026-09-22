@@ -154,12 +154,16 @@ namespace Bloodlines.Core
                     return true;
                 case Keys.Back:
                     Shops?.CancelVehiclePreview();
+                    // A page opened from inside the survey goes back to the survey; only B on
+                    // the survey page itself ends it.
+                    if (page.Tag == AdditionsTag) { if (page.Title.StartsWith("Add to ")) CloseAdditions(); _stack.Pop(); return true; }
+                    if (_survey.IsEditing && page.Tag == PlacementTag && !page.Title.StartsWith("Placement survey")) { _stack.Pop(); return true; }
                     if (_survey.IsEditing) { _survey.Stop(); if (_stack.Count > 1) _stack.Pop(); return true; }
                     if (_stack.Count > 1) _stack.Pop();
                     else Toggle();
                     return true;
                 default:
-                    return false;
+                    return HandlePageKey(key);
             }
         }
 
@@ -253,6 +257,8 @@ namespace Bloodlines.Core
                 if (ControllerInput.JustPressed(GTA.Control.FrontendCancel)) HandleKey(Keys.Back);
                 else if (ControllerInput.JustPressed(GTA.Control.FrontendAccept)) HandleKey(Keys.Enter);
             }
+            HandlePageShortcuts();
+            UpdateAdditions();
             if (IsOpen && _stack.Count > 0) Draw(_stack.Peek());
         }
 
@@ -916,6 +922,8 @@ namespace Bloodlines.Core
                 (page.Index + 1) + "/" + page.Items.Count +
                 "   D-pad: move/adjust | A: select | B: back | " + _config.DevMenuKey + " close",
                 new PointF(x, y + 4f), 0.26f, Color.FromArgb(190, 150, 156, 166)).Draw();
+            if (!string.IsNullOrEmpty(page.Hint))
+                new TextElement(page.Hint, new PointF(x, y + 24f), 0.26f, Color.FromArgb(220, 232, 168, 56)).Draw();
         }
 
         private static string Title(MissionDefinition mission)
@@ -940,6 +948,10 @@ namespace Bloodlines.Core
             }
 
             public string Title { get; }
+            /// <summary>Which family of page this is, for the pad shortcuts that only mean something on it.</summary>
+            public string Tag;
+            /// <summary>A second footer line naming this page's own shortcuts.</summary>
+            public string Hint;
             public List<Item> Items { get; } = new List<Item>();
             public int Index { get; private set; }
 

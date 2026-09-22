@@ -50,7 +50,15 @@ namespace Bloodlines.Missions.Objectives
         private readonly Func<Vehicle> _vehicle;
         private readonly float _radius;
         private readonly int _duration;
-        private int _started = -1, _nextBoard;
+        private int _started = -1, _nextBoard, _lastTick = -1, _lastSteady = -1;
+        /// <summary>
+        /// How fast a boat may be moving and still count as stopped. Storm swell alone moves an
+        /// idle dinghy past the 1 m/s a car is held to, so M05's "take him aboard" could not be
+        /// started and, once started, kept restarting (Ron, September 22).
+        /// </summary>
+        public const float AfloatStopSpeed = 3.5f;
+        /// <summary>How long a boat may be pushed out of reach or over that speed before a hold in progress is lost. The bar pauses meanwhile; it does not restart.</summary>
+        public const int AfloatGraceMs = 2500;
         private readonly bool _stopVehicle;
         private readonly string _animation;
         private readonly Func<Vector3> _face;
@@ -82,9 +90,12 @@ namespace Bloodlines.Missions.Objectives
         }
         public override void Exit(MissionContext c) { StopAnimation(Game.Player.Character); base.Exit(c); }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
-        public override void Enter(MissionContext c) { base.Enter(c); _started = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right."; }
+        public override void Enter(MissionContext c) { base.Enter(c); _started = -1; _lastTick = -1; _lastSteady = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right."; }
         public override void Update(MissionContext c)
         {
+            int now = Game.GameTime;
+            int dt = _lastTick < 0 ? 0 : Math.Max(0, Math.Min(250, now - _lastTick));
+            _lastTick = now;
             var requiredVehicle = _vehicle?.Invoke();
             if (_vehicle != null && (requiredVehicle == null || !requiredVehicle.Exists() || requiredVehicle.IsDead))
             { Fail("The required work vehicle is lost. Restart this mission."); return; }
@@ -95,17 +106,33 @@ namespace Bloodlines.Missions.Objectives
             if (!IsOwnerActive(c)) { _started = -1; StopAnimation(ped); Label = "Switch to " + Crew.Protagonist.Of(RequiredCharacter.Value).Handle + ": " + _action; return; }
             if (requiredVehicle != null) MissionBoarding.Update(requiredVehicle, VehicleSeat.Any, ref _nextBoard);
             bool seated = _vehicle != null && ped != null && ped.IsInVehicle(_vehicle());
-            bool near = ped != null && ped.Exists() && (_vehicle != null ? seated && requiredVehicle.Position.DistanceTo(point) <= _radius : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
+            // Afloat, the reach is measured flat: the swell lifts one boat past the other and
+            // a three-dimensional distance counted that as drifting apart.
+            bool afloat = requiredVehicle != null && requiredVehicle.Model.IsBoat;
+            bool near = ped != null && ped.Exists() && (_vehicle != null
+                ? seated && (afloat ? GameUtils.IsWithinFlat(requiredVehicle.Position, point, _radius) : requiredVehicle.Position.DistanceTo(point) <= _radius)
+                : !ped.IsInVehicle() && ped.Position.DistanceTo(point) <= _radius);
+            bool steady = !_stopVehicle || requiredVehicle == null || requiredVehicle.Speed <= (afloat ? AfloatStopSpeed : 1f);
+            if (near && steady) _lastSteady = now;
+            else if (afloat && seated && _started >= 0 && now - _lastSteady <= AfloatGraceMs)
+            {
+                // A wave is not the player letting go. Hold the bar where it is for a moment
+                // rather than throwing away the work.
+                _started += dt;
+                Label = _action + " — hold steady; the swell moved the boat.";
+                GameUtils.DrawProgressBar((now - _started) / (float)_duration);
+                return;
+            }
             if (!near) { _started = -1; StopAnimation(ped); Label = _action + (_vehicle == null ? " — get out and reach the yellow marker." : (seated ? " — take the marked vehicle to the yellow marker." : " — board the marked vehicle first (F / Y or E / D-pad Right).")); return; }
-            if (_stopVehicle && requiredVehicle != null && requiredVehicle.Speed > 1f) { _started = -1; Label = _action + " — stop the vehicle to begin unloading."; return; }
+            if (!steady) { _started = -1; Label = _action + (afloat ? " — ease off the throttle and let the boat settle." : " — stop the vehicle to begin unloading."); return; }
             if (_started < 0)
             {
                 Label = _action + " — press E / D-pad Right to start.";
                 if (!Game.IsControlJustPressed(GTA.Control.Context)) return;
-                _started = Game.GameTime;
+                _started = now;
                 if (_vehicle == null) StartAnimation(ped, point);
             }
-            int elapsed = Game.GameTime - _started;
+            int elapsed = now - _started;
             Label = _action;
             GameUtils.DrawProgressBar(elapsed / (float)_duration);
             if (elapsed >= _duration) { StopAnimation(ped); Complete(); }

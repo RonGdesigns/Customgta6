@@ -35,6 +35,8 @@ namespace Bloodlines.Missions
         protected abstract void OnCommit(MissionCatalog catalog, OperationWorld world);
 
         public override string Id => Operation.EntryId;
+        /// <summary>Each chapter places its own additions; the sitting would repeat its entry chapter's.</summary>
+        protected override bool TakesPlacedAdditions => false;
         public override string Title => Operation.Title;
         public string PhaseId => Operation.PhaseIds[_phaseIndex];
         public Mission Phase => _phase;

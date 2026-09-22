@@ -112,10 +112,51 @@ namespace Bloodlines.Core
         {
             if (_retiring == null) return;
             if (Game.GameTime < _retireAt) return;
+            ForceRetire();
+        }
+
+        /// <summary>
+        /// Delete the camera that is handing back now, whatever its clock says. A new scene
+        /// calls this before it looks at what is rendering, and so does a second hand-back:
+        /// a camera still sliding home is this director's own, never a previous owner's
+        /// view to restore.
+        /// </summary>
+        private void ForceRetire()
+        {
             var going = _retiring;
             _retiring = null;
-            try { if (going.Exists()) going.Delete(); }
+            if (going == null) return;
+            try
+            {
+                // Still the rendering camera when its slide should be long over means the
+                // view is stranded on it. Hand the view back before the camera goes, or the
+                // screen stays on a shot that no longer exists.
+                var rendering = World.RenderingCamera;
+                if (IsScene(rendering, going) && !IsActive)
+                {
+                    Logger.Warn("Scene camera was still rendering after its hand-back; returning the view to gameplay.");
+                    Function.Call(Hash.RENDER_SCRIPT_CAMS, false, false, 0, true, false, 0);
+                }
+                if (going.Exists()) going.Delete();
+            }
             catch (Exception ex) { Logger.Error("Retiring a scene camera", ex); }
+        }
+
+        private static bool IsScene(Camera candidate, Camera ours) =>
+            candidate != null && ours != null && candidate.Handle == ours.Handle;
+
+        /// <summary>One word for the diagnostics line: who has the view right now.</summary>
+        public string CameraReport()
+        {
+            try
+            {
+                var rendering = World.RenderingCamera;
+                if (rendering == null || !rendering.Exists()) return "gameplay";
+                if (IsActive && IsScene(rendering, _camera)) return "scene";
+                if (IsScene(rendering, _retiring)) return "handing-back";
+                return "script:" + rendering.Handle;
+            }
+            catch { return "unknown"; }
         }
         private List<DialogueCue> _lines;
         private int _index, _startedAt;
@@ -205,9 +246,17 @@ namespace Bloodlines.Core
             _hadControl = Game.Player.CanControlCharacter;
             try
             {
+                // A scene that starts while the last one is still sliding home would
+                // otherwise read that camera as somebody else's view and restore it when
+                // it ends: the view then sits on a dead shot and never comes back to the
+                // player. Every Act One briefing followed by its first staged scene did
+                // this, a quarter of a second apart (Ron, September 22).
+                var handingBack = _retiring;
+                ForceRetire();
                 _previousCamera = World.RenderingCamera;
                 // GET_RENDERING_CAM can return an invalid handle wrapped as a Camera.
                 if (_previousCamera != null && !_previousCamera.Exists()) _previousCamera = null;
+                if (IsScene(_previousCamera, handingBack)) _previousCamera = null;
                 if (missionId == "M01" && phase == "intro" && !ProloguePlacement.Prepare(_locations))
                     throw new InvalidOperationException("M01 dock surfaces are not ready. Move near its start marker and retry.");
                 Logger.Info("Scene started: " + missionId + ":" + phase);
@@ -583,7 +632,7 @@ namespace Bloodlines.Core
             bool smooth = _previousCamera == null && _camera != null && _camera.Exists();
             Release("gameplay camera", () =>
             {
-                if (smooth) Function.Call(Hash.RENDER_SCRIPT_CAMS, false, true, HandoffMs, true, true);
+                if (smooth) Function.Call(Hash.RENDER_SCRIPT_CAMS, false, true, HandoffMs, true, false, 0);
                 else World.RenderingCamera = null;
             });
             Release("previous scripted camera", () =>
@@ -593,7 +642,7 @@ namespace Bloodlines.Core
             // A camera deleted mid-interpolation is a hard cut with extra steps. Keep it
             // alive for the length of the hand-back; RetireCameras deletes it after, and
             // the next scene forces the retirement if that never ran.
-            if (smooth) { RetireCameras(); _retiring = _camera; _retireAt = Game.GameTime + HandoffMs + 250; }
+            if (smooth) { Release("earlier scene camera", ForceRetire); _retiring = _camera; _retireAt = Game.GameTime + HandoffMs + 250; }
             else Release("camera delete", () => _camera?.Delete());
             _camera = null;
             _previousCamera = null;

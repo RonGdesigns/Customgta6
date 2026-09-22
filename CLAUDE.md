@@ -1469,3 +1469,30 @@ MissionManager reads HUD objectives from a continuous operation's current phase.
 entity view reads the existing OperationWorld collection, so results include hostiles from
 all phases without taking ownership or counting a handle twice. Run both harnesses; the
 review repair tests exercise time overlap, both heist dispatchers, and phase transitions.
+
+## September 22: scene cameras, M05's boarding, and placed additions
+
+See `docs/PLAYTEST-2026-09-22.md`. **A scene camera sliding home is this director's own,
+never a view to restore.** The eased hand-back keeps it rendering for about a second, and
+69 of 79 missions start a staged scene straight after the briefing. The second scene read
+the sliding camera as another system's and restored it on exit, which left the view on a
+dead shot. `CutsceneDirector.Play` retires any sliding camera before it looks at what is
+rendering. The host retires cameras first in the tick, ahead of every early return. A camera
+still rendering when its slide should be over is handed back before it is deleted.
+
+**Nothing on a boat is ever stopped.** `MissionInteraction` holds from a boat measure reach
+flat, accept 3.5 m/s as stopped, and pause (not restart) for up to 2.5 s when a wave moves
+them. A hold owned by a passenger needs somebody steering. M05 anchors Mateo's boat, and
+Guess brings the dinghy alongside and anchors it while the player is not at the wheel. Tie
+that to the stage's own enter and exit, never to a stage number.
+
+Thermal Pulse marks hostiles out to 300 m (everyone else stays at 60 m), because its
+explanation in M05 promises the generator crew 270 m below Ice's perch.
+
+**Placed additions are the mission's, not a second pool.** `Core/MissionAdditions` spawns an
+author's extra men, crewed vehicles and props through `Mission.Track`, so the mission's own
+cleanup owns them. A man is told to fight once, when the crew comes within range. Additions
+never count toward an objective. `ContinuousOperation` opts out (`TakesPlacedAdditions`),
+because it shares its entry chapter's id. The editor's pick lists are strings, so
+`lint_missions.py` checks them against the dumps. The survey page keeps Save second and Y
+saves from any row.
