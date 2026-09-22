@@ -27,6 +27,7 @@ namespace Bloodlines.Core
         public const int EchoMs = 2500;
         public const float Left = 470f, Top = 546f, Width = 340f;
         private const float SlowScale = .2f;
+        private const string TimeOwner = "CrewOrderStrip";
 
         private static readonly Color Panel = Color.FromArgb(170, 12, 14, 18);
         private static readonly Color Muted = Color.FromArgb(255, 178, 195, 211);
@@ -35,7 +36,6 @@ namespace Bloodlines.Core
         private readonly List<CrewSlot> _brothers = new List<CrewSlot>();
         private readonly List<CrewOrder> _orders = new List<CrewOrder>();
         private int _brother, _order;
-        private float _previousScale;
         private int _padSince;
         private string _echo = "";
         private CrewSlot _echoSlot;
@@ -69,8 +69,7 @@ namespace Bloodlines.Core
             if (_brothers.Count == 0) return false;
             _brother = 0; _order = 0; _axisLatched = false;
             Refresh(crew);
-            _previousScale = Game.TimeScale;
-            Game.TimeScale = Math.Min(_previousScale, SlowScale);
+            SlowMotion.Hold(TimeOwner, SlowScale);
             IsOpen = true;
             return true;
         }
@@ -80,7 +79,7 @@ namespace Bloodlines.Core
         {
             if (!IsOpen) return;
             IsOpen = false;
-            Game.TimeScale = _previousScale;
+            SlowMotion.Release(TimeOwner);
         }
 
         /// <summary>Re-read what the selected brother can be told, keeping the pick where it was.</summary>

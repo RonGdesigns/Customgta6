@@ -90,5 +90,22 @@ public static partial class RegressionTests
   Check(!ai.Order(CrewSlot.Ice,CrewOrder.HoldHere,null),"nor does a script that owns him");ai.ReleaseAll();
   Check(ai.Order(CrewSlot.Ice,CrewOrder.HoldHere,null)&&ai.HasOrders,"Released, he takes orders again");
   ai.RideAlong=false;Check(!ai.HasOrders,"and a group travel request from the phone resets them, the way it resets the individual choices");
+  // Phone choices use these same public entry points after a quick order.
+  ai.Order(CrewSlot.Ice,CrewOrder.HoldHere,null);
+  ai.Order(CrewSlot.Gohan,CrewOrder.HoldHere,null);
+  Check(ai.SetHangout(CrewSlot.Ice,false),"A phone dismissal replaces a standing quick order");
+  ai.Update(CrewSlot.Ice,ice,leader);
+  Check(ai.OrderOf(CrewSlot.Ice)==CrewOrder.None&&!ai.IsHangingOut(CrewSlot.Ice)&&ai.StateOf(CrewSlot.Ice)!=CompanionState.Hold,
+   "Dismissed brother resumes his own behavior instead of holding forever");
+  Check(ai.OrderOf(CrewSlot.Gohan)==CrewOrder.HoldHere,"Changing one brother leaves the other brother's order alone");
+  ai.Order(CrewSlot.Ice,CrewOrder.HoldHere,null);
+  Check(ai.SetTravelChoice(CrewSlot.Ice,false)&&ai.OrderOf(CrewSlot.Ice)==CrewOrder.None&&!ai.RidesAlong(CrewSlot.Ice),
+   "Drive alongside replaces a quick hold with the selected travel preference");
+  ai.Order(CrewSlot.Ice,CrewOrder.HoldHere,null);
+  ai.HoldPosition=true;
+  Check(!ai.SetHangout(CrewSlot.Ice,false)&&ai.OrderOf(CrewSlot.Ice)==CrewOrder.HoldHere,
+   "A refused phone change cannot clear a mission-held order");
+  ai.HoldPosition=false;
+
  }
 }

@@ -91,18 +91,19 @@ namespace Bloodlines.Crew
         public static Ped NearestPolice(Ped driver, float within)
         {
             if (driver == null || !driver.Exists()) return null;
-            int cop = Game.GenerateHash("COP");
             Ped best = null; float bestDistance = within;
             foreach (var ped in World.GetNearbyPeds(driver, within))
             {
-                if (ped == null || !ped.Exists() || ped.IsDead || ped.Handle == driver.Handle) continue;
-                // Read through the native rather than the wrapper: the group is what the
-                // engine says it is, and the same line compiles in both harnesses.
-                if (Function.Call<int>(Hash.GET_PED_RELATIONSHIP_GROUP_HASH, ped) != cop) continue;
+                if (!IsPoliceThreat(ped, driver, within)) continue;
                 float distance = ped.Position.DistanceTo(driver.Position);
                 if (distance < bestDistance) { best = ped; bestDistance = distance; }
             }
             return best;
         }
+
+        public static bool IsPoliceThreat(Ped ped, Ped driver, float within) =>
+            ped != null && ped.Exists() && !ped.IsDead && driver != null && driver.Exists() &&
+            ped.Handle != driver.Handle && ped.Position.DistanceTo(driver.Position) < within &&
+            Function.Call<int>(Hash.GET_PED_RELATIONSHIP_GROUP_HASH, ped) == Game.GenerateHash("COP");
     }
 }

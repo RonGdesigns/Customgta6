@@ -152,6 +152,8 @@ namespace GTA.Native {
   public static Color PaintFor(int index)=>FlatPaint?Color.FromArgb(255,10,10,10)
    :Color.FromArgb(255,(index*37)%256,(index*61+40)%256,(index*97+90)%256);
   public static readonly List<Tuple<Hash,object[]>> Calls=new List<Tuple<Hash,object[]>>();public static void Call(Hash h,params object[] args){
+   // Native time writes and the SDK getter observe the same engine clock.
+   if(h==Hash.SET_TIME_SCALE)Game.TimeScale=(float)args[0];
    if(h==Hash.SET_TIMECYCLE_MODIFIER&&!RejectedTimecycles.Contains((string)args[0])){TimecycleName=(string)args[0];TimecycleIndex=Game.GenerateHash(TimecycleName)&0x7fffffff;}
    if(h==Hash.SET_TIMECYCLE_MODIFIER_STRENGTH)TimecycleStrength=(float)args[0];
    if(h==Hash.CLEAR_TIMECYCLE_MODIFIER){TimecycleIndex=-1;TimecycleName=null;TimecycleStrength=0;}

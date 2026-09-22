@@ -47,8 +47,14 @@ public static partial class RegressionTests
   Check(Function.Values.ContainsKey(Hash.SET_DRIVER_RACING_MODIFIER),"and committing to his corners");
   int flees=driver.Task.VehicleMissions;Game.GameTime+=1000;ai.Update(CrewSlot.Gohan,driver,rider);
   Check(driver.Task.VehicleMissions==flees,"The flee task is not re-issued every review against the same officer, which would make him hesitate");
+  farOfficer.Position=new Vector3(30,0,0);Game.GameTime+=750;ai.Update(CrewSlot.Gohan,driver,rider);
+  Check(driver.Task.VehicleMissions==flees&&driver.Task.MissionTarget==officer,
+   "A different nearer officer cannot reset a valid flee task before five seconds");
   officer.Position=new Vector3(200,0,0);Game.GameTime+=CompanionDriver.FleeRefreshMs+100;ai.Update(CrewSlot.Gohan,driver,rider);
   Check(driver.Task.VehicleMissions==flees+1&&driver.Task.MissionTarget==farOfficer,"but once the refresh is due a nearer officer becomes the one he flees");
+  farOfficer.IsDead=true;officer.Position=new Vector3(40,0,0);Game.GameTime+=750;ai.Update(CrewSlot.Gohan,driver,rider);
+  Check(driver.Task.VehicleMissions==flees+2&&driver.Task.MissionTarget==officer,
+   "A dead flee target is replaced immediately even inside the cooldown");
   World.WaypointBlip=new Blip{Position=new Vector3(500,500,5)};Game.GameTime+=1000;ai.Update(CrewSlot.Gohan,driver,rider);
   Check(driver.Task.DriveKind=="road"&&driver.Task.DriveTarget==World.WaypointBlip.Position&&(driver.Task.LastDriveStyle&512)!=0,
    "A map waypoint set during the chase is driven to, at escape pace and in the escape style, rather than fled from");

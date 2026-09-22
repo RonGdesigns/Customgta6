@@ -273,6 +273,7 @@ namespace Bloodlines
 
         private void OnTick(object sender, EventArgs e)
         {
+            Step("cancel unavailable crew orders", () => { if (!OrdersAvailable()) _orders.Close(); });
             // Ron's call, and it is the right one: one pause he expects at startup rather than
             // one he does not expect while driving. The registration native stops to load and
             // there is no way to make it free, so it happens here, once, before he is anywhere.
@@ -298,10 +299,10 @@ namespace Bloodlines
                 }
                 catch { _phone.Shutdown(); throw; }
             });
-            Step("nitrous input", () => _worldTuning.Nitrous.Update(!_crew.IsDeployed || _death.IsHandling || _cutscenes.IsActive ||
+            Step("nitrous input", () => _worldTuning.Nitrous.Update(_orders.IsOpen || !_crew.IsDeployed || _death.IsHandling || _cutscenes.IsActive ||
                 _homes.Apartment.Busy || _homes.Apartment.Inside || _menu.IsOpen || CampaignPhone.BlocksGameplayInput || _characterWheel.IsOpen || _prologue.IsActive || _survey.IsActive ||
                 _missions.RequiredSwitch.HasValue || ControllerInput.Pressed(GTA.Control.CharacterWheel)));
-            Step("controller ability", () => _abilities.HandleController(_missions.RequiredSwitch.HasValue || _homes.Apartment.Inside || _homes.Apartment.Busy || _menu.IsOpen || _characterWheel.IsOpen ||
+            Step("controller ability", () => _abilities.HandleController(_orders.IsOpen || _missions.RequiredSwitch.HasValue || _homes.Apartment.Inside || _homes.Apartment.Busy || _menu.IsOpen || _characterWheel.IsOpen ||
                 _cutscenes.IsActive || _death.IsHandling || ControllerInput.Pressed(GTA.Control.CharacterWheel)));
             // Each subsystem is stepped separately. Wrapping the whole tick in one
             // try/catch meant a fault in the first line stopped every line after it:
@@ -326,8 +327,8 @@ namespace Bloodlines
                 _death.IsHandling || _homes.Apartment.Busy || _cutscenes.IsActive || _prologue.IsActive || _menu.IsOpen || CampaignPhone.BlocksGameplayInput || _characterWheel.IsOpen));
             if (_death.IsHandling || _homes.Apartment.Busy || _cutscenes.IsActive || _abilities.IsActive)
                 Step("yield visual grade", _visuals.SuspendGrading);
-            if (_death.IsHandling) { _phone.Close(); _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
-            if (_homes.Apartment.Busy) { _phone.Close(); Step("apartment loading", _homes.UpdateTransition); return; }
+            if (_death.IsHandling) { _orders.Close(); _phone.Close(); _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; SlowMotion.Reset(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_homes.Apartment.Busy) { _orders.Close(); _phone.Close(); Step("apartment loading", _homes.UpdateTransition); return; }
             if (_cutscenes.IsActive)
             {
                 _phone.Close();
@@ -374,7 +375,7 @@ namespace Bloodlines
             Step("prologue", _prologue.Update);
             Step("missions", _missions.Update);
             ObjectiveMarkers.EndFrame();
-            if (_cutscenes.IsActive) { Step("yield new scene grade", _visuals.SuspendGrading); _phone.Close(); _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_cutscenes.IsActive) { _orders.Close(); Step("yield new scene grade", _visuals.SuspendGrading); _phone.Close(); _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             Step("campaign hub", () => _hub.Update(_crew.IsDeployed && !_missions.IsRunning && !_prologue.IsActive &&
                 !_menu.IsOpen && !_phone.IsOpen && !_survey.IsActive && !_dialogue.HasPending));
             Step("dialogue", _dialogue.Update);
@@ -459,6 +460,7 @@ namespace Bloodlines
                 Game.DisableControlThisFrame(GTA.Control.SelectCharacterTrevor);
                 Game.DisableControlThisFrame(GTA.Control.SelectCharacterMultiplayer);
             }
+            if (_orders.IsOpen) { _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; return; }
             bool held = ControllerInput.Pressed(GTA.Control.CharacterWheel);
             if (!held)
             {
@@ -534,7 +536,7 @@ namespace Bloodlines
             }
             if (CampaignPhone.BlocksGameplayInput) return;
             if (_homes.Apartment.Busy) return;
-            if (_death.IsHandling) { _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; Game.TimeScale = 1f; ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
+            if (_death.IsHandling) { _orders.Close(); _menu.Close(); _survey.Stop(); _characterWheel.Close(); _controllerWheelHeld = false; _controllerSelection = null; SlowMotion.Reset(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             if (_cutscenes.IsActive)
             {
                 if (e.KeyCode == Keys.Enter && _cutscenes.SkipInputAllowed) _cutscenes.Skip();
@@ -808,6 +810,7 @@ namespace Bloodlines
         {
             _phone.Shutdown();
             Step("stop mission presentation", _presentation.Stop);
+            Step("close crew orders", _orders.Close);
             Logger.Info("Script aborting - tearing down.");
             Step("save free-roam crew memory", () => { if (!_missions.IsRunning && !_death.IsHandling) { _memory.Capture(_crew); _state.Save(); } });
             Step("cancel prologue", _prologue.Cancel);
@@ -832,7 +835,7 @@ namespace Bloodlines
             Step("reset visuals", _visuals.Reset);
             Step("dismiss crew", _crew.Dismiss);
             Step("release recovery", _death.Cancel);
-            Step("restore time", () => Game.TimeScale = 1f);
+            Step("restore time", SlowMotion.Reset);
         }
     }
 }

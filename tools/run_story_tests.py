@@ -28,13 +28,17 @@ def main():
     start=main_source.index('        private void HandleControllerSwitch()')
     end=main_source.index('        private void HandleAbortHold()',start)
     controller=output/'ControllerHarness.cs'
-    controller.write_text('using System;using GTA;using Bloodlines.Core;using Bloodlines.Crew;public sealed class MenuProbe{public bool IsOpen;}public sealed class HomeProbe{public ApartmentAccess Apartment=new ApartmentAccess(new CrewRoster());}public sealed class ControllerHarness{public Bloodlines.Abilities.AbilityController _abilities=new Bloodlines.Abilities.AbilityController();public CharacterWheel _characterWheel=new CharacterWheel("missing-test-images");public ModConfig _config=new ModConfig();public CrewRoster _crew;public SwitchController _switching;public HomeProbe _homes=new HomeProbe();public MenuProbe _menu=new MenuProbe();private CrewSlot? _controllerSelection;private bool _controllerWheelHeld;public void Tick(){HandleControllerSwitch();}'+main_source[start:end]+'}',encoding='utf-8')
+    controller.write_text('using System;using GTA;using Bloodlines.Core;using Bloodlines.Crew;public sealed class MenuProbe{public bool IsOpen;}public sealed class HomeProbe{public ApartmentAccess Apartment=new ApartmentAccess(new CrewRoster());}public sealed class ControllerHarness{public Bloodlines.Abilities.AbilityController _abilities=new Bloodlines.Abilities.AbilityController();public CrewOrderStrip _orders=new CrewOrderStrip();public CharacterWheel _characterWheel=new CharacterWheel("missing-test-images");public ModConfig _config=new ModConfig();public CrewRoster _crew;public SwitchController _switching;public HomeProbe _homes=new HomeProbe();public MenuProbe _menu=new MenuProbe();private CrewSlot? _controllerSelection;private bool _controllerWheelHeld;public void Tick(){HandleControllerSwitch();}'+main_source[start:end]+'}',encoding='utf-8')
     args.append(f'"{controller}"')
     ability=(ROOT/'src/Bloodlines/Abilities/AbilityController.cs').read_text(encoding='utf-8')
     first=ability.index('        public void HandleController(bool blocked)');last=ability.index('        public bool IsActive',first)
     harness=output/'AbilityInputHarness.cs'
     harness.write_text('using GTA;using Bloodlines.Core;using Bloodlines.Crew;public class AbilityInputHarness{public ModConfig _config=new ModConfig();public CrewRoster _crew=new CrewRoster();private AbilityChord _chord=new AbilityChord();public int Toggles;private void Toggle(){Toggles++;}'+ability[first:last]+'}',encoding='utf-8')
     args.append(f'"{harness}"')
+    first=ability.index('        public void Stop()');last=ability.index('        private void DrawMeter()',first)
+    stop=output/'AbilityStopHarness.cs'
+    stop.write_text('using GTA;using Bloodlines.Core;using Bloodlines.Abilities;public class AbilityStopHarness{public Ability _running,_settling;public Ped _owner;'+ability[first:last]+'}',encoding='utf-8')
+    args.append(f'"{stop}"')
     args += [f'"{p}"' for p in sorted((ROOT/'tests/story').glob('*.cs'))]
     rsp=output/'tests.rsp';rsp.write_text('\n'.join(args),encoding='utf-8')
     subprocess.run([build_roslyn.find_csc(),'/noconfig','@'+str(rsp)],check=True)

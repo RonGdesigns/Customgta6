@@ -33,7 +33,7 @@ namespace Bloodlines.Missions.Campaign
 
         private bool _shotStarted, _shotActive, _boardingHeld;
         private int _shotUntil;
-        private float _previousScale = 1f;
+        private const string TimeOwner = "M09 shot window";
         private Vehicle _frogger;
         private Ped _escortDriver;
         private Vehicle _escortTruck;
@@ -186,9 +186,9 @@ namespace Bloodlines.Missions.Campaign
             if (!_shotStarted && Ctx.Crew.ActiveSlot == CrewSlot.Ice && !Ctx.Switching.IsSwitching && !CharacterWheel.AnyOpen &&
                 GameUtils.IsWithinFlat(_escortTruck.Position, _ambush, 130f))
             {
-                _shotStarted = _shotActive = true; _previousScale = Game.TimeScale;
+                _shotStarted = _shotActive = true;
                 _shotUntil = Game.GameTime + 4500;
-                Game.TimeScale = Math.Min(_previousScale, .3f);
+                SlowMotion.Hold(TimeOwner, .3f);
                 GameUtils.Subtitle("~y~Ice: slow-motion shot. Aim through the escort cab window; keep the truck intact.", 4500);
             }
             if (_shotActive && (Game.GameTime >= _shotUntil || Ctx.Crew.ActiveSlot != CrewSlot.Ice)) EndShotWindow();
@@ -196,7 +196,7 @@ namespace Bloodlines.Missions.Campaign
         private void EndShotWindow()
         {
             if (!_shotActive) return;
-            _shotActive = false; CharacterWheel.RestoreTemporaryScale(Math.Min(_previousScale, .3f), _previousScale);
+            _shotActive = false; SlowMotion.Release(TimeOwner);
         }
 
         private void MaintainHelicopter()

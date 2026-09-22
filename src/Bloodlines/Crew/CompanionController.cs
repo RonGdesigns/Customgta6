@@ -112,6 +112,8 @@ namespace Bloodlines.Crew
         public bool SetHangout(CrewSlot slot, bool follow)
         {
             if (MissionActive || HoldPosition || RequireSharedVehicle || _scripted.Contains(slot)) return false;
+            // Phone invitations and travel choices replace this brother's standing order.
+            ClearOrder(slot);
             _hangouts[slot] = follow;
             _separatedByRecovery.Remove(slot);
             Life.Suspend(slot); Driver.Forget(slot); Convoy.Forget(slot); Refresh(slot);

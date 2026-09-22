@@ -132,7 +132,7 @@ namespace Bloodlines.Missions
         protected virtual bool OnStage() => OnStart();
 
         /// <summary>Everything this mission has staged, for a preview to pacify and list.</summary>
-        public IEnumerable<Entity> Staged => _entities;
+        public virtual IEnumerable<Entity> Staged => _entities;
 
         public void Tick()
         {

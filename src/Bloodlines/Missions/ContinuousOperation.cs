@@ -39,6 +39,7 @@ namespace Bloodlines.Missions
         public string PhaseId => Operation.PhaseIds[_phaseIndex];
         public Mission Phase => _phase;
         public OperationWorld World => _world;
+        public override IEnumerable<GTA.Entity> Staged => _world != null ? _world.Entities : base.Staged;
         private string RestartNotice => _world?.RestartNotice ?? "Restart the entire " + Operation.Title + ".";
         // One sitting: neither the parent nor its owned sections record checkpoints.
         public override bool AllowsCheckpointCapture => false;

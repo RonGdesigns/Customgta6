@@ -159,11 +159,11 @@ namespace Bloodlines.Abilities
             }
             finally
             {
-                // Belt and braces: a stuck time scale ruins the whole session.
+                // Release only the ability claim; a menu or mission may still own slow motion.
                 _settling = _running;
                 _running = null;
                 _owner = null;
-                SlowMotion.Reset();
+                SlowMotion.Release(SlipstreamReflex.TimeOwner);
             }
         }
 
