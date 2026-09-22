@@ -1394,8 +1394,18 @@ and the seed is used, the way `PlacementPreflight` only ever warns.
 was already `1.0`, the engine's maximum, so there was nothing to raise. They were commanded a
 flat 39 m/s on a route where the player's car runs to twice its stock redline, because
 `WorldTuning` lifts every ceiling in the world including theirs. The speed comes from the
-car's own `GET_VEHICLE_ESTIMATED_MAX_SPEED` now, they drive the player's model with the
-performance parts fitted, and aggressiveness is at 1.0.
+car's own `GET_VEHICLE_ESTIMATED_MAX_SPEED` now, they run the performance parts, and
+aggressiveness is at 1.0.
+
+**A fair grid is matched to the player's car, never copied from it.** The first pass gave both
+rivals the player's own model and Ron rejected it outright: "I definitely don't want them to
+have my car." Bringing your own car to a street race is the point of the mission, and two
+copies of it on the grid hands that to the opposition. `Core/RivalGrid` is KJ's own roster of
+twelve base-game street cars spanning 41 to 52 m/s, and he fields the two whose **model** top
+speed is closest to the player's, with the player's model excluded so the matching cannot
+land on it by coincidence. Compare model to model, because both sides get the parts fitted;
+comparing his built car to their stock ones fields a grid that is always too slow. Whatever
+gap is left is `RacePacing`'s to close, bounded.
 
 **`Core/RacePacing` is bounded rubber-banding, and it only writes the commanded speed.** A
 trailing rival is helped up to 1.35x, a runaway leader eases to 0.85x, both over a 400 m
