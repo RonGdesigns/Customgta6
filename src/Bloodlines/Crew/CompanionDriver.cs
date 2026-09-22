@@ -110,11 +110,12 @@ namespace Bloodlines.Crew
             // waypoint is still driven to, at escape pace and in the escape style.
             bool pursued = Game.Player.WantedLevel > 0 && active != null && active.Exists() && active.IsInVehicle(trip.Vehicle) &&
                            (model.IsCar || model.IsBike) && !destination.HasValue && !trip.Rendezvous;
+            // Keep a valid threat for the entire cooldown even if another cop becomes nearer.
+            if (pursued && trip.Started && !urgencyChanged && Game.GameTime < trip.NextFleeTask &&
+                CrewDriving.IsPoliceThreat(trip.Fleeing, ped, CrewDriving.PoliceSearchMeters)) return;
             var officer = pursued ? CrewDriving.NearestPolice(ped, CrewDriving.PoliceSearchMeters) : null;
             if (officer != null)
             {
-                bool sameOfficer = trip.Fleeing != null && trip.Fleeing.Exists() && trip.Fleeing.Handle == officer.Handle;
-                if (trip.Started && sameOfficer && !urgencyChanged && Game.GameTime < trip.NextFleeTask) return;
                 CrewDriving.Configure(ped, trip.Slot, true);
                 ped.Task.StartVehicleMission(trip.Vehicle, officer, VehicleMissionType.Flee,
                     CrewDriving.Speed(trip.Slot, true, trip.Vehicle), (VehicleDrivingFlags)CrewDriving.EscapeFlags, 10f, 30f, true);

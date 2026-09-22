@@ -39,6 +39,8 @@ namespace Bloodlines.Missions
         public string PhaseId { get; set; }
         public Dictionary<string, string> CargoChanges { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public int OwnedCount => _owned.Count;
+        /// <summary>Read-only enumeration for staging inspection and mission results.</summary>
+        public IEnumerable<Entity> Entities => _owned.Values;
 
         public void Own(Entity entity)
         {

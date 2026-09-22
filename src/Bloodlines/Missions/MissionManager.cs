@@ -36,8 +36,9 @@ namespace Bloodlines.Missions
         /// <summary>What the running attempt is adding up to.</summary>
         public Core.MissionTally Tally { get; } = new Core.MissionTally();
         /// <summary>The live stage's objectives and name, for the HUD. Null outside a composed mission.</summary>
-        public System.Collections.Generic.IReadOnlyList<Objectives.Objective> CurrentObjectives => (_current as ComposedMission)?.CurrentStageObjectives;
-        public string CurrentStageName => (_current as ComposedMission)?.CurrentStageName;
+        private ComposedMission ActiveChapter => (_current is ContinuousOperation operation ? operation.Phase : _current) as ComposedMission;
+        public System.Collections.Generic.IReadOnlyList<Objectives.Objective> CurrentObjectives => ActiveChapter?.CurrentStageObjectives;
+        public string CurrentStageName => ActiveChapter?.CurrentStageName;
         public System.Action BeforeGameplay { get; set; }
 
         /// <summary>Stage of the running mission, or -1. Used by the dev menu.</summary>

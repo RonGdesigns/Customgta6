@@ -4,6 +4,8 @@ A single-player GTA V campaign mod: 70 main missions + 9 solo missions, three
 playable brothers with switching and abilities, built from a set of design-bible
 PDFs in `docs/bibles/`.
 
+Current status: all 79 gameplay scripts exist. Dated sections below preserve the history of decisions and repairs; earlier statements that later missions are unimplemented are historical. See `docs/FEATURES-STILL-PLANNED.md` for current remaining work.
+
 ## The two rules
 
 1. **Story Mode only. Never load GTA Online with this installed.** ScriptHookV
@@ -117,8 +119,7 @@ script hook itself is NOT interchangeable between builds.
 
 ## State
 
-**All 79 missions have gameplay scripts** (M01–M70, SM01–SM09). Every one of them is
-archive-derived and none has been played. The code builds clean with `--warnaserror`.
+**All 79 missions have gameplay scripts** (M01–M70, SM01–SM09). Live-playtest corrections are documented below; automated coverage does not establish live acceptance of every mission. The code builds clean with `--warnaserror`.
 
 Gameplay not implemented: interstitial
 systems beyond the implemented homes/workbenches/dispatches, MLO interiors, custom peds,
@@ -1450,3 +1451,21 @@ empty road.
 story stand-in's `RelationshipGroup` is an `int` and the thin one's is a struct with a
 `Hash`; `GET_PED_RELATIONSHIP_GROUP_HASH` is the one spelling that compiles in both and is
 what the engine says anyway.
+
+
+## September 19: integration repairs
+
+See `docs/code-review-2026-09-19.md`. Crew orders, the character wheel, M09's shot window,
+and Slipstream use `SlowMotion` claims. Closing one releases only its claim; ability shutdown
+must not reset the scene or menu clock. Emergency teardown resets all claims. Suppress the
+vanilla character switch even when the order strip blocks the custom wheel.
+
+Phone hangout and travel choices replace the selected brother's quick order only after the
+normal mission/ownership gates accept the change. A valid flee target survives the full
+five-second cooldown even if another officer becomes nearer; death, loss of range, a changed
+destination, or lost pursuit can still replace the task immediately.
+
+MissionManager reads HUD objectives from a continuous operation's current phase. Its staged
+entity view reads the existing OperationWorld collection, so results include hostiles from
+all phases without taking ownership or counting a handle twice. Run both harnesses; the
+review repair tests exercise time overlap, both heist dispatchers, and phase transitions.
