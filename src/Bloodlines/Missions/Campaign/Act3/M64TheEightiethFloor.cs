@@ -48,9 +48,13 @@ namespace Bloodlines.Missions.Campaign
         public const float LiftRadius = 2.5f;
         /// <summary>Where the campaign records that the executive floor is reachable.</summary>
         public const string AscentCargo = "mazeBankAscent";
+        /// <summary>How long calling the freight lift takes, and how near the entrance counts.</summary>
+        public const int LiftCallSeconds = 2;
+        public const float DoorsRadius = 3.5f;
 
         private readonly List<Ped> _defenders = new List<Ped>();
-        private Vector3 _arrival, _lift;
+        private readonly FloorEntry _entry = new FloorEntry();
+        private Vector3 _arrival, _lift, _doors;
         private bool _inside, _cleared, _atLift;
 
         public override string Id => "M64";
@@ -77,22 +81,42 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!BeginCrew(CrewSlot.Ice)) return false;
 
+            // The entrance is on the raised plaza deck, a fixed surface nobody has measured for
+            // this mission. One probe puts the lift call on the slab; the slab is loaded, because
+            // the crew is standing twenty meters from it.
+            _doors = MissionSites.OnSurface(At("M64.Doors"), MazeBank.PlazaHeadroom, MazeBank.PlazaFloor, Id + " tower entrance", 3);
+
             Establish("approach", "Fifty floors with the power off",
                 "The elevators stopped at fifty and Aegis is holding the floors above on foot. The way up is the service level, and the executive lift is on the other side of whoever is standing in it.");
             return true;
         }
 
+        private Vector3 DoorsPoint() => _doors == Vector3.Zero ? At("M64.Doors") : _doors;
+
         /// <summary>
-        /// Up into the tower, and then the floor's own layout found rather than written down.
-        /// The defenders and the lift are offsets from where the crew actually ends up.
+        /// The freight lift. This only asks the access service for the floor; the floor is laid
+        /// out in <see cref="OnUpdate"/> once the service says the player is standing on it.
+        /// Reading his position in this same call gave the plaza, and every defender and the
+        /// lift were placed out there while Ice alone went up (Ron, September 22).
         /// </summary>
-        private void GoUp()
+        private void GoUp() => _entry.Request(Ctx, MazeBank.Garage, MazeBank.GarageIpl);
+
+        /// <summary>
+        /// The floor's own layout, found rather than written down, from where the player
+        /// landed. The other two come up with him: the lift is Guess's to blow and the fight
+        /// is everybody's.
+        /// </summary>
+        private void OnTheFloor()
         {
-            string failure;
-            if (!MazeBank.Enter(Ctx, MazeBank.Garage, MazeBank.GarageIpl, out failure)) { Fail(failure); return; }
-            _inside = true;
-            _arrival = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot)?.Position ?? MazeBank.Garage;
+            _arrival = _entry.Arrival;
             _lift = MazeBank.Nearby(_arrival, 0.0, FloorSpread, Id + " executive lift");
+            int n = 0;
+            foreach (var hero in Protagonist.All)
+            {
+                if (hero.Slot == Ctx.Crew.ActiveSlot) continue;
+                var spot = MazeBank.BringAlongside(Ctx, hero.Slot, _arrival, 200.0 + 60.0 * n++, Id + " lift");
+                if (spot.HasValue) Roles?.For(hero.Slot).Observe(spot.Value, spot.Value);
+            }
 
             for (int i = 0; i < DefenderPosts; i++)
             {
@@ -108,6 +132,7 @@ namespace Bloodlines.Missions.Campaign
                 Fail("The service floor did not load its security. Retry the mission.");
                 return;
             }
+            _inside = true;
             Fighting = true;
             Logger.Info(Id + ": on the service floor at " + _arrival + " with " + _defenders.Count + " defenders and the lift at " + _lift + ".");
         }
@@ -119,10 +144,15 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Get into the tower",
-                new ConditionObjective("Take the freight lift up to the service floor", () => _inside)
-                { Marker = () => At("M64.Doors"), MarkerRadius = 4f })
-                .AnyOf()
-                .OnEnter(c => GoUp());
+                new MissionInteraction("Call the freight lift up to the service floor", DoorsPoint, LiftCallSeconds, DoorsRadius))
+                .AnyBrother()
+                .OnExit(c => GoUp());
+
+            // A real wait, not a formality: the lift is the access service's fade and load,
+            // and the floor is only laid out once it reports the player standing on it.
+            yield return new MissionStage("Up to the service floor",
+                new ConditionObjective("Riding the freight lift up to the service floor", () => _inside))
+                .AnyBrother();
 
             // M64_S1_01_ICE calls a falling elevator car. There is no shaft to drop one down,
             // so it is not fired; the adaptation is recorded rather than faked.
@@ -149,6 +179,20 @@ namespace Bloodlines.Missions.Campaign
             _atLift = true;
             Ctx.State?.SetCargo(AscentCargo, "M64.Doors");
             Logger.Info(Id + ": the executive floor is reachable.");
+        }
+
+        protected override void OnUpdate()
+        {
+            if (_entry.Update(Ctx)) OnTheFloor();
+            if (_entry.Refused) { Fail(_entry.Failure); return; }
+            if (Status != MissionStatus.Running) return;
+            base.OnUpdate();
+        }
+
+        protected override void OnCleanup()
+        {
+            _entry.Release(Ctx, Protagonist.All.Select(h => Ctx.Crew.PedFor(h.Slot)));
+            base.OnCleanup();
         }
 
         protected override void OnPassed()

@@ -1031,7 +1031,7 @@ Prerequisite: M60. Retry: full mission restart.
 | 1 | Gohan | **Get down to the wreck** — ReachZoneObjective: Gohan: dive to the flooded bridge |
 | 2 | Gohan | **Cut the server out** — MissionInteraction: Gohan: cut the command server out of the chassis |
 | 3 | any brother | **Deal with their divers** — KillTargetsObjective: Take the Aegis demolition divers |
-| 4 | any brother | **Surface with it** — TravelObjective: Bring the server up to the quay |
+| 4 | any brother | **Surface with it** — TravelObjective: Bring the server up to the surface by the quay |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1049,7 +1049,7 @@ Prerequisite: M61. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Rider.
+Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Flat1, M62.Flat2, M62.Rider.
 
 ## M63 — TOWER OF GLASS
 
@@ -1071,9 +1071,10 @@ Prerequisite: M63. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | as assigned | **Get into the tower** — ConditionObjective: Take the freight lift up to the service floor |
-| 2 | any brother | **Clear the service floor** — KillTargetsObjective: Take the executive security holding the floor |
-| 3 | Guess | **Take the executive lift** — MissionInteraction: Guess: blow the executive lift open |
+| 1 | any brother | **Get into the tower** — MissionInteraction: Call the freight lift up to the service floor |
+| 2 | any brother | **Up to the service floor** — ConditionObjective: Riding the freight lift up to the service floor |
+| 3 | any brother | **Clear the service floor** — KillTargetsObjective: Take the executive security holding the floor |
+| 4 | Guess | **Take the executive lift** — MissionInteraction: Guess: blow the executive lift open |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1085,10 +1086,11 @@ Prerequisite: M64. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | as assigned | **Reach the executive floor** — ConditionObjective: Take the lift to the executive floor |
-| 2 | any brother | **Break the detail** — KillTargetsObjective: Take Vance's bodyguard detail |
-| 3 | Gohan | **Open the escrow** — MissionInteraction: Gohan: force Vance's biometrics at the escrow terminal |
-| 4 | Ice | **Finish it** — ConditionObjective: Ice: take Vance |
+| 1 | any brother | **To the executive lift** — MissionInteraction: Call the lift to the executive floor |
+| 2 | any brother | **Reach the executive floor** — ConditionObjective: Riding the lift to the executive floor |
+| 3 | any brother | **Break the detail** — KillTargetsObjective: Take Vance's bodyguard detail |
+| 4 | Gohan | **Open the escrow** — MissionInteraction: Gohan: force Vance's biometrics at the escrow terminal |
+| 5 | Ice | **Finish it** — ConditionObjective: Ice: take Vance |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1158,7 +1160,7 @@ Prerequisite: M69. Retry: full mission restart.
 |---|---|---|
 | 1 | any brother | **Hold the fuselage** — SurviveWavesObjective: Hold the plane. Three waves. |
 | 2 | Guess | **Start all four** — EnterVehicleObjective: Guess: get into the C-130 and start all four turboprops |
-| 3 | Guess | **Off the seawall** — DeliverVehicleObjective: Guess: take the plane off the end of the runway into the water |
+| 3 | Guess | **Off the seawall** — ConditionObjective: Guess: take the plane off the end of the runway into the water |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1263,12 +1265,14 @@ Prerequisite: M52. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Take the foyer** — KillTargetsObjective: Ice: take the executive detail in the foyer |
-| 2 | Ice | **Settle it** — ConditionObjective: Ice: Sterling |
+| 1 | Ice | **Up to the suite** — MissionInteraction: Ice: take the service elevator up to Sterling's floor |
+| 2 | Ice | **Riding up** — ConditionObjective: Ice: riding up to Sterling's floor |
+| 3 | Ice | **Take the foyer** — KillTargetsObjective: Ice: take the executive detail in the foyer |
+| 4 | Ice | **Settle it** — ConditionObjective: Ice: Sterling |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM07.Suite.
+Survey references: SM07.Start, SM07.Suite.
 
 ## SM08 — BURNER PROTOCOL
 
@@ -1276,13 +1280,17 @@ Prerequisite: M52. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Take the client files** — MissionInteraction: Gohan: bypass the biometric lock and copy the client files |
-| 2 | Gohan | **Burn the vault** — MissionInteraction: Gohan: run thermite along the filing cabinets |
-| 3 | Gohan | **Get out before it goes** — TravelObjective: Get out of the building |
+| 1 | Gohan | **Up to the firm** — MissionInteraction: Gohan: take the service elevator up to the Vanderbilt and Cole floor |
+| 2 | Gohan | **Riding up** — ConditionObjective: Gohan: riding up to the firm's floor |
+| 3 | Gohan | **Take the client files** — MissionInteraction: Gohan: bypass the biometric lock and copy the client files |
+| 4 | Gohan | **Burn the vault** — MissionInteraction: Gohan: run thermite along the filing cabinets |
+| 5 | Gohan | **Get out before it goes** — MissionInteraction: Gohan: back to the service elevator and down |
+| 6 | Gohan | **Riding down** — ConditionObjective: Gohan: riding down to the street |
+| 7 | Gohan | **Clear of the building** — TravelObjective: Get clear of the building |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM08.Exit, SM08.Floor.
+Survey references: SM08.Exit, SM08.Floor, SM08.Start.
 
 ## SM09 — THE LONG EXIT
 
@@ -1295,7 +1303,7 @@ Prerequisite: M52. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM09.Berth, SM09.Pound.
+Survey references: SM09.Berth, SM09.Pound, SM09.Start.
 
 ## Boundaries of this audit
 

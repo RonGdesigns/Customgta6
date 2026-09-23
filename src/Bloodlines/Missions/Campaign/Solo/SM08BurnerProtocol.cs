@@ -45,10 +45,22 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where the campaign records the files are his.</summary>
         public const string FilesEvidence = "vanderbiltFiles";
 
+        /// <summary>The service elevator: how long it takes, and how near its door counts.</summary>
+        public const int ElevatorSeconds = 2;
+        public const float ElevatorRadius = 3.5f;
+        /// <summary>How near the terminal the night security notices him working it.</summary>
+        public const float NoticeMeters = 4f;
+        /// <summary>How often a guard who has dropped out of the fight is re-ordered. Never every frame.</summary>
+        public const int FightReviewMs = 3000;
+
         private readonly TargetBlips _blips = new TargetBlips();
         private readonly List<Ped> _security = new List<Ped>();
+        private readonly FloorEntry _entry = new FloorEntry();
+        /// <summary>Each guard's health when he was posted, so a wound is a change of state.</summary>
+        private readonly Dictionary<int, int> _postedHealth = new Dictionary<int, int>();
         private Vector3 _arrival, _terminal, _vault;
-        private bool _inside, _downloaded, _armed, _out;
+        private int _fightReviewAt;
+        private bool _inside, _engaged, _downloaded, _armed, _out;
 
         public override string Id => "SM08";
         public override string Title => "Burner Protocol";
@@ -69,25 +81,47 @@ namespace Bloodlines.Missions.Campaign
         // the key's kind is "interior", and MissionSites.Prepare only grounds "land", so
         // the walkable query never gets a chance to answer with the street below.
 
+        /// <summary>The firm's office MLO. DLC map data, so it is opened through the tower helper.</summary>
+        public const string FloorIpl = "ex_dt1_02_office_01a";
+
         protected override bool Setup()
         {
-            var floor = At("SM08.Floor");
-
-            // The office floors are DLC map data. A plain REQUEST_IPL on those quietly does
-            // nothing until the shipped archives are registered, and then the interior is
-            // simply absent — which is a man standing in open sky at 167 m.
-            DlcMaps.RequestIpl("ex_dt1_02_office_01a");
-            if (!MissionSites.InteriorAt(floor))
+            // Gohan on the street below the tower, alone, the way SM05 and SM06 put their man
+            // down. Nothing deployed anybody here, so with the crew stood down there was no
+            // Gohan to send up - the same fault that stopped SM07 (Ron, September 22).
+            if (!MissionSites.Prepare(Ctx.Locations, Id) ||
+                !Ctx.Crew.DeploySolo(CrewSlot.Gohan, At("SM08.Start"), Ctx.Locations.Heading("SM08.Start")))
             {
-                Logger.Error(Id + ": no interior at " + floor + " after requesting ex_dt1_02_office_01a.");
-                GameUtils.Notify("~r~The firm's floor did not load. See Bloodlines.log.");
+                Logger.Error(Id + ": Gohan could not be put down at SM08.Start.");
+                GameUtils.Notify("~r~Gohan could not be placed below the tower. See Bloodlines.log.");
                 return false;
             }
-
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
-            if (gohan == null || !gohan.Exists()) { Logger.Error(Id + ": Gohan is not available for his own solo."); return false; }
-            gohan.Position = floor;
-            _arrival = gohan.Position;
+            if (gohan == null || !gohan.Exists())
+            {
+                Logger.Error(Id + ": Gohan is not available for his own solo.");
+                GameUtils.Notify("~r~Gohan is not available for this solo. See Bloodlines.log.");
+                return false;
+            }
+            // No interior check here. The office is DLC map data that some builds only
+            // register once the player is near it; the access service asks for the IPL,
+            // looks the room up with him there and rolls him back if it never loads, and
+            // the ride-up stage turns that into a failure with a reason.
+            RequireSurvivor(gohan, "Gohan is down. Restart this solo mission.");
+            return true;
+        }
+
+        /// <summary>
+        /// Up to the firm's floor through the access service: it owns the fade, the IPL, the
+        /// room pin and the collision wait. He used to be set down in the MLO directly, never
+        /// enabled, pinned or checked ready, with everybody placed in the same frame.
+        /// </summary>
+        private void GoUp() => _entry.Request(Ctx, At("SM08.Floor"), FloorIpl);
+
+        /// <summary>The floor, laid out from where Gohan actually landed.</summary>
+        private void LayOutFloor()
+        {
+            _arrival = _entry.Arrival;
             _inside = true;
 
             _terminal = MazeBank.Nearby(_arrival, 0.0, FloorSpread, Id + " client-file terminal");
@@ -99,25 +133,69 @@ namespace Bloodlines.Missions.Campaign
                 var ped = Guard(post, WeaponHash.Pistol, true);
                 if (ped == null) continue;
                 _security.Add(ped);
+                _postedHealth[ped.Handle] = ped.Health;
                 _blips.Attach(ped, BlipColor.Red, "Night security");
             }
             if (_security.Count == 0)
                 Logger.Warn(Id + ": no night security could be placed; the floor is empty, which at three in the morning is not impossible.");
 
             // Establish belongs to PreparationOperation, which owns a crew; a solo plays its
-            // own scene the way SM05 and SM06 do.
-            Ctx.Cutscenes.Play(new SceneSpec
+            // own scene the way SM05 and SM06 do - here, where the floor it shows exists.
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan != null && gohan.Exists())
+                Ctx.Cutscenes.Play(new SceneSpec
+                {
+                    MissionId = Id, Phase = "approach", Title = "The suits who wrote the ledger",
+                    Reason = "Show the floor and the paper vault before Gohan starts. He is alone up here.",
+                    Blocking = new SceneBlocking().Then(ShotStep.Low(2200, gohan, 6, 4, 2))
+                });
+        }
+
+        /// <summary>
+        /// Night security goes for him the moment he is working the terminal, or the moment a
+        /// shot is fired or one of them is hurt. They used to be placed and never told anything,
+        /// with their permanent events blocked, so they stood still for the whole job. After
+        /// that, an order goes only to a man who has dropped out of combat.
+        /// </summary>
+        private void KeepFighting()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (!_engaged && _inside && gohan != null && gohan.Exists())
             {
-                MissionId = Id, Phase = "approach", Title = "The suits who wrote the ledger",
-                Reason = "Show the floor and the paper vault before Gohan starts. He is alone up here.",
-                Blocking = new SceneBlocking().Then(ShotStep.Low(2200, gohan, 6, 4, 2))
-            });
-            RequireSurvivor(gohan, "Gohan is down. Restart this solo mission.");
-            return true;
+                bool working = _terminal != Vector3.Zero && gohan.Position.DistanceTo(_terminal) <= NoticeMeters;
+                bool loud = gohan.IsShooting || _security.Any(p => p != null && p.Exists() &&
+                    (p.IsDead || (_postedHealth.TryGetValue(p.Handle, out int posted) && p.Health < posted)));
+                if (working || loud)
+                {
+                    _engaged = true;
+                    _fightReviewAt = 0;
+                    Logger.Info(Id + ": night security is onto Gohan" + (working ? " at the terminal." : "."));
+                }
+            }
+            if (!_engaged || Ctx.Cutscenes.IsActive || Game.GameTime < _fightReviewAt) return;
+            _fightReviewAt = Game.GameTime + FightReviewMs;
+            foreach (var ped in _security)
+            {
+                if (ped == null || !ped.Exists() || ped.IsDead || ped.IsInCombat) continue;
+                ped.BlockPermanentEvents = false;
+                ped.Task.FightAgainstHatedTargets(60f);
+            }
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            yield return new MissionStage("Up to the firm",
+                new MissionInteraction("Gohan: take the service elevator up to the Vanderbilt and Cole floor",
+                    () => At("SM08.Start"), ElevatorSeconds, ElevatorRadius)
+                { RequiredCharacter = CrewSlot.Gohan })
+                .OnExit(c => GoUp());
+
+            // The ride is the access service's fade and load. Nothing is placed until it
+            // reports Gohan standing on the floor.
+            yield return new MissionStage("Riding up",
+                new ConditionObjective("Gohan: riding up to the firm's floor", () => _inside))
+                .OwnedBy(CrewSlot.Gohan);
+
             yield return new MissionStage("Take the client files",
                 new MissionInteraction("Gohan: bypass the biometric lock and copy the client files",
                     () => _terminal, DownloadSeconds, 2.5f, animation: MissionInteraction.ReachInside)
@@ -134,14 +212,35 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("SM08_S2_03_GOHAN");
 
             // Sixty seconds, because the line says sixty seconds. The clock is the objective's,
-            // so it fails with a reason rather than burning him quietly.
+            // so it fails with a reason rather than burning him quietly. The way out is the
+            // service elevator he came up in: an office MLO a hundred and thirty meters up has
+            // no walkable way down, and the street exit this used to ask for was unreachable
+            // from the floor (M55's lesson, Ron, September 22).
             yield return new MissionStage("Get out before it goes",
-                new TravelObjective("Get out of the building", () => At("SM08.Exit"), 12f),
+                new MissionInteraction("Gohan: back to the service elevator and down",
+                    () => _arrival, ElevatorSeconds, ElevatorRadius)
+                { RequiredCharacter = CrewSlot.Gohan },
                 new TimerObjective(BurnSeconds,
                     "The thermite went while Gohan was still on the floor. Sixty seconds means sixty seconds."))
                 .OwnedBy(CrewSlot.Gohan)
+                .OnExit(c => GoDown());
+
+            yield return new MissionStage("Riding down",
+                new ConditionObjective("Gohan: riding down to the street", () => _entry.Left))
+                .OwnedBy(CrewSlot.Gohan);
+
+            yield return new MissionStage("Clear of the building",
+                new TravelObjective("Get clear of the building", () => At("SM08.Exit"), 12f))
+                .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => Clear())
                 .AfterCues("SM08_S2_04_GOHAN");
+        }
+
+        /// <summary>Down through the access service's own exit, with its fade, to the street he came up from.</summary>
+        private void GoDown()
+        {
+            if (!_entry.RequestExit(Ctx) && !_entry.Refused)
+                Logger.Warn(Id + ": the service elevator could not be called down; the floor was not open.");
         }
 
         private void Copied()
@@ -171,13 +270,18 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+            if (_entry.Update(Ctx) && _entry.Ready) LayOutFloor();
+            if (_entry.Refused) { Fail(_entry.Failure); return; }
             _blips.Update();
+            KeepFighting();
             base.OnUpdate();
         }
 
         protected override void OnCleanup()
         {
             _blips.Dispose();
+            // Whatever way this ends, Gohan is not left on a burning floor with no door.
+            _entry.Release(Ctx, null);
             base.OnCleanup();
         }
 

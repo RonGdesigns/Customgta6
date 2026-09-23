@@ -91,13 +91,21 @@ namespace Bloodlines.Missions.Campaign
             _technical = Car(TechnicalModel, Deck("M63.Technical"), Ctx.Locations.Heading("M63.Technical"), true);
             if (!RequireAssets(_technical)) return false;
             _technical.IsPersistent = true;
-            RequireAsset(_technical, "The technical was destroyed before it reached the doors.");
+            // No RequireAsset. That contract lasts the whole mission, and once the technical is
+            // through the doors it is a wreck in a gunfight nobody needs any more: losing it to
+            // the nests after the breach failed the mission (Ron, September 22). Its delivery
+            // objective already fails the breach if it is lost on the way in, which is the only
+            // stretch it matters.
 
             // Two to a nest, each on his own settled point: the plaza deck is a built surface,
             // so these go in through the path that does not ask the engine for ground.
             foreach (var key in NestKeys())
             {
-                var post = Deck(key);
+                // The deck offset is measured at the doors, and the nests stand up to sixty
+                // meters north of them - past the edge of the raised deck, some of them, where
+                // that height is seven meters of air over the street. Each post is settled on
+                // whatever is actually under it.
+                var post = MissionSites.OnSurface(Deck(key), MazeBank.PlazaHeadroom, MazeBank.PlazaFloor, Id + " " + key, 2);
                 int men = MissionPlacement.Count(Ctx.Locations, key, PerNest);
                 for (int i = 0; i < men; i++)
                 {

@@ -50,6 +50,16 @@ namespace Bloodlines.Missions.Campaign
         public const float DiverSpeed = 2f;
         /// <summary>Where the campaign records the access codes are the crew's.</summary>
         public const string ServerEvidence = "aegisCommandServer";
+        /// <summary>How far above the measured seabed the wreck is created, so it settles rather than clips.</summary>
+        public const float WreckClearance = 1.5f;
+        /// <summary>
+        /// How long Gohan can stay down with the dive gear on. The cut alone is fourteen
+        /// seconds at the wreck, after a swim down to it; a player's own breath does not cover
+        /// that, and nothing gave him more (Ron, September 22).
+        /// </summary>
+        public const float GohanAirSeconds = 600f;
+        /// <summary>How near the wreck the cut can be worked from. Underwater a swimmer drifts.</summary>
+        public const float CutRadius = 6f;
 
         private readonly List<Ped> _frogmen = new List<Ped>();
         private Vehicle _wreck;
@@ -80,7 +90,15 @@ namespace Bloodlines.Missions.Campaign
                 return false;
             }
 
-            var seabed = MarineSites.ResolveOrThrow(Ctx.Locations, "M61.Wreck", RequiredDepth);
+            // ResolveOrThrow answers with the water's surface, not the bottom: the wreck used to
+            // be created floating there and left to sink on its own. It goes on the seabed the
+            // probe measured, and stays at the surface to sink only where no bottom was seen.
+            var water = MarineSites.ResolveOrThrow(Ctx.Locations, "M61.Wreck", RequiredDepth);
+            var column = MarineSites.Native.Column(water);
+            var seabed = column.Known && !column.Assumed && column.HasDepth(RequiredDepth)
+                ? new Vector3(water.X, water.Y, column.Floor + WreckClearance)
+                : water;
+            if (seabed == water) Logger.Warn(Id + ": no seabed was measured under " + water + "; the wreck is left to sink from the surface.");
             _wreck = Car(WreckModel, seabed, Ctx.Locations.Heading("M61.Wreck"), false);
             if (!RequireAssets(_wreck)) return false;
             _wreck.IsPersistent = true;
@@ -132,12 +150,15 @@ namespace Bloodlines.Missions.Campaign
                 new ReachZoneObjective("Gohan: dive to the flooded bridge",
                     () => _wreck != null && _wreck.Exists() ? _wreck.Position : At("M61.Wreck"), 8f))
                 .OwnedBy(CrewSlot.Gohan)
+                .OnEnter(c => DiveGear(true))
                 .OnExit(c => _down = true);
 
+            // No reach-inside animation: it is a standing pose, and played on a swimmer it
+            // takes him out of the swim at the bottom of the basin.
             yield return new MissionStage("Cut the server out",
                 new MissionInteraction("Gohan: cut the command server out of the chassis",
                     () => _wreck != null && _wreck.Exists() ? _wreck.Position : At("M61.Wreck"),
-                    CutSeconds, 4f, animation: MissionInteraction.ReachInside)
+                    CutSeconds, CutRadius)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnEnter(c => Fighting = true)
                 .OnExit(c => Cutting())
@@ -150,7 +171,7 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M61_S1_02_ICE");
 
             yield return new MissionStage("Surface with it",
-                new TravelObjective("Bring the server up to the quay", () => At("M61.Surface"), 12f))
+                new TravelObjective("Bring the server up to the surface by the quay", () => At("M61.Surface"), 12f))
                 .AnyBrother()
                 .AfterCues("M61_S1_03_GOHAN");
         }
@@ -160,6 +181,29 @@ namespace Bloodlines.Missions.Campaign
             _cut = true;
             Ctx.State?.SetEvidence(ServerEvidence, EvidenceState.CopyHeld);
             Logger.Info(Id + ": the tactical command server is out, with the Maze Bank access codes on it.");
+        }
+
+        /// <summary>
+        /// Gohan's dive gear: the scuba set and the air to go with it. Taken off again on every
+        /// exit path. The longer air is left with him - the engine has no getter for what he had
+        /// before, and guessing a number to write back would be worse than a generous lung.
+        /// </summary>
+        private void DiveGear(bool on)
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists()) return;
+            try
+            {
+                Function.Call(Hash.SET_ENABLE_SCUBA, gohan, on);
+                if (on) Function.Call(Hash.SET_PED_MAX_TIME_UNDERWATER, gohan, GohanAirSeconds);
+            }
+            catch (Exception ex) { Logger.Error(Id + ": " + (on ? "fitting" : "removing") + " Gohan's dive gear", ex); }
+        }
+
+        protected override void OnCleanup()
+        {
+            DiveGear(false);
+            base.OnCleanup();
         }
 
         protected override void OnPassed()
