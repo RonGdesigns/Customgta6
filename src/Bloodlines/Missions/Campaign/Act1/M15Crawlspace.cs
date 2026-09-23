@@ -30,6 +30,10 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _watchmen = new List<Ped>();
 
         private readonly NonlethalGuards _nonlethal = new NonlethalGuards();
+        /// <summary>A stun gun in every brother's hand, and nothing else for the two the player is not holding.</summary>
+        private readonly NonlethalCrew _stunOnly = new NonlethalCrew();
+        /// <summary>Charges on each brother's loaned stun gun.</summary>
+        public const int StunRounds = NonlethalCrew.DefaultRounds;
         private Prop _office;
         private Prop _panel;
         private Vehicle _granger;
@@ -66,9 +70,6 @@ namespace Bloodlines.Missions.Campaign
             ApplyBibleSetting();
             Ctx.Abilities.Refill();
 
-            var player = Game.Player.Character;
-            player.Weapons.Give(WeaponHash.StunGun, 1, false, true);
-
             SpawnWatchmen();
             SpawnPanel();
             SpawnGranger();
@@ -79,7 +80,11 @@ namespace Bloodlines.Missions.Campaign
             Station(CrewSlot.Gohan, _granger, VehicleSeat.RightRear);
             if (_granger != null && _granger.Exists()) Station(CrewSlot.Guess, _granger, VehicleSeat.Driver);
             else Station(CrewSlot.Guess, _exit + new Vector3(10f, 0f, 0f));
-            Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.StunGun, 100, true, true);
+            // A dead watchman fails this mission at any stage, and M50 showed what a brother the
+            // player is not holding does with a carbine once something sends him into a fight
+            // (Ron, September 22). Gohan had a one-charge stun gun in his pocket, Guess had none,
+            // and only Ice's was in his hand. All three carry one now, in hand, on loan.
+            _stunOnly.Begin(Ctx.Crew, StunRounds);
             PlayApproach();
             return true;
         }
@@ -253,6 +258,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+            _stunOnly.Update();
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan })
                 if (slot != Ctx.Crew.ActiveSlot) Ctx.Crew.CompanionAI.TakeControl(slot);
             if (_withdrawing && !Ctx.Cutscenes.IsActive && Game.GameTime >= _nextWithdrawalOrder)
@@ -284,6 +290,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            try { _stunOnly.End(); } catch (System.Exception ex) { Logger.Error("M15 stun gun release", ex); }
             Ctx.Crew.CompanionsHoldPosition = false;
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);
             _nonlethal.Dispose();

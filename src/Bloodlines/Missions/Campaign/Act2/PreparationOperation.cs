@@ -63,6 +63,12 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnRejoin(CrewSlot slot) { Roles?.Peek(slot)?.Stop(); }
         /// <summary>
+        /// A man in the opposition the brothers must never be sent to fight: M50's watchmen,
+        /// who fail the mission dead. Support orders pass over him even while the mission is
+        /// fighting, because a support order is a gun, not a stun gun.
+        /// </summary>
+        protected virtual bool Spared(Ped ped) => false;
+        /// <summary>
         /// Keys that sit on built geometry — a pier deck, a platform, a vessel — rather
         /// than on the terrain. The ground preparation asks the engine for walkable ground
         /// near each point, and over water that answer is the water beside the structure:
@@ -370,7 +376,7 @@ namespace Bloodlines.Missions.Campaign
                 if (slot == Ctx.Crew.ActiveSlot || Ctx.Crew.CompanionAI.IsRejoining(slot)) continue;
                 var actor = Ctx.Crew.PedFor(slot);
                 if (actor == null || !actor.Exists() || actor.IsDead || (actor.IsInVehicle() && actor.SeatIndex == VehicleSeat.Driver)) continue;
-                var threat = Opposition.Where(p => p != null && p.Exists() && !p.IsDead && p.Position.DistanceTo(actor.Position) < 110f)
+                var threat = Opposition.Where(p => p != null && p.Exists() && !p.IsDead && !Spared(p) && p.Position.DistanceTo(actor.Position) < 110f)
                     .OrderBy(p => p.Position.DistanceTo(actor.Position)).FirstOrDefault();
                 if (threat == null) { _supportTargets.Remove(slot); continue; }
                 // Once per target, and again only if he has dropped out of the fight. It was

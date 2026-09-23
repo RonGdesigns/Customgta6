@@ -49,11 +49,13 @@ namespace Bloodlines.Missions.Campaign
         /// targets" shot a watchman dead within seconds of the start (Ron, September 22).
         /// </summary>
         public const string WatchGroup = "BLOODLINES_WATCHMEN";
-        /// <summary>Charges on Ice's loaned stun gun. The gun itself goes back at teardown.</summary>
-        public const int StunRounds = 100;
+        /// <summary>Charges on each brother's loaned stun gun. The gun itself goes back at teardown.</summary>
+        public const int StunRounds = NonlethalCrew.DefaultRounds;
 
         private readonly CrewBoarding _boarding = new CrewBoarding();
         private NonlethalGuards _contained;
+        /// <summary>The brothers' side of it: a stun gun in every hand, and no other gun for the ones the player is not holding.</summary>
+        private readonly NonlethalCrew _stunOnly = new NonlethalCrew();
         private bool _spliced, _invalidated;
 
         public override string Id => "M50";
@@ -112,11 +114,13 @@ namespace Bloodlines.Missions.Campaign
                 _contained.Add(guard);
             }
 
-            // "Use the stun gun" was the failure message, and nobody had handed Ice one: the
-            // campaign's M03 stun gun belongs to Gohan. A mission loan, opened and closed by
-            // MissionManager, so it goes back to the arsenal baseline at teardown.
-            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.StunGun, StunRounds, false, true);
+            // "Use the stun gun" was the failure message, and only Ice had been handed one, not
+            // in his hand. Ron, September 22: "they automatically shot. They didn't start with
+            // stun guns." Every brother carries one now, as a mission loan that MissionManager
+            // returns at teardown, has it in his hand when gameplay starts, and the two the
+            // player is not holding cannot draw anything else until the attempt is over. The
+            // watchmen keep their carbines; that was Ron's call too.
+            _stunOnly.Begin(Ctx.Crew, StunRounds);
 
             Paleto.Review(Ctx, PlacementContract.Interaction("M50.Conduit"),
                 PlacementContract.Vehicle("M50.Van", new Model("granger")));
@@ -190,8 +194,12 @@ namespace Bloodlines.Missions.Campaign
             GameUtils.Subtitle("~g~The coordinated feed is down. Local copies still exist; this bought time, not an acquittal.", 6000);
         }
 
+        /// <summary>A support order never picks a watchman, even if this mission ever declares a fight.</summary>
+        protected override bool Spared(Ped ped) => _contained != null && _contained.Contains(ped);
+
         protected override void OnUpdate()
         {
+            _stunOnly.Update();
             _contained?.Update();
             if (_invalidated && !Aboard)
                 _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Crew(CrewSlot.Guess), Id);
@@ -200,7 +208,10 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
-            _contained?.Dispose();
+            // Each on its own: a brother left locked to the stun gun would never draw anything
+            // else again, whatever else in teardown went wrong.
+            try { _stunOnly.End(); } catch (Exception ex) { Logger.Error("M50 stun gun release", ex); }
+            try { _contained?.Dispose(); } catch (Exception ex) { Logger.Error("M50 watchman release", ex); }
             base.OnCleanup();
         }
 
