@@ -44,6 +44,15 @@ namespace Bloodlines.Missions.Campaign
         private int _tankResponseAt = -1, _tankCount, _nextTankOrder;
         private readonly List<Vehicle> _tanks = new List<Vehicle>();
         private readonly List<Ped> _tankDrivers = new List<Ped>();
+        /// <summary>How long a tank's attack order stands with nothing changed before it is given again.</summary>
+        public const int TankRefreshMs = 15000;
+        /// <summary>How many military police hold the pad; the stage that clears them needs every one.</summary>
+        public const int PadGuards = 6;
+        private readonly Dictionary<int, int> _tankTarget = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _tankOrderedAt = new Dictionary<int, int>();
+        /// <summary>How many attack orders the armor has been given, for the harness.</summary>
+        public int TankOrders { get; private set; }
+        public IReadOnlyList<Vehicle> Tanks => _tanks;
         private bool _challenged, _crewMoved, _landed;
 
         /// <summary>This mission's claim on the city lights; see Core/WorldLights.</summary>
@@ -83,6 +92,9 @@ namespace Bloodlines.Missions.Campaign
                 Logger.Warn("M16: the campaign does not record the IFF unit; the approach is played as if it were on the dash anyway.");
 
             SpawnMilitaryPolice();
+            // An empty pad is a "clear the pad" stage that finishes the moment it opens.
+            if (_militaryPolice.Count != PadGuards)
+            { Logger.Error("M16: only " + _militaryPolice.Count + " of " + PadGuards + " military police loaded on the pad."); return false; }
             SpawnCargobob();
             SpawnGranger();
             if (!RequireAssets(_cargobob, _granger)) return false;
@@ -379,9 +391,20 @@ namespace Bloodlines.Missions.Campaign
                 var blip=Track(tank.AddBlip());blip.Color=BlipColor.Red;blip.Name="Delayed armor response";
                 Radio("GOHAN","Armor's rolling manually. Grid is still down. Get the lift out of there.","M16_TANK_"+_tankCount);
             }
+            // Reviewed every four seconds, ordered only when the tank has somebody new to
+            // attack or on a slow refresh: an attack mission handed over on every review
+            // restarts before the tank can act on it (Ron, September 22).
             if(Game.GameTime<_nextTankOrder)return;_nextTankOrder=Game.GameTime+4000;
-            for(int i=0;i<_tanks.Count;i++)if(_tanks[i].Exists()&&!_tanks[i].IsDead&&_tankDrivers[i].Exists()&&!_tankDrivers[i].IsDead)
-                _tankDrivers[i].Task.StartVehicleMission(_tanks[i],Game.Player.Character,VehicleMissionType.Attack,20f,(VehicleDrivingFlags)786603,25f,35f,true);
+            var target=Game.Player.Character;
+            for(int i=0;i<_tanks.Count;i++)
+            {
+                if(!_tanks[i].Exists()||_tanks[i].IsDead||!_tankDrivers[i].Exists()||_tankDrivers[i].IsDead||target==null)continue;
+                int handle=_tankDrivers[i].Handle;
+                if(_tankTarget.TryGetValue(handle,out var last)&&last==target.Handle&&
+                   _tankOrderedAt.TryGetValue(handle,out var at)&&Game.GameTime-at<TankRefreshMs)continue;
+                _tankDrivers[i].Task.StartVehicleMission(_tanks[i],target,VehicleMissionType.Attack,20f,(VehicleDrivingFlags)786603,25f,35f,true);
+                _tankTarget[handle]=target.Handle;_tankOrderedAt[handle]=Game.GameTime;TankOrders++;
+            }
         }
 
         protected override void OnPassed()
@@ -394,7 +417,7 @@ namespace Bloodlines.Missions.Campaign
             _blackout=false;
             WorldLights.Restore(LightOwner);
             if(_cargobob!=null&&_cargobob.Exists())Function.Call(Hash.SET_VEHICLE_CAN_BE_TARGETTED,_cargobob,true);
-            _tanks.Clear();_tankDrivers.Clear();
+            _tanks.Clear();_tankDrivers.Clear();_tankTarget.Clear();_tankOrderedAt.Clear();
             // Never leave the player's wanted ceiling where a mission put it.
             Function.Call(Hash.SET_MAX_WANTED_LEVEL, _previousWantedMaximum);
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan }) Ctx.Crew.CompanionAI.ReleaseControl(slot);

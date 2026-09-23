@@ -266,7 +266,10 @@ namespace Bloodlines.Missions.Campaign
                     else
                     {
                         var seat = slot == CrewSlot.Ice ? VehicleSeat.LeftRear : VehicleSeat.RightRear;
-                        if (_granger.IsSeatFree(seat)) brother.Task.EnterVehicle(_granger, seat, 8000, 2f);
+                        // An entry already under way is left to finish: ordering it again on
+                        // the four-second clock restarts the climb into the seat.
+                        if (_granger.IsSeatFree(seat) && !Function.Call<bool>(Hash.IS_PED_GETTING_INTO_A_VEHICLE, brother))
+                            brother.Task.EnterVehicle(_granger, seat, 8000, 2f);
                     }
                 }
             }

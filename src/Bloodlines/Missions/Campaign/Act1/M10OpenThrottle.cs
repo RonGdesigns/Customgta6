@@ -43,6 +43,19 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _shop;
         private bool _gunshipShown, _delivered;
         private int _nextPursuit;
+        /// <summary>How long an order to a pursuer stands before it is given again with nothing changed.</summary>
+        public const int PursuitRefreshMs = 15000;
+        /// <summary>How long AI Ice keeps shooting at one bike before the order is renewed.</summary>
+        public const int IceShotCooldownMs = 6000;
+        private readonly Dictionary<int, bool> _riderMounted = new Dictionary<int, bool>();
+        private readonly Dictionary<int, int> _riderOrderedAt = new Dictionary<int, int>();
+        private int _gunshipTarget, _gunshipOrderedAt;
+        private bool _running;
+        private Ped _iceTarget;
+        private int _iceShotAt, _guessDriveAt, _guessSlowSince;
+        private bool _guessDriving;
+        public bool IceShooting => _iceTarget != null;
+        public bool GuessDrivingRun => _guessDriving;
 
         public override string Id => "M10";
         public override string Title => "Open Throttle";
@@ -104,7 +117,12 @@ namespace Bloodlines.Missions.Campaign
                         "The chase boxed the flatbed in and popped the slicks.", graceSeconds: 20),
                     new KillTargetsObjective("Clear the cartel bikes.", () => _bikers, 0, false),
                     new ProtectObjective("", () => _flatbed, "The flatbed and the engines are gone."))
-                .OnEnter(context => SpawnBikes())
+                // Any brother: Ice has the launcher and the passenger window, and switching
+                // to him used to lock him out of the stage it was his to fight, while the
+                // bikes he shot counted only while Guess was the player (Ron, September 22).
+                .AnyBrother()
+                .OnEnter(context => { _running = true; SpawnBikes(); })
+                .OnExit(context => { _running = false; StopIceShooting(); })
                 .WithCues("M10_S1_01_GUESS", "M10_S1_02_ICE", "M10_S1_03_GOHAN");
 
             // The gunship is shown coming; the tunnel mouth is named as the place to
@@ -180,7 +198,10 @@ namespace Bloodlines.Missions.Campaign
                 if (!guess.IsInVehicle(_flatbed)) guess.SetIntoVehicle(_flatbed, VehicleSeat.Driver);
                 Function.Call(Hash.TASK_VEHICLE_TEMP_ACTION, guess, _flatbed, 27, 4000);
             }
+            _guessDriving = false;
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            // The drive-by gun goes away and the launcher comes back out for the Buzzard.
+            if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.RPG, 0, true, true);
             if (ice != null && ice.Exists() && ice.IsInVehicle(_flatbed) && ice.Handle == Game.Player.Character.Handle)
                 GameUtils.Subtitle("~y~Tunnel mouth. Get out and take the Buzzard with the launcher.", 4000);
         }
@@ -326,8 +347,9 @@ namespace Bloodlines.Missions.Campaign
             _buzzard = Track(World.CreateVehicle(model, approach, player.Heading));
             if (_buzzard == null || !_buzzard.Exists()) { Fail("The gunship could not spawn. Restart the mission."); return; }
             _buzzard.IsPersistent = true;
-            _buzzard.IsEngineRunning = true;
-            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED, _buzzard);
+            // Created sixty meters up: rotors at speed and approach airspeed, or it falls
+            // while the blades spin up from nothing.
+            AircraftHold.LaunchAirborne(_buzzard);
 
             _pilot = Track(World.CreatePed(pilotModel, _buzzard.Position, 0f));
             model.MarkAsNoLongerNeeded();
@@ -347,31 +369,112 @@ namespace Bloodlines.Missions.Campaign
             blip.Name = "Aegis Buzzard";
         }
 
-        private void OrderGunship()
+        /// <summary>The gunship's attack run, ordered at spawn and again only when its target changes or on a slow refresh.</summary>
+        private void OrderGunship(bool force = true)
         {
             var player = Game.Player.Character;
             if (_pilot == null || !_pilot.Exists() || _pilot.IsDead || _buzzard == null || !_buzzard.Exists() || _buzzard.IsDead || !_pilot.IsInVehicle(_buzzard)) return;
+            if (!force && player.Handle == _gunshipTarget && Game.GameTime - _gunshipOrderedAt < PursuitRefreshMs) return;
+            _gunshipTarget = player.Handle;
+            _gunshipOrderedAt = Game.GameTime;
             _pilot.Task.StartHeliMission(_buzzard, player, VehicleMissionType.Attack, 35f, 35f,
                 (int)Math.Max(_buzzard.Position.Z, player.Position.Z + 40f), 25, -1f, 70f, (HeliMissionFlags)0);
+        }
+
+        /// <summary>
+        /// The pursuit, reviewed every three seconds and ordered only on a change: a rider
+        /// who comes off his bike is sent to fight on foot, once, and one still mounted is
+        /// given his chase again only on a slow refresh. Re-issuing the chase and the
+        /// gunship's attack every review restarted both before they could act on them.
+        /// </summary>
+        private void MaintainPursuit()
+        {
+            var target = Ctx.Crew.PedFor(CrewSlot.Guess);
+            foreach (var rider in _bikers)
+            {
+                if (rider == null || !rider.Exists() || rider.IsDead || target == null || !target.Exists()) continue;
+                bool mounted = rider.IsInVehicle();
+                if (_riderMounted.TryGetValue(rider.Handle, out var was) && was == mounted &&
+                    _riderOrderedAt.TryGetValue(rider.Handle, out var at) && Game.GameTime - at < PursuitRefreshMs) continue;
+                if (mounted) rider.Task.VehicleChase(target);
+                else rider.Task.FightAgainst(target);
+                _riderMounted[rider.Handle] = mounted;
+                _riderOrderedAt[rider.Handle] = Game.GameTime;
+            }
+            OrderGunship(force: false);
+        }
+
+        /// <summary>
+        /// Ice riding beside a Guess the player is driving works the window himself: a
+        /// drive-by on the nearest bike, renewed when that bike goes down or on a cooldown,
+        /// never every frame. A player who is Ice shoots for himself.
+        /// </summary>
+        private void MaintainIceShooting()
+        {
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var player = Game.Player.Character;
+            if (ice == null || !ice.Exists() || ice.IsDead || _flatbed == null || !_flatbed.Exists() ||
+                (player != null && ice.Handle == player.Handle) || !ice.IsInVehicle(_flatbed))
+            { _iceTarget = null; return; }
+            bool current = _iceTarget != null && _iceTarget.Exists() && !_iceTarget.IsDead && _iceTarget.Position.DistanceTo(ice.Position) <= 80f;
+            if (current && Game.GameTime - _iceShotAt < IceShotCooldownMs) return;
+            Ped best = null; float bestDistance = 80f;
+            foreach (var rider in _bikers)
+            {
+                if (rider == null || !rider.Exists() || rider.IsDead) continue;
+                float distance = rider.Position.DistanceTo(ice.Position);
+                if (distance < bestDistance) { best = rider; bestDistance = distance; }
+            }
+            if (best == null) { _iceTarget = null; return; }
+            if (_iceTarget == null) ice.Weapons.Give(WeaponHash.MicroSMG, 300, true, true);
+            Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ice, 2, true);
+            ice.Task.VehicleShootAtPed(best);
+            _iceTarget = best;
+            _iceShotAt = Game.GameTime;
+        }
+
+        private void StopIceShooting() => _iceTarget = null;
+
+        /// <summary>
+        /// Guess keeps the flatbed moving toward the tunnel mouth while the player is Ice,
+        /// so the speed floor is his to hold. Ordered once when he takes the wheel as the
+        /// AI, and again only when the truck has actually stalled.
+        /// </summary>
+        private void MaintainGuessDriving()
+        {
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            var player = Game.Player.Character;
+            if (guess == null || !guess.Exists() || guess.IsDead || _flatbed == null || !_flatbed.Exists() ||
+                (player != null && guess.Handle == player.Handle) || _flatbed.GetPedOnSeat(VehicleSeat.Driver) != guess)
+            { _guessDriving = false; _guessSlowSince = 0; return; }
+            bool stalled = false;
+            if (_flatbed.Speed < 3f) { if (_guessSlowSince == 0) _guessSlowSince = Game.GameTime; stalled = Game.GameTime - _guessSlowSince > 4000; }
+            else _guessSlowSince = 0;
+            if (_guessDriving && !(stalled && Game.GameTime - _guessDriveAt > 8000)) return;
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+            guess.Task.DriveTo(_flatbed, _window, 20f, CrewDriving.Speed(CrewSlot.Guess, true, _flatbed), DrivingStyle.Rushed);
+            _guessDriving = true;
+            _guessDriveAt = Game.GameTime;
+            _guessSlowSince = 0;
         }
 
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            if (Status != MissionStatus.Running || Game.GameTime < _nextPursuit) return;
+            if (Status != MissionStatus.Running) return;
+            if (_running && !Ctx.Cutscenes.IsActive) { MaintainIceShooting(); MaintainGuessDriving(); }
+            if (Game.GameTime < _nextPursuit) return;
             _nextPursuit = Game.GameTime + 3000;
-            var target = Ctx.Crew.PedFor(CrewSlot.Guess);
-            foreach (var rider in _bikers)
-            {
-                if (rider == null || !rider.Exists() || rider.IsDead || target == null || !target.Exists()) continue;
-                if (rider.IsInVehicle()) rider.Task.VehicleChase(target);
-                else rider.Task.FightAgainst(target);
-            }
-            OrderGunship();
+            MaintainPursuit();
         }
 
         protected override void OnCleanup()
         {
+            _running = false;
+            _iceTarget = null;
+            _guessDriving = false;
+            _riderMounted.Clear();
+            _riderOrderedAt.Clear();
             _bikers.Clear();
             _bikes.Clear();
             _crates.Clear();
