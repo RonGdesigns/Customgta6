@@ -48,8 +48,21 @@ namespace Bloodlines.Missions.Campaign
         public const int Rockets = 10;
         /// <summary>How far a lane may be from its seed before the seed is used instead.</summary>
         public const float LaneSearch = 45f;
-        /// <summary>How high it hovers over the apron while the crew gets back in the truck.</summary>
+        /// <summary>The least it climbs above where it was parked before the chase can begin.</summary>
         public const float HoverHeight = 18f;
+        /// <summary>
+        /// The height the chase waits for, and the lowest the scripted flight goes: over every
+        /// tree between the clearing and the first flight point. From the archives, the tallest
+        /// canopy within 45 m of the parked aircraft tops out at 46.6 (a prop_tree_pine_02) and
+        /// the tallest on the line to BM01.Flight01 at 51.9 (a prop_tree_cedar_03 beside the
+        /// coast road, its trunk to 48.3). Ron's first run began the chase 6 m off the ground
+        /// among trees, and the Osprey was destroyed half a second later.
+        /// </summary>
+        public const float ClearAltitude = 54f;
+        /// <summary>Meters a second it climbs out of the clearing.</summary>
+        public const float ClimbRate = 5f;
+        /// <summary>A climb that has not reached the ceiling in this long is finished by the script, and the log says so.</summary>
+        public const int ClimbTimeoutMs = 20000;
         /// <summary>Further than this from every brother, for longer than <see cref="EscapeGraceMs"/>, and it is gone.</summary>
         public const float EscapeMeters = 450f;
         public const int EscapeGraceMs = 15000;
@@ -98,7 +111,7 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _held;
         private float? _originHeight;
         private bool _parked, _parkVerified, _reportedUnverified;
-        private int _nextOspreyProbe, _nearSince = -1, _nextPostProbe;
+        private int _nextOspreyProbe, _nearSince = -1, _nextPostProbe, _liftedAt = -1;
 
         /// <summary>A guard, where he was created, and whether his footing has been checked.</summary>
         private sealed class GuardPost
@@ -131,6 +144,14 @@ namespace Bloodlines.Missions.Campaign
         public Vector3 Pad => _pad;
         /// <summary>Guard posts whose footing has been checked, or given up on and logged.</summary>
         public int SettledPosts => _posts.Count(p => p.Settled);
+        /// <summary>How high it climbs before the chase begins: clear of the trees, and never less than <see cref="HoverHeight"/> off the pad.</summary>
+        public float ClimbCeiling => Math.Max(_pad.Z + HoverHeight, ClearAltitude);
+        /// <summary>
+        /// It has lifted and climbed clear of the trees. A missing aircraft counts as clear, so
+        /// the stage does not wait forever on it; the hull objective fails on a missing target.
+        /// </summary>
+        public bool Climbed => _osprey == null || !_osprey.Exists() ||
+            (_hovering && _osprey.Position.Z >= ClimbCeiling - 1f);
 
         /// <summary>
         /// The flight line is corrected onto lanes at runtime, so ground preparation must not
@@ -439,7 +460,7 @@ namespace Bloodlines.Missions.Campaign
                 // Guess drives it whoever is being played. Ron switched to Ice on the way north
                 // and the truck sat where it was, because nothing told Guess where to go until
                 // the chase (September 22).
-                .OnEnter(c => { DrivingDestination = () => At("BM01.Approach"); Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's on the apron and the gate is manned.", "BM01_RADIO_01_GOHAN"); })
+                .OnEnter(c => { DrivingDestination = () => At("BM01.Approach"); Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's in the clearing below the bunker and the gate is manned.", "BM01_RADIO_01_GOHAN"); })
                 .OnExit(c => { DrivingDestination = null; Fighting = true; Radio("ICE", "Gate and guard post. Take them, and keep an eye on that aircraft.", "BM01_RADIO_02_ICE"); });
 
             yield return new MissionStage("The gate",
@@ -448,7 +469,9 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c => PlayTakeoff());
 
             yield return new MissionStage("Back in the truck",
-                new ConditionObjective("Everyone in the gun truck: Guess drives, Ice on the gun, Gohan beside him", () => Aboard)
+                // Both, not either: with the crew already aboard this stage used to end in the
+                // tick the lift began, and the chase started with the Osprey still in the trees.
+                new ConditionObjective("Everyone in the gun truck while the Osprey climbs clear of the trees: Guess drives, Ice on the gun, Gohan beside him", () => Aboard && Climbed)
                 { Marker = () => _truck != null && _truck.Exists() ? _truck.Position : _pad, MarkerRadius = 3f })
                 .AnyBrother()
                 // The stage opens in the same tick the takeoff scene starts, with the pilot still
@@ -477,28 +500,42 @@ namespace Bloodlines.Missions.Campaign
             Protagonist.All.All(hero => Ctx.Crew.PedFor(hero.Slot)?.IsInVehicle(_truck) == true);
 
         /// <summary>
-        /// The pilot runs for the aircraft and takes it. Watching and skipping end the same
-        /// way: he is in the seat either way, because the scene's own step seats him.
+        /// The pilot runs for the aircraft and takes it.
+        ///
+        /// This scene is not required, and that is deliberate. Its one piece of state is the
+        /// pilot in the seat, and <see cref="Lift"/> seats him if the scene did not: a walk that
+        /// times out, a skip whose seat will not take, or a scene that cannot start at all.
+        /// Watched, skipped or failed, gameplay resumes in the same state. As a required scene
+        /// it failed Ron's first attempt ("A required scene action was interrupted") when the
+        /// pilot had not reached the aircraft by the time he skipped.
         /// </summary>
         private void PlayTakeoff()
         {
             if (_pilot == null || !_pilot.Exists() || _osprey == null || !_osprey.Exists()) return;
-            // The shot is of the aircraft on the apron, so it is set down before it is shown.
+            // The shot is of the aircraft on the ground, so it is set down before it is shown.
             SettleOsprey(true);
             var blocking = new SceneBlocking()
                 .Then(new EnterVehicleStep(_pilot, _osprey, VehicleSeat.Driver) { TimeoutMs = 9000 })
                 .Then(new ShotStep(4000, _osprey, new Vector3(-24f, 16f, 7f), _osprey, new Vector3(0f, 0f, 2f), 2f));
+            var spec = new SceneSpec
+            {
+                MissionId = Id, Phase = "takeoff", Title = "The Osprey",
+                Reason = "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.",
+                Blocking = blocking
+            };
             // This runs inside a stage exit, and a throw there is a script error rather than a
-            // failure. If the scene cannot finish, the pilot is seated anyway and the chase goes on.
+            // failure. Whatever happens here, the lift seats the pilot and the chase goes on.
             try
             {
-                RequiredScene("takeoff", "The Osprey",
-                    "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.", blocking);
+                if (!Ctx.Cutscenes.Play(spec))
+                {
+                    Logger.Warn(Id + ": the takeoff scene did not play; the pilot is seated directly.");
+                    blocking.Complete();
+                }
             }
             catch (Exception ex)
             {
-                Logger.Warn(Id + ": the takeoff scene could not complete (" + ex.Message + "); seating the pilot directly.");
-                if (!_pilot.IsInVehicle(_osprey)) _pilot.SetIntoVehicle(_osprey, VehicleSeat.Driver);
+                Logger.Warn(Id + ": the takeoff scene could not run (" + ex.Message + "); the pilot is seated directly.");
             }
         }
 
@@ -513,6 +550,8 @@ namespace Bloodlines.Missions.Campaign
             SettleOsprey(true);
             if (_pilot != null && _pilot.Exists() && !_pilot.IsInVehicle(_osprey))
             {
+                Logger.Info(Id + ": the pilot did not reach the Osprey during the takeoff scene; seating him directly.");
+                _pilot.Task.ClearAllImmediately();
                 _pilot.SetIntoVehicle(_osprey, VehicleSeat.Driver);
                 if (!_pilot.IsInVehicle(_osprey)) Logger.Warn(Id + ": the pilot could not be seated; the Osprey flies with its seat empty.");
             }
@@ -525,6 +564,26 @@ namespace Bloodlines.Missions.Campaign
             _osprey.Position = _pad + new Vector3(0f, 0f, 6f);
             Function.Call(Hash.SET_ENTITY_VELOCITY, _osprey, 0f, 0f, 0f);
             _hovering = true;
+            _liftedAt = Game.GameTime;
+        }
+
+        /// <summary>
+        /// Anything it took while it was a parked prop is gone before it becomes a target: the
+        /// hull, and the damage records the hull meter reads. A rocket fired at it during the
+        /// gate fight is not a rocket the chase gets credit for, and a scraped airframe must not
+        /// make it undriveable the moment invincibility drops.
+        /// </summary>
+        private void ClearParkedDamage()
+        {
+            _osprey.Repair();
+            _osprey.EngineHealth = 1000f;
+            _osprey.BodyHealth = 1000f;
+            Function.Call(Hash.SET_VEHICLE_PETROL_TANK_HEALTH, _osprey, 1000f);
+            Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, _osprey);
+            Function.Call(Hash.CLEAR_ENTITY_LAST_WEAPON_DAMAGE, _osprey);
+            // A repair is a reset, and the rotors have to stay turning and up.
+            _osprey.IsEngineRunning = true;
+            Function.Call(Hash.SET_VEHICLE_FLIGHT_NOZZLE_POSITION_IMMEDIATE, _osprey, 1f);
         }
 
         /// <summary>
@@ -536,15 +595,19 @@ namespace Bloodlines.Missions.Campaign
         {
             _hovering = false;
             _route = RaceRoute.Build(Ctx.Locations, "BM01.Flight", "BM01.FlightTrail", "BM01.Getaway");
-            _flight = new ScriptedFlight(_osprey, _route.Gates);
+            _flight = new ScriptedFlight(_osprey, _route.Gates, ClearAltitude);
+            // Proof against collisions from here on, so only the crew can bring it down.
             _flight.Begin();
+            ClearParkedDamage();
             // Kept a target while it flies: the hull meter decides when it comes down, and the
             // gunners need somebody in the seat to aim at.
             _osprey.IsInvincible = false;
             _hunting = true;
             _farSince = -1;
-            DrivingDestination = () => _flight != null && !_flight.Finished
-                ? _flight.Points[_flight.Next] - new Vector3(0f, 0f, ScriptedFlight.Altitude)
+            // The road under the point it is flying to: the gate itself, since the flight's
+            // own height is no longer always the road plus a fixed altitude.
+            DrivingDestination = () => _flight != null && !_flight.Finished && _route != null && _flight.Next < _route.Gates.Count
+                ? _route.Gates[_flight.Next]
                 : At("BM01.Getaway");
             Radio("GOHAN", "It's following the coast road east. Stay under it, and keep the gun on it.", "BM01_RADIO_03_GOHAN");
         }
@@ -571,11 +634,24 @@ namespace Bloodlines.Missions.Campaign
             return sitting != null && sitting.Exists() && sitting == Game.Player.Character;
         }
 
-        /// <summary>It climbs off the apron and holds, rotors turning, while the crew gets in.</summary>
+        /// <summary>
+        /// It climbs straight up out of the clearing and holds over the trees, rotors turning,
+        /// while the crew gets in. A climb that stalls is finished by the script rather than
+        /// holding the chase back forever.
+        /// </summary>
         private void Hover()
         {
             if (_osprey == null || !_osprey.Exists()) return;
-            float climb = _osprey.Position.Z < _pad.Z + HoverHeight ? 2.5f : 0f;
+            float ceiling = ClimbCeiling;
+            var at = _osprey.Position;
+            if (at.Z < ceiling - 1f && _liftedAt >= 0 && Game.GameTime - _liftedAt > ClimbTimeoutMs)
+            {
+                Logger.Warn(Id + ": the Osprey had only climbed to " + at.Z.ToString("0.0") + " of " + ceiling.ToString("0.0") +
+                    " after " + (ClimbTimeoutMs / 1000) + " s; putting it at the ceiling.");
+                _osprey.Position = new Vector3(at.X, at.Y, ceiling);
+                at = _osprey.Position;
+            }
+            float climb = at.Z < ceiling ? ClimbRate : 0f;
             Function.Call(Hash.SET_ENTITY_VELOCITY, _osprey, 0f, 0f, climb);
         }
 
@@ -620,7 +696,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _hunting = false; _hovering = false; _liftPending = false;
-            _parked = false; _parkVerified = false; _reportedUnverified = false; _nearSince = -1;
+            _parked = false; _parkVerified = false; _reportedUnverified = false; _nearSince = -1; _liftedAt = -1;
             _posts.Clear();
             _flight?.Release();
             if (_pilot != null && _pilot.Exists()) _pilot.IsInvincible = false;

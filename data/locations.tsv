@@ -861,8 +861,8 @@ BM01.Guard5	-690.0	5941.0	15.0	90	land	estimate	Paleto Forest
 BM01.Yard1	-764.0	5952.0	19.0	90	land	estimate	Paleto Forest, north of the bunker entrance ramp; the old point (-760, 5944) was inside the ramp's collision (gr_prop_gr_bunkeddoor_f, top 19.89), and terrain here is 18.99 in the archives
 BM01.Yard2	-770.0	5930.0	19.9	90	land	estimate	Paleto Forest
 BM01.Yard3	-751.0	5930.0	18.5	90	land	estimate	Paleto Forest
-BM01.Osprey	-738.0	5942.0	16.7	90	land	estimate	Paleto Forest, z is the terrain collision under the point in the archives (16.72, cs1_08_32.ybn)
-BM01.Pilot	-755.0	5951.0	19.0	120	land	estimate	Paleto Forest
+BM01.Osprey	-766.0	5873.0	8.4	90	land	estimate	Paleto Forest, the sand clearing south of the bunker, read from the archives: terrain 8.37 under the point (cs1_08_32.ybn); facing west, the avenger's 32.3 m by 22.2 m footprint has no tree canopy, rock or structure within 13 m of its edge, and the nearest placed object of any kind is a bush 16.4 m from it
+BM01.Pilot	-750.0	5868.0	9.5	120	land	estimate	Paleto Forest, beside the Osprey's tail in the sand clearing; terrain 9.51 in the archives
 BM01.Flight01	-684.0	5925.0	14.0	0	land	estimate	Paleto Bay
 BM01.Flight02	-509.3	5850.6	32.0	0	land	estimate	Paleto Bay
 BM01.Flight03	-425.8	5968.4	30.2	0	land	estimate	Paleto Bay

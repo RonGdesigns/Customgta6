@@ -36,7 +36,7 @@ Prerequisite: M70. Story gate: SM01, SM02, SM03, SM04, SM05, SM06, SM07, SM08, S
 |---|---|---|
 | 1 | Guess | **Up the coast** — TravelObjective: Guess: drive the gun truck north up the coast highway to the Paleto Forest bunker |
 | 2 | any brother | **The gate** — KillTargetsObjective: Take out the men at the gate and the guard post |
-| 3 | any brother | **Back in the truck** — ConditionObjective: Everyone in the gun truck: Guess drives, Ice on the gun, Gohan beside him |
+| 3 | any brother | **Back in the truck** — ConditionObjective: Everyone in the gun truck while the Osprey climbs clear of the trees: Guess drives, Ice on the gun, Gohan beside him |
 | 4 | any brother | **Bring it down** — ShootDownObjective: Bring down the Osprey - stay under it on the coast road |
 
 Final gameplay dialogue drains before the pass/aftermath transition.

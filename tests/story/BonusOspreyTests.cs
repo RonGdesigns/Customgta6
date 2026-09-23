@@ -96,6 +96,13 @@ public static partial class StoryTests
         return m;
     }
 
+    /// <summary>The climb the engine flies on the velocity the mission sets: the stand-in does not integrate it.</summary>
+    static void ClimbOut(BM01ClippedWings m)
+    {
+        var at = m.Osprey.Position;
+        m.Osprey.Position = new Vector3(at.X, at.Y, m.ClimbCeiling);
+    }
+
     static void ClippedWingsFlowChecks()
     {
         var m = StartClippedWings(out var crew, out var c);
@@ -137,9 +144,11 @@ public static partial class StoryTests
               Function.Calls.Any(x => x.Item1 == Hash.SET_ENTITY_HAS_GRAVITY && x.Item2[0] == m.Osprey && !(bool)x.Item2[1]),
             "Gameplay resumes with the Osprey already off the ground");
 
-        // Everyone back in the truck, and the chase.
+        // Everyone back in the truck, and the chase once it has climbed clear of the trees.
         foreach (var seat in m.SeatPlan()) crew.PedFor(seat.Key).SetIntoVehicle(truck, seat.Value);
         m.Tick(); m.Tick();
+        Check(m.CurrentStage == 2 && !m.Hunting, "Aboard is not enough: the chase waits for the Osprey to climb");
+        ClimbOut(m); m.Tick(); m.Tick();
         Check(m.CurrentStage == 3 && m.Hunting && m.Flight != null && m.Route.Gates.Count == BM01ClippedWings.FlightPoints + 1,
             "With all three aboard the Osprey flies the coast road: seventeen points and the end of the line");
         Check(!m.Osprey.IsInvincible && m.Pilot.IsInvincible, "The aircraft can be hurt now; the man in the seat stays a target for the gunners");
@@ -172,7 +181,7 @@ public static partial class StoryTests
         foreach (var guard in m.Guards) guard.IsDead = true;
         m.Tick(); Game.GameTime += CutsceneDirector.SkipGraceMs; c.Cutscenes.Skip(); m.Tick();
         foreach (var seat in m.SeatPlan()) crew.PedFor(seat.Key).SetIntoVehicle(truck, seat.Value);
-        m.Tick(); m.Tick();
+        m.Tick(); ClimbOut(m); m.Tick(); m.Tick();
         foreach (var hero in Protagonist.All) crew.PedFor(hero.Slot).Position = m.Osprey.Position + new Vector3(0, -900, 0);
         m.Tick();
         Check(m.Status == MissionStatus.Running && m.Escaping, "Losing it is a warning first, with the escape clock running");

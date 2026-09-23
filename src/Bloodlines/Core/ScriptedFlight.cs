@@ -39,11 +39,16 @@ namespace Bloodlines.Core
         private Vector3 _velocity;
         private int _lastTick = -1;
 
-        public ScriptedFlight(Vehicle craft, IEnumerable<Vector3> roadPoints)
+        /// <param name="floor">
+        /// The lowest height it may fly at anywhere on the line. <see cref="Altitude"/> over a
+        /// road is not always over the trees beside it: BM01's first point is a junction with
+        /// cedars whose trunks stand 34 m above the lane.
+        /// </param>
+        public ScriptedFlight(Vehicle craft, IEnumerable<Vector3> roadPoints, float floor = float.MinValue)
         {
             _craft = craft;
             _points = new List<Vector3>();
-            foreach (var p in roadPoints) _points.Add(p + new Vector3(0f, 0f, Altitude));
+            foreach (var p in roadPoints) _points.Add(new Vector3(p.X, p.Y, Math.Max(p.Z + Altitude, floor)));
         }
 
         public IReadOnlyList<Vector3> Points => _points;
@@ -51,11 +56,19 @@ namespace Bloodlines.Core
         public bool Finished => _next >= _points.Count;
         public float Speed { get; private set; }
 
-        /// <summary>Take the aircraft off physics: no gravity, so the script's velocity is the whole story.</summary>
+        /// <summary>
+        /// Take the aircraft off physics: no gravity, so the script's velocity is the whole story.
+        /// It is also made proof against collisions, and only against collisions. A line flown
+        /// by the script can still clip a treetop or a pole, and in Ron's first run that alone
+        /// destroyed the Osprey half a second into the chase. Bullets and explosions still land,
+        /// so whatever brings it down is the crew.
+        /// </summary>
         public void Begin()
         {
             if (_craft == null || !_craft.Exists()) return;
             Function.Call(Hash.SET_ENTITY_HAS_GRAVITY, _craft, false);
+            // Bullet, fire, explosion, collision, melee, steam, (unused), drown.
+            Function.Call(Hash.SET_ENTITY_PROOFS, _craft, false, false, false, true, false, false, false, false);
             _velocity = Vector3.Zero;
             _lastTick = Game.GameTime;
         }
@@ -64,7 +77,11 @@ namespace Bloodlines.Core
         public void Release()
         {
             if (_craft == null || !_craft.Exists()) return;
-            try { Function.Call(Hash.SET_ENTITY_HAS_GRAVITY, _craft, true); }
+            try
+            {
+                Function.Call(Hash.SET_ENTITY_HAS_GRAVITY, _craft, true);
+                Function.Call(Hash.SET_ENTITY_PROOFS, _craft, false, false, false, false, false, false, false, false);
+            }
             catch (Exception ex) { Logger.Warn("Returning a scripted aircraft to physics: " + ex.Message); }
         }
 
