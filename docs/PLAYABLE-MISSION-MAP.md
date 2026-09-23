@@ -545,7 +545,7 @@ Prerequisite: M30. Retry: full mission restart.
 | 1 | Ice | **Read the approaches** — MultiHoldObjective: Ice: inspect each yellow approach marker beside the three barriers; press E / D-pad Right |
 | 2 | Gohan | **Arm the perimeter** — MultiHoldObjective: Gohan: arm each marked barrier charge; press E / D-pad Right |
 | 3 | Guess | **Prove the withdrawal road** — TravelObjective: Guess: drive the crew car to the yellow withdrawal marker and stop. Leave the road clear. |
-| 4 | Guess | **Hold the perimeter** — KillTargetsObjective: Defend the generator. Stop the marked probe convoy; planted charges fire only when enemies enter their lane and the crew is clear. |
+| 4 | any brother | **Hold the perimeter** — KillTargetsObjective: Defend the generator. Stop the marked probe convoy; planted charges fire only when enemies enter their lane and the crew is clear. |
 | 5 | Gohan | **Check the damage** — MissionInteraction: Gohan: inspect the surviving generator controls |
 | 6 | Gohan | **Keep the base concealed** — LoseWantedObjective: Lose any police pursuit before returning to the perimeter. |
 
@@ -622,8 +622,8 @@ Prerequisite: M34. Retry: full mission restart.
 | 1 | Ice | **Prepare the trap** — MultiHoldObjective: Ice: plant both marked roadside charges; press E / D-pad Right |
 | 2 | Guess | **Close the far exit** — TravelObjective: Guess: park the crew car across the road at the south end of the pass and stop. That closes the convoy's only way out and keeps you beside the gun truck |
 | 3 | Gohan | **Identify the target** — MissionInteraction: Gohan: use the laptop on the marked field table to identify the convoy's gun truck |
-| 4 | Gohan | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
-| 5 | Gohan | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
+| 4 | any brother | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
+| 5 | any brother | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
 | 6 | Guess | **Take the driver seat** — EnterVehicleObjective: Guess: take the captured technical's driver seat |
 | 7 | Guess | **Bring both brothers** — ConditionObjective: Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat |
 | 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the pursuit. Switch to Ice for the mounted gun or Gohan in the cab while Guess drives; the wheel is yours whenever you want it |
@@ -674,7 +674,7 @@ Prerequisite: M37. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Bring moving cover** — TravelObjective: Guess: drive the Benson into the yellow loading lane under fire. Ice covers the approach; keep the truck moving until you reach the marker |
-| 2 | Guess | **Clear the loading yard** — KillTargetsObjective: Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact |
+| 2 | any brother | **Clear the loading yard** — KillTargetsObjective: Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact |
 | 3 | Gohan | **Release blasting stock** — MissionInteraction: Gohan: unlock the marked stock-control cabinet beside the crates |
 | 4 | Gohan | **Collect package ** — MissionInteraction: Gohan: pick up marked charge package  |
 | 5 | Gohan | **Load package ** — MissionInteraction: Gohan: carry the package to the back of the stopped Benson |
@@ -793,7 +793,7 @@ Prerequisite: M44. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Bring the helicopter over the rail** — TravelObjective: Guess: hold the Annihilator low over the vessel's upper deck |
 | 2 | Ice | **Put Ice on the upper deck** — ConditionObjective: Ice: step off onto the upper deck |
-| 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail |
+| 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail<br>ConditionObjective: Ice: the deck detail is not on the upper deck; hold the stair head |
 | 4 | Gohan | **Bring the Kraken to the stern** — TravelObjective: Gohan: take the Kraken alongside the stern platform |
 | 5 | Gohan | **Get Gohan aboard** — ConditionObjective: Gohan: get out of the Kraken and climb onto the vessel |
 
@@ -814,7 +814,7 @@ Prerequisite: M45. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M46.Bonds, M46.Bridge, M46.Console, M46.Ledger, M46.Stairs, M46.Vault.
+Survey references: M45.Hold, M46.Bonds, M46.Bridge, M46.Console, M46.Ledger, M46.Stairs, M46.Vault.
 
 ## M47 — PALETO DEEP-SEA: COLLAPSE
 
@@ -824,7 +824,7 @@ Prerequisite: M46. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Put the helicopter down and take the boat** — DeliverVehicleObjective: Guess: land the Annihilator on the cove strip<br>EnterVehicleObjective: Guess: take the Tropic out to the pickup marker |
 | 2 | Gohan | **Trigger the charges** — MissionInteraction: Gohan: trigger the charges from the rail |
-| 3 | Gohan | **Go off the side** — ConditionObjective: Ice and Gohan: get to the edge and go into the water |
+| 3 | any brother | **Go off the side** — ConditionObjective: Ice and Gohan: get to the edge and go into the water |
 | 4 | Guess | **Pick them up** — ConditionObjective: Guess: bring the boat onto both swimmers until all three are aboard |
 | 5 | Guess | **Clear the demolition area** — TravelObjective: Guess: take the boat clear of the burning vessel |
 
@@ -1186,10 +1186,10 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Rooftop** — MissionInteraction: Gohan: run to the building's service door, then take the maintenance stairs to the roof. |
+| 1 | Gohan | **Rooftop** — ConditionObjective: Gohan: up the maintenance stairs. |
 | 2 | Gohan | **Server bay** — SubdueTargetsObjective: Gohan: use the stun gun on both marked guards. Keep them alive. |
 | 3 | Gohan | **Root terminal** — MissionInteraction: Inject the worm at the root terminal. |
-| 4 | Gohan | **Fire escape** — MissionInteraction: Gohan: return to the roof access and take the maintenance stairs down before IT traces you. |
+| 4 | Gohan | **Fire escape** — ConditionObjective: Gohan: down the maintenance stairs. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

@@ -68,12 +68,24 @@ namespace Bloodlines.Missions.Campaign
                     .Then(ShotStep.Low(1800,_receiver,2,1,1))
                     .Then(new VerifySceneStep("Receiver fitted",()=>_unloaded&&_receiver.Exists()&&Function.Call<bool>(Hash.IS_ENTITY_ATTACHED_TO_ENTITY,_parts,_bench),()=>_received=true)));
         }
+        /// <summary>
+        /// The gunship is pressure on the drive, not the job. It used to throw from the
+        /// stage's entry when it would not load, which ends the attempt as a "Script error";
+        /// a gunship that cannot be made is now a quieter road, logged, and the delivery
+        /// goes on (the September 22 audit).
+        /// </summary>
         private void LaunchPursuit()
         {
             _heli=Car("buzzard",_truck.Position-_truck.ForwardVector*180f+new Vector3(0,0,95f),0,false);_pilot=Guard(At("M30.Start"));
-            if(!RequireAssets(_heli,_pilot))throw new System.InvalidOperationException("The pursuit helicopter failed to load.");
-            _pilot.SetIntoVehicle(_heli,VehicleSeat.Driver);_heli.IsEngineRunning=true;
-            Function.Call(Hash.SET_HELI_BLADES_FULL_SPEED,_heli);
+            if(_heli==null||!_heli.Exists()||_pilot==null||!_pilot.Exists())
+            { GameUtils.SafeDelete(_pilot);GameUtils.SafeDelete(_heli);_pilot=null;_heli=null;Logger.Warn("M30: the ridge gunship could not be created; the run continues without it.");return; }
+            // Created 95 meters up: rotors at speed and airspeed on it, or it is falling
+            // while the blades spin up.
+            AircraftHold.LaunchAirborne(_heli);
+            // Seated outright and checked, never a queued board followed by the attack order.
+            _pilot.SetIntoVehicle(_heli,VehicleSeat.Driver);
+            if(_heli.GetPedOnSeat(VehicleSeat.Driver)!=_pilot)
+            { GameUtils.SafeDelete(_pilot);GameUtils.SafeDelete(_heli);_pilot=null;_heli=null;Logger.Warn("M30: the gunship pilot could not be seated; the run continues without it.");return; }
             _gunshipBlip=Track(_heli.AddBlip());
             if(_gunshipBlip!=null){_gunshipBlip.Color=BlipColor.Red;_gunshipBlip.Name="Ridge gunship";}
             _pilot.Task.StartHeliMission(_heli,Game.Player.Character,VehicleMissionType.Attack,35,35,60,25,0,20,HeliMissionFlags.None);
@@ -82,6 +94,7 @@ namespace Bloodlines.Missions.Campaign
         private void LoseGunship()
         {
             if(_gunshipBlip!=null&&_gunshipBlip.Exists())_gunshipBlip.Delete();
+            if(_heli==null)return; // there was never a gunship to break off
             if(_heli!=null&&_heli.Exists()&&!_heli.IsDead&&_pilot!=null&&_pilot.Exists()&&!_pilot.IsDead)
             {
                 _pilot.Task.ClearAll();

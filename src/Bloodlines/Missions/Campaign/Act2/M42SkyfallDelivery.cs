@@ -18,8 +18,16 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _water;
         private bool _flightStarted;
         private int _planeOrders;
+        /// <summary>
+        /// Why the release could not happen. It used to throw from inside the corridor
+        /// check, which is an objective's condition, and a throw there ends the attempt as a
+        /// "Script error"; the reason is kept and fails it on the next frame instead
+        /// (the September 22 audit).
+        /// </summary>
+        private string _fault;
         protected override bool Setup()
         {
+            _fault = null;
             if (!BeginCrew(CrewSlot.Guess)) return false;
             _water = MarineSites.ResolveOrThrow(Ctx.Locations, "M42.Drop", 6f, 4f, 7f, 0);
             MarineSites.ResolveOrThrow(Ctx.Locations, "M42.Delivery", 3f, 3.5f, 5f, 0);
@@ -50,14 +58,15 @@ namespace Bloodlines.Missions.Campaign
             ObjectiveMarkers.Navigation(_water, CrewSlot.Guess);
             bool ready = GameUtils.IsWithinFlat(Titan.Position, _water, 100f) && Titan.Position.Z - _water.Z >= 150f && Titan.Position.Z - _water.Z <= 350f && Titan.Speed < 85f && Math.Abs(Titan.Rotation.X) < 15f && Math.Abs(Titan.Rotation.Y) < 15f;
             GameUtils.Subtitle("Drop corridor: " + (ready ? "~g~READY - E / D-pad Right" : "~y~Level flight, 150-350m, inside ring") + " ~s~| Altitude " + (int)(Titan.Position.Z - _water.Z) + "m", 500);
-            if (!ready || !Game.IsControlJustPressed(Control.Context)) return false;
+            if (_fault != null || !ready || !Game.IsControlJustPressed(Control.Context)) return false;
             var first = WorkProp("p_parachute1_sp_s", Sub.Position, false);
             var second = WorkProp("p_parachute1_sp_s", Sub.Position, false);
-            if (!Drop.Release(first, second)) throw new InvalidOperationException("The cargo parachutes failed to deploy. The sub was not released.");
+            if (!Drop.Release(first, second)) { _fault = "The cargo parachutes failed to deploy. The sub was not released."; return false; }
             return true;
         }
         protected override void OnUpdate()
         {
+            if (_fault != null) { Fail(_fault); return; }
             if (!_flightStarted && !Ctx.Cutscenes.IsActive)
             { Titan.IsPositionFrozen = false; Titan.Velocity = Titan.ForwardVector * 55f; _flightStarted = true; }
             if (Ctx.Cutscenes.IsActive) { base.OnUpdate(); return; }

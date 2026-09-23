@@ -127,7 +127,7 @@ public static partial class StoryTests
   m26.Cleanup();Check(m26.Lazer.Exists()&&m26.ApproachPlane.Exists(),"Both aircraft stay on the apron for M27");
   // Killing the second spotter during the listen loses the lead.
   Reset();crew=Roster();c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,"sage26b.json"));var early=new M26AlamoScramble();early.Begin(c);c.Cutscenes.Skip();early.Tick();Use(crew,CrewSlot.Guess);Game.Player.Character.SetIntoVehicle(early.Lazer,VehicleSeat.Driver);early.Tick();
-  early.Spotters[0].IsDriveable=false;c.Dialogue.Clear();early.Tick();early.Spotters[1].IsDriveable=false;c.Dialogue.Clear();early.Tick();early.Tick();
+  early.Spotters[0].IsDriveable=false;c.Dialogue.Clear();early.Tick();Function.TestDamage.Add(early.Spotters[1].Handle);early.Spotters[1].IsDriveable=false;c.Dialogue.Clear();early.Tick();early.Tick();
   Check(early.Status==MissionStatus.Failed&&early.FailReason.Contains("call sign"),"Splashing the second spotter before the call sign is in fails the job with the reason");
 
   // ---- M27: Ice in the Duster's second seat beside the parked Lazer, the transfer as a cut, the ledger in hand, Ron home on his own route, the boat.

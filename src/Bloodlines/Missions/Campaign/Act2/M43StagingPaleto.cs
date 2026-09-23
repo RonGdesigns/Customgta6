@@ -20,11 +20,30 @@ namespace Bloodlines.Missions.Campaign
         private Prop _table, _board;
         private bool _subReady, _boatReady, _airReady, _committed;
         public string MissingPreparation { get; private set; }
+        /// <summary>The preparation chapters this save has not finished, as read at the start.</summary>
+        public string MissingAtStart { get; private set; }
+        /// <summary>Why the sign-off could not be committed, failed on the next frame rather than thrown from the stage exit.</summary>
+        private string _fault;
         private static readonly string[] RequiredUpgrades = { "bunkerPerimeterReady", "empCasesSecured", "ramosRescued", "armoredEscortReady", "technicalSupportReady", "offshoreSurveyReady", "aircraftSmokeReady", "seismicStockReady", "rigMainlandCableCut", "extractionLaunchesReady" };
         /// <summary>Departure room an Annihilator needs in front of its landing point.</summary>
         public const float AircraftClearance = 30f;
         protected override bool Setup()
         {
+            _fault = null;
+            // Said up front. The ledger stage waits for every chapter from M31 to M42, and a
+            // save that has not finished them (a QA start, or a chapter played out of order)
+            // used to find that out only after positioning three vehicles, from a subtitle
+            // that never went away. It is a notice rather than a refusal: the staging itself
+            // is still worth checking, and the ledger names what is missing when he gets
+            // there (the September 22 audit).
+            var unfinished = Enumerable.Range(31, 12).Select(n => "M" + n)
+                .Where(id => Ctx.State == null || !Ctx.State.Completed.Contains(id)).ToList();
+            MissingAtStart = string.Join(", ", unfinished);
+            if (unfinished.Count > 0)
+            {
+                GameUtils.Notify("~o~Staging Paleto cannot be signed off yet. Finish first: " + MissingAtStart + ".");
+                Logger.Warn(Id + " started with preparation chapters unfinished: " + MissingAtStart + ". The ledger stage will wait for them.");
+            }
             if (!BeginCrew(CrewSlot.Gohan)) return false;
             // This used to capture both aircraft keys, deploy the crew, then read the
             // same keys again and refuse the mission if either had moved more than
@@ -63,7 +82,10 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Land the extraction helicopter", new DeliverVehicleObjective("Guess: fly the Annihilator to the yellow Paleto coastal staging lot and land at its center", () => Helicopter, () => At("M43.Land"), 4f, true)).OwnedBy(CrewSlot.Guess).OnExit(c => _airReady = true).AfterCues("M43_S1_02_GUESS");
             yield return new MissionStage("Check the preparation ledger", new ConditionObjective("Guess: all three vehicles must stay in their holding positions; complete any missing preparation missions shown below", () => ReadyToCommit())).OwnedBy(CrewSlot.Guess);
             yield return new MissionStage("Commit the staging plan", new MissionInteraction("Guess: walk to the laptop beside the Paleto landing area and confirm the offshore plan", () => At("M43.BoardWork"), 5, 3f, animation: MissionInteraction.ReachInside, face: () => _board.Position)).OwnedBy(CrewSlot.Guess)
-                .OnExit(c => { if (!ReadyToCommit()) throw new InvalidOperationException("An asset left its holding position or a preparation is missing."); _committed = true; Establish("ready", "We leave as three", "All three assets are in position. Ramos's rescue, the EMP, survey, smoke, charges, cable cut and verified card are in the ledger. This records preparation for the future offshore assault; it does not create an offshore rig or award its vault.", _board); }).AfterCues("M43_S1_01_ICE");
+                // A vehicle that drifted off its mark during the walk to the laptop used to
+                // throw here, a "Script error"; it fails with the reason instead
+                // (the September 22 audit).
+                .OnExit(c => { if (!ReadyToCommit()) { _fault = "An asset left its holding position before the plan was confirmed: " + MissingPreparation + "."; return; } _committed = true; Establish("ready", "We leave as three", "All three assets are in position. Ramos's rescue, the EMP, survey, smoke, charges, cable cut and verified card are in the ledger. This records preparation for the future offshore assault; it does not create an offshore rig or award its vault.", _board); }).AfterCues("M43_S1_01_ICE");
         }
         private bool ReadyToCommit()
         {
@@ -81,6 +103,11 @@ namespace Bloodlines.Missions.Campaign
             MissingPreparation = string.Join(", ", missing);
             if (missing.Count != 0) GameUtils.Subtitle("Preparation missing: " + MissingPreparation, 500);
             return missing.Count == 0;
+        }
+        protected override void OnUpdate()
+        {
+            if (_fault != null) { Fail(_fault); return; }
+            base.OnUpdate();
         }
         protected override void OnPassed()
         { if (!_committed) throw new InvalidOperationException("The staging ledger was not confirmed."); Ctx.State?.SetCargo("offshoreStaging", "M43.Board"); Release(Sub); Release(Launch); Release(Helicopter); }

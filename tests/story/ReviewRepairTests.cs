@@ -83,6 +83,8 @@ public static partial class StoryTests
             Reset(); crew = Roster(); var c = Context(crew);
             var state = c.State = CampaignState.Load(Path.Combine(root, "review-hud-" + entry + ".json"));
             for (int i = 1; i <= 9; i++) state.Completed.Add("SM" + i.ToString("00"));
+            // The Paleto operation refuses to start without the card its vault needs.
+            if (entry == "M44") state.SetEvidence("bradleyKeycard", EvidenceState.CopyHeld);
             var def = new MissionDefinition { Info = new MissionInfo { Id = entry, Title = entry }, Factory = () => new ChapterProbe(entry) };
             var cat = new MissionCatalog(); cat.All.Add(def);
             var manager = new MissionManager(c, state, cat);
