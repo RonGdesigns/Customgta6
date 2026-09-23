@@ -43,6 +43,24 @@ namespace Bloodlines.Core
 
         private readonly Dictionary<CrewSlot, Attempt> _attempts = new Dictionary<CrewSlot, Attempt>();
 
+        /// <summary>When each brother was last ordered aboard, across every boarding in flight.</summary>
+        private static readonly Dictionary<CrewSlot, int> _ordered = new Dictionary<CrewSlot, int>();
+        /// <summary>How long an order to board keeps a brother out of other hands.</summary>
+        public const int BoardingHoldMs = OrderIntervalMs + 1500;
+
+        /// <summary>
+        /// True while a brother has been ordered aboard recently. A mission's role logic
+        /// leaves him alone meanwhile: its threat response used to clear his tasks and send
+        /// him to cover between two boarding orders, so the boarding never finished (the
+        /// September 22 audit, M49 to M51). It expires on its own, so a boarding that ended
+        /// without being reset never holds him.
+        /// </summary>
+        /// <summary>Forget every boarding order, for a new session or a test.</summary>
+        public static void ForgetOrders() { _ordered.Clear(); }
+
+        public static bool IsBoarding(CrewSlot slot) =>
+            _ordered.TryGetValue(slot, out int at) && Game.GameTime - at < BoardingHoldMs && Game.GameTime >= at;
+
         /// <summary>How many brothers were placed rather than boarding on their own feet.</summary>
         public int Placed { get; private set; }
 
@@ -73,13 +91,19 @@ namespace Bloodlines.Core
 
                 if (!_attempts.TryGetValue(pair.Key, out var attempt))
                     _attempts[pair.Key] = attempt = new Attempt { Since = now };
+                _ordered[pair.Key] = now;
+                // His seat already has somebody in it: the player sat down there, or a man
+                // who died in it. He takes whatever else is free rather than waiting forever
+                // for a seat he will never get.
+                var seat = SeatFor(vehicle, pair.Value, brother);
+                if (seat == VehicleSeat.None) continue;
 
                 // Still on his way. He is ordered, but he is not yet failing to board,
                 // so the clock is held at now rather than running while he travels.
                 if (brother.Position.DistanceTo(vehicle.Position) > BoardRange) attempt.Since = now;
                 else if (now - attempt.Since > DirectAfterMs)
                 {
-                    brother.SetIntoVehicle(vehicle, pair.Value);
+                    brother.SetIntoVehicle(vehicle, seat);
                     if (!brother.IsInVehicle(vehicle)) continue;
                     _attempts.Remove(pair.Key);
                     Placed++;
@@ -92,9 +116,34 @@ namespace Bloodlines.Core
                 crew.CompanionAI.TakeControl(pair.Key);
                 // Already in something else — he has to get out before he can get in.
                 if (brother.IsInVehicle()) brother.Task.LeaveVehicle();
-                else brother.Task.EnterVehicle(vehicle, pair.Value);
+                else brother.Task.EnterVehicle(vehicle, seat);
             }
             return all;
+        }
+
+        /// <summary>The seat he was given if it is free, otherwise the first free one, driver's last.</summary>
+        private static VehicleSeat SeatFor(Vehicle vehicle, VehicleSeat wanted, Ped brother)
+        {
+            var sitting = vehicle.GetPedOnSeat(wanted);
+            if (sitting == null || !sitting.Exists() || sitting == brother) return wanted;
+            for (int i = 0; i < 8; i++)
+                if (vehicle.IsSeatFree((VehicleSeat)i)) return (VehicleSeat)i;
+            return vehicle.IsSeatFree(VehicleSeat.Driver) ? VehicleSeat.Driver : VehicleSeat.None;
+        }
+
+        /// <summary>
+        /// Everybody: the named driver at the wheel and the other two alongside him. Use this,
+        /// not <see cref="Passengers"/>, when the driver may be somebody the player is not
+        /// playing. With only the passengers named, a Guess who was not the player was never
+        /// told to get in, and the crew waited for him until the mission was aborted (M51,
+        /// September 22).
+        /// </summary>
+        public static KeyValuePair<CrewSlot, VehicleSeat>[] Crew(CrewSlot driver,
+            VehicleSeat first = VehicleSeat.RightFront, VehicleSeat second = VehicleSeat.LeftRear)
+        {
+            var seats = new List<KeyValuePair<CrewSlot, VehicleSeat>> { new KeyValuePair<CrewSlot, VehicleSeat>(driver, VehicleSeat.Driver) };
+            seats.AddRange(Passengers(driver, first, second));
+            return seats.ToArray();
         }
 
         /// <summary>

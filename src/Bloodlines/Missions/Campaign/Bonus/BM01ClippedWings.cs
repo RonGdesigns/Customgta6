@@ -242,8 +242,18 @@ namespace Bloodlines.Missions.Campaign
             var blocking = new SceneBlocking()
                 .Then(new EnterVehicleStep(_pilot, _osprey, VehicleSeat.Driver) { TimeoutMs = 9000 })
                 .Then(new ShotStep(4000, _osprey, new Vector3(-24f, 16f, 7f), _osprey, new Vector3(0f, 0f, 2f), 2f));
-            RequiredScene("takeoff", "The Osprey",
-                "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.", blocking);
+            // This runs inside a stage exit, and a throw there is a script error rather than a
+            // failure. If the scene cannot finish, the pilot is seated anyway and the chase goes on.
+            try
+            {
+                RequiredScene("takeoff", "The Osprey",
+                    "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.", blocking);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(Id + ": the takeoff scene could not complete (" + ex.Message + "); seating the pilot directly.");
+                if (!_pilot.IsInVehicle(_osprey)) _pilot.SetIntoVehicle(_osprey, VehicleSeat.Driver);
+            }
         }
 
         /// <summary>

@@ -143,7 +143,8 @@ public static partial class StoryTests
 
         // Bring it down.
         for (int i = 0; i < 20 && m.Hull.Hull > 0f; i++) { Function.ExplosiveDamage.Add(m.Osprey.Handle); m.Tick(); Function.ExplosiveDamage.Remove(m.Osprey.Handle); }
-        m.Tick();
+        // Then the crew's closing radio, which every mission from M07 on finishes with.
+        for (int i = 0; i < 40 && m.Status == MissionStatus.Running; i++) { Game.GameTime += 500; c.Dialogue.Update(); m.Tick(); }
         Check(m.Status == MissionStatus.Passed && m.Osprey.IsDead, "An empty hull meter brings it down and passes the mission");
         Check(Function.Calls.Any(x => x.Item1 == Hash.SET_ENTITY_HAS_GRAVITY && x.Item2[0] == m.Osprey && (bool)x.Item2[1]), "and it falls");
 

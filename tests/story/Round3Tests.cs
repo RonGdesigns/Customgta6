@@ -43,7 +43,7 @@ public static partial class StoryTests
   string m2=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M02LooseStrands.cs"));
   Check(m2.Contains("Enter the Granger: F / controller Y")&&m2.Contains("player.Task.EnterVehicle(_chase, FreeSeat(), 6000")&&m2.Contains("_chase.LockStatus = VehicleLockStatus.Unlocked"),"M02's Granger takes Ice back at its door whatever the engine makes of the drives in his hand");
   string m3=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M03CypressFoundry.cs"));
-  Check(m3.Contains("new ConditionObjective(\"Guess: put the street crew down.\"")&&m3.Contains("UnseatCrew();")&&m3.Contains("GameUtils.IsWithinFlat(post, truck, 7f)"),"M03 clears the block before any switch, never spawns a guard in the Benson, and gets everyone out before it locks");
+  Check(m3.Contains("new ConditionObjective(\"Guess: put the street crew down.\"")&&m3.Contains("UnseatCrew();")&&m3.Contains("GameUtils.IsWithinFlat(post, truck, TruckClearance)")&&m3.Contains("public const float TruckClearance = 7f;"),"M03 clears the block before any switch, never spawns a guard in the Benson, and gets everyone out before it locks");
   string m4=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M04SeveredWire.cs"));
   Check(m4.Contains("Station(CrewSlot.Ice, _iceWatch);")&&m4.Contains("Station(CrewSlot.Gohan, _gohanApproach);")&&!m4.Contains("Station(CrewSlot.Ice, _van"),"M04's Ron pulls up alone; Ice and Gohan are already in place");
   string m7=File.ReadAllText(Path.Combine(Repo,"src","Bloodlines","Missions","Campaign","Act1","M07WiretapWaltz.cs"));

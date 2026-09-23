@@ -85,6 +85,12 @@ namespace Bloodlines.Missions
         public void Update()
         {
             if (Ped == null || !Ped.Exists() || Ped.IsDead || State == RoleState.Idle) return;
+            // A brother in a seat, or being ordered into one, belongs to the vehicle. Every
+            // order below starts with ClearAll, and the threat response then sends him running
+            // for cover: that pulled Ice off M56's gun and Gohan out of its cab when the armor
+            // closed, bailed M49's crew out at the checkpoint, and undid every boarding order in
+            // M49 to M51 (the September 22 audit). He gets a fresh order when he is on his feet.
+            if (Ped.IsInVehicle() || Core.CrewBoarding.IsBoarding(Slot)) { _orderIssued = false; return; }
             if (!_orderIssued) { Order(); _orderIssued = true; }
 
             if (State == RoleState.Approaching && Arrived) { State = RoleState.Observing; Order(); return; }

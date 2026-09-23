@@ -262,7 +262,7 @@ namespace Bloodlines.Missions
                 // An inner part of the continuous Port Heist ends on its last real
                 // objective; the next part starts while the radio line plays.
                 bool innerPart = OperationOwned && MissionOperations.IsInnerPhase(Id);
-                if (!innerPart && (Id.StartsWith("SM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7))) stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")).AnyBrother());
+                if (!innerPart && (Id.StartsWith("SM") || Id.StartsWith("BM") || (int.TryParse(Id.Substring(1), out var number) && number >= 7))) stages.Add(new MissionStage("Radio debrief", new DialogueFinishedObjective("Listen to the crew's final radio call.")).AnyBrother());
             }
             return stages;
         }
