@@ -228,5 +228,14 @@ public static partial class StoryTests
             "It is registered, and offered after everything else");
         Check(MissionContextCard.Cards.ContainsKey("BM01") && File.ReadAllText(Path.Combine(dataDir, "mission_starts.tsv")).Contains("BM01\tBM01.Start"),
             "It has a briefing card and a start marker like any other mission");
+
+        // The install is what the game loads, and the packager copies a fixed list. BM01 was
+        // merged with its data file missing from that list, so the game would never have seen it.
+        string package = Source("tools/package.py");
+        string sources = string.Join("\n", Directory.GetFiles(Path.Combine(Repo, "src"), "*.cs", SearchOption.AllDirectories).Select(File.ReadAllText));
+        var loaded = System.Text.RegularExpressions.Regex.Matches(sources, @"Path\.Combine\(dataDirectory, ""([a-z_]+\.(?:tsv|json|txt))""")
+            .Cast<System.Text.RegularExpressions.Match>().Select(x => x.Groups[1].Value).Distinct().Where(n => n != "savegame.json").ToList();
+        Check(loaded.Count >= 8 && loaded.All(n => package.Contains("'" + n + "'")),
+            "Every data file the mod reads at runtime is copied by the packager (missing: " + string.Join(", ", loaded.Where(n => !package.Contains("'" + n + "'"))) + ")");
     }
 }
