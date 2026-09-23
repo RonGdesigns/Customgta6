@@ -133,7 +133,9 @@ public static partial class StoryTests
        foreach(var hero in Protagonist.All)
         crew.PedFor(hero.Slot).SetIntoVehicle(collapse.Boat,hero.Slot==CrewSlot.Guess?VehicleSeat.Driver:hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);
      }
-     if(name=="ConditionObjective"&&m.Id=="M67")
+     // Only on the beat that asks for the rig to roll. The airport stage has an arrival
+     // condition too, and setting the rig moving there would keep it from ever stopping.
+     if(name=="ConditionObjective"&&m.Id=="M67"&&objective.Label.Contains("rig on the road"))
      {
       var rig=((Bloodlines.Missions.Campaign.M67ScorchedGrid)m).Semi;
       if(rig!=null){Game.Player.Character.SetIntoVehicle(rig,VehicleSeat.Driver);rig.Speed=18;}

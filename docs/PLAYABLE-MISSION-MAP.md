@@ -1050,7 +1050,7 @@ Prerequisite: M61. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Flat1, M62.Flat2, M62.Rider.
+Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat1, M62.Flat2, M62.Rider.
 
 ## M63 — TOWER OF GLASS
 
@@ -1137,7 +1137,7 @@ Prerequisite: M67. Story gate: SM09 must be complete first (QA may bypass). Retr
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M68.Chaser, M68.GohanStart, M68.GuessStart, M68.IceStart, M68.Mouth, M68.Rig, M68.Start.
+Survey references: M68.GohanStart, M68.GuessStart, M68.IceStart, M68.Mouth, M68.Rig, M68.Start.
 
 ## M69 — BLOOD BROTHERS: RUNWAY 30L
 
