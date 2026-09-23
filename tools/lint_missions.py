@@ -111,6 +111,29 @@ def check_ascii(errors):
                         ', '.join('U+%04X (%s)' % (ord(ch), ch) for ch in bad)))
 
 
+ADDITION_LIST = re.compile(r'public static readonly string\[\] (EnemyModels|VehicleModels)\s*=\s*\{([^}]*)\}', re.S)
+
+
+def check_addition_models(peds, vehicles, errors):
+    """The survey editor's pick lists name models as plain strings.
+
+    MissionAdditions offers these to an author and spawns whichever he chose, so a typo
+    there is an enemy or a car that silently never appears. They are not written as
+    `new Model("...")`, so the ordinary model check never sees them.
+    """
+    path = os.path.join(REPO, 'src', 'Bloodlines', 'Core', 'MissionAdditions.cs')
+    if not os.path.exists(path):
+        return
+    with io.open(path, encoding='utf-8') as handle:
+        source = handle.read()
+    for name, body in ADDITION_LIST.findall(source):
+        known = peds if name == 'EnemyModels' else vehicles
+        for model in re.findall(r'"([^"]+)"', body):
+            if model.lower() not in known:
+                errors.append('Core/MissionAdditions.cs: {} lists "{}", which is not a known {} model'
+                              .format(name, model, 'ped' if name == 'EnemyModels' else 'vehicle'))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -253,6 +276,7 @@ def main():
                       .format(mission_id))
 
     check_ascii(errors)
+    check_addition_models(peds, vehicles, errors)
 
     print('\nErrors' if errors else '\nNo errors.')
     for error in errors:

@@ -68,10 +68,10 @@ public static partial class StoryTests
   var insurgent=CrewVan.FleetChoices.First(c=>c.Model=="insurgent2");Game.Player.Character.SetIntoVehicle(car,VehicleSeat.Driver);
   Check(!vans.Select(insurgent,true)&&car.Exists()&&state.CashOnHand==200000,"Crew fleet cannot replace an occupied car");Game.Player.Character.Task.LeaveVehicle();
   Check(!vans.Select(insurgent,false)&&state.CashOnHand==200000,"Crew vehicle purchase requires hideout access");
-  Check(vans.Select(insurgent,true)&&state.CrewVan.Model=="insurgent2"&&state.CashOnHand==80000,"Insurgent can be bought as the crew's four-seat car");
+  Check(vans.Select(insurgent,true)&&state.CrewVan.Model=="insurgent2"&&state.CashOnHand==200000-insurgent.Price,"Insurgent can be bought as the crew's four-seat car");
   car=vans.Spawn(Vector3.Zero,0);Check(car.Model.Name=="insurgent2","Mission crew-car factory uses the selected Insurgent");car.Mods.NeonLightsColor=Color.Purple;car.Mods[VehicleModType.Engine].Index=2;vans.Capture(car);
-  Check(vans.Select(CrewVan.FleetChoices.First(c=>c.Model=="granger"),true)&&state.CashOnHand==80000,"Returning to the owned Granger costs nothing");car=vans.Spawn(Vector3.Zero,0);Check((int)car.Mods.PrimaryColor==7,"Granger retains its separate saved customization");
-  vans.Select(insurgent,true);car=vans.Spawn(Vector3.Zero,0);Check(car.Mods[VehicleModType.Engine].Index==2&&car.Mods.NeonLightsColor.ToArgb()==Color.Purple.ToArgb()&&state.CashOnHand==80000,"Re-selecting the Insurgent restores its upgrades and neon without rebuying");
+  Check(vans.Select(CrewVan.FleetChoices.First(c=>c.Model=="granger"),true)&&state.CashOnHand==200000-insurgent.Price,"Returning to the owned Granger costs nothing");car=vans.Spawn(Vector3.Zero,0);Check((int)car.Mods.PrimaryColor==7,"Granger retains its separate saved customization");
+  vans.Select(insurgent,true);car=vans.Spawn(Vector3.Zero,0);Check(car.Mods[VehicleModType.Engine].Index==2&&car.Mods.NeonLightsColor.ToArgb()==Color.Purple.ToArgb()&&state.CashOnHand==200000-insurgent.Price,"Re-selecting the Insurgent restores its upgrades and neon without rebuying");
   restored=CampaignState.Load(Path.Combine(root,"fleet19.json"));Check(restored.CrewVan.Model=="insurgent2"&&restored.CrewVan.Fleet.ContainsKey("granger"),"Crew fleet ownership and active selection survive reload");
   // The Foundry is lost in M22; the bunker must retain the same fleet commerce.
   state.Safehouses["cypressFoundry"]=false;state.Safehouses[BunkerSite.Unlock]=true;state.CashOnHand=200000;

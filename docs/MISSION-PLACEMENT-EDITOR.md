@@ -58,6 +58,70 @@ stays open until Finish. Individual placements use the same persistent menu.
 | Visit saved coordinate | Select Teleport to this spot | F7 |
 | Save draft and remain here | Select Save this placement | F11 |
 | Previous / next with teleport | Select Previous / Next | Home / End |
+| **Save this placement from any row** | **Y** | Select the row (second from the top) |
+| **Place at my position / the camera** | **X** | Space with the menu closed |
+| Back out of the stand-in or additions page | B (returns to the survey page) | Backspace |
+
+### The survey page, reordered (September 22)
+
+Ron's report: saving took a long scroll, because **Save this placement** was the tenth of
+eighteen rows. The page now runs in the order a placement is actually done:
+
+1. Current placement (and whether it has unsaved changes)
+2. **Save this placement** (Y)
+3. **Save and teleport to next**
+4. **Place at my position** (X), which uses the camera while it is flying
+5. Free camera, Teleport to this spot, Next spot, Previous spot
+6. **Add enemies, vehicles, props**, described below
+7. Facing, Height, Enemy count, Enemy radius
+8. Stand-in (the flown ghost and its distance and facing, on a page of their own)
+9. Accept this spot as correct, Discard unsaved changes, Finish survey
+
+Y saves from anywhere on the page, so a save never needs a scroll. B on the stand-in or
+additions page steps back to the survey page. Only B on the survey page itself ends the
+survey, as it always has.
+
+## Adding enemies, vehicles and props
+
+A mission's own keys are the places its script already reads. Anything more (another
+group of men, a car with men in it, a crate stack to fight behind) is an **addition**. Open
+it from the mission's list (**Add enemies, vehicles, props**, near the top) or from inside
+the survey page. The camera comes up, and the stand-in in front of it becomes the actual
+thing you are about to place.
+
+| Row | Left / Right changes | Notes |
+| --- | --- | --- |
+| Drop it here | (select or **X**) | Writes it at the stand-in, dropped onto the surface under it. A boat is dropped onto the water. |
+| What | enemies on foot / a vehicle with men in it / a prop | |
+| Model | the man, the vehicle, or the prop | **Y** loads the next model, and the stand-in changes to it |
+| Crew | who rides in a vehicle | vehicles only |
+| How many | 1 to 8 men, or men aboard | a vehicle takes no more than it has seats |
+| Spread | 0 to 25 m | enemies on foot only; they stand in the same sunflower spread mission groups use |
+| Weapon | pistol, SMG, carbine, rifle, shotgun, MG, sniper, RPG | |
+| Side | cartel / Aegis | Aegis men get armor |
+| Orders | hold this spot / patrol the area (or drive around) | |
+| Facing, Distance from camera | turn the stand-in, push it out | |
+| Placed in this mission | | each one: go to it, move it to the stand-in, remove it |
+
+Keyboard on that page: Space drops, Tab loads the next model.
+
+Each addition is saved **the moment it is dropped** to `Bloodlines.Additions.tsv`, beside
+the survey ini (`.bak` kept). It spawns the next time that mission starts, including in
+the staging preview. Placed things already in the file are drawn where they will spawn,
+with their id over them: red for men (one dot per man), orange for vehicles and blue for
+props.
+
+In the mission they belong to the mission. They are tracked like anything it spawns, and
+its cleanup takes them away on pass, failure or abort. A placed man holds his orders until
+one of the crew comes within 60 m (90 m for a vehicle crew), then is told once to fight.
+Additions never count toward an objective, and a mission passes or fails exactly as it did
+without them. A continuous operation's chapters each take their own, so the entry chapter
+is never spawned twice. Up to 40 per mission.
+
+The pick lists are models the campaign already uses or that `build/vehicles.json` and
+`build/peds.json` confirm. `tools/lint_missions.py` checks the men and vehicles against
+those dumps, so a typo there fails the linter rather than silently spawning nothing.
+Nobody has watched a placed addition fight in game yet.
 
 The orange circle and red dots preview supported enemy groups; the blue line
 shows facing. Radius grows at 8m/s, bounded to 1-60m; quantity is bounded to 1-16.

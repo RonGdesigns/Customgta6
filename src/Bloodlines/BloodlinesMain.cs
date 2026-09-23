@@ -90,6 +90,9 @@ namespace Bloodlines
             SurveyMode.SurfaceProbe = (at, reach) => MissionSites.SurfaceHeight(at, at.Z, at.Z - reach);
             SurveyMode.HeadroomProbe = (at, height) => MissionSites.OpenAbove(at, height);
             SurveyMode.InteriorProbe = at => MissionSites.InteriorAt(at);
+            // The extra men, vehicles and props placed with the survey editor. Beside the
+            // survey ini, loaded once; a mission spawns its own when it starts.
+            MissionAdditions.Load(Path.Combine(root, MissionAdditions.FileName));
             _catalog = new MissionCatalog(_data, Path.Combine(root, "missions"));
             _state = CampaignState.Load(Path.Combine(dataDirectory, "savegame.json"));
             _dispatches = new CampaignDispatches(_state);
@@ -320,6 +323,11 @@ namespace Bloodlines
             if (_characterWheel.IsOpen && (Game.Player.Character == null || Game.Player.Character.IsDead ||
                 !_crew.IsDeployed || _cutscenes.IsActive || _menu.IsOpen)) _characterWheel.Close();
             if (Game.Player.Character == null || Game.Player.Character.IsDead) Step("cancel apartment", _homes.StopApartment);
+            // A camera handed back to gameplay is deleted once the slide home is over,
+            // which is after the scene it belonged to has ended. It runs ahead of every
+            // early return below: it used to sit at the end of the tick, so a scene that
+            // started during the slide held the old camera alive for its whole length.
+            Step("scene cameras", _cutscenes.RetireCameras);
             Step("grounded spawns", GameUtils.SettleHeld);
             Step("death", _death.Update);
             Step("mission presentation", () => _presentation.Update(
@@ -374,6 +382,8 @@ namespace Bloodlines
             // mission objective, so it lives here and nowhere earlier in the tick.
             Step("prologue", _prologue.Update);
             Step("missions", _missions.Update);
+            // A placed man is told to fight once one of the crew comes close, once.
+            if (_missions.IsRunning) Step("placed additions", () => MissionAdditions.Update(Protagonist.All.Select(p => _crew.PedFor(p.Slot))));
             ObjectiveMarkers.EndFrame();
             if (_cutscenes.IsActive) { _orders.Close(); Step("yield new scene grade", _visuals.SuspendGrading); _phone.Close(); _characterWheel.Close(); ObjectiveMarkers.Clear(); _missionMarkers.Clear(); return; }
             Step("campaign hub", () => _hub.Update(_crew.IsDeployed && !_missions.IsRunning && !_prologue.IsActive &&
@@ -385,9 +395,6 @@ namespace Bloodlines
             Step("survey", _survey.Update);
             // The staged world draws its markers and its banner; it runs nothing.
             Step("staging preview", _menu.Preview.Update);
-            // A camera handed back to gameplay is deleted once the slide home is over,
-            // which is after the scene it belonged to has ended.
-            Step("scene cameras", _cutscenes.RetireCameras);
             // An aircraft the player is flying has a running engine. Planes and
             // helicopters are created cold on purpose, and nothing ever started them: a
             // jet spawned from the dev menu let Ron fire its guns and never accelerate.

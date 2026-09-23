@@ -95,9 +95,29 @@ namespace Bloodlines.Missions
                 return false;
             }
 
+            PlaceAdditions();
             Status = MissionStatus.Running;
             Logger.Info("Mission started: " + Id + " — " + Title);
             return true;
+        }
+
+        /// <summary>
+        /// False for a mission whose chapters take their own additions: a continuous
+        /// operation shares its entry chapter's id, so it would spawn that chapter's
+        /// additions a second time.
+        /// </summary>
+        protected virtual bool TakesPlacedAdditions => true;
+
+        /// <summary>
+        /// The extra men, vehicles and props an author placed in this mission with the
+        /// survey editor. Tracked like anything the mission spawned itself, so its own
+        /// cleanup takes them away. A failure here is logged; it never stops the mission.
+        /// </summary>
+        private void PlaceAdditions()
+        {
+            if (!TakesPlacedAdditions) return;
+            try { foreach (var entity in MissionAdditions.Spawn(Id)) Track(entity); }
+            catch (Exception ex) { Logger.Error(Id + " placed additions", ex); }
         }
 
         /// <summary>
@@ -116,7 +136,12 @@ namespace Bloodlines.Missions
             Stage = 0;
             StageStartedAt = Game.GameTime;
             FailReason = null;
-            try { return OnStage(); }
+            try
+            {
+                bool staged = OnStage();
+                if (staged) PlaceAdditions();
+                return staged;
+            }
             catch (Exception ex)
             {
                 Logger.Error("Mission " + Id + " threw while staging for a preview", ex);
@@ -351,6 +376,7 @@ namespace Bloodlines.Missions
                 else GameUtils.SafeDelete(entity);
             }
             _entities.Clear();
+            if (TakesPlacedAdditions) MissionAdditions.Forget();
             _preserved.Clear();
             _survivors.Clear();
             _requiredAssets.Clear();

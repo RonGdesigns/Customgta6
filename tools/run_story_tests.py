@@ -19,6 +19,7 @@ def main():
     sources += ['Core/BoundedPlacement.cs', 'Core/NonlethalGuards.cs', 'Core/MissionDoctor.cs', 'Core/PlacementContract.cs', 'Core/CargoRide.cs', 'Core/GuardAwareness.cs', 'Core/AircraftHold.cs', 'Core/CrewBoarding.cs', 'Core/VehicleSpecs.cs', 'Core/VehicleStages.cs', 'Core/SlowMotion.cs', 'Core/TargetBlips.cs', 'Core/DlcMaps.cs']
     sources += ['Missions/MissionOperations.cs','Missions/OperationWorld.cs','Missions/ContinuousOperation.cs']
     sources += ['Core/NightVision.cs']
+    sources += ['Core/MissionAdditions.cs', 'Core/AdditionEditor.cs']
     sources += ['Core/PaintPalette.cs']
     sources += ['Crew/CompanionPresence.cs', 'Core/PlacementPreflight.cs', 'Core/RouteRibbons.cs', 'Core/ScenePreview.cs', 'Core/ScenePerformance.cs']
     sources += ['Core/ScriptedMap.cs','Core/ScriptedInterior.cs','Missions/PaletoWorld.cs','Missions/PaletoOperation.cs']

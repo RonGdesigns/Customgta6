@@ -73,6 +73,10 @@ namespace Bloodlines.Core
             page.Add("Stage this mission's world",()=>Preview.IsActive&&Preview.MissionId==mission?"staged - select again to restage":"spawn it all, run nothing",
                 ()=>StagePreview(mission));
             page.Add("Survey all - visit placements in order",()=>"teleport / adjust / save / next",()=>StartPlacement(mission,false,true));
+            // Anything the mission does not already spawn: more men, a vehicle with men in
+            // it, a prop. Opens the survey at this mission's first spot with the camera up.
+            page.Add("Add enemies, vehicles, props",()=>MissionAdditions.For(mission).Count+" placed",()=>
+            {StartPlacement(mission,false,true);if(_survey.IsEditing)OpenAdditions(mission);});
             // The measurement behind these two rows: 1,062 keys are estimates and most
             // missions have about nine. Flying to all nine to find the two that are wrong is
             // the slow half, so the tool visits them and says which two.
@@ -105,41 +109,56 @@ namespace Bloodlines.Core
         }
         private Page BuildPlacementSession()
         {
-            var page = new Page("Placement survey - " + (_survey.Draft?.Key.Split('.')[0] ?? ""));
-            page.Add("Current placement",()=>_survey.PlacementProgress,null);
-            page.Add("Teleport to this spot",()=>"menu stays open",()=>_survey.TeleportToCurrent());
+            var page = new Page("Placement survey - " + (_survey.Draft?.Key.Split('.')[0] ?? "")) { Tag = PlacementTag,
+                Hint = "Y: save | X: place here | sticks: fly | LT/RT: down/up" };
+            // Ron, September 22: saving was the tenth row of eighteen, so every placement
+            // ended with a long scroll down to it. The rows he uses on every spot come first,
+            // in the order he uses them - look, place, save - and Y saves from anywhere on
+            // the page. The fine adjustments and the stand-in come after.
+            page.Add("Current placement",()=>_survey.PlacementProgress+(_survey.PlacementDirty?"  (unsaved)":""),null);
+            page.Add("Save this placement",()=>_survey.PlacementDirty?"unsaved changes - Y":"mark verified - Y",()=>_survey.SavePlacement(true));
+            page.Add("Save and teleport to next",()=>"capture draft, then advance",()=>_survey.SaveAndNextPlacement());
+            page.Add("Place at my position",()=>_survey.Camera.IsFlying?"uses the camera, dropped onto the surface - X":"walk to the correct spot first - X",()=>_survey.PlaceAtPlayer());
             // The camera is the fast way to place anything that is not at head height on
             // walkable ground: a hold forty meters up, a roost with no stair, a deck.
             page.Add("Free camera",()=>_survey.Camera.IsFlying?"flying - "+_config.SurveyCameraKey+" to land":"fly to the spot - "+_config.SurveyCameraKey,
                 ()=>_survey.ToggleCamera());
-            page.Add("Place at my position",()=>_survey.Camera.IsFlying?"uses the camera, dropped onto the surface":"walk to the correct spot first",()=>_survey.PlaceAtPlayer());
-            // Fly the thing itself into place rather than the empty point.
-            page.Add("Stand-in",()=>_survey.Ghost.IsShowing?_survey.Ghost.Current+" - "+_survey.Ghost.Standoff.ToString("0")+"m out":"off - select to show",
-                ()=>_survey.ToggleGhost(),d=>{if(_survey.Ghost.IsShowing)_survey.Ghost.Cycle(d);});
-            page.Add("Stand-in distance",()=>_survey.Ghost.IsShowing?_survey.Ghost.Standoff.ToString("0")+" m":"no stand-in",null,d=>_survey.Ghost.PushOut(d));
-            page.Add("Stand-in facing",()=>_survey.Ghost.IsShowing?_survey.Ghost.Heading.ToString("0")+" degrees":"no stand-in",null,d=>_survey.Ghost.Turn(d*5f));
-            page.Add("Place from the stand-in",()=>_survey.Ghost.IsShowing?"write where it is standing":"show the stand-in first",()=>_survey.PlaceAtGhost());
-            page.Add("Accept this spot as correct",()=>_survey.LastReading!=null&&!_survey.LastReading.Fits?"it has not checked out":"keep the coordinates, mark verified",
-                ()=>_survey.AcceptCurrent());
-            page.Add("Save this placement",()=>_survey.PlacementDirty?"unsaved changes":"mark verified",()=>_survey.SavePlacement(true));
-            page.Add("Save and teleport to next",()=>"capture draft, then advance",()=>_survey.SaveAndNextPlacement());
+            page.Add("Teleport to this spot",()=>"menu stays open",()=>_survey.TeleportToCurrent());
             page.Add("Next spot - keep existing",()=>"teleport without saving",()=>_survey.MovePlacement(1));
             page.Add("Previous spot",()=>"teleport back",()=>_survey.MovePlacement(-1));
+            page.Add("Add enemies, vehicles, props",()=>{var m=_survey.Draft?.Key.Split('.')[0];return m==null?"no mission":MissionAdditions.For(m).Count+" placed in "+m;},
+                ()=>{var m=_survey.Draft?.Key.Split('.')[0];if(m!=null)OpenAdditions(m);});
             page.Add("Facing",()=>_survey.Draft?.Heading.ToString("0")+" degrees",null,d=>_survey.AdjustPlacement(0,0,d*5f));
             page.Add("Height",()=>_survey.Draft?.Position.Z.ToString("0.00")+"m",null,d=>_survey.AdjustPlacement(0,0,0,d*.1f));
             // The old answer, 'not a group', was a dead end: it named a state without saying what the key
             // was instead, so a row that did nothing looked like a broken row. These say
             // which of the three a key actually is - a detail he can size, a detail whose
             // shape belongs to the mission, or one man standing at a point.
+            page.Add("Enemy count",()=>_survey.Draft==null?"no draft"
+                :MissionPlacement.HasGroup(_survey.Draft.Key)?_survey.Draft.SpawnCount+" men"
+                :"one man - add more with Add enemies",null,d=>_survey.AdjustPlacement(0,d,0));
             page.Add("Enemy radius",()=>_survey.Draft==null?"no draft"
                 :MissionPlacement.HasRadius(_survey.Draft.Key)?_survey.Draft.SpawnRadius.ToString("0.0")+"m"
                 :MissionPlacement.HasGroup(_survey.Draft.Key)?"the mission lays this detail out"
                 :"one man at this point",null,d=>_survey.AdjustPlacement(d,0,0));
-            page.Add("Enemy count",()=>_survey.Draft==null?"no draft"
-                :MissionPlacement.HasGroup(_survey.Draft.Key)?_survey.Draft.SpawnCount+" men"
-                :"one man at this point",null,d=>_survey.AdjustPlacement(0,d,0));
+            page.Add("Stand-in",()=>_survey.Ghost.IsShowing?_survey.Ghost.Describe:"off",()=>_stack.Push(BuildStandInPage()));
+            page.Add("Accept this spot as correct",()=>_survey.LastReading!=null&&!_survey.LastReading.Fits?"it has not checked out":"keep the coordinates, mark verified",
+                ()=>_survey.AcceptCurrent());
             page.Add("Discard unsaved changes",()=>"restore this spot's saved values",()=>_survey.ResetPlacementDraft());
             page.Add("Finish survey",()=>"saved changes are kept",()=>{_survey.Stop();_stack.Pop();});
+            return page;
+        }
+
+        /// <summary>The flown stand-in's rows, on a page of their own so the survey page stays short.</summary>
+        private Page BuildStandInPage()
+        {
+            var page = new Page("Stand-in") { Tag = PlacementTag, Hint = "Y: save | X: place here | sticks: fly | LT/RT: down/up" };
+            // Fly the thing itself into place rather than the empty point.
+            page.Add("Place from the stand-in",()=>_survey.Ghost.IsShowing?"write where it is standing":"show the stand-in first",()=>_survey.PlaceAtGhost());
+            page.Add("Stand-in",()=>_survey.Ghost.IsShowing?_survey.Ghost.Describe+" - "+_survey.Ghost.Standoff.ToString("0")+"m out":"off - select to show",
+                ()=>_survey.ToggleGhost(),d=>{if(_survey.Ghost.IsShowing)_survey.Ghost.Cycle(d);});
+            page.Add("Stand-in distance",()=>_survey.Ghost.IsShowing?_survey.Ghost.Standoff.ToString("0")+" m":"no stand-in",null,d=>_survey.Ghost.PushOut(d));
+            page.Add("Stand-in facing",()=>_survey.Ghost.IsShowing?_survey.Ghost.Heading.ToString("0")+" degrees":"no stand-in",null,d=>_survey.Ghost.Turn(d*5f));
             return page;
         }
         private void StartPlacement(string key,bool here,bool tour=false)

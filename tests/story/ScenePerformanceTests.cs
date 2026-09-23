@@ -107,7 +107,7 @@ public static partial class StoryTests
             "Shots slide, and they leave and arrive slowly rather than at a constant rate");
         Check(director.Contains("subject.Position + new Vector3(0f, 0f, 0.7f), ease: false);"),
             "except a tracking shot, which would lag the thing it is following");
-        Check(director.Contains("Function.Call(Hash.RENDER_SCRIPT_CAMS, false, true, HandoffMs, true, true);"),
+        Check(director.Contains("Function.Call(Hash.RENDER_SCRIPT_CAMS, false, true, HandoffMs, true, false, 0);"),
             "The view eases back into the player's own camera instead of cutting to it");
         Check(director.Contains("bool smooth = _previousCamera == null"),
             "but only when nobody else owns a scripted camera to restore");
