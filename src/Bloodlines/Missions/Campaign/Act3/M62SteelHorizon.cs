@@ -332,7 +332,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Hook the container",
                 new MissionInteraction("Hook the cargo container onto the chopper sling",
-                    () => Deck("M62.Container"), HookSeconds, 3f, animation: MissionInteraction.ReachInside))
+                    () => Deck("M62.Container"), HookSeconds, 3f, animation: MissionInteraction.Repair))
                 .AnyBrother()
                 .OnExit(c => Hooking())
                 .AfterCues("M62_S1_03_GUESS");

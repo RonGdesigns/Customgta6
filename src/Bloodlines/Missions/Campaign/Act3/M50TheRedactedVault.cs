@@ -136,7 +136,7 @@ namespace Bloodlines.Missions.Campaign
             // Parallel again: Gohan's splice and Ice's containment are the same stretch of
             // time, and the player picks which of them he wants to be.
             var splice = new MissionInteraction("Gohan: splice the optical conduit at the street cabinet",
-                () => At("M50.Conduit"), SpliceSeconds, 3f, animation: MissionInteraction.ReachInside)
+                () => At("M50.Conduit"), SpliceSeconds, 3f, animation: MissionInteraction.Repair)
             { RequiredCharacter = CrewSlot.Gohan };
 
             var contain = new SubdueTargetsObjective("Ice: put the private security down without killing them",
@@ -156,7 +156,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Invalidate the feed",
                 new MissionInteraction("Gohan: push the invalidation onto the feed", () => At("M50.Conduit"),
-                    WipeSeconds, 3f, animation: MissionInteraction.ReachInside))
+                    WipeSeconds, 3f, animation: MissionInteraction.Typing))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => Invalidate())
                 .AfterCues("M50_S1_03_GOHAN");

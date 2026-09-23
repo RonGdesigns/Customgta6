@@ -115,7 +115,7 @@ namespace Bloodlines.Missions.Campaign
             // limits of the place are learned bay by bay, not announced.
             yield return new MissionStage("Secure the bays",
                     new MultiHoldObjective("Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay.", _bays, 5, 4f,
-                        "Checking the bay") { SiteDone = BayChecked })
+                        "Checking the bay") { SiteDone = BayChecked, Animation = MissionInteraction.Inspect })
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context =>
                 {
@@ -125,7 +125,7 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M23_S1_02_GUESS");
 
             yield return new MissionStage("Power up",
-                    new MissionInteraction("Gohan: use the control side of the visible generator to restore bunker access.", () => _generator, 6, 2.5f, animation: MissionInteraction.ReachInside))
+                    new MissionInteraction("Gohan: use the control side of the visible generator to restore bunker access.", () => _generator, 6, 2.5f, animation: MissionInteraction.Operate))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context =>
                 {

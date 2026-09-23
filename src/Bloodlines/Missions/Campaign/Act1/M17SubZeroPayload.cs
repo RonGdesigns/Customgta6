@@ -74,13 +74,13 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             var welds = new MultiHoldObjective("Gohan: prepare the three torch modules at the dock workbenches.",
-                _weldPoints, 8, 3f, "Welding") { SiteDone = FitPart, Animation = MissionInteraction.ReachInside };
+                _weldPoints, 8, 3f, "Welding") { SiteDone = FitPart, Animation = MissionInteraction.Welding };
             yield return new MissionStage("Calibrate the torches", welds)
                 .OwnedBy(CrewSlot.Gohan)
                 .AfterCues("M17_S1_01_GOHAN");
 
             yield return new MissionStage("Grapple test",
-                    new MissionInteraction("Guess — test the fifty-ton magnetic lock.", () => _slip, 10, 1.7f, animation: MissionInteraction.ReachInside, face: () => _slip + new Vector3(-1.5f, 0f, 0f)),
+                    new MissionInteraction("Guess — test the fifty-ton magnetic lock.", () => _slip, 10, 1.7f, animation: MissionInteraction.Operate, face: () => _slip + new Vector3(-1.5f, 0f, 0f)),
                     new ReactionTrigger(() => !_releaseAsked && !Ctx.Cutscenes.IsActive, AskForRelease))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => GameUtils.Subtitle("~g~Four minutes through eight inches of naval bulkhead.", 5000))
@@ -89,7 +89,7 @@ namespace Bloodlines.Missions.Campaign
             // Ron's question becomes an object: a release on the outside, where either
             // brother can reach it. Gohan changes it; the change is seen.
             yield return new MissionStage("The release",
-                    new MissionInteraction("Gohan: configure the external grapple release at the marked workbench.", () => ReleasePoint(), 5, 1.7f, animation: MissionInteraction.ReachInside, face: () => ReleasePoint() + new Vector3(-1.5f, 0f, 0f)))
+                    new MissionInteraction("Gohan: configure the external grapple release at the marked workbench.", () => ReleasePoint(), 5, 1.7f, animation: MissionInteraction.Repair, face: () => ReleasePoint() + new Vector3(-1.5f, 0f, 0f)))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => PlayRelease());
 

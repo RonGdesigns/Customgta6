@@ -173,7 +173,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Trigger the charges",
                 new MissionInteraction("Gohan: trigger the charges from the rail", () => _trigger, 3, 3f,
-                    animation: MissionInteraction.ReachInside))
+                    animation: MissionInteraction.Kneel))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => FireCharges())
                 .AfterCues("M47_S1_01_GOHAN");

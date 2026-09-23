@@ -170,6 +170,31 @@ public static partial class StoryTests
         Check(new MissionInteraction("Check the crates", () => spot, 3, 3f, () => car).Animation == null
               && new MissionInteraction("Check the crates", () => spot, 3, 3f, () => car, animation: MissionInteraction.Inspect).Animation == null,
             "A hold made from a vehicle plays nothing, explicit or inferred");
+
+        // MultiHoldObjective runs through the same non-blocking path.
+        ClearAnimationStubs(); Function.Calls.Clear();
+        string kneelDict = MissionInteraction.Kneel.Split('|')[0];
+        var sites = new[] { spot, spot + new Vector3(10f, 0f, 0f) };
+        var multi = new MultiHoldObjective("Plant the charges on both pylons", sites, 2, 3f, "Planting");
+        multi.Enter(c);
+        Check(multi.ResolvedAnimation == MissionInteraction.Kneel && Function.Calls.Any(x => x.Item1 == Hash.REQUEST_ANIM_DICT && (string)x.Item2[0] == kneelDict),
+            "A multi-site hold that names no animation infers Kneel for planting and asks for it before the first press");
+        ped.Position = sites[0] + new Vector3(0.5f, 0f, 0f); Function.Calls.Clear();
+        Game.Accept = true; multi.Update(c); Game.Accept = false;
+        Check(ped.Task.Playing == MissionInteraction.Kneel && multi.PlayingAnimation == MissionInteraction.Kneel && Function.Calls.Any(x => x.Item1 == Hash.TASK_PLAY_ANIM && x.Item2[0] == (object)ped),
+            "and kneels at the first site through the native task, not the wrapper that waits on the load");
+        Game.GameTime += 2001; multi.Update(c);
+        Check(ped.Task.Playing == null && multi.Remaining == 1, "The site completes and the clip stops");
+        Function.MissingAnimDicts.Add(kneelDict);
+        ped.Position = sites[1] + new Vector3(0.5f, 0f, 0f);
+        Game.Accept = true; multi.Update(c); Game.Accept = false; Game.GameTime += 16; multi.Update(c);
+        Check(ped.Task.Playing == MissionInteraction.ReachInside, "A missing dictionary falls back to ReachInside on a multi-site hold as well");
+        Function.Calls.Clear(); multi.Exit(c);
+        Check(ped.Task.Playing == null && Function.Calls.Any(x => x.Item1 == Hash.REMOVE_ANIM_DICT && (string)x.Item2[0] == kneelDict),
+            "Exit stops a multi-site hold's clip and releases its dictionary");
+        Check(new MultiHoldObjective("Clamp the floats", sites, 2, 3f, "Clamping", () => car) { Animation = MissionInteraction.Kneel }.ResolvedAnimation == null,
+            "A multi-site hold worked from a vehicle plays nothing");
+        ClearAnimationStubs();
     }
 
     static void InferenceChecks()
@@ -212,67 +237,152 @@ public static partial class StoryTests
             "Inference matches whole words and stems, not letters inside other words");
     }
 
-    /// <summary>
-    /// Every on-foot MissionInteraction in the source either names an animation or resolves one
-    /// through inference. Read as code: comments and string contents are skipped, so a sentence
-    /// that mentions the class is never counted as a call, and line endings do not matter.
-    /// </summary>
-    static void CampaignAnimationSourceChecks()
+    /// <summary>One hold as written in the source: which class, its label text, whether it is
+    /// worked from a vehicle, and the animation it names (resolved to its value) or null.</summary>
+    sealed class SourceHold
     {
+        public string File, Kind, Label, Animation;
+        public bool FromVehicle, LiteralLabel;
+    }
+
+    /// <summary>
+    /// Every MissionInteraction and MultiHoldObjective in the source, read as code: comments and
+    /// string contents are skipped, so a sentence that mentions either class is never counted as
+    /// a call, and line endings do not matter.
+    /// </summary>
+    static List<SourceHold> SourceHolds(out List<string> faults)
+    {
+        faults = new List<string>();
         var consts = typeof(MissionInteraction).Assembly.GetTypes()
             .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
             .Where(f => f.IsLiteral && f.FieldType == typeof(string))
-            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.Select(f => (string)f.GetRawConstantValue()).ToList());
-        int calls = 0, onFoot = 0, named = 0, inferred = 0;
-        var faults = new List<string>();
+            .GroupBy(f => f.Name).ToDictionary(g => g.Key, g => g.Select(f => (string)f.GetRawConstantValue()).Distinct().ToList());
+        var holds = new List<SourceHold>();
         foreach (var file in Directory.GetFiles(Path.Combine(Repo, "src", "Bloodlines"), "*.cs", SearchOption.AllDirectories))
         {
             string code = CodeOnly(File.ReadAllText(file));
             string name = Path.GetFileNameWithoutExtension(file);
             int at = 0;
-            while ((at = NextCall(code, at)) >= 0)
+            while ((at = NextCall(code, at, out string kind)) >= 0)
             {
                 int open = code.IndexOf('(', at);
                 var args = Arguments(code, open, out int close);
                 at = close;
-                calls++;
                 var positional = args.Where(a => !IsNamed(a)).ToList();
                 string Named(string key) => args.Where(IsNamed).Select(a => a.Split(new[] { ':' }, 2)).Where(p => p[0].Trim() == key).Select(p => p[1].Trim()).FirstOrDefault();
-                string vehicle = Named("vehicle") ?? (positional.Count > 4 ? positional[4] : null);
-                if (vehicle != null && vehicle != "null") continue;
-                onFoot++;
-                string animation = Named("animation") ?? (positional.Count > 6 ? positional[6] : null);
-                if (animation != null && animation != "null")
+                bool multi = kind == "MultiHoldObjective";
+                string vehicle = Named("vehicle") ?? (positional.Count > (multi ? 5 : 4) ? positional[multi ? 5 : 4] : null);
+                string animation;
+                if (multi)
+                {
+                    // MultiHoldObjective takes its animation in an object initializer.
+                    animation = null;
+                    int j = close + 1; while (j < code.Length && char.IsWhiteSpace(code[j])) j++;
+                    if (j < code.Length && code[j] == '{')
+                    {
+                        var init = Arguments(code, j, out int initClose);
+                        at = initClose;
+                        animation = init.Select(x => x.Split(new[] { '=' }, 2)).Where(x => x.Length == 2 && x[0].Trim() == "Animation").Select(x => x[1].Trim()).FirstOrDefault();
+                    }
+                }
+                else animation = Named("animation") ?? (positional.Count > 6 ? positional[6] : null);
+                if (animation == "null") animation = null;
+                string value = null;
+                if (animation != null)
                 {
                     string id = animation.Split('.').Last().Trim();
-                    if (!consts.TryGetValue(id, out var values) || values.Any(v => v != MissionInteraction.InWater && v.Split('|').Length != 2))
-                        faults.Add(name + ": animation " + animation + " is not a named dictionary|clip constant");
-                    named++;
-                    continue;
+                    if (!consts.TryGetValue(id, out var values) || values.Count != 1 || (values[0] != MissionInteraction.InWater && values[0].Split('|').Length != 2))
+                        faults.Add(name + ": animation " + animation + " is not one named dictionary|clip constant");
+                    else value = values[0];
                 }
-                // No animation: the action text is inferred at runtime, and inference never
-                // returns nothing on foot.
-                if (MissionInteraction.Resolve(null, positional.Count > 0 ? positional[0] : "", false) == null && !(positional.Count > 0 && MissionInteraction.Infer(positional[0]) == MissionInteraction.InWater))
-                    faults.Add(name + ": " + positional[0] + " resolves no animation");
-                inferred++;
+                string label = positional.Count > 0 ? positional[0] : "";
+                holds.Add(new SourceHold
+                {
+                    File = name, Kind = kind, Label = label, Animation = value,
+                    FromVehicle = vehicle != null && vehicle != "null",
+                    LiteralLabel = label.StartsWith("\"", StringComparison.Ordinal),
+                });
             }
         }
-        Check(calls >= 99 && onFoot >= 80, "The source scan finds the campaign's MissionInteraction calls (" + calls + " calls, " + onFoot + " on foot)");
-        Check(faults.Count == 0, "Every on-foot hold names an animation or resolves one through inference" + (faults.Count > 0 ? ": " + string.Join("; ", faults) : ""));
-        Check(named + inferred == onFoot, "and each on-foot hold was judged exactly once");
-        Check(CodeOnly("// new MissionInteraction(\"x\")\r\nvar s = \"new MissionInteraction(\";\n/* new MissionInteraction( */") .IndexOf("MissionInteraction", StringComparison.Ordinal) < 0,
-            "The scan reads calls, not comments or text that mention the class");
+        return holds;
     }
 
-    static int NextCall(string code, int from)
+    static bool Mentions(string label, params string[] keys)
     {
+        var words = new string((label ?? "").ToLowerInvariant().Select(ch => char.IsLetterOrDigit(ch) ? ch : ' ').ToArray())
+            .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        return keys.Any(k => k.EndsWith("*", StringComparison.Ordinal)
+            ? words.Any(w => w.StartsWith(k.Substring(0, k.Length - 1), StringComparison.Ordinal))
+            : words.Contains(k));
+    }
+
+    static readonly string[] DeviceWords = { "laptop*", "terminal*", "console*", "keypad*", "computer*", "server*" };
+    static readonly string[] ChargeWords = { "charge", "charges", "limpet*", "plant", "plants", "planted", "planting" };
+
+    static void CampaignAnimationSourceChecks()
+    {
+        var holds = SourceHolds(out var faults);
+        var interactions = holds.Where(h => h.Kind == "MissionInteraction").ToList();
+        var multis = holds.Where(h => h.Kind == "MultiHoldObjective").ToList();
+        var onFoot = holds.Where(h => !h.FromVehicle).ToList();
+        Check(interactions.Count >= 99 && interactions.Count(h => !h.FromVehicle) >= 80 && multis.Count >= 12,
+            "The source scan finds the campaign's holds (" + interactions.Count + " MissionInteraction, " + multis.Count + " MultiHoldObjective, " + onFoot.Count + " on foot)");
+        Check(multis.Any(h => h.Label.Contains("clear the vault shelves") && h.Animation == MissionInteraction.ReachInside)
+              && holds.Any(h => h.Label.Contains("Inject the worm") && h.Animation == MissionInteraction.Typing),
+            "The scan reads a multi-site hold's animation out of its initializer and a hold's out of its arguments");
+        foreach (var h in onFoot)
+            if (MissionInteraction.Resolve(h.Animation, h.Label, false) == null && (h.Animation ?? MissionInteraction.Infer(h.Label)) != MissionInteraction.InWater)
+                faults.Add(h.File + ": " + h.Label + " resolves no animation");
+        Check(faults.Count == 0, "Every on-foot hold names an animation or resolves one through inference" + (faults.Count > 0 ? ": " + string.Join("; ", faults) : ""));
+
+        // What a hold will actually play: its named animation, or what its label infers to.
+        string Plays(SourceHold h) => h.Animation ?? MissionInteraction.Infer(h.Label);
+
+        var devices = onFoot.Where(h => h.LiteralLabel && Mentions(h.Label, DeviceWords)).ToList();
+        var bent = devices.Where(h => Plays(h) == MissionInteraction.ReachInside).Select(h => h.File + ": " + h.Label).ToList();
+        Check(devices.Count >= 10 && bent.Count == 0,
+            "No hold at a laptop, terminal, console, keypad, computer or server reaches into a bin (" + devices.Count + " checked)" + (bent.Count > 0 ? ": " + string.Join("; ", bent) : ""));
+        Check(devices.Where(h => Plays(h) != MissionInteraction.InWater).All(h => Plays(h) == MissionInteraction.Typing),
+            "and every one of them types, except a server cut out of a wreck underwater");
+
+        // Charges, limpets and planting kneel. A charge armed from a console is worked at the
+        // console, so it types; a charge worked from a sub or a kayak plays nothing at all.
+        var charges = onFoot.Where(h => h.LiteralLabel && Mentions(h.Label, ChargeWords)).ToList();
+        var standing = charges.Where(h =>
+        {
+            string plays = Plays(h);
+            if (plays == MissionInteraction.Kneel || plays == MissionInteraction.InWater) return false;
+            return !(Mentions(h.Label, DeviceWords) && plays == MissionInteraction.Typing);
+        }).Select(h => h.File + ": " + h.Label + " plays " + Plays(h)).ToList();
+        Check(charges.Count >= 6 && standing.Count == 0,
+            "Every hold that plants a charge or seats a limpet kneels (" + charges.Count + " checked)" + (standing.Count > 0 ? ": " + string.Join("; ", standing) : ""));
+
+        Check(CodeOnly("// new MissionInteraction(\"x\")\r\nvar s = \"new MultiHoldObjective(\";\n/* new MissionInteraction( */").IndexOf("new Mission", StringComparison.Ordinal) < 0
+              && CodeOnly("var s = \"new MultiHoldObjective(\";").IndexOf("MultiHoldObjective", StringComparison.Ordinal) < 0,
+            "The scan reads calls, not comments or text that mention either class");
+
+        // Nothing that plays a hold's clip goes through SHVDN's blocking wrapper.
+        foreach (var file in new[] { "MissionInteraction.cs", "AdvancedObjectives.cs" })
+        {
+            string code = CodeOnly(File.ReadAllText(Path.Combine(Repo, "src", "Bloodlines", "Missions", "Objectives", file)));
+            Check(!System.Text.RegularExpressions.Regex.IsMatch(code, @"\.Task\s*\.\s*PlayAnimation\s*\("),
+                file + " never calls ped.Task.PlayAnimation, which pauses the script while the dictionary loads");
+        }
+    }
+
+    static int NextCall(string code, int from, out string kind)
+    {
+        kind = null;
         for (int i = code.IndexOf("new", from, StringComparison.Ordinal); i >= 0; i = code.IndexOf("new", i + 3, StringComparison.Ordinal))
         {
             if (i > 0 && (char.IsLetterOrDigit(code[i - 1]) || code[i - 1] == '_')) continue;
             int j = i + 3; while (j < code.Length && char.IsWhiteSpace(code[j])) j++;
-            if (string.CompareOrdinal(code, j, "MissionInteraction", 0, 18) != 0) continue;
-            j += 18; while (j < code.Length && char.IsWhiteSpace(code[j])) j++;
-            if (j < code.Length && code[j] == '(') return i;
+            foreach (var name in new[] { "MissionInteraction", "MultiHoldObjective" })
+            {
+                if (string.CompareOrdinal(code, j, name, 0, name.Length) != 0) continue;
+                int k = j + name.Length; while (k < code.Length && char.IsWhiteSpace(code[k])) k++;
+                if (k < code.Length && code[k] == '(') { kind = name; return i; }
+            }
         }
         return -1;
     }
@@ -339,7 +449,7 @@ public static partial class StoryTests
                     text.Append(source[j]);
                 }
                 // Keep the words for inference; break any identifier that could read as a call.
-                sb.Append('"').Append(text.ToString().Replace("MissionInteraction", "Mission Interaction").Replace("(", " ").Replace(")", " ").Replace(",", " ").Replace("\"", " ")).Append('"');
+                sb.Append('"').Append(text.ToString().Replace("MissionInteraction", "Mission Interaction").Replace("MultiHoldObjective", "MultiHold Objective").Replace("(", " ").Replace(")", " ").Replace(",", " ").Replace("\"", " ")).Append('"');
                 i = j; continue;
             }
             sb.Append(ch);

@@ -123,7 +123,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(context => Say("M04_S1_01_GOHAN"));
 
             yield return new MissionStage("Kill the lights",
-                    new MissionInteraction("Gohan: cut the marked surface-lot breaker", () => _breaker, 5, 3f, animation: MissionInteraction.ReachInside))
+                    new MissionInteraction("Gohan: cut the marked surface-lot breaker", () => _breaker, 5, 3f, animation: MissionInteraction.Operate))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context => PlayTransaction())
                 .OnExit(context => LightsOut());

@@ -46,7 +46,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Identify the prisoner",new ReachZoneObjective("Ice: reach the yellow observation point; Ramos is the unarmed prisoner. Do not shoot him.",()=>At("M33.Observe"),12)).OwnedBy(CrewSlot.Ice).OnExit(c=>Engage());
             yield return new MissionStage("Stop the execution",new KillTargetsObjective("Stop the four red execution guards before the rescue clock expires. Protect Ramos.",()=>Opposition))
                 .WithCues("M33_S1_01_ICE");
-            yield return new MissionStage("Free Ramos",new MissionInteraction("Gohan: reach Ramos and cut his restraints",()=>_ramos.Position,4,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Free Ramos",new MissionInteraction("Gohan: reach Ramos and cut his restraints",()=>_ramos.Position,4,3f,animation:MissionInteraction.Repair)).OwnedBy(CrewSlot.Gohan)
                 .OnExit(c=>{_freed=true;Fighting=false;_ramos.Task.ClearAll();_ramos.RelationshipGroup=Ctx.Crew.PedFor(CrewSlot.Guess).RelationshipGroup;Radio("GOHAN","Ramos is free. Guess, bring the car to this marker. We are taking him out in a seat, not asking for codes.","M33_FREE");});
             yield return new MissionStage("Bring the extraction car",new TravelObjective("Guess: drive to the yellow pickup marker beside Ramos and stop",()=>At("M33.Pickup"),10,()=>CrewCar)).OwnedBy(CrewSlot.Guess);
             yield return new MissionStage("All four aboard",new ConditionObjective("Keep the car stopped: Ramos takes the front passenger seat, Ice and Gohan take the back",()=>BoardRamosAndCrew())).OwnedBy(CrewSlot.Guess)

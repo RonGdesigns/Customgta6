@@ -168,7 +168,7 @@ namespace Bloodlines.Missions.Campaign
             // open! We are on the executive floor!"
             yield return new MissionStage("Take the executive lift",
                 new MissionInteraction("Guess: blow the executive lift open", LiftPoint,
-                    LiftSeconds, LiftRadius, animation: MissionInteraction.ReachInside))
+                    LiftSeconds, LiftRadius, animation: MissionInteraction.Kneel))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(c => Reached())
                 .AfterCues("M64_S1_03_GUESS");

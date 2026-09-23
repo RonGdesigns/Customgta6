@@ -197,7 +197,7 @@ namespace Bloodlines.Missions.Campaign
             // execution and the failure path below enforces it.
             yield return new MissionStage("Open the escrow",
                 new MissionInteraction("Gohan: force Vance's biometrics at the escrow terminal",
-                    TerminalPoint, BiometricSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                    TerminalPoint, BiometricSeconds, 2.5f, animation: MissionInteraction.Typing)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnExit(c => Opened())
                 .AfterCues("M65_S1_03_GOHAN");

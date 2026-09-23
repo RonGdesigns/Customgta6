@@ -182,7 +182,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Override the relay",
                 new MissionInteraction("Gohan: override the state relay at the mast",
-                    () => At("M59.Mast"), OverrideSeconds, 3f, animation: MissionInteraction.ReachInside)
+                    () => At("M59.Mast"), OverrideSeconds, 3f, animation: MissionInteraction.Typing)
                 { RequiredCharacter = CrewSlot.Gohan },
                 new ProtectObjective("", () => Ctx.Crew.PedFor(CrewSlot.Gohan),
                     "Gohan was killed at the mast before the broadcast went out."))

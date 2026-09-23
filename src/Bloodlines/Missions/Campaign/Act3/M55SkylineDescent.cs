@@ -330,7 +330,7 @@ namespace Bloodlines.Missions.Campaign
             var vaultSecurity = new KillTargetsObjective("Guess: put down the vault security",
                 () => _vaultGuards) { RequiredCharacter = CrewSlot.Guess };
             var terminal = new MissionInteraction("Gohan: bypass the offshore escrow terminal",
-                () => _terminal, TerminalSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                () => _terminal, TerminalSeconds, 2.5f, animation: MissionInteraction.Typing)
             { RequiredCharacter = CrewSlot.Gohan };
             var vault = new MissionInteraction("Guess: crack the vault and pull the secondary ledger",
                 () => _vault, VaultSeconds, 2.5f, animation: MissionInteraction.ReachInside)

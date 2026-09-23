@@ -110,7 +110,7 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M15_S1_02_ICE");
 
             yield return new MissionStage("Splice the trunk",
-                    new MissionInteraction("Gohan — splice the optical bypass.", () => _splice, 12, 1.7f, animation: MissionInteraction.ReachInside, face: () => _panel.Position))
+                    new MissionInteraction("Gohan — splice the optical bypass.", () => _splice, 12, 1.7f, animation: MissionInteraction.Repair, face: () => _panel.Position))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => PlaySplice())
                 .WithCues("M15_S1_01_GOHAN");

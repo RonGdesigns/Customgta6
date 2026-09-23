@@ -38,11 +38,11 @@ namespace Bloodlines.Missions.Campaign
             // the drive in, and a kill objective only completes while its owner is in play,
             // so "use Ice" could never finish the yard (the September 22 audit).
             yield return new MissionStage("Clear the loading yard",new KillTargetsObjective("Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact",()=>Opposition)).AnyBrother();
-            yield return new MissionStage("Release blasting stock",new MissionInteraction("Gohan: unlock the marked stock-control cabinet beside the crates",()=>At("M38.CabinetWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_cabinet.Position)).OwnedBy(CrewSlot.Gohan).OnEnter(c=>Fighting=false);
+            yield return new MissionStage("Release blasting stock",new MissionInteraction("Gohan: unlock the marked stock-control cabinet beside the crates",()=>At("M38.CabinetWork"),4,3f,animation:MissionInteraction.Operate,face:()=>_cabinet.Position)).OwnedBy(CrewSlot.Gohan).OnEnter(c=>Fighting=false);
             for(int i=0;i<4;i++)
             {
                 int n=i;
-                yield return new MissionStage("Collect package "+(n+1),new MissionInteraction("Gohan: pick up marked charge package "+(n+1)+" of 4",()=>_crates[n].Position,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan).OnExit(c=>Carry(_crates[n],CrewSlot.Gohan));
+                yield return new MissionStage("Collect package "+(n+1),new MissionInteraction("Gohan: pick up marked charge package "+(n+1)+" of 4",()=>_crates[n].Position,3,3f,animation:MissionInteraction.Kneel)).OwnedBy(CrewSlot.Gohan).OnExit(c=>Carry(_crates[n],CrewSlot.Gohan));
                 yield return new MissionStage("Load package "+(n+1),new MissionInteraction("Gohan: carry the package to the back of the stopped Benson",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,3,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                     .OnExit(c=>{SaveCargo(_crates[n],CrewCar,new Vector3(n%2==0?-.5f:.5f,-2.5f+n/2f,.5f));_loaded++;});
             }
@@ -51,7 +51,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Escape the quarry",new TravelObjective("Drive the loaded Benson out through the yellow quarry escape marker",()=>At("M38.Exit"),20,()=>CrewCar)).OnExit(c=>{RetreatResponse();DrivingDestination=null;}).AfterCues("M38_S1_03_GUESS");
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the police before returning with explosives"));
             yield return new MissionStage("Deliver seismic stock",new TravelObjective("Stop the same loaded Benson at the bunker delivery marker",()=>At("M38.Senora.Delivery"),12,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M38.Senora.Delivery"));
-            yield return new MissionStage("Verify the load",new MissionInteraction("Gohan: inspect all four packages at the back of the stopped truck",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,4,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Verify the load",new MissionInteraction("Gohan: inspect all four packages at the back of the stopped truck",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,4,3.5f,animation:MissionInteraction.Inspect,face:()=>CrewCar.Position)).OwnedBy(CrewSlot.Gohan)
                 // Out of the box first: he cannot walk to the doors while attached inside them.
                 .OnEnter(c=>{DrivingDestination=null;CargoRide.OpenDoors(CrewCar);CargoRide.Unload(c.Crew.PedFor(CrewSlot.Gohan),CrewCar,At("M38.Senora.Delivery"));}).OnExit(c=>VerifyDelivery());
         }

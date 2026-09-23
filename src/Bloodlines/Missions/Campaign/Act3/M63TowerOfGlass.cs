@@ -154,7 +154,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Bypass the security core",
                 new MissionInteraction("Gohan: bypass the security core and release the freight lift",
-                    () => Deck("M63.Core"), CoreSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                    () => Deck("M63.Core"), CoreSeconds, 2.5f, animation: MissionInteraction.Typing)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnExit(c => Fortify())
                 .AfterCues("M63_S1_03_GOHAN");

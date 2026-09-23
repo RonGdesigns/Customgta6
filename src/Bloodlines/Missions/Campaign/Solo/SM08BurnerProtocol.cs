@@ -198,7 +198,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Take the client files",
                 new MissionInteraction("Gohan: bypass the biometric lock and copy the client files",
-                    () => _terminal, DownloadSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                    () => _terminal, DownloadSeconds, 2.5f, animation: MissionInteraction.Typing)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnExit(c => Copied())
                 .WithCues("SM08_S1_01_GOHAN")
@@ -206,7 +206,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Burn the vault",
                 new MissionInteraction("Gohan: run thermite along the filing cabinets",
-                    () => _vault, ThermiteSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                    () => _vault, ThermiteSeconds, 2.5f, animation: MissionInteraction.Welding)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnExit(c => Ignite())
                 .AfterCues("SM08_S2_03_GOHAN");

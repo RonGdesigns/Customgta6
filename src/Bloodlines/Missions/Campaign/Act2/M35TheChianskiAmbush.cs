@@ -44,9 +44,9 @@ namespace Bloodlines.Missions.Campaign
         }
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            yield return new MissionStage("Prepare the trap",new MultiHoldObjective("Ice: plant both marked roadside charges; press E / D-pad Right",Enumerable.Range(1,2).Select(i=>At("M35.ChargeWork"+i)),4,3f,"Planting charge"){Animation=MissionInteraction.ReachInside,SiteDone=i=>_charges.Add(Equipment("prop_ld_bomb_01","M35.Charge"+(i+1)))}).OwnedBy(CrewSlot.Ice).OnExit(c=>Roles.For(CrewSlot.Ice).Approach(At("M35.IceCover"),At("M35.IceCover")));
+            yield return new MissionStage("Prepare the trap",new MultiHoldObjective("Ice: plant both marked roadside charges; press E / D-pad Right",Enumerable.Range(1,2).Select(i=>At("M35.ChargeWork"+i)),4,3f,"Planting charge"){Animation=MissionInteraction.Kneel,SiteDone=i=>_charges.Add(Equipment("prop_ld_bomb_01","M35.Charge"+(i+1)))}).OwnedBy(CrewSlot.Ice).OnExit(c=>Roles.For(CrewSlot.Ice).Approach(At("M35.IceCover"),At("M35.IceCover")));
             yield return new MissionStage("Close the far exit",new TravelObjective("Guess: park the crew car across the road at the south end of the pass and stop. That closes the convoy's only way out and keeps you beside the gun truck",()=>At("M35.BlockExit"),8,()=>CrewCar)).OwnedBy(CrewSlot.Guess);
-            yield return new MissionStage("Identify the target",new MissionInteraction("Gohan: use the laptop on the marked field table to identify the convoy's gun truck",()=>At("M35.DeviceWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_device.Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>StartConvoy());
+            yield return new MissionStage("Identify the target",new MissionInteraction("Gohan: use the laptop on the marked field table to identify the convoy's gun truck",()=>At("M35.DeviceWork"),4,3f,animation:MissionInteraction.Typing,face:()=>_device.Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>StartConvoy());
             // Both of these are the whole crew's, not Gohan's. Unowned, they inherited him
             // from the laptop stage, which told Ice in cover to switch away and, because a
             // kill objective only completes while its owner is in play, would not let the
@@ -72,7 +72,7 @@ namespace Bloodlines.Missions.Campaign
                 });
             yield return new MissionStage("Lose pursuit",new LoseWantedObjective("Lose the pursuit. Switch to Ice for the mounted gun or Gohan in the cab while Guess drives; the wheel is yours whenever you want it"));
             yield return new MissionStage("Deliver the gun truck",new TravelObjective("Take the same technical with both brothers to the bunker vehicle bay and stop. Guess drives if you are someone else",()=>At("M35.Senora.Delivery"),15,()=>_technical));
-            yield return new MissionStage("Inspect the capture",new MissionInteraction("Gohan: get out and inspect the gun mount at the rear of the parked technical",()=>_technical.Position-_technical.ForwardVector*2f,5,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Inspect the capture",new MissionInteraction("Gohan: get out and inspect the gun mount at the rear of the parked technical",()=>_technical.Position-_technical.ForwardVector*2f,5,4f,animation:MissionInteraction.Inspect,face:()=>_technical.Position)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>DrivingDestination=null).OnExit(c=>{_delivered=true;Establish("delivery","Protection for the way home","The captured technical arrives intact. Gohan checks the real gun mount. It provides machine-gun cover against exposed targets and low aircraft; it is not a missile launcher or an automatic air-defense system.",_technical);}).AfterCues("M35_S1_03_GOHAN");
         }
         private void StartConvoy()

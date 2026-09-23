@@ -63,10 +63,8 @@ namespace Bloodlines.Missions.Objectives
         private readonly bool _stopVehicle;
         private readonly string _animation;
         private readonly Func<Vector3> _face;
-        private bool _animating;
-        private Ped _worker;
         public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null, Func<Vector3> face = null) : base(action)
-        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; _face = face; }
+        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; _face = face; _hold = new HoldAnimation(action); }
 
         // ---- What he does with his hands while the bar fills --------------------------------
         //
@@ -108,9 +106,9 @@ namespace Bloodlines.Missions.Objectives
         /// <summary>What a hold falls back to when the text names nothing the inference knows.</summary>
         public const string Generic = Operate;
         /// <summary>How long a dictionary may take to load after the press before the fallback is used.</summary>
-        public const int LoadTimeoutMs = 2000;
+        public const int LoadTimeoutMs = HoldAnimation.LoadTimeoutMs;
         /// <summary>How long after the clip is started it is checked for actually playing.</summary>
-        public const int VerifyAfterMs = 750;
+        public const int VerifyAfterMs = HoldAnimation.VerifyAfterMs;
 
         private sealed class Rule
         {
@@ -174,11 +172,8 @@ namespace Bloodlines.Missions.Objectives
             return chosen == InWater ? null : chosen;
         }
 
-        private bool _inferenceLogged, _swimLogged, _fellBack, _wantAnimation, _verified;
-        private string _playing, _fallbackFrom;
-        private int _requestedAt, _playedAt;
-        private Vector3 _workPoint;
-        private readonly HashSet<string> _requestedDicts = new HashSet<string>();
+        private bool _inferenceLogged;
+        private readonly HoldAnimation _hold;
 
         /// <summary>The animation this hold plays on foot, explicit or inferred; null from a vehicle or in the water.</summary>
         public string Animation
@@ -197,107 +192,15 @@ namespace Bloodlines.Missions.Objectives
         /// <summary>Whether the animation was read from the action text rather than given.</summary>
         public bool AnimationInferred => _vehicle == null && string.IsNullOrEmpty(_animation);
         /// <summary>The clip actually playing on the worker now, or null.</summary>
-        public string PlayingAnimation => _animating ? _playing : null;
-
-        private static bool Split(string animation, out string dict, out string clip)
-        {
-            dict = clip = null;
-            if (string.IsNullOrEmpty(animation)) return false;
-            var parts = animation.Split('|');
-            if (parts.Length != 2 || parts[0].Length == 0 || parts[1].Length == 0) return false;
-            dict = parts[0]; clip = parts[1];
-            return true;
-        }
-        private void Request(string animation)
-        {
-            if (!Split(animation, out var dict, out _)) return;
-            GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_ANIM_DICT, dict);
-            _requestedDicts.Add(dict);
-        }
-        private void StopAnimation(Ped ped)
-        {
-            _wantAnimation = false;
-            if (!_animating) return;
-            _animating = false;
-            if (_worker != null && _worker.Exists() && Split(_playing, out var dict, out var clip))
-                GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, dict, clip, 2f);
-            _worker = null;
-        }
-        /// <summary>
-        /// The press. The clip is issued now; its dictionary was asked for on <see cref="Enter"/>,
-        /// so it is normally resident by the time he reaches the marker. Nothing here waits on
-        /// the script thread, and the bar runs from the press either way.
-        /// </summary>
-        private void StartAnimation(Ped ped, Vector3 point)
-        {
-            _playing = _playing ?? Animation;
-            if (_playing == null) return;
-            _wantAnimation = true; _requestedAt = Game.GameTime; _workPoint = point;
-            MaintainAnimation(ped, Game.GameTime);
-        }
-        private void FallBack(string reason)
-        {
-            if (_fellBack || _playing == ReachInside)
-            {
-                Logger.Warn("Mission interaction \"" + _action + "\": " + _playing + " " + reason + "; no animation this hold.");
-                _wantAnimation = false;
-                return;
-            }
-            Logger.Warn("Mission interaction \"" + _action + "\": " + _playing + " " + reason + "; falling back to " + ReachInside + ".");
-            _fellBack = true; _fallbackFrom = _playing; _playing = ReachInside; _requestedAt = Game.GameTime;
-            Request(_playing);
-        }
+        public string PlayingAnimation => _hold.Playing;
         /// <summary>The clip this hold fell back from, when its own did not play.</summary>
-        public string FellBackFrom => _fallbackFrom;
-        private void MaintainAnimation(Ped ped, int now)
-        {
-            if (ped == null || !ped.Exists()) return;
-            if (_animating)
-            {
-                if (_verified || now - _playedAt < VerifyAfterMs) return;
-                if (!Split(_playing, out var playingDict, out var playingClip)) return;
-                if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_PLAYING_ANIM, _worker, playingDict, playingClip, 3))
-                { _verified = true; return; }
-                if (now - _requestedAt <= LoadTimeoutMs)
-                {
-                    // Still inside the load window: the dictionary may have arrived since the
-                    // press, and a clip asked for before it did simply never started.
-                    if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_ANIM_DICT_LOADED, playingDict)) { Play(_worker, playingDict, playingClip); _playedAt = now; }
-                    return;
-                }
-                StopAnimation(ped);
-                _wantAnimation = true;
-                FallBack("did not play within " + LoadTimeoutMs + " ms of the press");
-                return;
-            }
-            if (!_wantAnimation) return;
-            // A standing pose played on a swimmer takes him out of the swim.
-            if (ped.IsSwimming || ped.IsSwimmingUnderWater)
-            {
-                if (!_swimLogged) { _swimLogged = true; Logger.Info("Mission interaction \"" + _action + "\": he is swimming, so no animation is played."); }
-                _wantAnimation = false;
-                return;
-            }
-            if (!Split(_playing, out var dict, out var clip)) { FallBack("is not a dictionary|clip pair"); return; }
-            if (!GTA.Native.Function.Call<bool>(GTA.Native.Hash.DOES_ANIM_DICT_EXIST, dict)) { FallBack("names a dictionary the game does not have"); return; }
-            Request(_playing);
-            ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, _face?.Invoke() ?? _workPoint);
-            Play(ped, dict, clip);
-            _animating = true; _worker = ped; _playedAt = now; _verified = false;
-        }
-        /// <summary>
-        /// The native task, not <c>ped.Task.PlayAnimation</c>: SHVDN's wrapper requests the
-        /// dictionary itself and yields the script for up to a second waiting on it. The
-        /// dictionary was asked for on <see cref="Enter"/>; a clip issued before it has
-        /// arrived does not start, and the check above issues it again once it has.
-        /// </summary>
-        private static void Play(Ped ped, string dict, string clip)
-            => GTA.Native.Function.Call(GTA.Native.Hash.TASK_PLAY_ANIM, ped, dict, clip, 4f, -4f, -1, (int)AnimationFlags.Loop, 0f, false, false, false);
+        public string FellBackFrom => _hold.FellBackFrom;
+        private void StopAnimation(Ped ped) => _hold.Stop();
+        private void StartAnimation(Ped ped, Vector3 point) => _hold.Start(ped, Animation, () => _face?.Invoke() ?? point);
+        private void MaintainAnimation(Ped ped, int now) => _hold.Maintain(ped, now);
         public override void Exit(MissionContext c)
         {
-            StopAnimation(Game.Player.Character);
-            foreach (var dict in _requestedDicts) GTA.Native.Function.Call(GTA.Native.Hash.REMOVE_ANIM_DICT, dict);
-            _requestedDicts.Clear();
+            _hold.Release();
             base.Exit(c);
         }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
@@ -305,7 +208,7 @@ namespace Bloodlines.Missions.Objectives
         {
             base.Enter(c); _started = -1; _lastTick = -1; _lastSteady = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right.";
             // Asked for on the way to the marker so the clip is resident by the press.
-            Request(_playing ?? Animation);
+            _hold.Prepare(Animation);
         }
         public override void Update(MissionContext c)
         {
@@ -354,6 +257,134 @@ namespace Bloodlines.Missions.Objectives
             GameUtils.DrawProgressBar(elapsed / (float)_duration);
             if (elapsed >= _duration) { StopAnimation(ped); Complete(); }
         }
+    }
+
+    /// <summary>
+    /// A hold's work clip, played without ever waiting on the script thread. The dictionary is
+    /// requested up front (<see cref="Prepare"/>) and the clip issued through the native task,
+    /// not <c>ped.Task.PlayAnimation</c>: SHVDN's wrapper requests the dictionary itself and
+    /// yields the script for up to a second waiting on it. A moment after the press the clip is
+    /// checked for actually playing; a dictionary the game does not have, one that has not
+    /// loaded inside <see cref="LoadTimeoutMs"/>, or a clip that does not take falls back once
+    /// to <see cref="MissionInteraction.ReachInside"/> and says so in the log. A swimmer is
+    /// never given a standing pose. Shared by <see cref="MissionInteraction"/> and
+    /// <see cref="MultiHoldObjective"/>, so the two cannot drift apart.
+    /// </summary>
+    public sealed class HoldAnimation
+    {
+        /// <summary>How long a dictionary may take to load after the press before the fallback is used.</summary>
+        public const int LoadTimeoutMs = 2000;
+        /// <summary>How long after the clip is started it is checked for actually playing.</summary>
+        public const int VerifyAfterMs = 750;
+
+        private readonly string _owner;
+        private readonly HashSet<string> _requested = new HashSet<string>();
+        private string _playing, _fallbackFrom;
+        private bool _fellBack, _want, _animating, _verified, _swimLogged;
+        private int _requestedAt, _playedAt;
+        private Ped _worker;
+        private Func<Vector3> _face;
+
+        public HoldAnimation(string owner) { _owner = owner; }
+
+        /// <summary>The clip actually issued on the worker now, or null.</summary>
+        public string Playing => _animating ? _playing : null;
+        /// <summary>The clip this hold fell back from, when its own did not play.</summary>
+        public string FellBackFrom => _fallbackFrom;
+
+        private static bool Split(string animation, out string dict, out string clip)
+        {
+            dict = clip = null;
+            if (string.IsNullOrEmpty(animation)) return false;
+            var parts = animation.Split('|');
+            if (parts.Length != 2 || parts[0].Length == 0 || parts[1].Length == 0) return false;
+            dict = parts[0]; clip = parts[1];
+            return true;
+        }
+        private void Request(string animation)
+        {
+            if (!Split(animation, out var dict, out _)) return;
+            GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_ANIM_DICT, dict);
+            _requested.Add(dict);
+        }
+        /// <summary>Ask for the dictionary ahead of the press, so the clip is resident when it comes.</summary>
+        public void Prepare(string animation) => Request(_playing ?? animation);
+        /// <summary>The press: issue the clip now, facing what <paramref name="face"/> names. A null animation plays nothing.</summary>
+        public void Start(Ped ped, string animation, Func<Vector3> face)
+        {
+            _playing = _playing ?? animation;
+            if (_playing == null) return;
+            _want = true; _requestedAt = Game.GameTime; _face = face;
+            Maintain(ped, Game.GameTime);
+        }
+        public void Stop()
+        {
+            _want = false;
+            if (!_animating) return;
+            _animating = false;
+            if (_worker != null && _worker.Exists() && Split(_playing, out var dict, out var clip))
+                GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, dict, clip, 2f);
+            _worker = null;
+        }
+        /// <summary>Stop, and let go of every dictionary this hold asked for.</summary>
+        public void Release()
+        {
+            Stop();
+            foreach (var dict in _requested) GTA.Native.Function.Call(GTA.Native.Hash.REMOVE_ANIM_DICT, dict);
+            _requested.Clear();
+        }
+        private void FallBack(string reason)
+        {
+            if (_fellBack || _playing == MissionInteraction.ReachInside)
+            {
+                Logger.Warn("Hold \"" + _owner + "\": " + _playing + " " + reason + "; no animation this hold.");
+                _want = false;
+                return;
+            }
+            Logger.Warn("Hold \"" + _owner + "\": " + _playing + " " + reason + "; falling back to " + MissionInteraction.ReachInside + ".");
+            _fellBack = true; _fallbackFrom = _playing; _playing = MissionInteraction.ReachInside; _requestedAt = Game.GameTime;
+            Request(_playing);
+        }
+        /// <summary>Every frame of a hold in progress: start, confirm, issue again, or fall back.</summary>
+        public void Maintain(Ped ped, int now)
+        {
+            if (ped == null || !ped.Exists()) return;
+            if (_animating)
+            {
+                if (_verified || now - _playedAt < VerifyAfterMs) return;
+                if (!Split(_playing, out var playingDict, out var playingClip)) return;
+                if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_PLAYING_ANIM, _worker, playingDict, playingClip, 3))
+                { _verified = true; return; }
+                if (now - _requestedAt <= LoadTimeoutMs)
+                {
+                    // Still inside the load window: the dictionary may have arrived since the
+                    // press, and a clip asked for before it did simply never started.
+                    if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_ANIM_DICT_LOADED, playingDict)) { Play(_worker, playingDict, playingClip); _playedAt = now; }
+                    return;
+                }
+                Stop();
+                _want = true;
+                FallBack("did not play within " + LoadTimeoutMs + " ms of the press");
+                return;
+            }
+            if (!_want) return;
+            // A standing pose played on a swimmer takes him out of the swim.
+            if (ped.IsSwimming || ped.IsSwimmingUnderWater)
+            {
+                if (!_swimLogged) { _swimLogged = true; Logger.Info("Hold \"" + _owner + "\": he is swimming, so no animation is played."); }
+                _want = false;
+                return;
+            }
+            if (!Split(_playing, out var dict, out var clip)) { FallBack("is not a dictionary|clip pair"); return; }
+            if (!GTA.Native.Function.Call<bool>(GTA.Native.Hash.DOES_ANIM_DICT_EXIST, dict)) { FallBack("names a dictionary the game does not have"); return; }
+            Request(_playing);
+            var target = _face?.Invoke();
+            if (target.HasValue) ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, target.Value);
+            Play(ped, dict, clip);
+            _animating = true; _worker = ped; _playedAt = now; _verified = false;
+        }
+        private static void Play(Ped ped, string dict, string clip)
+            => GTA.Native.Function.Call(GTA.Native.Hash.TASK_PLAY_ANIM, ped, dict, clip, 4f, -4f, -1, (int)AnimationFlags.Loop, 0f, false, false, false);
     }
 
     public sealed class OccupiedVehicleDestination : Objective

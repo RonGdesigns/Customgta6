@@ -72,7 +72,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Mount the turbine",
-                    new MissionInteraction("Guess — fabricate the motor mounts.", () => _bench.Position + new Vector3(1.5f, 0f, 0f), 6, 1.7f, animation: MissionInteraction.ReachInside, face: () => _bench.Position))
+                    new MissionInteraction("Guess — fabricate the motor mounts.", () => _bench.Position + new Vector3(1.5f, 0f, 0f), 6, 1.7f, animation: MissionInteraction.Welding, face: () => _bench.Position))
                 .OwnedBy(CrewSlot.Guess)
                 .AfterCues("M11_S1_01_GUESS");
 
