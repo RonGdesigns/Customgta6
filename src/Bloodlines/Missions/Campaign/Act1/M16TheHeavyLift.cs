@@ -37,6 +37,13 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _fence;
         private Vector3 _helipad;
         private Vector3 _canyon;
+        private Vector3 _canyonExit;
+        /// <summary>
+        /// How close the lift has to come to the canyon's east mouth. The mouth is 415 m on
+        /// from the canyon run point and the run stage passes inside 120 m of that, so this
+        /// cannot already be true the moment the stage opens.
+        /// </summary>
+        public const float CanyonExitRadius = 100f;
         private Vector3 _terminal;
         private int _boardingSince, _departureSince = -1, _previousWantedMaximum = 5;
         private bool _boardingOrdered, _roadOrdered, _departureOver;
@@ -74,6 +81,7 @@ namespace Bloodlines.Missions.Campaign
             _fence = Ctx.Locations.Position("M16.DepotFence");
             _helipad = Ctx.Locations.Position("M16.Helipad");
             _canyon = Ctx.Locations.Position("M16.CanyonRun");
+            _canyonExit = Ctx.Locations.Position("M16.CanyonExit");
             _terminal = Ctx.Locations.Position("M16.TerminalDrop");
 
             if (!Ctx.Crew.Deploy(CrewSlot.Ice, _fence, Ctx.Locations.Heading("M16.DepotFence")))
@@ -145,9 +153,13 @@ namespace Bloodlines.Missions.Campaign
                     new DeliverVehicleObjective("Guess: fly the Cargobob through the marked canyon route.", () => _cargobob, () => _canyon, 120f))
                 .WithCues("M16_S1_02_GUESS");
 
-            // The base's heat is lost on the way, not at the flats.
+            // The base's heat is lost on the way, not at the flats. This used to aim at the
+            // canyon run point itself, with a wider radius than the stage before it, so it was
+            // already true the moment it opened. The lift now has to reach the canyon's east
+            // mouth, M16.CanyonExit, with the player aboard it.
             yield return new MissionStage("Clear the canyon",
-                    new ReachZoneObjective("Guess: clear the canyon exit. Gohan keeps base anti-air offline until the lift is delivered.", () => _canyon, 150f),
+                    new DeliverVehicleObjective("Guess: fly the lift out of the canyon's east mouth. Gohan keeps base anti-air offline until the lift is delivered.",
+                        () => _cargobob, () => _canyonExit, CanyonExitRadius),
                     new ProtectObjective("", () => _cargobob, "The Cargobob is gone."));
 
             yield return new MissionStage("Terminal Island",

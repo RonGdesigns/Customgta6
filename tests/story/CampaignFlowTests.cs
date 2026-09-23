@@ -133,7 +133,9 @@ public static partial class StoryTests
        foreach(var hero in Protagonist.All)
         crew.PedFor(hero.Slot).SetIntoVehicle(collapse.Boat,hero.Slot==CrewSlot.Guess?VehicleSeat.Driver:hero.Slot==CrewSlot.Ice?VehicleSeat.RightFront:VehicleSeat.LeftRear);
      }
-     if(name=="ConditionObjective"&&m.Id=="M67")
+     // Only on the beat that asks for the rig to roll. The airport stage has an arrival
+     // condition too, and setting the rig moving there would keep it from ever stopping.
+     if(name=="ConditionObjective"&&m.Id=="M67"&&objective.Label.Contains("rig on the road"))
      {
       var rig=((Bloodlines.Missions.Campaign.M67ScorchedGrid)m).Semi;
       if(rig!=null){Game.Player.Character.SetIntoVehicle(rig,VehicleSeat.Driver);rig.Speed=18;}
@@ -162,6 +164,12 @@ public static partial class StoryTests
      {
       var titan=((Bloodlines.Missions.Campaign.M70BloodBrothersGroundedTitan)m).Plane;
       if(titan!=null)titan.IsInWater=true;
+     }
+     // BM01's return to the truck waits for the Osprey to climb clear of the trees: the stand-in does not fly it up.
+     if(name=="ConditionObjective"&&m.Id=="BM01")
+     {
+      var osprey=(Bloodlines.Missions.Campaign.BM01ClippedWings)m;
+      if(osprey.Osprey!=null)osprey.Osprey.Position=new Vector3(osprey.Osprey.Position.X,osprey.Osprey.Position.Y,osprey.ClimbCeiling);
      }
      if(name=="ConditionObjective"&&m.Id=="M66")
       Game.Player.Character.Position=Bloodlines.Missions.Campaign.MazeBank.Roof

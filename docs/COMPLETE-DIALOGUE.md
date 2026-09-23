@@ -3807,7 +3807,7 @@ Trigger: outro
 ### Intro
 
 **GOHAN** `BM01_SCENE_INTRO_01_GOHAN`
-Aegis never cleared out of the Paleto Forest bunker. There's an Osprey on the apron and a crew holding the gate for whoever's buying it.
+Aegis never cleared out of the Paleto Forest bunker. There's an Osprey in the clearing below it and a crew holding the gate for whoever's buying it.
 Delivery: Briefing; intent before tactics
 Trigger: intro
 

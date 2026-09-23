@@ -115,16 +115,22 @@ public static partial class StoryTests
   Check(guess.Task.Chases==1&&m4.Roles.For(CrewSlot.Gohan).State==RoleState.Covering,"Ron's own AI is already on Miller while Gohan takes cover");
   c.Cutscenes.Stop();m4.Tick();Check(m4.CurrentStage==3&&!m4.RequiredSwitch.HasValue,"The switch is offered, not required, while the window is open");
   Game.GameTime+=M04SeveredWire.SwitchWindowMs+200;m4.Tick();Check(m4.RequiredSwitch==CrewSlot.Guess,"When the window closes the switch is required through the hand-off");
+  // The chase opens with the van 180 m behind Miller's car: out of hack range, inside the chase.
+  var millerCar=World.Vehicles.First(v=>v.Model.Name=="fugitive");van.Position=millerCar.Position+new Vector3(180f,0f,0f);guess.Position=van.Position;
   Use(crew,CrewSlot.Guess);m4.Tick();m4.Tick();Check(m4.CurrentStage==4,"Taking Guess opens the pursuit");
-  var millerCar=World.Vehicles.First(v=>v.Model.Name=="fugitive");
   if(killMiller)m4.Miller.IsDead=true;
   else
   {
-   // Gohan in the van with Ron: he offers the hack, and twelve seconds inside range kill the car.
-   gohan.SetIntoVehicle(van,VehicleSeat.LeftRear);Game.Player.Character.SetIntoVehicle(van,VehicleSeat.Driver);van.Position=millerCar.Position;c.Dialogue.Clear();m4.Tick();
-   Check(c.Dialogue.HasPending&&m4.CarHackProgress==0f,"Gohan riding with Ron says he can kill Miller's car from his seat");
+   // Ron, September 22: Gohan rides the chase in the van, and his hack is offered once Ron is
+   // close to Miller. It is never required; the chase is the job.
+   Check(gohan.IsInVehicle(van),"Gohan is seated in the van for the chase rather than left on the lot");
+   Game.Player.Character.SetIntoVehicle(van,VehicleSeat.Driver);m4.Tick();
+   Check(!m4.CarHackOffered,"Far behind Miller nothing is offered: the chase is the job");
+   c.Dialogue.Clear();van.Position=millerCar.Position;Game.Player.Character.Position=van.Position;m4.Tick();
+   Check(m4.CarHackOffered,"Once Ron is close, the offer comes");
+   Check(c.Dialogue.HasPending&&m4.CarHackProgress==0f,"Close to Miller, Gohan says he can kill Miller's car from his seat");
    for(int i=0;i<M04SeveredWire.CarHackSeconds+2&&millerCar.IsDriveable;i++){Game.GameTime+=1000;m4.Tick();}
-   Check(!millerCar.IsDriveable&&m4.CarHackProgress>=1f,"Inside thirty-five meters long enough, the hack kills Miller's car");
+      Check(!millerCar.IsDriveable&&m4.CarHackProgress>=1f,"Inside thirty-five meters long enough, the hack kills Miller's car");
   }
   m4.Tick();Check(m4.CurrentStage==5,killMiller?"A dead Miller ends the chase":"A disabled car ends the chase");
   Interact(m4,c,CrewSlot.Guess,m4.Miller.Position,3);

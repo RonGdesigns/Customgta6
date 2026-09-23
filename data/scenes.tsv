@@ -499,7 +499,7 @@ SM09_SCENE_INTRO_01_KJ	SM09	intro	KJ	Briefing; intent before tactics	Guess, that
 SM09_SCENE_INTRO_02_GUESS	SM09	intro	GUESS	Briefing; intent before tactics	I will. You make the introduction, then step back, KJ. This is my run. You don't owe my enemies a look at your face.
 SM09_SCENE_OUTRO_01_KJ	SM09	outro	KJ	Reflective; allow the response to land	He confirmed the documents and passage. Keep your other exit too. One captain's schedule isn't something I'd stake a family on.
 SM09_SCENE_OUTRO_02_GUESS	SM09	outro	GUESS	Reflective; allow the response to land	I kept it. When this is over, I'm buying you breakfast, KJ. Somewhere without a starting grid or a security gate.
-BM01_SCENE_INTRO_01_GOHAN	BM01	intro	GOHAN	Briefing; intent before tactics	Aegis never cleared out of the Paleto Forest bunker. There's an Osprey on the apron and a crew holding the gate for whoever's buying it.
+BM01_SCENE_INTRO_01_GOHAN	BM01	intro	GOHAN	Briefing; intent before tactics	Aegis never cleared out of the Paleto Forest bunker. There's an Osprey in the clearing below it and a crew holding the gate for whoever's buying it.
 BM01_SCENE_INTRO_02_ICE	BM01	intro	ICE	Briefing; intent before tactics	Guess drives, I take the gun in the back, Gohan calls it. That aircraft doesn't leave this county.
 BM01_SCENE_OUTRO_01_GUESS	BM01	outro	GUESS	Reflective; allow the response to land	That's the last thing Aegis had with wings up here, and it's in the trees.
 BM01_SCENE_OUTRO_02_GOHAN	BM01	outro	GOHAN	Reflective; allow the response to land	There's another one on the market. Same airframe, clean paperwork. The crew could own it.

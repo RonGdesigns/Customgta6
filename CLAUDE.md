@@ -546,14 +546,20 @@ M53's coordinates cannot be authored offline at all — nothing is placed under 
 ## M52, and where the shot is actually taken from
 
 The bible puts Ice on the Union Depository roof "across the plaza" from City Hall. Those
-two buildings are **716 m apart** — not a plaza, and not a shot. M52 uses the roof 62 m
-from the steps and 15 m above them, which Rockstar gave a ladder named
-`bh1_16_ladder_mission_fizz`: a ladder placed for a mission, so the climb and the way down
-both already exist. `M52.Roost` is a fixed surface; ground preparation would put it on the
-street.
+two buildings are **716 m apart** — not a plaza, and not a shot. M52 now uses the roof of
+City Hall's own west wing (Ron, September 22: "change to where a ladder actually is"). The
+first replacement, `bh1_16_ladder_mission_fizz`, climbs from a roof slab to a plant deck and
+never reaches the street, and the scaffold route an audit added to get onto that roof was
+never climbed; both are gone. **A ladder's name is not evidence that it reaches the street;
+its archetype's `CExtensionDefLadder` entries are.** They give each climbable ladder's
+bottom, top and facing. `bh1_21_ladder2` has five: Ice climbs from the ground beside the
+wing's outer wall (bottom 37.67) to a ledge at 45.67, then to the roof at 48.95, and
+`M52.Roost` is the top of the ladder on the roof's plaza-facing edge. `M52.Ladder` is the
+foot of the first. `M52.Roost` is a fixed surface, probed onto the slab once Ice is within
+60 m, never in Setup.
 
-Harrison comes out of the steps and walks 43 m **away** from the roost to his clear-shot
-mark, not toward it. Check that when moving either key: a mark closer to the roof than the
+Harrison comes out 47.6 m from the roost and walks to a clear-shot mark 52.0 m from it,
+**away** from the roost, not toward it. Check that when moving either key: a mark closer to the roof than the
 steps turns a rooftop shot into a man walking into the muzzle.
 
 Its machinery is M41's on purpose — identify, wait for a clear shot, eliminate, extract —
@@ -1531,3 +1537,22 @@ bare `GuardCurrentPosition`, or he will leave it. Send brothers anywhere with
 
 A passenger returning fire uses `TASK_DRIVE_BY`. Only a turret seat uses the vehicle-weapon
 task.
+
+## Nonlethal jobs: a stun gun in every hand
+
+Ron on M50, September 22: a dead watchman ended the mission, "but they automatically shot.
+They didn't start with stun guns." Only Ice had been issued one, nobody had it in hand, and a
+brother the player is not holding fights with whatever he picks, which is his carbine.
+
+`Core/NonlethalCrew` is the crew's half of a job where nobody may be killed; `NonlethalGuards`
+is the guards' half. M50 and M15 use both. `Begin` in Setup issues every brother a stun gun
+inside the weapon loan, so `EndLoan` returns it. The first mission tick (gameplay start, after
+the scenes) puts it in every hand, and a switch puts it in the new player's hand. The brothers
+the player is not holding get `CanSwitchWeapons = false`, and any other gun in their hands is
+swapped back each tick. The player can still draw anything, and a watchman he kills still fails
+the mission. `CompanionController.StunGunOnly` stops a seated brother getting a drive-by (a Micro
+SMG) or a mounted gun. `PreparationOperation.Spared` keeps support orders off such a man.
+`End` runs in its own `try` in `OnCleanup`, and `ReleaseAll` clears the flag as a backstop.
+Never strip a brother's lethal weapons to do this: `WeaponProgression.Update` gives owned
+weapons back on its own cycle. SM02 is solo, so there is no AI brother, and it already equips
+the stun gun.

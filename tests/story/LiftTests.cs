@@ -23,7 +23,8 @@ public static partial class StoryTests
   Check(m16.CurrentStage==3&&m16.CrewMoved&&crew.PedFor(CrewSlot.Ice).Task.Enters==1&&crew.PedFor(CrewSlot.Ice).Task.LastSeat==VehicleSeat.RightFront&&crew.PedFor(CrewSlot.Gohan).Task.Enters==1&&crew.PedFor(CrewSlot.Gohan).Task.LastSeat==VehicleSeat.Driver,"Ron in the lift: Ice comes to board it, Gohan goes for the Granger; nobody is imagined into a seat the aircraft lacks");
   Game.GameTime+=20001;m16.Tick();Check(crew.PedFor(CrewSlot.Ice).IsInVehicle(m16.Cargobob)&&m16.CurrentStage==4,"Ice aboard, the canyon is the job");
   m16.Cargobob.HeightAboveGround=20f;m16.Cargobob.Position=c.Locations.Position("M16.CanyonRun");Game.Player.Character.Position=m16.Cargobob.Position;m16.Tick();Check(m16.CurrentStage==5,"Through the canyon, the pursuit is lost on the way, not at the flats");
-  Game.Player.WantedLevel=0;m16.Tick();Check(m16.CurrentStage==6,"Pursuit lost, Terminal is the job");
+  Game.Player.WantedLevel=0;m16.Tick();Check(m16.CurrentStage==5,"Still at the canyon run point, the canyon is not yet cleared");
+  m16.Cargobob.Position=c.Locations.Position("M16.CanyonExit");Game.Player.Character.Position=m16.Cargobob.Position;m16.Tick();Check(m16.CurrentStage==6,"Out of the canyon's east mouth, Terminal is the job");
   m16.Cargobob.HeightAboveGround=0f;m16.Cargobob.Speed=0f;m16.Cargobob.Position=c.Locations.Position("M16.TerminalDrop");Game.Player.Character.Position=m16.Cargobob.Position;m16.Tick();
   Check(m16.Landed&&c.Cutscenes.IsActive&&c.State.CargoAt("cargobob")=="M16.TerminalDrop","Landed on the flats, the lift is shown and recorded where M18 finds it");
   c.Cutscenes.Skip();m16.Tick();c.Dialogue.Clear();m16.Tick();Check(m16.Status==MissionStatus.Passed,"M16 passes");

@@ -39,8 +39,23 @@ namespace Bloodlines.Missions.Campaign
         public const string RigModel = "phantom";
         public const string TrailerModel = "trailers";
         public const string ChaserModel = "insurgent";
-        /// <summary>Gun-trucks coming in off the bridge ramps.</summary>
+        /// <summary>Gun-trucks coming down the channel after the rig.</summary>
         public const int ChaserCount = 3;
+        /// <summary>
+        /// How far behind the rig's center each gun-truck starts, along the rig's own heading.
+        /// The trailer's tail is about seventeen meters back, so the nearest truck has forty
+        /// meters of channel to close before it reaches the rig.
+        /// </summary>
+        public static readonly float[] ChaserBehind = { 60f, 80f, 100f };
+        /// <summary>How far across the channel each truck stands from the rig's line. The floor is about thirty-eight meters wide.</summary>
+        public static readonly float[] ChaserAcross = { -6f, 6f, 0f };
+        /// <summary>
+        /// How far a road node may be from a derived start before it is somebody else's road.
+        /// The street is twenty-eight meters over the channel floor, so an answer from up there
+        /// is refused on height alone.
+        /// </summary>
+        public const float NodeReach = 12f;
+        public const float NodeRise = 4f;
         /// <summary>Mines Gohan carries for the trail.</summary>
         public const int Mines = 8;
         /// <summary>How far above and below the authored channel floor the slab is looked for.</summary>
@@ -75,8 +90,7 @@ namespace Bloodlines.Missions.Campaign
 
         /// <summary>Same reasoning as M56: the floor is twenty-eight meters under the street.</summary>
         protected override string[] FixedSurfaces =>
-            new[] { "M68.Start", "M68.IceStart", "M68.GohanStart", "M68.GuessStart", "M68.Rig", "M68.Mouth" }
-                .Concat(Enumerable.Range(1, ChaserCount).Select(i => "M68.Chaser" + i)).ToArray();
+            new[] { "M68.Start", "M68.IceStart", "M68.GohanStart", "M68.GuessStart", "M68.Rig", "M68.Mouth" };
 
         /// <summary>An authored channel point, on the floor the probe actually found.</summary>
         private Vector3 Floor(string key) => At(key) + new Vector3(0f, 0f, _floorOffset);
@@ -102,9 +116,16 @@ namespace Bloodlines.Missions.Campaign
             Station(CrewSlot.Guess, _rig, VehicleSeat.Driver);
             Station(CrewSlot.Ice, _rig, VehicleSeat.Passenger);
 
-            for (int i = 1; i <= ChaserCount; i++)
+            // Behind the rig, on its line down the channel, facing the way it faces. They used to
+            // stand at three authored points forty to a hundred and twenty meters down the
+            // channel, so the pursuit started in front of the rig and the rig drove into it
+            // (Ron, September 22). Measured from where the rig actually stands, the chase comes
+            // from behind wherever the rig is surveyed to.
+            float floorZ = Floor("M68.Rig").Z;
+            for (int i = 0; i < ChaserCount; i++)
             {
-                var truck = Car(ChaserModel, Floor("M68.Chaser" + i), Ctx.Locations.Heading("M68.Chaser" + i), false);
+                var start = OnTheChannelRoad(BehindTheRig(_rig.Position, _rig.ForwardVector, floorZ, i), i + 1);
+                var truck = Car(ChaserModel, start, _rig.Heading, false);
                 if (truck == null || !truck.Exists()) continue;
                 truck.IsPersistent = true;
                 var driver = Occupant(truck, VehicleSeat.Driver);
@@ -209,6 +230,44 @@ namespace Bloodlines.Missions.Campaign
                 if (gunner != null && gunner.Exists() && gunner.IsAlive && driver != null && driver.Exists())
                     Function.Call(Hash.TASK_VEHICLE_SHOOT_AT_PED, gunner, driver, 80f);
             }
+        }
+
+        /// <summary>
+        /// Where gun-truck <paramref name="index"/> starts: <see cref="ChaserBehind"/> meters
+        /// back along the rig's heading and <see cref="ChaserAcross"/> meters to one side, on
+        /// the channel floor. The heading is flattened, so a rig parked on the channel's slight
+        /// slope does not push the point into the concrete or up toward the rim.
+        /// </summary>
+        public static Vector3 BehindTheRig(Vector3 rig, Vector3 forward, float floorZ, int index)
+        {
+            var along = new Vector3(forward.X, forward.Y, 0f);
+            float length = along.Length();
+            along = length < 0.01f ? new Vector3(0f, 1f, 0f) : along * (1f / length);
+            var right = new Vector3(along.Y, -along.X, 0f);
+            return new Vector3(rig.X, rig.Y, floorZ) - along * ChaserBehind[index] + right * ChaserAcross[index];
+        }
+
+        /// <summary>
+        /// A derived start moved onto the nearest vehicle node when the node is really on the
+        /// channel floor and still behind the rig. Anything else, the street overhead above
+        /// all, keeps the derived point, which is already on the floor the probe measured.
+        /// </summary>
+        private Vector3 OnTheChannelRoad(Vector3 seed, int n)
+        {
+            if (GameUtils.NearestRoadNode(seed, NodeReach, out var node, out _) &&
+                Math.Abs(node.Z - seed.Z) <= NodeRise && GameUtils.IsWithinFlat(node, seed, NodeReach) && IsBehindTheRig(node))
+                return node;
+            Logger.Warn(Id + ": no road node on the channel floor near gun-truck " + n + "; it starts at the derived point " + seed + ".");
+            return seed;
+        }
+
+        /// <summary>Whether a point is behind the rig along its heading.</summary>
+        private bool IsBehindTheRig(Vector3 point)
+        {
+            if (_rig == null || !_rig.Exists()) return false;
+            var offset = point - _rig.Position;
+            var forward = _rig.ForwardVector;
+            return offset.X * forward.X + offset.Y * forward.Y < 0f;
         }
 
         private void Through()

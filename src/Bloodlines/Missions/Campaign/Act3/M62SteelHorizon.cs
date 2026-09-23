@@ -67,6 +67,18 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How far above and below the bridge keys the deck is looked for. The water is under it, and a probe must never answer with the seabed.</summary>
         public const float DeckHeadroom = 4f;
         public const float DeckFloor = 0.5f;
+        /// <summary>
+        /// Bumper-to-bumper lengths of the standing freight, from the archive dimensions in
+        /// build/vehicles.json: <c>freight</c> runs from -8.58 to 8.85 m along its length and
+        /// <c>freightcar</c> from -9.24 to 9.19 m. Constants rather than a read of the model,
+        /// because a model the spawn helper has already released can report no size at all.
+        /// </summary>
+        public const float EngineLength = 17.42f;
+        public const float CarLength = 18.43f;
+        /// <summary>The space left between two coupled cars.</summary>
+        public const float CouplingGap = 0.5f;
+        /// <summary>Freight cars coupled behind the engine when no mission train comes back.</summary>
+        public const int FallbackCars = 2;
 
         private readonly List<Vehicle> _consist = new List<Vehicle>();
         private readonly List<Ped> _riders = new List<Ped>();
@@ -200,15 +212,58 @@ namespace Bloodlines.Missions.Campaign
             finally { foreach (var model in models) model.MarkAsNoLongerNeeded(); }
 
             Logger.Warn(Id + ": no mission train came back; standing freight is used instead, so Aegis is loading rather than leaving.");
-            var engine = Car(EngineModel, at, Ctx.Locations.Heading("M62.Consist"), false);
+            // One train, coupled end to end behind the engine along the rail line. The cars
+            // used to stand at the two outer bridge sections, a hundred and forty and ninety
+            // meters either side of the engine, which read as three vehicles abandoned along
+            // two hundred and thirty meters of track rather than a consist (Ron, September 22).
+            float heading = Ctx.Locations.Heading("M62.Consist");
+            var line = CoupledConsist(at, TrackForward(heading), FallbackCars);
+            var engine = Car(EngineModel, line[0], heading, false);
             if (engine != null && engine.Exists()) { engine.IsPersistent = true; _consist.Add(engine); }
-            for (int i = 1; i <= 2; i++)
+            for (int i = 1; i < line.Length; i++)
             {
-                var flat = Car(CarModel, Deck("M62.Flat" + i), Ctx.Locations.Heading("M62.Flat" + i), false);
-                if (flat == null || !flat.Exists()) continue;
-                flat.IsPersistent = true;
-                _consist.Add(flat);
+                var car = Car(CarModel, line[i], heading, false);
+                if (car == null || !car.Exists()) continue;
+                car.IsPersistent = true;
+                _consist.Add(car);
             }
+            Logger.Info(Id + ": the standing consist is " + _consist.Count + " vehicles coupled behind the engine at " + at + ".");
+        }
+
+        /// <summary>
+        /// The rail line's direction along the bridge, read from its two outer sections
+        /// (<c>M62.Flat2</c> to <c>M62.Flat1</c>) and pointed the way the engine faces, so the
+        /// cars trail behind it rather than stand in front of it.
+        /// </summary>
+        private Vector3 TrackForward(float engineHeading)
+        {
+            var from = At("M62.Flat2"); var to = At("M62.Flat1");
+            var along = new Vector3(to.X - from.X, to.Y - from.Y, 0f);
+            double radians = engineHeading * Math.PI / 180.0;
+            var facing = new Vector3((float)-Math.Sin(radians), (float)Math.Cos(radians), 0f);
+            float length = along.Length();
+            if (length < 1f) return facing;
+            along = along * (1f / length);
+            return along.X * facing.X + along.Y * facing.Y < 0f ? along * -1f : along;
+        }
+
+        /// <summary>
+        /// The centers of an engine at <paramref name="head"/> and <paramref name="cars"/>
+        /// freight cars coupled behind it, each touching the one before with
+        /// <see cref="CouplingGap"/> between them, in a straight line against
+        /// <paramref name="forward"/>. Index 0 is the engine.
+        /// </summary>
+        public static Vector3[] CoupledConsist(Vector3 head, Vector3 forward, int cars)
+        {
+            var line = new Vector3[cars + 1];
+            line[0] = head;
+            float back = EngineLength / 2f + CouplingGap + CarLength / 2f;
+            for (int i = 1; i <= cars; i++)
+            {
+                line[i] = head - forward * back;
+                back += CarLength + CouplingGap;
+            }
+            return line;
         }
 
         /// <summary>The consist's head, or its authored point before anything exists.</summary>
