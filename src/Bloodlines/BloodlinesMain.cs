@@ -360,6 +360,14 @@ namespace Bloodlines
             if (gameplay && !_gameplayWasRunning) Step("control diagnostics", () => ControlDiagnostics.Snapshot("gameplay begins", _crew, _cutscenes, _handoff, _homes, _missions.LastAttempted?.Id));
             _gameplayWasRunning = gameplay;
             _crew.CompanionAI.MissionActive = _missions.IsRunning;
+            // A solo job leaves one brother on the map. Once it is over - its aftermath scene
+            // finished, since that is still his alone - the other two come back so he can be
+            // switched away from. Before the dockyard reunion free roam is Ron's alone.
+            Step("end solo job", () => {
+                if (_crew.IsSolo && _crew.IsDeployed && !_missions.IsRunning && !_prologue.IsActive && !_death.IsHandling &&
+                    (_state.IsComplete("M01") || _config.DevToolsEnabled) && _crew.EndSolo())
+                    _memory.Restore(_crew);
+            });
             Step("free-roam character memory", () => _memory.Update(_crew, !_missions.IsRunning && !_prologue.IsActive));
             Step("crew", _crew.Update);
             Step("military response", () => _crew.CompanionAI.Military.Update(_crew.ActiveSlot, _crew.IsDeployed && !_missions.IsRunning && !_survey.IsActive, _crew.CrewGroup, _menu.IsOpen));

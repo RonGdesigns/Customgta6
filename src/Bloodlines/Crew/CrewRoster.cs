@@ -199,6 +199,47 @@ namespace Bloodlines.Crew
             return true;
         }
 
+        /// <summary>How far behind the player the other two come back after a solo job, so they walk in rather than appear beside him.</summary>
+        public const float RejoinBehindMeters = 25f;
+
+        /// <summary>
+        /// A solo job is over: the other two come back. The man who did it stays exactly as he
+        /// is. Ron finished SM01 as Ice and SM02 as Gohan and was locked to that brother
+        /// afterward, because nothing ever put the other two back (September 23). They are
+        /// placed out of sight behind him and walk in under the companion controller. False
+        /// when there was no solo deployment to end.
+        /// </summary>
+        public bool EndSolo()
+        {
+            if (!IsSolo || !IsDeployed) return false;
+            var lead = PedFor(ActiveSlot);
+            if (lead == null || !lead.Exists()) return false;
+            var anchor = lead.IsInVehicle() ? lead.CurrentVehicle.Position : lead.Position;
+            var back = lead.ForwardVector;
+            int side = 0;
+            foreach (var protagonist in Protagonist.All)
+            {
+                if (protagonist.Slot == ActiveSlot) continue;
+                if (_peds.TryGetValue(protagonist.Slot, out var existing) && existing != null && existing.Exists()) continue;
+                var model = protagonist.Model;
+                if (!GameUtils.RequestModel(model)) { Logger.Error("Could not stream " + protagonist.DisplayName + " to rejoin after a solo job."); continue; }
+                var wanted = anchor - back * RejoinBehindMeters + lead.RightVector * (side++ == 0 ? 2.5f : -2.5f);
+                var at = World.GetSafeCoordForPed(wanted, true, 16);
+                if (at == Vector3.Zero) at = World.GetSafeCoordForPed(wanted, false, 0);
+                if (at == Vector3.Zero) at = anchor - back * 4f;
+                var ped = World.CreatePed(model, at, lead.Heading);
+                model.MarkAsNoLongerNeeded();
+                if (ped == null || !ped.Exists()) { Logger.Error("CreatePed returned nothing for " + protagonist.DisplayName + " after a solo job."); continue; }
+                ConfigurePed(ped, protagonist);
+                _peds[protagonist.Slot] = ped;
+            }
+            IsSolo = false;
+            RefreshCompanionBlips();
+            AssignCompanionAI();
+            Logger.Info("Solo job over: the crew is back together with " + Active.DisplayName + ".");
+            return true;
+        }
+
         /// <summary>
         /// Puts each character down at their own start point — the split-approach
         /// deployment the opening mission is built on.
