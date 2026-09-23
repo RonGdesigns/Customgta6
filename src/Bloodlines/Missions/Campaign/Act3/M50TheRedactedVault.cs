@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -42,6 +43,14 @@ namespace Bloodlines.Missions.Campaign
         public const int WipeSeconds = 10;
         /// <summary>Where the campaign records that the coordinated feed is down.</summary>
         public const string FeedEvidence = "municipalWarrantFeed";
+        /// <summary>
+        /// The watchmen's own relationship group. They are not BLOODLINES_AEGIS, because the
+        /// crew hates that group for the whole game, and a brother told to fight "hated
+        /// targets" shot a watchman dead within seconds of the start (Ron, September 22).
+        /// </summary>
+        public const string WatchGroup = "BLOODLINES_WATCHMEN";
+        /// <summary>Charges on Ice's loaned stun gun. The gun itself goes back at teardown.</summary>
+        public const int StunRounds = 100;
 
         private readonly CrewBoarding _boarding = new CrewBoarding();
         private NonlethalGuards _contained;
@@ -69,8 +78,27 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!BeginCrew(CrewSlot.Gohan)) return false;
 
+            // The brothers the player is not holding never go looking for the watchmen. Ron
+            // played this twice on September 22 and failed at 16 and 10 seconds with "keep the
+            // watchmen alive": a watchman inside the role tracks' threat radius sent Guess and
+            // Ice after him with carbines, and a man with 1,000 health lasts about that long.
+            // Keeping them contained is the player's job with a stun gun, so the tracks see no
+            // threats here. Being shot at still sends a brother to cover.
+            Roles = new RoleTracks(Ctx.Crew, () => Enumerable.Empty<Ped>());
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
+                Roles.For(slot).Observe(At("M50." + slot + "Start"), At("M50." + slot + "Start"));
+
             CrewCar = CrewTransport("M50.Van");
             if (!RequireAssets(CrewCar)) return false;
+
+            // The watchmen hate the crew, so they still fight back; the crew is only neutral
+            // toward them, so "fight hated targets" - what a brother under fire is told - can
+            // never pick one of them.
+            var watch = World.AddRelationshipGroup(WatchGroup);
+            var crew = Ctx.Crew.CrewGroup;
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, watch, crew);
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 3, crew, watch);
+            Function.Call(Hash.SET_RELATIONSHIP_BETWEEN_GROUPS, 5, watch, Game.GenerateHash("PLAYER"));
 
             _contained = new NonlethalGuards();
             for (int i = 1; i <= Sentries; i++)
@@ -79,8 +107,16 @@ namespace Bloodlines.Missions.Campaign
                 // Contained rather than killed: private security outside a residential
                 // block, and the story wants the crew to have been here without leaving
                 // bodies in Rockford Hills.
-                if (guard != null) _contained.Add(guard);
+                if (guard == null) continue;
+                guard.RelationshipGroup = watch;
+                _contained.Add(guard);
             }
+
+            // "Use the stun gun" was the failure message, and nobody had handed Ice one: the
+            // campaign's M03 stun gun belongs to Gohan. A mission loan, opened and closed by
+            // MissionManager, so it goes back to the arsenal baseline at teardown.
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.StunGun, StunRounds, false, true);
 
             Paleto.Review(Ctx, PlacementContract.Interaction("M50.Conduit"),
                 PlacementContract.Vehicle("M50.Van", new Model("granger")));
@@ -125,6 +161,9 @@ namespace Bloodlines.Missions.Campaign
                 new EnterVehicleObjective("All three: get back in the van", () => CrewCar, VehicleSeat.Driver, true),
                 new ConditionObjective("Nobody is left on the street", () => Aboard))
                 .AnyOf()
+                // Whoever the player is holding. It used to inherit Gohan from the stage
+                // before, so the HUD said "Switch to Gohan" to get into a van (Ron, September 22).
+                .AnyBrother()
                 .OnEnter(c => _boarding.Reset());
 
             yield return new MissionStage("Leave Rockford Hills",

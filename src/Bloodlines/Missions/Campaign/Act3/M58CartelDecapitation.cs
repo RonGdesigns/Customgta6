@@ -26,8 +26,12 @@ namespace Bloodlines.Missions.Campaign
     /// **Everything here is at street level, so ground preparation does its job.** No fixed
     /// surfaces and no probes: Mirror Park is an ordinary neighborhood at z 56 to 63, the
     /// engine's walkable query is right about it, and overriding that would be inventing a
-    /// problem. The two vent keys keep their own archive heights because they are roof fittings
-    /// and Gohan reaches up to them rather than standing on them.
+    /// problem. That includes the two vent keys. They are roof fittings - 60.34 and 63.23 over
+    /// ground the archives put at 57.2 and 56.6, three to five meters down, with an ATM and a
+    /// workshop floor within six meters of them - and ground preparation stands Gohan on that
+    /// ground beside each one. Holding them at the fittings' own heights would put the marker
+    /// on a roof nobody has shown a way onto, which is the unreachable marker M51 and M52
+    /// both shipped. (An earlier note here said they kept their heights; they never did.)
     ///
     /// **The gate is a road, so it is found rather than written.** Roads are baked terrain —
     /// M49's problem — so the approach lane comes from <c>GameUtils.NearestRoadNode</c> at
@@ -49,6 +53,13 @@ namespace Bloodlines.Missions.Campaign
         public const float LaneSearch = 90f;
         /// <summary>Where the campaign records the council is gone.</summary>
         public const string CouncilEvidence = "cifuentesCouncil";
+        /// <summary>
+        /// How close a brother gets to the compound before it notices him, if the gate has not
+        /// gone first. Five of the six guards stood 22 to 37 m from the crew's start, inside
+        /// both the awareness model's sight and the role tracks' threat radius, so the fight
+        /// the gate is meant to start was already going at spawn (Ron, September 22).
+        /// </summary>
+        public const float ApproachMeters = 15f;
 
         private static readonly string[] VentKeys = { "M58.Vent1", "M58.Vent2" };
 
@@ -56,7 +67,7 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _security = new List<Ped>();
         private Vehicle _hauler;
         private Vector3 _gate;
-        private bool _breached, _gassed, _councilDown;
+        private bool _breached, _gassed, _councilDown, _alert;
 
         public override string Id => "M58";
         public override string Title => "Cartel Decapitation";
@@ -73,10 +84,21 @@ namespace Bloodlines.Missions.Campaign
         public IReadOnlyList<Ped> Security => _security;
         /// <summary>The lane the gate actually resolved to.</summary>
         public Vector3 Gate => _gate;
+        /// <summary>The compound knows the crew is there.</summary>
+        public bool Alert => _alert;
 
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Guess)) return false;
+
+            // Quiet until the approach. The compound registers nothing while the crew waits at
+            // the mouth of the cul-de-sac - a bullet still lands, which is the model's own
+            // rule - and the brothers the player is not holding are not sent after men who have
+            // not noticed them. The gate, a brother walking up, a shot or a body ends it.
+            Awareness.Suppressed = true;
+            Roles = new RoleTracks(Ctx.Crew, () => _alert ? (IEnumerable<Ped>)Opposition : Enumerable.Empty<Ped>());
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
+                Roles.For(slot).Observe(At("M58." + slot + "Start"), At("M58." + slot + "Start"));
 
             var seed = At("M58.Gate");
             if (GameUtils.NearestRoadNode(seed, LaneSearch, out var node, out float _))
@@ -143,7 +165,7 @@ namespace Bloodlines.Missions.Campaign
                 new DeliverVehicleObjective("Guess: put the hauler through the compound gate",
                     () => _hauler, () => _gate, BreachRadius))
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(c => { _breached = true; Fighting = true; Awareness.ReportToAll(Stimulus.RadioCall, _gate); })
+                .OnExit(c => { _breached = true; Raise("the hauler went through the gate"); Fighting = true; Awareness.ReportToAll(Stimulus.RadioCall, _gate); })
                 .AfterCues("M58_S1_01_ICE");
 
             // Both vents, either order, and the overwatch alongside them: parallel objectives
@@ -163,6 +185,40 @@ namespace Bloodlines.Missions.Campaign
                 .AnyBrother()
                 .OnExit(c => Finished())
                 .AfterCues("M58_S1_03_GUESS");
+        }
+
+        /// <summary>The compound is awake. Once only; an alarm does not un-ring.</summary>
+        private void Raise(string why)
+        {
+            if (_alert) return;
+            _alert = true;
+            Awareness.Suppressed = false;
+            // The tracks' threat list is read every frame, so the brothers start answering the
+            // compound from here on; nothing else has to be reissued.
+            Logger.Info(Id + ": the compound is alert - " + why + ".");
+        }
+
+        /// <summary>Anything short of the gate that should wake the compound.</summary>
+        private void WatchTheApproach()
+        {
+            if (_alert) return;
+            var player = Game.Player.Character;
+            if (player != null && player.Exists() && player.IsShooting) { Raise("somebody fired"); return; }
+            var heroes = Protagonist.All.Select(h => Ctx.Crew.PedFor(h.Slot))
+                .Where(p => p != null && p.Exists() && !p.IsDead).ToArray();
+            foreach (var hostile in Opposition)
+            {
+                if (hostile == null || !hostile.Exists()) continue;
+                if (hostile.IsDead) { Raise("one of them is down"); return; }
+                if (Awareness.StateOf(hostile) >= Alertness.Detected) { Raise("one of them was hit"); return; }
+                if (heroes.Any(h => h.Position.DistanceTo(hostile.Position) < ApproachMeters)) { Raise("a brother walked up on them"); return; }
+            }
+        }
+
+        protected override void OnUpdate()
+        {
+            WatchTheApproach();
+            base.OnUpdate();
         }
 
         private void Finished()

@@ -74,6 +74,12 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How far above and below the authored tunnel height the slab is looked for.</summary>
         public const float TunnelHeadroom = 5f;
         public const float TunnelFloor = 8f;
+        /// <summary>
+        /// How far above the platform's authored height its probe starts. Short on purpose: a
+        /// probe that starts above the station ceiling finds the ceiling, which is a worse
+        /// answer than the estimate it was correcting.
+        /// </summary>
+        public const float PlatformHeadroom = 1.5f;
         /// <summary>How often a sweeper's walk order is refreshed. Never every frame.</summary>
         public const int SweepOrderMs = 6000;
         /// <summary>How near the train a sweeper gets before the ambush is sprung.</summary>
@@ -86,7 +92,7 @@ namespace Bloodlines.Missions.Campaign
 
         private readonly List<Ped> _sweepers = new List<Ped>();
         private Vehicle _train;
-        private float _floorOffset;
+        private float _floorOffset, _platformOffset;
         private bool _wired, _cleared;
         private int _orderAt;
 
@@ -100,6 +106,8 @@ namespace Bloodlines.Missions.Campaign
         public bool Cleared => _cleared;
         /// <summary>How far the probe moved the authored tunnel height.</summary>
         public float FloorOffset => _floorOffset;
+        /// <summary>How far the platform's own probe moved the squads' authored height.</summary>
+        public float PlatformOffset => _platformOffset;
         public Vehicle Train => _train;
         public IReadOnlyList<Ped> Sweepers => _sweepers;
 
@@ -121,6 +129,15 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>An authored tunnel point, moved onto the floor the probe actually found.</summary>
         private Vector3 Down(string key) => At(key) + new Vector3(0f, 0f, _floorOffset);
 
+        /// <summary>
+        /// An authored platform point, moved by the platform's own measurement. The squads
+        /// stand at the station end, whose origins are at 13.64 rather than the tunnel's 13.03,
+        /// and a platform is a slab raised above the track bed: moving them by the tunnel's
+        /// offset put them 2 m down from their own origin, which can be inside the slab
+        /// (Ron, September 22). One flat datum, one probe - there are just two of them here.
+        /// </summary>
+        private Vector3 OnPlatform(string key) => At(key) + new Vector3(0f, 0f, _platformOffset);
+
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Ice)) return false;
@@ -134,6 +151,24 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info(Id + ": the tunnel floor is " + (authored.Z + _floorOffset).ToString("0.00") +
                 " against the authored " + authored.Z.ToString("0.00") +
                 "; every tunnel point moves by " + _floorOffset.ToString("0.00") + ".");
+
+            // The crew was placed at the authored start heights before anything was measured,
+            // which is two meters above the slab the probe found. Put them on it.
+            if (Math.Abs(_floorOffset) > .5f)
+                foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
+                {
+                    var ped = Ctx.Crew.PedFor(slot);
+                    var start = At("M53." + slot + "Start");
+                    if (ped == null || !ped.Exists() || ped.IsInVehicle() || !GameUtils.IsWithinFlat(ped.Position, start, 1.5f)) continue;
+                    ped.Position = Down("M53." + slot + "Start");
+                }
+
+            // The platform is its own datum. If nothing answers there, the squads keep their
+            // authored height: a man placed above his floor drops onto it, and one placed
+            // inside it does not come out.
+            var platform = At("M53.SquadB1");
+            _platformOffset = MissionSites.OffsetToSurface(platform, PlatformHeadroom, TunnelFloor, Id + " platform");
+            Logger.Info(Id + ": the platform squads move by " + _platformOffset.ToString("0.00") + ".");
 
             // The stalled carriage. A train that will not create is a thinner set piece, not
             // a dead mission: the ambush is a tunnel fight with or without it, and refusing
@@ -150,7 +185,7 @@ namespace Bloodlines.Missions.Campaign
 
             foreach (var key in SquadKeys())
             {
-                var ped = EnemyAt(Down(key), key);
+                var ped = EnemyAt(OnPlatform(key), key);
                 if (ped != null) _sweepers.Add(ped);
             }
             if (_sweepers.Count == 0)
@@ -215,8 +250,10 @@ namespace Bloodlines.Missions.Campaign
 
             // Out the way they came in. metro_newwalk1 is the station walkway between the
             // platform and the street, so this is a real place rather than a point in a wall.
+            // It is a third datum - the walkway's own origin at 22.51 - so the tunnel's offset
+            // does not apply to it; the zone's six meters take up the rest.
             yield return new MissionStage("Out through the station",
-                new ReachZoneObjective("Get up onto the station walkway and out", () => Down("M53.Exit"), 6f))
+                new ReachZoneObjective("Get up onto the station walkway and out", () => At("M53.Exit"), 6f))
                 .AnyBrother();
         }
 

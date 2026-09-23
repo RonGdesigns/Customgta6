@@ -855,13 +855,13 @@ Prerequisite: M48. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Come up on the line** — TravelObjective: Guess: bring the Granger up short of the checkpoint |
 | 2 | Guess | **Take the towers and the radio** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 3 | Guess | **Everyone in the Granger** — EnterVehicleObjective: All three: get into the Granger before the run<br>ConditionObjective: Nobody is left on the shoulder |
+| 3 | any brother | **Everyone in the Granger** — EnterVehicleObjective: All three: get into the Granger before the run<br>ConditionObjective: Nobody is left on the shoulder |
 | 4 | Guess | **Run the seam** — TravelObjective: Guess: take the Granger through the gap in the concrete |
 | 5 | Guess | **Into the county** — TravelObjective: Drive north past the county line |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M49.Checkpoint, M49.Crew, M49.South.
+Survey references: M49.Checkpoint, M49.Crew, M49.South, M49.Start.
 
 ## M50 — THE REDACTED VAULT
 
@@ -871,7 +871,7 @@ Prerequisite: M49. Retry: full mission restart.
 |---|---|---|
 | 1 | as assigned | **Splice the conduit** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Gohan | **Invalidate the feed** — MissionInteraction: Gohan: push the invalidation onto the feed |
-| 3 | Gohan | **Back to the van** — EnterVehicleObjective: All three: get back in the van<br>ConditionObjective: Nobody is left on the street |
+| 3 | any brother | **Back to the van** — EnterVehicleObjective: All three: get back in the van<br>ConditionObjective: Nobody is left on the street |
 | 4 | Guess | **Leave Rockford Hills** — TravelObjective: Guess: drive the crew clear of the block |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
@@ -886,8 +886,8 @@ Prerequisite: M50. Retry: full mission restart.
 |---|---|---|
 | 1 | as assigned | **Wire both banks** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Gohan | **Arm the sequence** — MissionInteraction: Gohan: arm the sequence and leave it waiting |
-| 3 | Gohan | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
-| 4 | Gohan | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
+| 3 | any brother | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
+| 4 | any brother | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -899,16 +899,17 @@ Prerequisite: M51. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Get on the roof** — ReachZoneObjective: Ice: take the service ladder to the roof across the plaza |
-| 2 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
-| 3 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
-| 4 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
-| 5 | Ice | **Get to the bike** — EnterVehicleObjective: Ice: get down off the roof and onto the back of Guess's bike |
-| 6 | Ice | **Lose the response** — LoseWantedObjective: Ride clear of Downtown and lose the Aegis cruisers |
+| 1 | Ice | **Find the way up** — ReachZoneObjective: Ice: get to the scaffolding on the south corner of the roost's block |
+| 2 | Ice | **Get on the roof** — ReachZoneObjective: Ice: climb the scaffolding, cross the roof north-west and take the service ladder up to the roost |
+| 3 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
+| 4 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
+| 5 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
+| 6 | Ice | **Get to the bike** — EnterVehicleObjective: Ice: get down off the roof and onto the back of Guess's bike |
+| 7 | any brother | **Lose the response** — TravelObjective: Guess: ride Ice clear of the plaza<br>LoseWantedObjective: Ride clear of Downtown and lose the Aegis cruisers |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Scaffold, M52.Walk.
 
 ## M53 — SUBTERRANEAN SWEEP
 
@@ -922,7 +923,7 @@ Prerequisite: M52. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.Start, M53.Train.
+Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.SquadB1, M53.Start, M53.Train.
 
 ## M54 — THE PILLBOX REDOUBT
 

@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -49,6 +50,12 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How far above and below the roost the sign's own surface is looked for.</summary>
         public const float RoostHeadroom = 4f;
         public const float RoostFloor = 320f;
+        /// <summary>How often the roost probe is tried while the sign's collision streams in.</summary>
+        public const int RoostProbeMs = 1000;
+        /// <summary>How many tries before the authored height is kept and reported.</summary>
+        public const int RoostProbeTries = 20;
+        /// <summary>How far the gunship holds off over the ridge until the relay override starts.</summary>
+        public const float HoldOffRadius = 80f;
         /// <summary>Where the campaign records the broadcast is out and repeating.</summary>
         public const string BroadcastEvidence = "aegisBroadcast";
 
@@ -56,7 +63,8 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _gunship;
         private Ped _pilot;
         private Vector3 _roost;
-        private bool _onTheLetters, _broadcast, _skyClear;
+        private bool _onTheLetters, _broadcast, _skyClear, _roostSettled;
+        private int _roostTries, _roostProbeAt;
 
         public override string Id => "M59";
         public override string Title => "The Wire Cutters";
@@ -85,13 +93,26 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!BeginCrew(CrewSlot.Gohan)) return false;
 
-            _roost = MissionSites.OnSurface(At("M59.Roost"), RoostHeadroom, RoostFloor, Id + " sign roost", 3);
+            // Not probed here. The roost is 522 m from Gohan, whom the player starts as, and a
+            // shape test only answers where collision is loaded - so this probe always came
+            // back empty and Ice was left on a ladder prop's origin (Ron, September 22). It is
+            // measured once the sign's collision is in around Ice (SettleRoost).
+            _roost = At("M59.Roost");
 
             // A marksman rifle, because the shot is 522 m and the line calls it a sniper round.
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
             if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.SniperRifle, 40, false, true);
 
             SpawnGunship();
+            // The objective later asks for every one of these, and an empty list fails it on
+            // its first update with a message about a hostile that did not load. Refuse the
+            // start instead, where the log can say why.
+            if (_gunship == null || _shooters.Count == 0)
+            {
+                Logger.Error(Id + ": the Aegis helicopter could not be put in the air; there is nothing to clear from the sky. Refusing to start.");
+                GameUtils.Notify("~r~The Aegis helicopter could not be placed. See Bloodlines.log.");
+                return false;
+            }
 
             Establish("approach", "Every television in the state",
                 "The relay on the ridge reaches every set in San Andreas. Gohan works it at the mast; Ice watches the approach from the letters, five hundred meters east of him.",
@@ -144,8 +165,10 @@ namespace Bloodlines.Missions.Campaign
                 Blips.Attach(rider, BlipColor.Red, "Aegis shooter");
             }
 
-            _pilot.Task.StartHeliMission(_gunship, _roost, VehicleMissionType.Circle,
-                30f, 60f, 350, 40, 0f, 0f, HeliMissionFlags.None);
+            // It holds off over its approach until the override starts. Sent at the sign from
+            // the first frame, its riders were shooting at Ice before he had a stage to fight in.
+            _pilot.Task.StartHeliMission(_gunship, at, VehicleMissionType.Circle,
+                30f, HoldOffRadius, 350, 40, 0f, 0f, HeliMissionFlags.None);
             pilotModel.MarkAsNoLongerNeeded();
             model.MarkAsNoLongerNeeded();
         }
@@ -163,7 +186,7 @@ namespace Bloodlines.Missions.Campaign
                 { RequiredCharacter = CrewSlot.Gohan },
                 new ProtectObjective("", () => Ctx.Crew.PedFor(CrewSlot.Gohan),
                     "Gohan was killed at the mast before the broadcast went out."))
-                .OnEnter(c => Fighting = true)
+                .OnEnter(c => { Fighting = true; SendTheGunship(); })
                 .OnExit(c => Broadcasting())
                 .AfterCues("M59_S1_01_GOHAN");
 
@@ -172,6 +195,49 @@ namespace Bloodlines.Missions.Campaign
                 .AnyBrother()
                 .OnExit(c => _skyClear = true)
                 .AfterCues("M59_S1_02_ICE", "M59_S1_03_GOHAN");
+        }
+
+        /// <summary>The helicopter comes for the sign. Once, when the override begins.</summary>
+        private void SendTheGunship()
+        {
+            if (_gunship == null || !_gunship.Exists() || _pilot == null || !_pilot.Exists() || _pilot.IsDead) return;
+            _pilot.Task.StartHeliMission(_gunship, _roost, VehicleMissionType.Circle,
+                30f, 60f, 350, 40, 0f, 0f, HeliMissionFlags.None);
+            Logger.Info(Id + ": the Aegis helicopter is coming for the sign.");
+        }
+
+        /// <summary>
+        /// The roost's real height, measured once the sign's collision has streamed in around
+        /// Ice rather than from half a kilometer away in Setup. Ice, if he is still standing at
+        /// the ladder origin he was placed on and the player is not holding him, is moved onto
+        /// the surface it finds. Nothing found after <see cref="RoostProbeTries"/> keeps the
+        /// authored height and says so.
+        /// </summary>
+        private void SettleRoost()
+        {
+            if (_roostSettled || Game.GameTime < _roostProbeAt) return;
+            _roostProbeAt = Game.GameTime + RoostProbeMs;
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice == null || !ice.Exists()) return;
+            if (!Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, ice) && ++_roostTries < RoostProbeTries) return;
+            _roostSettled = true;
+            var authored = At("M59.Roost");
+            float? surface = MissionSites.SurfaceHeight(authored, authored.Z + RoostHeadroom, RoostFloor);
+            if (!surface.HasValue)
+            {
+                Logger.Warn(Id + ": nothing solid under the sign roost at " + authored + "; keeping the authored height. Survey M59.Roost.");
+                return;
+            }
+            _roost = new Vector3(authored.X, authored.Y, surface.Value);
+            Logger.Info(Id + ": the sign roost is at " + surface.Value.ToString("0.00") + ", not the authored " + authored.Z.ToString("0.00") + ".");
+            if (Ctx.Crew.ActiveSlot != CrewSlot.Ice && !ice.IsInVehicle() && GameUtils.IsWithinFlat(ice.Position, At("M59.IceStart"), 2f))
+                ice.Position = _roost;
+        }
+
+        protected override void OnUpdate()
+        {
+            SettleRoost();
+            base.OnUpdate();
         }
 
         private void Broadcasting()

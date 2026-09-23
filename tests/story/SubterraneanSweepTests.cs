@@ -46,15 +46,19 @@ public static partial class StoryTests
             "The tunnel floor is measured once, at the carriage");
         Check(src.Contains("private Vector3 Down(string key) => At(key) + new Vector3(0f, 0f, _floorOffset)"),
             "and every other tunnel point moves by the offset that probe found");
-        Check(src.Split(new[] { "OffsetToSurface(" }, StringSplitOptions.None).Length - 1 == 1 &&
+        // Two flat data, two probes: the tunnel's section origins sit at 13.03 and the
+        // platform's at 13.64, and moving the platform squads by the tunnel's offset could put
+        // them inside the platform slab (Ron, September 22). Still never one per point.
+        Check(src.Split(new[] { "OffsetToSurface(" }, StringSplitOptions.None).Length - 1 == 2 &&
+              src.Contains("MissionSites.OffsetToSurface(platform, PlatformHeadroom, TunnelFloor") &&
               !src.Contains("MissionSites.OnSurface"),
-            "There is exactly one probe in the mission, not one per point");
+            "There is one probe per flat datum - the tunnel and the platform - not one per point");
 
         // ---- A contractor down here is placed, not snapped. Guard accepts a walkable answer
         // up to 35 m away, and the street is inside that, so all eight would have spawned in
         // traffic.
-        Check(src.Contains("EnemyAt(Down(key), key)"),
-            "The contractors are created at settled tunnel positions");
+        Check(src.Contains("EnemyAt(OnPlatform(key), key)"),
+            "The contractors are created at settled platform positions");
         Check(!src.Contains("Enemy(\"M53."), "and never through the navmesh-snapping overload");
         Check(desert.Contains("bool trustPoint = false") && desert.Contains("if (!trustPoint)"),
             "Guard can be told to trust a point the caller has already settled");

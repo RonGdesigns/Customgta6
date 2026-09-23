@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -46,7 +47,12 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Prop> _barriers = new List<Prop>();
         private readonly List<Prop> _towers = new List<Prop>();
         private readonly CrewBoarding _boarding = new CrewBoarding();
+        /// <summary>Generators counted out because a brother hit them. A frozen generator
+        /// prop may never report itself dead under rifle fire, which left Ice shooting at a
+        /// tower that would not go out (Ron, September 22).</summary>
+        private readonly HashSet<int> _towersOut = new HashSet<int>();
         private Vector3 _lane, _forward, _right;
+        private float _heading;
         private bool _laneFound, _towersDown, _jammed, _through;
 
         public override string Id => "M49";
@@ -74,6 +80,12 @@ namespace Bloodlines.Missions.Campaign
 
             CrewCar = CrewTransport("M49.Crew");
             if (!RequireAssets(CrewCar)) return false;
+            // Guess starts at the wheel. Ron surveyed M49.Crew 1.2 m from M49.GuessStart, so
+            // the Granger was being created on top of him; he is the driver and the first beat
+            // is his drive, so he is seated outright and his role track is stood down, the way
+            // M52 seats him on the bike. The survey stays exactly as Ron captured it.
+            Station(CrewSlot.Guess, CrewCar, VehicleSeat.Driver);
+            Roles.For(CrewSlot.Guess).Stop();
 
             Establish("approach", "The second line",
                 "The cove cordon is behind them and this road is still closed: concrete, two armored cars and two spotlight towers. Ice takes the towers from the shoulder, Gohan jams the dispatch, and the seam opens because the towers went out.",
@@ -105,8 +117,21 @@ namespace Bloodlines.Missions.Campaign
                             "; the checkpoint is being built on the authored seed. Resurvey M49.Checkpoint on the highway.");
                 Ctx.Doctor?.Warn("placement", "M49.Checkpoint", "no vehicle node near this point; the barricade may not be across the road");
             }
+            // A road node's heading is one of the lane's two directions, and nothing says it is
+            // the one pointing away from the crew. Everything below is laid out along _forward -
+            // the defenses beyond the concrete, the hold point short of it - so a southbound
+            // answer built the checkpoint facing the wrong way and put the hold point past it.
+            // The crew comes up from M49.Start; forward is away from them.
+            var start = At("M49.Start");
             double radians = heading * Math.PI / 180.0;
             _forward = new Vector3(-(float)Math.Sin(radians), (float)Math.Cos(radians), 0f);
+            if ((_lane.X - start.X) * _forward.X + (_lane.Y - start.Y) * _forward.Y < 0f)
+            {
+                heading += 180f;
+                _forward = new Vector3(-_forward.X, -_forward.Y, 0f);
+                Logger.Info(Id + ": the road node pointed back at the crew; the checkpoint faces the other way.");
+            }
+            _heading = ((heading % 360f) + 360f) % 360f;
             _right = new Vector3(_forward.Y, -_forward.X, 0f);
         }
 
@@ -124,7 +149,11 @@ namespace Bloodlines.Missions.Campaign
                 if (i == 1) continue;
                 var at = _lane + _right * (i * 3.2f);
                 var block = WorkProp(BarrierModel, GameUtils.OnGround(at), false);
-                if (block != null) _barriers.Add(block);
+                if (block == null) continue;
+                // Laid across the lane. The blocks were left at whatever heading the prop was
+                // created with, so the line of concrete had nothing to do with the road.
+                block.Heading = _heading;
+                _barriers.Add(block);
             }
 
             for (int side = -1; side <= 1; side += 2)
@@ -135,7 +164,7 @@ namespace Bloodlines.Missions.Campaign
                 else Logger.Warn(Id + ": a spotlight generator could not be placed at " + towerAt + ".");
 
                 var apc = Car(ApcModel, GameUtils.OnGround(_lane + _forward * 24f + _right * (5f * side)),
-                    Ctx.Locations.Heading("M49.Checkpoint") + 180f, false);
+                    _heading + 180f, false);
                 if (apc != null) apc.IsPersistent = true;
             }
 
@@ -145,12 +174,37 @@ namespace Bloodlines.Missions.Campaign
             {
                 var post = GameUtils.OnGround(_lane + _forward * 8f + _right * (i * 5f));
                 var guard = Guard(post);
-                if (guard != null) { Opposition.Add(guard); Track(guard); }
+                if (guard == null) continue;
+                Opposition.Add(guard);
+                // On the map like every other mission's hostiles; they were added without a
+                // blip, so the checkpoint detail was invisible until it was shooting.
+                Blips.Attach(guard, BlipColor.Red, "Armed guard");
             }
         }
 
-        private bool TowersDestroyed => _towers.Count > 0 &&
-            _towers.All(t => t == null || !t.Exists() || t.IsDead);
+        private bool TowersDestroyed => _towers.Count > 0 && _towers.All(TowerOut);
+
+        /// <summary>
+        /// A generator is out when it is gone, dead, or a brother has hit it. The last one is
+        /// the case that matters: the prop is frozen in place and rifle fire may never take its
+        /// health to zero, so waiting for IsDead alone could leave the stage unfinishable.
+        /// Only the crew's hits count - a stray round from the checkpoint detail does not.
+        /// </summary>
+        private bool TowerOut(Prop tower)
+        {
+            if (tower == null || !tower.Exists() || tower.IsDead) return true;
+            if (_towersOut.Contains(tower.Handle)) return true;
+            foreach (var hero in Protagonist.All)
+            {
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists()) continue;
+                if (!Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, tower, ped, true)) continue;
+                _towersOut.Add(tower.Handle);
+                Logger.Info(Id + ": " + hero.Slot + " put a spotlight generator out.");
+                return true;
+            }
+            return false;
+        }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
@@ -164,7 +218,7 @@ namespace Bloodlines.Missions.Campaign
                 () => TowersDestroyed)
             {
                 RequiredCharacter = CrewSlot.Ice,
-                Marker = () => _towers.FirstOrDefault(t => t != null && t.Exists() && !t.IsDead)?.Position ?? _lane,
+                Marker = () => _towers.FirstOrDefault(t => !TowerOut(t))?.Position ?? _lane,
                 MarkerRadius = 4f
             };
             var jam = new MissionInteraction("Gohan: point the scrambler at the checkpoint and hold it",
@@ -179,6 +233,9 @@ namespace Bloodlines.Missions.Campaign
                 new EnterVehicleObjective("All three: get into the Granger before the run", () => CrewCar, VehicleSeat.Driver, true),
                 new ConditionObjective("Nobody is left on the shoulder", () => Aboard))
                 .AnyOf()
+                // Whoever the player is holding. It inherited Ice from the towers stage, so the
+                // HUD demanded a switch just to get into the car (Ron, September 22).
+                .AnyBrother()
                 .OnEnter(c => _boarding.Reset());
 
             yield return new MissionStage("Run the seam",
