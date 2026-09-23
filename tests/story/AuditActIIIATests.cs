@@ -148,17 +148,17 @@ public static partial class StoryTests
 
     static void AuditM52Checks()
     {
-        var scaffold = KeyPoint("M52.Scaffold");
+        var ladder = KeyPoint("M52.Ladder");
         var roost = KeyPoint("M52.Roost");
-        Check(scaffold.DistanceTo2D(roost) < 80f && roost.Z - scaffold.Z > 10f,
-            "The way up starts at street level on the roost's own block");
+        Check(ladder.DistanceTo2D(roost) < 80f && roost.Z - ladder.Z > 10f,
+            "The way up starts at street level on the roost's own building");
 
         Reset(); var crew = Roster(); var c = Context(crew); var m = new M52JudicialStrike();
         Check(m.Begin(c), "M52 starts");
         var first = Flow(m)[0].Objectives.OfType<ReachZoneObjective>().Single();
-        Check(Field<Func<Vector3>>(first, "_position")().DistanceTo(c.Locations.Position("M52.Scaffold")) < .01f &&
+        Check(Field<Func<Vector3>>(first, "_position")().DistanceTo(c.Locations.Position("M52.Ladder")) < .01f &&
               Flow(m)[1].Name == "Get on the roof",
-            "Ice is sent to the scaffold before he is asked for a point on a roof");
+            "Ice is sent to the foot of the street ladder before he is asked for a point on a roof");
 
         var getaway = StageNamed(m, "Lose the response");
         Check(getaway.RequireAll && getaway.Objectives.OfType<LoseWantedObjective>().Any() &&

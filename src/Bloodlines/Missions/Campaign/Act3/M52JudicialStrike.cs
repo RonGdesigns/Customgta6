@@ -5,22 +5,37 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
     /// <summary>
     /// M52 — "Judicial Strike". City Hall plaza, high noon.
     ///
-    /// Harrison signed Aegis its immunity. Ice takes him from a roof across the plaza,
-    /// Gohan confirms who he is over the radio, and Guess is waiting on the superbike.
+    /// Harrison signed Aegis its immunity. Ice takes him from the roof of City Hall's own
+    /// west wing, Gohan confirms who he is over the radio, and Guess is waiting on the
+    /// superbike.
     ///
     /// The bible puts Ice on the Union Depository roof "across the plaza" from City Hall.
     /// Those two buildings are 716 meters apart, which is not a plaza and not a shot. The
-    /// roof this uses is 96 meters out, and Ice stands at the top of a ladder Rockstar
-    /// placed for a mission — bh1_16_ladder_mission_fizz — so the climb up and the way down
-    /// both exist without inventing either. Standing on the ladder's own spot rather than
-    /// somewhere else on the same roof is deliberate: it is the one point that is certainly
-    /// reachable. See docs/ACT3-OPENING-MAP-M49-M53.md.
+    /// first replacement, bh1_16's roof and its bh1_16_ladder_mission_fizz, turned out to
+    /// have no way up: that ladder climbs from the roof slab to a plant deck and never
+    /// touches the street (Ron, September 22: "change to where a ladder actually is").
+    ///
+    /// The ladders here are the game's own climbable ones, read out of the archetype's
+    /// CExtensionDefLadder entries rather than guessed from a prop's name. City Hall's west
+    /// wing, bh1_21_ladder2 in bh1_21_strm_0, carries five, and three of them are the way up:
+    ///
+    ///   street to ledge   bottom (-587.56, -200.50, 37.67)  top 45.67  facing WSW, the wing's outer wall
+    ///   ledge to roof     bottom (-582.68, -199.12, 45.45)  top 48.95  at the wing's rear end
+    ///   roof front edge   bottom (-571.84, -218.77, 45.45)  top 48.95  facing SSE, over the plaza
+    ///
+    /// The foot of the first stands on the planted ground beside the wing, grade 36.6 to 36.8
+    /// (prop_bush_med_03 at 36.77, prop_veg_grass_01_b at 36.64). The roost is the top of
+    /// the third, a meter back from its edge on the 48.95 roof: 47.6 m from where Harrison
+    /// comes out and 52.0 m from his clear-shot mark, so he walks away from the muzzle, and
+    /// eleven meters above the plaza. Every get-off flag on all three is set. See
+    /// docs/ACT3-OPENING-MAP-M49-M53.md for the earlier survey.
     ///
     /// The machinery is M41's, deliberately. Bradley's chapter already runs identify, wait
     /// for a clear shot, eliminate, extract, with working failure paths for the wrong
@@ -72,24 +87,45 @@ namespace Bloodlines.Missions.Campaign
         public bool ClearShot => _clear;
         public bool Struck => _struck;
 
+        /// <summary>How far above the authored roost the roof's own slab is looked for.</summary>
+        public const float RoostHeadroom = 3f;
+        /// <summary>
+        /// The lowest answer the probe accepts. The plaza is at 36 to 38 and the wing's lower
+        /// front roof at 45.45, so anything above this is the building rather than the street.
+        /// </summary>
+        public const float RoostFloor = 40f;
+        /// <summary>How close Ice has to be before the roof is measured: his collision, not the start's.</summary>
+        public const float RoostProbeReach = 60f;
+        /// <summary>How often the probe is tried while the roof's collision streams in.</summary>
+        public const int RoostProbeMs = 1000;
+        /// <summary>How many tries within reach before the authored height is kept and reported.</summary>
+        public const int RoostProbeTries = 20;
+
         /// <summary>
         /// The roost is a roof, so ground preparation must not touch it — it would find the
-        /// street eighty feet below and put Ice there. But the authored height came off a
-        /// ladder prop's origin, and a prop origin is not a floor: Ron found the marker
-        /// floating and no way up the side of the building. Fixed against the ground snap,
-        /// and probed down onto the actual slab in Setup.
+        /// plaza eleven meters below and put Ice there. Its height is still not trusted: it is
+        /// probed down onto the slab once Ice is near enough for that collision to be loaded,
+        /// never in Setup, where a shape test answers only around wherever he started.
         /// </summary>
         protected override string[] FixedSurfaces => new[] { "M52.Roost" };
 
-        /// <summary>The roof, at the height the geometry actually puts it.</summary>
+        /// <summary>The roof, at the height the geometry actually puts it once it has been measured.</summary>
         private Vector3 _roost;
+        private bool _roostSettled;
+        private int _roostTries, _roostProbeAt;
+
+        /// <summary>Where Ice takes the shot from: the authored point until the slab under it is measured.</summary>
+        public Vector3 Roost => _roost;
+        /// <summary>The slab under the roost has been probed, whatever it answered.</summary>
+        public bool RoostSettled => _roostSettled;
 
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Ice)) return false;
 
-            // The key sits at the top of the ladder; the slab under it is where Ice stands.
-            _roost = MissionSites.OnSurface(At("M52.Roost"), 3f, 38f, Id + " roof roost");
+            // Not probed here. Ice starts on the street 88 m from the wing, and a probe only
+            // answers where collision is loaded; SettleRoost measures it on his way up.
+            _roost = At("M52.Roost");
 
             Harrison = Person(HarrisonModel, "M52.Harrison", false);
             _bike = Car(BikeModel, At("M52.Bike"), Ctx.Locations.Heading("M52.Bike"), false);
@@ -109,28 +145,23 @@ namespace Bloodlines.Missions.Campaign
                 PlacementContract.Vehicle("M52.Bike", new Model(BikeModel)));
 
             Establish("approach", "The man who signed it",
-                "Ice goes up the service ladder to the roof across the plaza. Gohan reads the detail from the street and confirms the man; Guess holds the bike at the foot of the stairs. Harrison comes out at noon.",
+                "Ice goes up the service ladders on City Hall's west wing to the edge of its roof over the plaza. Gohan reads the detail from the street and confirms the man; Guess holds the bike at the foot of the stairs. Harrison comes out at noon.",
                 Harrison, _bike);
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            // The way up first. Ron's only attempt ended 54 m west of the roost with nothing
-            // telling him how to get there: a GPS route to a point on a roof follows the
-            // streets, and the ladder under the roost does not start at the street. The
-            // archives put bh1_16_ladder_mission_fizz on the roof itself, climbing from the
-            // slab at about 50.3 (roof vents and air handlers stand round it at that height),
-            // and the only way onto that roof they show is bh1_16_scaff on the block's south
-            // corner: tool boxes and paint benches at 40.7, 41.5, 44.1, 46.8 and 49.3, which
-            // is a scaffold with working platforms from the street to the roof. M52.Scaffold
-            // is the sidewalk at its foot. An estimate: nobody has climbed it yet.
+            // The way up first, at street level: a GPS route to a point on a roof follows the
+            // streets and never says which wall to climb. M52.Ladder is where a man stands to
+            // take the street ladder, 0.8 m out from its bottom along the ladder's own facing
+            // (-0.87, -0.50). An estimate: nobody has climbed it yet.
             yield return new MissionStage("Find the way up",
-                new ReachZoneObjective("Ice: get to the scaffolding on the south corner of the roost's block", () => At("M52.Scaffold"), 4f))
+                new ReachZoneObjective("Ice: get to the service ladder on the outer wall of City Hall's west wing", () => At("M52.Ladder"), 4f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Get on the roof",
-                new ReachZoneObjective("Ice: climb the scaffolding, cross the roof north-west and take the service ladder up to the roost", () => _roost, 6f))
+                new ReachZoneObjective("Ice: climb the ladder to the ledge, take the next ladder up onto the wing's roof, and cross to its front edge over the plaza", () => _roost, 6f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Identify Harrison",
@@ -200,8 +231,33 @@ namespace Bloodlines.Missions.Campaign
             return _escape;
         }
 
+        /// <summary>
+        /// The roost's real height, measured once Ice is within <see cref="RoostProbeReach"/>
+        /// of it and the collision around him has loaded. Nothing found keeps the authored
+        /// height and says so; the player is never moved, because he is the one climbing.
+        /// </summary>
+        private void SettleRoost()
+        {
+            if (_roostSettled || Game.GameTime < _roostProbeAt) return;
+            _roostProbeAt = Game.GameTime + RoostProbeMs;
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var authored = At("M52.Roost");
+            if (ice == null || !ice.Exists() || !GameUtils.IsWithinFlat(ice.Position, authored, RoostProbeReach)) return;
+            if (!Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, ice) && ++_roostTries < RoostProbeTries) return;
+            _roostSettled = true;
+            float? surface = MissionSites.SurfaceHeight(authored, authored.Z + RoostHeadroom, RoostFloor);
+            if (!surface.HasValue)
+            {
+                Logger.Warn(Id + ": nothing solid under the roost at " + authored + "; keeping the authored height. Survey M52.Roost.");
+                return;
+            }
+            _roost = new Vector3(authored.X, authored.Y, surface.Value);
+            Logger.Info(Id + ": the wing roof is at " + surface.Value.ToString("0.00") + ", not the authored " + authored.Z.ToString("0.00") + ".");
+        }
+
         protected override void OnUpdate()
         {
+            SettleRoost();
             if (Harrison != null && Harrison.Exists())
             {
                 if (!_identified && Harrison.IsDead)

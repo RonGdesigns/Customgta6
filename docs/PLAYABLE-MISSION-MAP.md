@@ -290,12 +290,12 @@ Prerequisite: M15. Retry: full mission restart.
 | 3 | Guess | **Spool the twins** — EnterVehicleObjective: Guess — take the Cargobob. |
 | 4 | Guess | **Ice aboard** — ConditionObjective: Hold the pad while Ice boards. |
 | 5 | Guess | **Raton Canyon** — AltitudeCeilingObjective: Hug the canyon — stay under 60 meters above terrain.<br>DeliverVehicleObjective: Guess: fly the Cargobob through the marked canyon route. |
-| 6 | Guess | **Clear the canyon** — ReachZoneObjective: Guess: clear the canyon exit. Gohan keeps base anti-air offline until the lift is delivered. |
+| 6 | Guess | **Clear the canyon** — DeliverVehicleObjective: Guess: fly the lift out of the canyon's east mouth. Gohan keeps base anti-air offline until the lift is delivered. |
 | 7 | Guess | **Terminal Island** — DeliverVehicleObjective: Put the Cargobob down at Terminal Island. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M16.Blackout, M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.GrangerSpawn, M16.Helipad, M16.Marine, M16.TankEntry, M16.TerminalDrop.
+Survey references: M16.Blackout, M16.CanyonExit, M16.CanyonRun, M16.CargobobSpawn, M16.DepotFence, M16.GrangerSpawn, M16.Helipad, M16.Marine, M16.TankEntry, M16.TerminalDrop.
 
 ## M17 — SUB-ZERO PAYLOAD
 
@@ -899,8 +899,8 @@ Prerequisite: M51. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Find the way up** — ReachZoneObjective: Ice: get to the scaffolding on the south corner of the roost's block |
-| 2 | Ice | **Get on the roof** — ReachZoneObjective: Ice: climb the scaffolding, cross the roof north-west and take the service ladder up to the roost |
+| 1 | Ice | **Find the way up** — ReachZoneObjective: Ice: get to the service ladder on the outer wall of City Hall's west wing |
+| 2 | Ice | **Get on the roof** — ReachZoneObjective: Ice: climb the ladder to the ledge, take the next ladder up onto the wing's roof, and cross to its front edge over the plaza |
 | 3 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
 | 4 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
 | 5 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
@@ -909,7 +909,7 @@ Prerequisite: M51. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Scaffold, M52.Walk.
+Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Ladder, M52.Roost, M52.Walk.
 
 ## M53 — SUBTERRANEAN SWEEP
 
