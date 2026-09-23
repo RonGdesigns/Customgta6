@@ -1643,3 +1643,27 @@ Each WAV uses the cue ID below, in that mission's existing audio bank. Silence i
 
 **GUESS** (SM09_SCENE_OUTRO_02_GUESS) — I kept it. When this is over, I'm buying you breakfast, KJ. Somewhere without a starting grid or a security gate.
 
+## BM01 — CLIPPED WINGS
+
+### Intro
+
+**GOHAN** (BM01_SCENE_INTRO_01_GOHAN) — Aegis never cleared out of the Paleto Forest bunker. There's an Osprey on the apron and a crew holding the gate for whoever's buying it.
+
+**ICE** (BM01_SCENE_INTRO_02_ICE) — Guess drives, I take the gun in the back, Gohan calls it. That aircraft doesn't leave this county.
+
+### Outro
+
+**GUESS** (BM01_SCENE_OUTRO_01_GUESS) — That's the last thing Aegis had with wings up here, and it's in the trees.
+
+**GOHAN** (BM01_SCENE_OUTRO_02_GOHAN) — There's another one on the market. Same airframe, clean paperwork. The crew could own it.
+
+**ICE** (BM01_SCENE_OUTRO_03_ICE) — Then buy it. Nobody moves anything out of this state by air without us knowing.
+
+### Takeoff
+
+**ICE** (BM01_SCENE_TAKEOFF_01_ICE) — Pilot's running for it. He's in, and the rotors are turning.
+
+**GUESS** (BM01_SCENE_TAKEOFF_02_GUESS) — Everybody in the truck. It flies the road; we drive under it.
+
+**GOHAN** (BM01_SCENE_TAKEOFF_03_GOHAN) — I'll call the hull. Keep the gun on it and don't let it get over the water.
+

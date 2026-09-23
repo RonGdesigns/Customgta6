@@ -58,7 +58,7 @@ MISSION_ID = re.compile(r'public override string Id => "([^"]+)"')
 SCENARIO = re.compile(r'StartScenario\("([^"]+)"')
 DEPLOY = re.compile(r'Crew\.Deploy(?:Solo)?\(CrewSlot\.\w+,\s*([^,]+?),', re.S)
 DEPLOY_OFFSET = re.compile(r'new Vector3\([^,]+,\s*[^,]+,\s*(-?[\d.]+)f\)')
-REGISTERED = re.compile(r'\{\s*"(S?M\d{2})",\s*\(\)\s*=>\s*new\s+(\w+)\(\)\s*\}')
+REGISTERED = re.compile(r'\{\s*"((?:S|B)?M\d{2})",\s*\(\)\s*=>\s*new\s+(\w+)\(\)\s*\}')
 
 # Scenarios used by the campaign. Not exhaustive for the game — exhaustive for us,
 # so a typo in a new one is flagged rather than silently doing nothing.

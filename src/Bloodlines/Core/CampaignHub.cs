@@ -262,6 +262,9 @@ namespace Bloodlines.Core
                 Body = "Save an eligible vehicle at an owned garage or from a customization shop. It will then appear here with its saved modifications. Phone deliveries use that exact owned vehicle record." });
             rows.Add(new PhoneEntry { Id = "crew-car", Title = "Crew vehicle", Subtitle = CrewCarName,
                 Body = "Current crew vehicle: " + CrewCarName + ".\n\nThis is the shared mission/fleet vehicle. Change it at the crew headquarters fleet service; it is separate from personally stored cars and cannot be duplicated through KJ delivery." });
+            // The Osprey, once BM01 has put one in the trees: bought and called in here.
+            rows.AddRange(OspreyHangar.Rows(_state, () => Free,
+                at => MissionSites.SurfaceHeight(at, at.Z, at.Z - 140f), at => MissionSites.FreeRadius(at, OspreyHangar.Clearance + 2f)));
             rows.Add(RecoveryFolder());
             return rows;
         }

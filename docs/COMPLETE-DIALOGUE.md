@@ -1,6 +1,6 @@
 # Bloodlines: complete dialogue and recording draft
 
-79 written missions; 79 gameplay scripts. Future mission triggers remain design targets.
+80 written missions; 80 gameplay scripts. Future mission triggers remain design targets.
 
 Generated from dialogue.tsv and authored scene sources. Editorial changes live in data/dialogue_edits.json; original PDFs remain intact.
 
@@ -3799,6 +3799,37 @@ Trigger: outro
 
 **GUESS** `SM09_SCENE_OUTRO_02_GUESS`
 I kept it. When this is over, I'm buying you breakfast, KJ. Somewhere without a starting grid or a security gate.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+## BM01 - CLIPPED WINGS (scripted)
+
+### Intro
+
+**GOHAN** `BM01_SCENE_INTRO_01_GOHAN`
+Aegis never cleared out of the Paleto Forest bunker. There's an Osprey on the apron and a crew holding the gate for whoever's buying it.
+Delivery: Briefing; intent before tactics
+Trigger: intro
+
+**ICE** `BM01_SCENE_INTRO_02_ICE`
+Guess drives, I take the gun in the back, Gohan calls it. That aircraft doesn't leave this county.
+Delivery: Briefing; intent before tactics
+Trigger: intro
+
+### Aftermath
+
+**GUESS** `BM01_SCENE_OUTRO_01_GUESS`
+That's the last thing Aegis had with wings up here, and it's in the trees.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**GOHAN** `BM01_SCENE_OUTRO_02_GOHAN`
+There's another one on the market. Same airframe, clean paperwork. The crew could own it.
+Delivery: Reflective; allow the response to land
+Trigger: outro
+
+**ICE** `BM01_SCENE_OUTRO_03_ICE`
+Then buy it. Nobody moves anything out of this state by air without us knowing.
 Delivery: Reflective; allow the response to land
 Trigger: outro
 

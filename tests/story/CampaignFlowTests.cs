@@ -25,8 +25,8 @@ public static partial class StoryTests
  static void CampaignFlowChecks()
  {
   var types=typeof(ComposedMission).Assembly.GetTypes().Where(t=>!t.IsAbstract&&t.IsSubclassOf(typeof(ComposedMission))&&t.Namespace=="Bloodlines.Missions.Campaign")
-   .Where(t=>t.Name.StartsWith("SM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
-  Check(types.Length==73,"All 73 later and solo production mission classes are covered by the flow harnesses");
+   .Where(t=>t.Name.StartsWith("SM")||t.Name.StartsWith("BM")||int.Parse(t.Name.Substring(1,2))>=7).OrderBy(t=>t.Name).ToArray();
+  Check(types.Length==74,"All 74 later, solo and bonus production mission classes are covered by the flow harnesses");
   foreach(var type in types)
   {
    Reset();var crew=Roster();var c=Context(crew);c.State=CampaignState.Load(Path.Combine(root,type.Name+".json"));var m=(ComposedMission)Activator.CreateInstance(type);
@@ -46,7 +46,7 @@ public static partial class StoryTests
    var flow=Flow(m);var cueIds=flow.SelectMany(s=>s.EntryCues.Concat(s.ExitCues)).ToArray();
    Check(cueIds.Length==cueIds.Distinct().Count()&&cueIds.All(id=>c.Data.Cue(id)!=null),m.Id+" uses unique, valid dialogue cues at gameplay events");
    // M31-M40 have dedicated physical custody, boarding, convoy and marine walkthroughs.
-   if(m is Bloodlines.Missions.Campaign.PreparationOperation&&!(m.Id.StartsWith("M")&&int.Parse(m.Id.Substring(1))>=49)){m.Abort();Check(m.Status==MissionStatus.Aborted,m.Id+" supports clean abort before its dedicated walkthrough");continue;}
+   if(m is Bloodlines.Missions.Campaign.PreparationOperation&&!m.Id.StartsWith("BM")&&!(m.Id.StartsWith("M")&&int.Parse(m.Id.Substring(1))>=49)){m.Abort();Check(m.Status==MissionStatus.Aborted,m.Id+" supports clean abort before its dedicated walkthrough");continue;}
    for(int tick=0;tick<800&&m.Status==MissionStatus.Running;tick++)
    {
     if(c.Cutscenes.IsActive){c.Cutscenes.Skip();if(c.Cutscenes.LastRequired&&c.Cutscenes.LastOutcome==SceneOutcome.Failed)throw new Exception(m.Id+" required scene failed in flow harness");continue;}
@@ -194,6 +194,7 @@ public static partial class StoryTests
      else if(name=="KillTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsDead=true;
      else if(name=="SubdueTargetsObjective") foreach(var ped in Field<Func<IEnumerable<Ped>>>(objective,"_targets")())ped.IsBeingStunned=true;
      else if(name=="DestroyVehicleObjective") Field<Func<Vehicle>>(objective,"_vehicle")().IsDriveable=false;
+     else if(name=="ShootDownObjective") Field<Func<Vehicle>>(objective,"_target")().IsDriveable=false;
      else if(name=="TrailerDeliveryObjective")
      {
       var truck=Field<Func<Vehicle>>(objective,"_truck")();var trailer=Field<Func<Vehicle>>(objective,"_trailer")();var point=Field<Func<Vector3>>(objective,"_destination")();
