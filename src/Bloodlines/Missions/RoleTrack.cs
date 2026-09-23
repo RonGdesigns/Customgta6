@@ -37,6 +37,8 @@ namespace Bloodlines.Missions
         public Ped Ped { get; }
         public RoleState State { get; private set; } = RoleState.Idle;
         public Vector3 Point => _point;
+        /// <summary>Told when this track gives him an order, so a brother who had rejoined the player is taken back first.</summary>
+        public Action<CrewSlot> Claimed { get; set; }
         public Vector3 Cover => _cover;
         public bool Arrived => Ped != null && Ped.Exists() && Ped.Position.DistanceTo(_point) <= 2.5f;
         public RoleAction Action => _action;
@@ -79,6 +81,7 @@ namespace Bloodlines.Missions
 
         private void Enter(RoleState state)
         {
+            if (state != RoleState.Idle) Claimed?.Invoke(Slot);
             State = state; _orderIssued = false; _clearSince = 0;
             if (Ped != null && Ped.Exists()) _lastHealth = Ped.Health;
         }
@@ -185,8 +188,14 @@ namespace Bloodlines.Missions
             if (_tracks.TryGetValue(slot, out var track)) return track;
             var ped = _crew.PedFor(slot);
             _crew.CompanionAI.TakeControl(slot);
-            return _tracks[slot] = new RoleTrack(slot, ped, _enemies);
+            return _tracks[slot] = new RoleTrack(slot, ped, _enemies)
+            {
+                Claimed = s => { if (_crew.CompanionAI.IsRejoining(s)) _crew.CompanionAI.TakeControl(s); }
+            };
         }
+
+        /// <summary>The track for a brother, if one exists, without taking him.</summary>
+        public RoleTrack Peek(CrewSlot slot) => _tracks.TryGetValue(slot, out var track) ? track : null;
 
         public bool AllIn(RoleState state, params CrewSlot[] slots) =>
             slots.All(slot => _tracks.TryGetValue(slot, out var track) && (track.State == state || (state == RoleState.Observing && track.State == RoleState.Threatened && track.Arrived)));

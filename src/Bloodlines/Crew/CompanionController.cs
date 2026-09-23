@@ -336,6 +336,7 @@ namespace Bloodlines.Crew
         /// <summary>A mission takes direct control of one companion until it releases it.</summary>
         public void TakeControl(CrewSlot slot)
         {
+            _rejoin.Remove(slot);
             Life.Suspend(slot);
             Presence.Release(slot);
             Driver.Forget(slot);
@@ -348,8 +349,24 @@ namespace Bloodlines.Crew
         /// <summary>Whether a mission or service is holding this brother.</summary>
         public bool IsHeld(CrewSlot slot) => _scripted.Contains(slot);
 
+        /// <summary>
+        /// A mission has nothing for this brother right now: he comes back to the player -
+        /// follows him, fights with him, gets in his vehicle - even while the mission holds
+        /// the rest of the crew in place. The next thing the mission gives him takes him back
+        /// through <see cref="TakeControl"/>.
+        /// </summary>
+        public void Rejoin(CrewSlot slot)
+        {
+            _scripted.Remove(slot);
+            _rejoin.Add(slot);
+            Presence.Release(slot);
+        }
+        public bool IsRejoining(CrewSlot slot) => _rejoin.Contains(slot);
+        private readonly HashSet<CrewSlot> _rejoin = new HashSet<CrewSlot>();
+
         public void ReleaseControl(CrewSlot slot)
         {
+            _rejoin.Remove(slot);
             _scripted.Remove(slot);
             Presence.Release(slot);
             SetState(slot, CompanionState.Follow);
@@ -357,6 +374,7 @@ namespace Bloodlines.Crew
 
         public void ReleaseAll()
         {
+            _rejoin.Clear();
             _scripted.Clear();
             Presence.Clear();
             ClearOrders();
@@ -464,7 +482,7 @@ namespace Bloodlines.Crew
             if (_scripted.Contains(slot)) return CompanionState.Scripted;
             // Separate approach actors must not board the leader's car or abandon
             // their assignment because another character starts a fight.
-            if (HoldPosition) return CompanionState.Hold;
+            if (HoldPosition && !_rejoin.Contains(slot)) return CompanionState.Hold;
             var ordered = DecideOrdered(slot, companion, leader);
             if (ordered.HasValue) return ordered.Value;
             // An individually dismissed or separate-car companion leaves only after a safe stop.

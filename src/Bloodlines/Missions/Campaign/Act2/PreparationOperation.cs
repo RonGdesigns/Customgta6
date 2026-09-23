@@ -39,6 +39,29 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected GuardAwareness Awareness { get; private set; }
         protected Func<Vector3> DrivingDestination;
+        private readonly Dictionary<CrewSlot, Vector3> _startPoints = new Dictionary<CrewSlot, Vector3>();
+
+        protected override bool RejoinsIdleCrew => true;
+
+        /// <summary>
+        /// A role that is on its way, working, taking cover or extracting is his job. So is
+        /// watching from a point the mission sent him to. Watching from where he started is not.
+        /// </summary>
+        protected override bool HasOwnWork(CrewSlot slot)
+        {
+            var track = Roles?.Peek(slot);
+            if (track == null) return false;
+            switch (track.State)
+            {
+                case RoleState.Idle: return false;
+                case RoleState.Working: return !track.ActionComplete;
+                case RoleState.Observing:
+                    return !(_startPoints.TryGetValue(slot, out var start) && track.Point.DistanceTo(start) < 1.5f);
+                default: return true;
+            }
+        }
+
+        protected override void OnRejoin(CrewSlot slot) { Roles?.Peek(slot)?.Stop(); }
         /// <summary>
         /// Keys that sit on built geometry — a pier deck, a platform, a vessel — rather
         /// than on the terrain. The ground preparation asks the engine for walkable ground
@@ -63,7 +86,12 @@ namespace Bloodlines.Missions.Campaign
                 .Select(h => Ctx.Crew.PedFor(h.Slot))
                 .Where(p => p != null && p.Exists() && !p.IsDead));
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
+            {
                 Roles.For(slot).Observe(At(site + "." + slot + "Start"), At(site + "." + slot + "Start"));
+                // Where he starts, not a post: once there is nothing for him, he comes to the player.
+                Unpost(slot);
+                _startPoints[slot] = At(site + "." + slot + "Start");
+            }
             return true;
         }
         protected Vehicle CrewTransport(string key)
@@ -148,6 +176,10 @@ namespace Bloodlines.Missions.Campaign
             // counting nothing else, soft-locked M41 when Ice took the other rear seat and
             // failed M54 when he took a brother's (the September 22 audit).
             if (actor == Game.Player.Character) { if (actor.IsInVehicle(vehicle)) { _boarding.Remove(actor); _boardingStarted.Remove(actor); return true; } return false; }
+            // Told to board, he is the mission's again.
+            if (Ctx?.Crew != null)
+                foreach (var hero in Protagonist.All)
+                    if (Ctx.Crew.PedFor(hero.Slot) == actor && Ctx.Crew.CompanionAI.IsRejoining(hero.Slot)) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
             if (actor.IsInVehicle(vehicle))
             { actor.Task.LeaveVehicle(); return false; }
             // A man who died in the seat is not a passenger. M35's gunner is killed in the gun
@@ -279,7 +311,8 @@ namespace Bloodlines.Missions.Campaign
         protected void TickSupport()
         {
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
-                if (slot != Ctx.Crew.ActiveSlot && Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted)
+                if (slot != Ctx.Crew.ActiveSlot && Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted &&
+                    !Ctx.Crew.CompanionAI.IsRejoining(slot))
                     Ctx.Crew.CompanionAI.TakeControl(slot);
             Roles?.Update();
             if (Awareness != null)
@@ -333,7 +366,8 @@ namespace Bloodlines.Missions.Campaign
             }
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Gohan, CrewSlot.Ice })
             {
-                if (slot == Ctx.Crew.ActiveSlot) continue;
+                // A brother who has rejoined the player fights under the companion controller.
+                if (slot == Ctx.Crew.ActiveSlot || Ctx.Crew.CompanionAI.IsRejoining(slot)) continue;
                 var actor = Ctx.Crew.PedFor(slot);
                 if (actor == null || !actor.Exists() || actor.IsDead || (actor.IsInVehicle() && actor.SeatIndex == VehicleSeat.Driver)) continue;
                 var threat = Opposition.Where(p => p != null && p.Exists() && !p.IsDead && p.Position.DistanceTo(actor.Position) < 110f)

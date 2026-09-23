@@ -38,6 +38,74 @@ namespace Bloodlines.Missions
         /// </summary>
         protected const float WalkToStationMeters = 80f;
 
+        /// <summary>How long a brother with nothing to do stands still before he rejoins the player.</summary>
+        public const int RejoinIdleMs = 3000;
+        /// <summary>Further than this from the player and a brother is somewhere on purpose; he is left there.</summary>
+        public const float RejoinReach = 250f;
+        private readonly HashSet<Crew.CrewSlot> _posted = new HashSet<Crew.CrewSlot>();
+        private readonly HashSet<Crew.CrewSlot> _assigned = new HashSet<Crew.CrewSlot>();
+        private readonly Dictionary<Crew.CrewSlot, int> _idleSince = new Dictionary<Crew.CrewSlot, int>();
+
+        /// <summary>
+        /// Whether any brother with nothing to do rejoins the player. Missions that run their
+        /// brothers through roles and stations say yes; the rest only let a brother go once the
+        /// objective he was given is done, because their set pieces task him directly.
+        /// </summary>
+        protected virtual bool RejoinsIdleCrew => false;
+        /// <summary>Work the mission is running for a brother outside its objectives: a role on its way somewhere, an action under way.</summary>
+        protected virtual bool HasOwnWork(Crew.CrewSlot slot) => false;
+        /// <summary>A brother the mission has put somewhere on purpose, who holds it.</summary>
+        protected void Post(Crew.CrewSlot slot) => _posted.Add(slot);
+        /// <summary>A brother who was only placed to start with, and is free to rejoin once he has nothing to do.</summary>
+        protected void Unpost(Crew.CrewSlot slot) => _posted.Remove(slot);
+        /// <summary>Called as a brother is let go, so a subclass can stop what it was running for him.</summary>
+        protected virtual void OnRejoin(Crew.CrewSlot slot) { }
+
+        /// <summary>
+        /// Ron, September 22: "when they're not doing anything they stand still ... if we finish
+        /// what they're supposed to do they stand still and do nothing." A brother's job comes
+        /// from the stage's objectives, a deliberate post or the mission's own work for him. With
+        /// none of those, on his feet, out of a fight and standing still for a few seconds, he is
+        /// handed back to the companion controller to come to the player. Anything the mission
+        /// gives him next takes him back.
+        /// </summary>
+        private void UpdateIntent(MissionStage stage)
+        {
+            if (Ctx.Config == null || !Ctx.Config.CrewRejoinsWhenIdle) return;
+            var player = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+            if (player == null || !player.Exists()) return;
+            foreach (var hero in Crew.Protagonist.All)
+            {
+                var slot = hero.Slot;
+                if (slot == Ctx.Crew.ActiveSlot || Ctx.Crew.CompanionAI.IsRejoining(slot)) { _idleSince.Remove(slot); continue; }
+                bool job = stage.Objectives.Any(o => !o.IsFinished && !o.IsPassive && o.RequiredCharacter.HasValue && o.RequiredCharacter.Value == slot);
+                if (job) _assigned.Add(slot);
+                var ped = Ctx.Crew.PedFor(slot);
+                bool idle = ped != null && ped.Exists() && !ped.IsDead && !ped.IsInVehicle() && !ped.IsInCombat &&
+                    !job && !_posted.Contains(slot) && !HasOwnWork(slot) && !Core.CrewBoarding.IsBoarding(slot) &&
+                    (RejoinsIdleCrew || _assigned.Contains(slot)) &&
+                    ped.Position.DistanceTo(player.Position) <= RejoinReach && ped.Velocity.Length() < 0.4f;
+                if (!idle) { _idleSince.Remove(slot); continue; }
+                if (!_idleSince.TryGetValue(slot, out int since)) { _idleSince[slot] = GTA.Game.GameTime; continue; }
+                if (GTA.Game.GameTime - since < RejoinIdleMs) continue;
+                _idleSince.Remove(slot);
+                OnRejoin(slot);
+                Ctx.Crew.CompanionAI.Rejoin(slot);
+                Logger.Info(Id + ": " + hero.Handle + " has nothing to do in this stage; rejoining " + Crew.Protagonist.Of(Ctx.Crew.ActiveSlot).Handle + ".");
+            }
+        }
+
+        /// <summary>Whether this position is the brother's start point rather than a post.</summary>
+        private bool IsStartPoint(Crew.CrewSlot slot, GTA.Math.Vector3 position)
+        {
+            foreach (var key in new[] { Id + "." + slot + "Start", Id + ".Start" })
+            {
+                var location = Ctx.Locations?.Peek(key);
+                if (location != null && location.Position.DistanceTo(position) < 1.5f) return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Put a brother at his post. If he is already on his feet nearby — which is what
         /// a continuing operation means — he walks there.
@@ -79,6 +147,8 @@ namespace Bloodlines.Missions
             }
             if (Ctx.Crew.ActiveSlot != slot && !walk) ped.Task.GuardCurrentPosition();
             _stationed.Add(slot);
+            // A post is held; a start point is only where he began.
+            if (IsStartPoint(slot, position)) _posted.Remove(slot); else _posted.Add(slot);
         }
         protected void Station(Crew.CrewSlot slot, GTA.Vehicle vehicle, GTA.VehicleSeat seat)
         {
@@ -194,6 +264,7 @@ namespace Bloodlines.Missions
                 { Fail(Crew.Protagonist.Of(slot).Handle + " is down. Restart the mission to rebuild the crew and objectives."); return; }
             }
             MaintainAssignments(stage);
+            UpdateIntent(stage);
             foreach (var objective in stage.Objectives)
             {
                 if (objective.IsFinished) continue;
