@@ -100,7 +100,7 @@ namespace Bloodlines.Missions.Campaign
         {
             // The load first: both crates, where M08 left them, chained and checked.
             yield return new MissionStage("Check the load",
-                    new MissionInteraction("Guess: check the crates on the flatbed", () => BedPosition(), 3, 4f))
+                    new MissionInteraction("Guess: check the crates on the flatbed", () => BedPosition(), 3, 4f, animation: MissionInteraction.Inspect, face: () => _flatbed != null && _flatbed.Exists() ? _flatbed.Position : BedPosition()))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => PlayInspect());
 

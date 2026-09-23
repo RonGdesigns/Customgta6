@@ -177,7 +177,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("To the executive lift",
-                new MissionInteraction("Call the lift to the executive floor", DoorsPoint, LiftCallSeconds, DoorsRadius))
+                new MissionInteraction("Call the lift to the executive floor", DoorsPoint, LiftCallSeconds, DoorsRadius, animation: MissionInteraction.Operate))
                 .AnyBrother()
                 .OnExit(c => GoUp());
 

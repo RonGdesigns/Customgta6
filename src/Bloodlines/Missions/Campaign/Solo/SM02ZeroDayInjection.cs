@@ -100,7 +100,7 @@ namespace Bloodlines.Missions.Campaign
             // "Script error"; as the stage's last objective it either lands him on the roof
             // or fails the attempt with the reason, before the next stage can open
             // (the September 22 audit).
-            var serviceDoor = new MissionInteraction("Gohan: run to the building's service door, then take the maintenance stairs to the roof.", () => Ctx.Locations.Position("SM02.StairEntry"), 2, 2.5f);
+            var serviceDoor = new MissionInteraction("Gohan: run to the building's service door, then take the maintenance stairs to the roof.", () => Ctx.Locations.Position("SM02.StairEntry"), 2, 2.5f, animation: MissionInteraction.Operate);
             yield return new MissionStage("Rooftop", serviceDoor,
                     new ConditionObjective("Gohan: up the maintenance stairs.", () => Stairs(serviceDoor, _roof, ref _upStairs,
                         "The maintenance stairs to the roof did not stream in. Retry the annex.")))
@@ -118,12 +118,13 @@ namespace Bloodlines.Missions.Campaign
                 .WithCues("SM02_S1_02_GOHAN");
 
             yield return new MissionStage("Root terminal",
-                    new MissionInteraction("Inject the worm at the root terminal.", () => _terminal, 8, 2.5f))
+                    new MissionInteraction("Inject the worm at the root terminal.", () => _terminal, 8, 2.5f, animation: MissionInteraction.Typing,
+                        face: () => _terminalProp != null && _terminalProp.Exists() ? _terminalProp.Position : _terminal))
                 .PlayedBy(CrewSlot.Gohan)
                 .OnExit(context => PlayTerminal());
 
             // IT's trace is the reason to leave: a clock, and the fire escape.
-            var roofAccess = new MissionInteraction("Gohan: return to the roof access and take the maintenance stairs down before IT traces you.", () => _roof, 2, 2.5f);
+            var roofAccess = new MissionInteraction("Gohan: return to the roof access and take the maintenance stairs down before IT traces you.", () => _roof, 2, 2.5f, animation: MissionInteraction.Operate);
             yield return new MissionStage("Fire escape", roofAccess,
                     new ConditionObjective("Gohan: down the maintenance stairs.", () => Stairs(roofAccess, _exit, ref _downStairs,
                         "The maintenance stairs down to the street did not stream in. Retry the annex.")),

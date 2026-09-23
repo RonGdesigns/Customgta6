@@ -263,8 +263,8 @@ public static partial class StoryTests
               Function.Calls.Any(call => call.Item1 == Hash.SET_PED_MAX_TIME_UNDERWATER && call.Item2[0] == (object)gohan),
             "Gohan goes down with dive gear and the air to work a fourteen-second cut at the bottom");
         var cut = Flow(m).First(s => s.Name == "Cut the server out").Objectives.OfType<MissionInteraction>().First();
-        Check(Field<string>(cut, "_animation") == null,
-            "The cut is not a standing reach-inside pose played on a swimmer");
+        Check(Field<string>(cut, "_animation") == MissionInteraction.InWater && cut.Animation == null,
+            "The cut is not a standing reach-inside pose played on a swimmer, and says so rather than leaving it to inference");
         Function.Calls.Clear();
         m.Abort();
         Check(Function.Calls.Any(call => call.Item1 == Hash.SET_ENABLE_SCUBA && call.Item2[0] == (object)gohan && !(bool)call.Item2[1]),

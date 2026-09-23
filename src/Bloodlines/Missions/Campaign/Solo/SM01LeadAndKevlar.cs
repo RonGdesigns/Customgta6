@@ -123,7 +123,7 @@ namespace Bloodlines.Missions.Campaign
 
             // The broker alive, hands up: the codes are the job, not his life.
             yield return new MissionStage("Sergei",
-                    new MissionInteraction("Ice: approach Sergei and demand the crate codes", () => SergeiPosition(), 4, 4f),
+                    new MissionInteraction("Ice: approach Sergei and demand the crate codes", () => SergeiPosition(), 4, 4f, animation: MissionInteraction.Handover),
                     new ReactionTrigger(() => _sergei == null || !_sergei.Exists() || _sergei.IsDead, () => Fail("Sergei died with the crate codes. The job needed him talking.")))
                 .PlayedBy(CrewSlot.Ice)
                 .OnEnter(context =>
@@ -135,7 +135,7 @@ namespace Bloodlines.Missions.Campaign
 
             // Counted into his own car: two cases, seen going in.
             yield return new MissionStage("The crates",
-                    new MissionInteraction("Ice: collect the two cases at the outside loading point", () => _trunk, 2, 3.5f))
+                    new MissionInteraction("Ice: collect the two cases at the outside loading point", () => _trunk, 2, 3.5f, animation: MissionInteraction.ReachInside))
                 .PlayedBy(CrewSlot.Ice)
                 .OnExit(context => PlayLoading());
 

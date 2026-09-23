@@ -186,7 +186,7 @@ namespace Bloodlines.Missions.Campaign
         {
             yield return new MissionStage("Up to the firm",
                 new MissionInteraction("Gohan: take the service elevator up to the Vanderbilt and Cole floor",
-                    () => At("SM08.Start"), ElevatorSeconds, ElevatorRadius)
+                    () => At("SM08.Start"), ElevatorSeconds, ElevatorRadius, animation: MissionInteraction.Operate)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnExit(c => GoUp());
 
@@ -218,7 +218,7 @@ namespace Bloodlines.Missions.Campaign
             // from the floor (M55's lesson, Ron, September 22).
             yield return new MissionStage("Get out before it goes",
                 new MissionInteraction("Gohan: back to the service elevator and down",
-                    () => _arrival, ElevatorSeconds, ElevatorRadius)
+                    () => _arrival, ElevatorSeconds, ElevatorRadius, animation: MissionInteraction.Operate)
                 { RequiredCharacter = CrewSlot.Gohan },
                 new TimerObjective(BurnSeconds,
                     "The thermite went while Gohan was still on the floor. Sixty seconds means sixty seconds."))

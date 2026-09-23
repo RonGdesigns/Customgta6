@@ -144,7 +144,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Get into the tower",
-                new MissionInteraction("Call the freight lift up to the service floor", DoorsPoint, LiftCallSeconds, DoorsRadius))
+                new MissionInteraction("Call the freight lift up to the service floor", DoorsPoint, LiftCallSeconds, DoorsRadius, animation: MissionInteraction.Operate))
                 .AnyBrother()
                 .OnExit(c => GoUp());
 

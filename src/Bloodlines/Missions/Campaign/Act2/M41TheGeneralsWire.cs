@@ -47,7 +47,7 @@ namespace Bloodlines.Missions.Campaign
         }
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            yield return new MissionStage("Identify Bradley", new MissionInteraction("Ice: observe from the yellow lookout and identify the marine officer; spare the lodge worker", () => At("M41.Observe"), 3, 3f, face: () => Bradley.Position)).OwnedBy(CrewSlot.Ice)
+            yield return new MissionStage("Identify Bradley", new MissionInteraction("Ice: observe from the yellow lookout and identify the marine officer; spare the lodge worker", () => At("M41.Observe"), 3, 3f, animation: MissionInteraction.Watch, face: () => Bradley.Position)).OwnedBy(CrewSlot.Ice)
                 .OnExit(c => { _identified = true; _walkAt = Game.GameTime; Bradley.Task.GoTo(At("M41.Meeting")); var b = Track(Bradley.AddBlip()); b.Color = BlipColor.Red; b.Name = "General Bradley"; });
             yield return new MissionStage("Wait for a clear shot", new ConditionObjective("Ice: watch Bradley walk clear of the lodge worker; do not fire until he reaches the meeting point", () => Bradley.Position.DistanceTo(At("M41.Meeting")) < 3f || _alarmAt >= 0)).OwnedBy(CrewSlot.Ice).OnExit(c => _safeShot = true);
             yield return new MissionStage("Stop Bradley", new ConditionObjective("Ice: eliminate Bradley before he escapes; the red officer carries the access card", () => Bradley.IsDead)).OwnedBy(CrewSlot.Ice)
