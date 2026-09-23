@@ -147,6 +147,7 @@ public static partial class StoryTests
         int heli = pilot.Task.HeliTasks;
         for (int i = 0; i < 3; i++) { Game.GameTime += 3100; m.Tick(); }
         Check(pilot.Task.HeliTasks == heli, "The gunship's attack run is not restarted every three seconds");
+        GunshipChecks(m, crew, pilot, c);
         m.Abort();
     }
 

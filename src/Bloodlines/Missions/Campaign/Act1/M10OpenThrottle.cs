@@ -45,6 +45,32 @@ namespace Bloodlines.Missions.Campaign
         private int _nextPursuit;
         /// <summary>How long an order to a pursuer stands before it is given again with nothing changed.</summary>
         public const int PursuitRefreshMs = 15000;
+
+        // The gunship's gun. Ron, September 23: the Buzzard "instantly shoots us every
+        // time"; it should fire near the crew and only hit a target that sits still. Its
+        // own attack mission aimed straight at the player, so it now circles and the
+        // mission fires its gun: bursts that walk beside and ahead of a moving target,
+        // with no damage, and land on one that has stayed still for StillMs.
+        /// <summary>Slower than this and the target counts as sitting still.</summary>
+        public const float StillSpeed = 2.5f;
+        /// <summary>How long a target may sit still before the gunship's rounds land on it.</summary>
+        public const int StillMs = 3500;
+        public const int BurstIntervalMs = 2600, BurstRounds = 10, RoundGapMs = 80;
+        /// <summary>How far from the target a near miss lands: close enough to see and hear, never on it.</summary>
+        public const float MissNear = 6f, MissFar = 11f;
+        /// <summary>Damage per round that lands on a target who sat still.</summary>
+        public const int RoundDamage = 18;
+        /// <summary>Beyond this the gunship does not fire.</summary>
+        public const float GunRange = 180f;
+        private static readonly uint BuzzardGun = unchecked((uint)Game.GenerateHash("VEHICLE_WEAPON_PLAYER_BUZZARD"));
+        private readonly Random _gunRandom = new Random();
+        private int _stillSince = -1, _nextBurstAt, _roundsLeft, _nextRoundAt;
+        private Vector3 _missOffset;
+        private bool _burstHits;
+        /// <summary>Rounds the gunship has fired, and where the last one was aimed.</summary>
+        public int GunshipRounds { get; private set; }
+        public Vector3 LastGunshipAim { get; private set; }
+        public bool LastGunshipRoundHit { get; private set; }
         /// <summary>How long AI Ice keeps shooting at one bike before the order is renewed.</summary>
         public const int IceShotCooldownMs = 6000;
         private readonly Dictionary<int, bool> _riderMounted = new Dictionary<int, bool>();
@@ -377,8 +403,75 @@ namespace Bloodlines.Missions.Campaign
             if (!force && player.Handle == _gunshipTarget && Game.GameTime - _gunshipOrderedAt < PursuitRefreshMs) return;
             _gunshipTarget = player.Handle;
             _gunshipOrderedAt = Game.GameTime;
-            _pilot.Task.StartHeliMission(_buzzard, player, VehicleMissionType.Attack, 35f, 35f,
+            // Circling, not attacking: the attack mission fires straight at the player.
+            // The gun is the mission's (MaintainGunfire).
+            _pilot.Task.StartHeliMission(_buzzard, player, VehicleMissionType.Circle, 35f, 45f,
                 (int)Math.Max(_buzzard.Position.Z, player.Position.Z + 40f), 25, -1f, 70f, (HeliMissionFlags)0);
+        }
+
+        /// <summary>
+        /// The gunship's bursts. A target that keeps moving has rounds walking beside and ahead
+        /// of him, harmless; one that has sat still for <see cref="StillMs"/> in the gunship's
+        /// sight is hit. Cover (no line of sight, the tunnel mouth) is never hit.
+        /// </summary>
+        private void MaintainGunfire()
+        {
+            if (_buzzard == null || !_buzzard.Exists() || _buzzard.IsDead || _pilot == null || !_pilot.Exists() || _pilot.IsDead || !_pilot.IsInVehicle(_buzzard)) return;
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || player.IsDead) return;
+            Entity target = player.IsInVehicle() ? (Entity)player.CurrentVehicle : player;
+            int now = Game.GameTime;
+            if (target.Velocity.Length() < StillSpeed) { if (_stillSince < 0) _stillSince = now; }
+            else _stillSince = -1;
+            if (_roundsLeft <= 0)
+            {
+                if (now < _nextBurstAt || _buzzard.Position.DistanceTo(target.Position) > GunRange) return;
+                _roundsLeft = BurstRounds; _nextRoundAt = now; _nextBurstAt = now + BurstIntervalMs;
+                _burstHits = _stillSince >= 0 && now - _stillSince >= StillMs &&
+                             Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, _buzzard, target, 17);
+                double angle = _gunRandom.NextDouble() * Math.PI * 2;
+                float distance = MissNear + (float)_gunRandom.NextDouble() * (MissFar - MissNear);
+                _missOffset = new Vector3((float)Math.Cos(angle) * distance, (float)Math.Sin(angle) * distance, 0f);
+            }
+            if (now < _nextRoundAt) return;
+            _nextRoundAt = now + RoundGapMs;
+            _roundsLeft--;
+            var ground = target.Position - new Vector3(0f, 0f, 0.8f);
+            Vector3 aim;
+            if (_burstHits)
+                aim = ground + new Vector3((float)(_gunRandom.NextDouble() - .5), (float)(_gunRandom.NextDouble() - .5), 0f);
+            else
+            {
+                // Ahead of him along his line, beside it, and walking a little each round.
+                aim = ground + target.Velocity * 0.4f + _missOffset * (1f + (BurstRounds - _roundsLeft) * 0.03f);
+                aim = ClearOfCrew(aim);
+            }
+            var muzzle = _buzzard.Position + _buzzard.ForwardVector * 4f - new Vector3(0f, 0f, 1.5f);
+            Function.Call(Hash.SHOOT_SINGLE_BULLET_BETWEEN_COORDS, muzzle.X, muzzle.Y, muzzle.Z, aim.X, aim.Y, aim.Z,
+                _burstHits ? RoundDamage : 0, true, BuzzardGun, _pilot, true, false, -1f);
+            GunshipRounds++; LastGunshipAim = aim; LastGunshipRoundHit = _burstHits;
+        }
+
+        /// <summary>A near miss is pushed out until no brother is within <see cref="MissNear"/> of it.</summary>
+        private Vector3 ClearOfCrew(Vector3 aim)
+        {
+            for (int pass = 0; pass < 3; pass++)
+            {
+                bool moved = false;
+                foreach (var hero in Protagonist.All)
+                {
+                    var ped = Ctx.Crew.PedFor(hero.Slot);
+                    if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                    var flat = new Vector3(aim.X - ped.Position.X, aim.Y - ped.Position.Y, 0f);
+                    float gap = flat.Length();
+                    if (gap >= MissNear) continue;
+                    var away = gap < 0.1f ? new Vector3(1f, 0f, 0f) : flat * (1f / gap);
+                    aim = new Vector3(ped.Position.X, ped.Position.Y, aim.Z) + away * MissNear;
+                    moved = true;
+                }
+                if (!moved) break;
+            }
+            return aim;
         }
 
         /// <summary>
@@ -463,6 +556,7 @@ namespace Bloodlines.Missions.Campaign
             base.OnUpdate();
             if (Status != MissionStatus.Running) return;
             if (_running && !Ctx.Cutscenes.IsActive) { MaintainIceShooting(); MaintainGuessDriving(); }
+            if (!Ctx.Cutscenes.IsActive) MaintainGunfire();
             if (Game.GameTime < _nextPursuit) return;
             _nextPursuit = Game.GameTime + 3000;
             MaintainPursuit();
