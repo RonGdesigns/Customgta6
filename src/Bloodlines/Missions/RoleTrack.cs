@@ -23,6 +23,8 @@ namespace Bloodlines.Missions
     {
         public const float ThreatRadius = 35f;
         public const int ClearMs = 6000;
+        /// <summary>A cover point further than this is not cover, it is a run across the map.</summary>
+        public const float CoverReach = 40f;
 
         private readonly Func<IEnumerable<Ped>> _enemies;
         private Vector3 _point, _cover;
@@ -107,7 +109,7 @@ namespace Bloodlines.Missions
                     if (State == RoleState.Working) _action?.Suspend(Ped);
                     State = RoleState.Threatened;
                     Order();
-                    Logger.Debug(Slot + " threatened; taking cover at " + _cover);
+                    Logger.Debug(Slot + (NearCover ? " threatened; taking cover at " + _cover : " threatened; fighting where he stands"));
                     return;
                 }
                 if (State == RoleState.Working) _action?.Tick(Ped);
@@ -124,6 +126,8 @@ namespace Bloodlines.Missions
                 Logger.Debug(Slot + " clear; resuming " + State + (State == RoleState.Working && _action != null ? " (" + _action.Name + ")" : ""));
             }
         }
+
+        private bool NearCover => _cover != Vector3.Zero && Ped.Position.DistanceTo(_cover) <= CoverReach;
 
         private bool Threatened()
         {
@@ -155,7 +159,11 @@ namespace Bloodlines.Missions
                     break;
                 case RoleState.Threatened:
                 case RoleState.Covering:
-                    task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
+                    // Most missions give a brother his start point as cover, which by the time a
+                    // fight starts can be hundreds of meters back down the road: BM01 logged Guess
+                    // "taking cover" 800 m away at the gate (September 22). He fights from where he
+                    // is instead of being sent there.
+                    task.ClearAll(); if (NearCover) task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
                 case RoleState.Extracting:
                     task.ClearAll(); task.RunTo(_point, false, 20000); break;
             }

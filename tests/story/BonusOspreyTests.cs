@@ -111,6 +111,16 @@ public static partial class StoryTests
         Check(Function.Calls.Any(x => x.Item1 == Hash.REQUEST_IPL && (string)x.Item2[0] == BM01ClippedWings.BunkerMap),
             "The Paleto Forest bunker's exterior is loaded for the attempt");
 
+        // Switch off Guess on the way north and he drives on to the bunker (Ron, September 22:
+        // the truck sat where it was).
+        var guessPed = crew.PedFor(CrewSlot.Guess);
+        crew.SetActive(CrewSlot.Ice); Game.Player.Character = crew.PedFor(CrewSlot.Ice);
+        int drives = guessPed.Task.Drives;
+        Game.GameTime += 3000; m.Tick();
+        Check(guessPed.Task.Drives > drives && guessPed.Task.LastDrivePoint.DistanceTo(c.Locations.Position("BM01.Approach")) < 1f,
+            "Played as Ice on the way north, Guess drives the truck on to the bunker");
+        crew.SetActive(CrewSlot.Guess);
+
         // Up the coast, then the gate.
         Game.Player.Character = crew.PedFor(CrewSlot.Guess); truck.Position = c.Locations.Position("BM01.Approach"); Game.Player.Character.Position = truck.Position;
         m.Tick(); m.Tick();

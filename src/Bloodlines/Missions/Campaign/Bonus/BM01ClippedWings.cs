@@ -195,8 +195,11 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Up the coast",
                 new TravelObjective("Guess: drive the gun truck north up the coast highway to the Paleto Forest bunker", () => At("BM01.Approach"), 35f, () => _truck))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(c => Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's on the apron and the gate is manned.", "BM01_RADIO_01_GOHAN"))
-                .OnExit(c => { Fighting = true; Radio("ICE", "Gate and guard post. Take them, and keep an eye on that aircraft.", "BM01_RADIO_02_ICE"); });
+                // Guess drives it whoever is being played. Ron switched to Ice on the way north
+                // and the truck sat where it was, because nothing told Guess where to go until
+                // the chase (September 22).
+                .OnEnter(c => { DrivingDestination = () => At("BM01.Approach"); Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's on the apron and the gate is manned.", "BM01_RADIO_01_GOHAN"); })
+                .OnExit(c => { DrivingDestination = null; Fighting = true; Radio("ICE", "Gate and guard post. Take them, and keep an eye on that aircraft.", "BM01_RADIO_02_ICE"); });
 
             yield return new MissionStage("The gate",
                 new KillTargetsObjective("Take out the men at the gate and the guard post", () => _guards))
