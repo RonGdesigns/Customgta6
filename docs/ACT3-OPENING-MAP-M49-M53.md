@@ -124,6 +124,23 @@ satisfies the treatment's requirement for *"a usable, mapped firing position and
 descent"* without inventing either. The roof height still needs the runtime probe rather
 than the authored 53.3, for the M45 reason.
 
+**Superseded (September 22).** The 81 m roof had no way up: the archetype's
+`CExtensionDefLadder` entries put `bh1_16_ladder_mission_fizz` between the roof slab
+(50.64) and a plant deck (55.64), and none of that block's ladders starts at the street.
+The origins in the table above are model pivots, not ladders. The ladders `bh1_21_ladder2`
+actually carries, in world space:
+
+| ladder | bottom | top | facing |
+|---|---|---|---|
+| street to ledge | (-587.56, -200.50, 37.67) | 45.67 | (-0.87, -0.50), the wing's outer wall |
+| second street ladder | (-575.65, -193.62, 37.67) | 45.67 | (0.87, 0.50) |
+| ledge to roof | (-582.68, -199.12, 45.45) | 48.95 | (-0.50, 0.87), the wing's rear |
+| roof to upper deck | (-573.36, -206.75, 48.71) | 52.21 | (-0.87, -0.50) |
+| plaza-facing edge | (-571.84, -218.77, 45.45) | 48.95 | (0.50, -0.87), toward the plaza |
+
+M52 climbs the first and third and stands at the top of the fifth: `M52.Roost`, 47.6 m
+from `M52.Harrison` and 52.0 m from `M52.Walk`. `M52.Ladder` is the foot of the first.
+
 **M41 already is the rest of this mission.** Bradley's chapter runs identify → wait for
 a clear shot → eliminate → recover → extract, with working failure paths for the wrong
 target and a premature shot:

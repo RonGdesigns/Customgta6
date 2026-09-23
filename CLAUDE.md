@@ -546,14 +546,20 @@ M53's coordinates cannot be authored offline at all — nothing is placed under 
 ## M52, and where the shot is actually taken from
 
 The bible puts Ice on the Union Depository roof "across the plaza" from City Hall. Those
-two buildings are **716 m apart** — not a plaza, and not a shot. M52 uses the roof 62 m
-from the steps and 15 m above them, which Rockstar gave a ladder named
-`bh1_16_ladder_mission_fizz`: a ladder placed for a mission, so the climb and the way down
-both already exist. `M52.Roost` is a fixed surface; ground preparation would put it on the
-street.
+two buildings are **716 m apart** — not a plaza, and not a shot. M52 now uses the roof of
+City Hall's own west wing (Ron, September 22: "change to where a ladder actually is"). The
+first replacement, `bh1_16_ladder_mission_fizz`, climbs from a roof slab to a plant deck and
+never reaches the street, and the scaffold route an audit added to get onto that roof was
+never climbed; both are gone. **A ladder's name is not evidence that it reaches the street;
+its archetype's `CExtensionDefLadder` entries are.** They give each climbable ladder's
+bottom, top and facing. `bh1_21_ladder2` has five: Ice climbs from the ground beside the
+wing's outer wall (bottom 37.67) to a ledge at 45.67, then to the roof at 48.95, and
+`M52.Roost` is the top of the ladder on the roof's plaza-facing edge. `M52.Ladder` is the
+foot of the first. `M52.Roost` is a fixed surface, probed onto the slab once Ice is within
+60 m, never in Setup.
 
-Harrison comes out of the steps and walks 43 m **away** from the roost to his clear-shot
-mark, not toward it. Check that when moving either key: a mark closer to the roof than the
+Harrison comes out 47.6 m from the roost and walks to a clear-shot mark 52.0 m from it,
+**away** from the roost, not toward it. Check that when moving either key: a mark closer to the roof than the
 steps turns a rooftop shot into a man walking into the muzzle.
 
 Its machinery is M41's on purpose — identify, wait for a clear shot, eliminate, extract —
