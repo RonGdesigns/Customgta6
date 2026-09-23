@@ -59,7 +59,7 @@ public static partial class StoryTests
   var past=CampaignState.Load(Path.Combine(root,"gates-thin-past.json"));foreach(var id in new[]{"M50","M62","M63"})past.Completed.Add(id);
   Check(past.GateSatisfied(m63,thin)&&past.Progress(thin)!=CampaignProgress.StoryBlocked,"A save already past the gate is still grandfathered through unavailable required content");
   // Markers route to the same answer as the mission key.
-  Check(CampaignState.StoryGates.Count==4&&CampaignState.StoryGates["M68"].SequenceEqual(new[]{"SM09"}),"All four story gates are declared centrally");
+  Check(CampaignState.StoryGates.Count==5&&CampaignState.StoryGates["M68"].SequenceEqual(new[]{"SM09"})&&CampaignState.StoryGates["BM01"].Length==9,"All five story gates are declared centrally, the bonus behind every solo job");
 
   // ---- 2. Weapon loan lifecycle across a whole mission and back into free roam.
   Reset();crew=Roster();c=Context(crew);var loanState=CampaignState.Load(Path.Combine(root,"loan-cycle.json"));var arsenal=new WeaponProgression(loanState);crew.Arsenal=arsenal;

@@ -21,6 +21,7 @@ namespace Bloodlines.Missions
 
         public static readonly Dictionary<string, Card> Cards = new Dictionary<string, Card>(System.StringComparer.OrdinalIgnoreCase)
         {
+            { "BM01", new Card { Target = "Bring down the Aegis Osprey", Reason = "The last aircraft Aegis has up north is leaving the Paleto Forest bunker", Roles = "Guess drives the gun truck; Ice works the gun; Gohan calls the hull", Destination = "Guess: drive north up the coast highway to the bunker gate" } },
             { "M31", new Card { Target = "Protect the desert refuge", Reason = "Prepare warning and a usable withdrawal road", Roles = "Ice scouts; Gohan arms barriers; Guess proves the escape road", Destination = "Ice: inspect the three marked approaches" } },
             { "M32", new Card { Target = "Two EMP cases at the Zancudo coast post", Reason = "Acquire hardware for the offshore defenses", Roles = "Gohan approaches by water and handles cases; Ice covers; Guess extracts", Destination = "Gohan: pilot the dinghy to the river-mouth landing" } },
             { "M33", new Card { Target = "Ramos at the execution site", Reason = "Rescue the person before asking for intelligence", Roles = "Ice stops the guards; Gohan frees Ramos; Guess picks up all four", Destination = "Ice: approach the yellow observation point" } },

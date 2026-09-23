@@ -36,6 +36,8 @@ namespace Bloodlines.Core
         public string ClassName { get; set; }
 
         public bool IsSolo => string.Equals(Kind, "solo", StringComparison.OrdinalIgnoreCase);
+        /// <summary>An authored mission from data/bonus_missions.tsv, not from the bible.</summary>
+        public bool IsBonus => string.Equals(Kind, "bonus", StringComparison.OrdinalIgnoreCase);
         public string Title { get; set; }
         public string Act { get; set; }
         public string Location { get; set; }
@@ -90,7 +92,13 @@ namespace Bloodlines.Core
         {
             var data = new CampaignData();
 
-            foreach (var row in DataTable.Load(Path.Combine(dataDirectory, "missions.tsv")).Rows)
+            // missions.tsv is the bible extraction and is regenerated, never hand-edited.
+            // bonus_missions.tsv is authored, like story_beats.txt: missions the design PDFs
+            // never had, in the same columns, loaded after them.
+            var rows = DataTable.Load(Path.Combine(dataDirectory, "missions.tsv")).Rows.ToList();
+            var bonus = Path.Combine(dataDirectory, "bonus_missions.tsv");
+            if (File.Exists(bonus)) rows.AddRange(DataTable.Load(bonus).Rows);
+            foreach (var row in rows)
             {
                 var info = new MissionInfo
                 {
@@ -178,6 +186,10 @@ namespace Bloodlines.Core
 
         public IEnumerable<MissionInfo> SoloMissions =>
             _missions.Values.Where(m => m.IsSolo).OrderBy(m => m.Number);
+
+        /// <summary>The authored bonus missions, offered after the campaign.</summary>
+        public IEnumerable<MissionInfo> BonusMissions =>
+            _missions.Values.Where(m => m.IsBonus).OrderBy(m => m.Number);
 
         public DialogueCue Cue(string cueId)
         {

@@ -402,6 +402,8 @@ namespace Bloodlines.Missions
             {
                 case "M03": Safehouses["cypressFoundry"] = true; break;
                 case "M05": CashOnHand += 60000; break;
+                // The bonus pays, and puts the Osprey on the phone's garage page for sale.
+                case "BM01": CashOnHand += 150000; break;
                 case "M11": FleetUpgrades["grangerTurbineInstalled"] = true; Safehouses["burroHeightsChopShop"] = true; break;
                 case "M14": Safehouses["mckenzieAirfieldHangar"] = true; break;
                 case "M15": CashOnHand += 66000; break;
@@ -496,7 +498,10 @@ namespace Bloodlines.Missions
             { "M19", new[] { "SM01", "SM02", "SM03" } },
             { "M44", new[] { "SM04", "SM05", "SM06" } },
             { "M63", new[] { "SM07", "SM08" } },
-            { "M68", new[] { "SM09" } }
+            { "M68", new[] { "SM09" } },
+            // The bonus opens when the rest of the campaign has been played: M70 through its
+            // prerequisite, and every solo job here.
+            { "BM01", new[] { "SM01", "SM02", "SM03", "SM04", "SM05", "SM06", "SM07", "SM08", "SM09" } }
         };
 
         /// <summary>

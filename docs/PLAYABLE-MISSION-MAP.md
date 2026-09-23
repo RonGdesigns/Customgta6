@@ -1,6 +1,6 @@
 # Playable mission flow and retry map
 
-79 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
+80 scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.
 
 The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.
 
@@ -27,6 +27,21 @@ Mandatory role handoffs block movement, attacks and interactions until switching
 | Shadow | Approach within the acquisition window, then hold the specified distance band. After acquisition, eight seconds outside the band fails. |
 | MultiHold | Visit every marked site, press the interaction button and finish each timed operation. Nearest unfinished site receives the route. |
 | Passive rules | Protect, detection, speed and altitude constrain the active stage. They never count as the action needed to finish it. |
+
+## BM01 — CLIPPED WINGS
+
+Prerequisite: M70. Story gate: SM01, SM02, SM03, SM04, SM05, SM06, SM07, SM08, SM09 must be complete first (QA may bypass). Retry: full mission restart.
+
+| Step | Role | Stage and on-screen base instruction |
+|---|---|---|
+| 1 | Guess | **Up the coast** — TravelObjective: Guess: drive the gun truck north up the coast highway to the Paleto Forest bunker |
+| 2 | any brother | **The gate** — KillTargetsObjective: Take out the men at the gate and the guard post |
+| 3 | any brother | **Back in the truck** — ConditionObjective: Everyone in the gun truck: Guess drives, Ice on the gun, Gohan beside him |
+| 4 | any brother | **Bring it down** — ShootDownObjective: Bring down the Osprey - stay under it on the coast road |
+
+Final gameplay dialogue drains before the pass/aftermath transition.
+
+Survey references: BM01.Approach, BM01.Flight, BM01.FlightTrail, BM01.Gate, BM01.Getaway, BM01.Guard1, BM01.Guard2, BM01.Guard3, BM01.Guard4, BM01.Guard5, BM01.Osprey, BM01.Pilot, BM01.Truck, BM01.Yard1, BM01.Yard2, BM01.Yard3.
 
 ## M01 — GHOST IN THE DOCKYARD
 

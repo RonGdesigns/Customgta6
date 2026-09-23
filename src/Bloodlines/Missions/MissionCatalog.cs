@@ -13,7 +13,9 @@ namespace Bloodlines.Missions
     {
         BleedingTrail = 1,
         Squeeze = 2,
-        ScorchedEarth = 3
+        ScorchedEarth = 3,
+        /// <summary>Authored missions offered once the campaign is done.</summary>
+        Bonus = 4
     }
 
     public sealed class MissionDefinition
@@ -32,6 +34,7 @@ namespace Bloodlines.Missions
         public string Title => Info.Title;
         public bool IsPlayable => Factory != null;
         public bool IsSolo => Info.IsSolo;
+        public bool IsBonus => Info.IsBonus;
 
         /// <summary>The character a solo mission belongs to; null for main missions.</summary>
         public CrewSlot? Owner
@@ -53,6 +56,7 @@ namespace Bloodlines.Missions
         {
             get
             {
+                if (IsBonus) return CampaignAct.Bonus;
                 if (IsSolo)
                 {
                     return Info.InsertAfter <= 22 ? CampaignAct.BleedingTrail :
@@ -70,6 +74,7 @@ namespace Bloodlines.Missions
             {
                 case CampaignAct.BleedingTrail: return "Act I — The Bleeding Trail";
                 case CampaignAct.Squeeze: return "Act II — The Squeeze";
+                case CampaignAct.Bonus: return "Bonus mission";
                 default: return "Act III — Scorched Earth";
             }
         }
@@ -167,6 +172,8 @@ namespace Bloodlines.Missions
                 { "SM07", () => new SM07BloodDebt() },
                 { "SM08", () => new SM08BurnerProtocol() },
                 { "SM09", () => new SM09TheLongExit() },
+                // Authored after the campaign, from data/bonus_missions.tsv.
+                { "BM01", () => new BM01ClippedWings() },
                 { "M57", () => new M57VespucciFlak() },
                 { "SM04", () => new SM04DeadDropQuarry() },
                 { "SM05", () => new SM05BlackBoxEstuary() },
@@ -175,6 +182,7 @@ namespace Bloodlines.Missions
 
         private readonly List<MissionDefinition> _main = new List<MissionDefinition>();
         private readonly List<MissionDefinition> _solo = new List<MissionDefinition>();
+        private readonly List<MissionDefinition> _bonus = new List<MissionDefinition>();
         private readonly List<MissionDefinition> _order = new List<MissionDefinition>();
 
         public MissionCatalog(CampaignData data, string missionAssemblyDirectory = null)
@@ -205,8 +213,11 @@ namespace Bloodlines.Missions
                 _order.AddRange(_solo.Where(solo => solo.Info.InsertAfter == mission.Number));
             }
             _order.AddRange(_solo.Where(solo => !_order.Contains(solo)));
+            // Bonus missions come after everything, because they are offered after everything.
+            foreach (var info in data.BonusMissions) _bonus.Add(Build(info));
+            _order.AddRange(_bonus);
 
-            Logger.Info("Catalog built: " + _main.Count + " main + " + _solo.Count + " solo, " +
+            Logger.Info("Catalog built: " + _main.Count + " main + " + _solo.Count + " solo + " + _bonus.Count + " bonus, " +
                         _order.Count(m => m.IsPlayable) + " playable.");
         }
 
@@ -280,6 +291,7 @@ namespace Bloodlines.Missions
         public IReadOnlyList<MissionDefinition> Main => _main;
 
         public IReadOnlyList<MissionDefinition> Solo => _solo;
+        public IReadOnlyList<MissionDefinition> Bonus => _bonus;
 
         public IEnumerable<MissionDefinition> Playable => _order.Where(m => m.IsPlayable);
 

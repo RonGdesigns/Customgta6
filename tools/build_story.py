@@ -21,7 +21,8 @@ PHASE_DIRECTION = {'transaction': 'Staged action; support cast on set, brothers 
                    'inspect': 'At the stash; the load checked before the run',
                    'shop': 'In the shop, mid-work; nobody stops for a briefing',
                    'lift': 'On the flats; the lift landed, its job named',
-                   'release': 'At the slip; the handle fitted where either can reach it'}
+                   'release': 'At the slip; the handle fitted where either can reach it',
+                   'takeoff': 'At the bunker gate; the pilot boards and the Osprey lifts'}
 
 def blocks(path, key_pattern, phases=None):
     """Lines per block. With `phases`, a block may contain '@name' lines that open a named phase;
@@ -50,8 +51,11 @@ def blocks(path, key_pattern, phases=None):
 def render():
     with (ROOT/'data/missions.tsv').open(encoding='utf-8') as stream:
         missions={row['id']: row for row in csv.DictReader(stream,delimiter='\t')}
+    # Authored bonus missions are written here too, but they are not bible extractions.
+    with (ROOT/'data/bonus_missions.tsv').open(encoding='utf-8') as stream:
+        missions.update({row['id']: row for row in csv.DictReader(stream,delimiter='\t')})
     named={}
-    beats=blocks(ROOT/'data/story_beats.txt',r'S?M\d\d',named)
+    beats=blocks(ROOT/'data/story_beats.txt',r'(?:S|B)?M\d\d',named)
     opening=blocks(ROOT/'data/opening_scene.txt',r'prologue|arrival|call|intro|recognition')
     if beats.keys()!=missions.keys(): raise ValueError(f'Mission coverage mismatch: {beats.keys() ^ missions.keys()}')
     if opening.keys()!={'prologue','arrival','call','intro','recognition'}: raise ValueError('Opening requires prologue, arrival, call, intro and recognition')
@@ -61,7 +65,7 @@ def render():
     with (ROOT/'data/locations.tsv').open(encoding='utf-8') as stream:
         location_keys={row['key'] for row in csv.DictReader(stream,delimiter='\t')}
     catalog=(ROOT/'src/Bloodlines/Missions/MissionCatalog.cs').read_text(encoding='utf-8')
-    playable=set(re.findall(r'\{\s*"(S?M\d{2})",\s*\(\)\s*=>\s*new',catalog))
+    playable=set(re.findall(r'\{\s*"((?:S|B)?M\d{2})",\s*\(\)\s*=>\s*new',catalog))
     if len(starts)!=len(playable) or {row['mission'] for row in starts}!=playable:
         raise ValueError('Start markers must cover every implemented mission exactly')
     if any(row['location_key'] not in location_keys for row in starts): raise ValueError('Unknown marker location key')
@@ -134,6 +138,7 @@ def main():
             if not path.exists() or path.read_text(encoding='utf-8')!=text: raise SystemExit('Regenerate stale artifact: '+str(path))
         else: path.write_text(text,encoding='utf-8',newline='\n')
     groups={(row['mission'],row['phase']) for row in csv.DictReader(io.StringIO(artifacts[ROOT/'data/scenes.tsv']),delimiter='\t')}
-    print(f'Story coverage: 79 missions, {count} unique cues, {len(groups)} scenes; '+('freshness verified' if args.check else 'generated'))
+    covered=len({mission for mission,_ in groups})
+    print(f'Story coverage: {covered} missions, {count} unique cues, {len(groups)} scenes; '+('freshness verified' if args.check else 'generated'))
 
 if __name__=='__main__':main()

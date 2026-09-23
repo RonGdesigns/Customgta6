@@ -847,3 +847,38 @@ M70.Water	-1880.000	-3200.000	0.000	240	water	estimate	Los Santos International 
 SM09.Start	409.000	-1618.000	29.300	320	land	estimate	Rancho / the LSPD auto pound, where the prototype is impounded; live survey pending
 SM09.Pound	409.000	-1625.000	29.300	320	land	estimate	Rancho / the impounded prototype bay in the pound; live survey pending
 SM09.Berth	990.000	-2893.000	5.300	180	land	estimate	Terminal / the container on the Terminal Island quay, among the moorings at y=-2899 and under the port_xr_lifep cranes at (981.4, -2865.4, 11.02); live survey pending
+BM01.Start	-1226.0	5268.0	49.5	300	land	estimate	Chiliad Mountain State Wilderness
+BM01.IceStart	-1223.0	5263.0	49.5	300	land	estimate	Chiliad Mountain State Wilderness
+BM01.GohanStart	-1229.0	5264.0	49.5	300	land	estimate	Chiliad Mountain State Wilderness
+BM01.GuessStart	-1226.0	5273.0	49.5	300	land	estimate	Chiliad Mountain State Wilderness
+BM01.Truck	-1219.0	5272.0	49.5	300	land	estimate	Chiliad Mountain State Wilderness
+BM01.Approach	-688.0	5885.0	15.5	0	land	estimate	Paleto Forest
+BM01.Gate	-705.0	5945.0	15.5	90	land	estimate	Paleto Forest
+BM01.Guard1	-700.0	5951.0	15.5	90	land	estimate	Paleto Forest
+BM01.Guard2	-702.0	5938.0	15.5	90	land	estimate	Paleto Forest
+BM01.Guard3	-716.0	5953.0	16.5	90	land	estimate	Paleto Forest
+BM01.Guard4	-713.0	5934.0	16.5	90	land	estimate	Paleto Forest
+BM01.Guard5	-690.0	5941.0	15.0	90	land	estimate	Paleto Forest
+BM01.Yard1	-760.0	5944.0	19.2	90	land	estimate	Paleto Forest
+BM01.Yard2	-770.0	5930.0	19.9	90	land	estimate	Paleto Forest
+BM01.Yard3	-751.0	5930.0	18.5	90	land	estimate	Paleto Forest
+BM01.Osprey	-738.0	5942.0	18.0	90	land	estimate	Paleto Forest
+BM01.Pilot	-755.0	5951.0	19.0	120	land	estimate	Paleto Forest
+BM01.Flight01	-684.0	5925.0	14.0	0	land	estimate	Paleto Bay
+BM01.Flight02	-509.3	5850.6	32.0	0	land	estimate	Paleto Bay
+BM01.Flight03	-425.8	5968.4	30.2	0	land	estimate	Paleto Bay
+BM01.Flight04	-355.6	6044.8	29.9	0	land	estimate	Paleto Bay
+BM01.Flight05	-284.2	6113.3	30.3	0	land	estimate	Paleto Bay
+BM01.Flight06	-207.0	6192.6	30.2	0	land	estimate	Paleto Bay
+BM01.Flight07	-126.9	6231.7	29.9	0	land	estimate	Paleto Bay
+BM01.Flight08	-7.6	6347.2	30.3	0	land	estimate	Paleto Bay
+BM01.Flight09	96.5	6445.4	29.9	0	land	estimate	Paleto Bay
+BM01.Flight10	215.2	6539.2	29.8	0	land	estimate	Paleto Bay
+BM01.Flight11	342.0	6554.4	27.1	0	land	estimate	Paleto Bay
+BM01.Flight12	503.7	6540.8	25.6	0	land	estimate	Paleto Bay
+BM01.Flight13	644.5	6509.6	26.7	0	land	estimate	Mount Chiliad
+BM01.Flight14	785.9	6483.1	23.2	0	land	estimate	Mount Chiliad
+BM01.Flight15	947.6	6506.5	19.9	0	land	estimate	Mount Chiliad
+BM01.Flight16	1109.5	6511.8	19.9	0	land	estimate	Mount Chiliad
+BM01.Flight17	1259.8	6508.5	19.1	0	land	estimate	Mount Chiliad
+BM01.Getaway	1502.2	6492.1	20.2	0	land	estimate	Mount Chiliad

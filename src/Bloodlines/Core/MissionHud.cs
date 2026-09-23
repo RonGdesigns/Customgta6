@@ -118,6 +118,14 @@ namespace Bloodlines.Core
                 frame.Progress = "signal " + (int)Math.Round(align.Strength * 100f) + "%" + (align.Locked ? "  -  locked" : "");
                 return;
             }
+            var hull = current as ShootDownObjective;
+            if (hull != null)
+            {
+                // The meter Ron asked for: how much of the aircraft is left to shoot.
+                frame.ProgressFraction = Math.Max(0f, Math.Min(1f, hull.Hull));
+                frame.Progress = "hull " + (int)Math.Round(hull.Hull * 100f) + "%";
+                return;
+            }
             var holds = current as MultiHoldObjective;
             if (holds != null && holds.Total > 0)
             {

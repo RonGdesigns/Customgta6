@@ -1496,3 +1496,21 @@ never count toward an objective. `ContinuousOperation` opts out (`TakesPlacedAdd
 because it shares its entry chapter's id. The editor's pick lists are strings, so
 `lint_missions.py` checks them against the dumps. The survey page keeps Save second and Y
 saves from any row.
+
+## Bonus missions, and BM01's Osprey
+
+See `docs/BONUS-BM01-CLIPPED-WINGS.md`. **A bonus mission is authored, never extracted.**
+Its row lives in `data/bonus_missions.tsv`, in the same columns as `missions.tsv`, and
+`CampaignData` loads it after the bible. The catalog offers bonus missions after everything
+else, under `CampaignAct.Bonus`. Ids are `BMnn`, so every tool that pattern-matches mission ids
+accepts `(?:S|B)?M\d\d`. BM01 opens after M70 and every solo job.
+
+**An aircraft the player has to shoot down is flown by the script, not the AI.**
+`Core/ScriptedFlight` turns gravity off and moves it along road points snapped at runtime,
+paced to stay ahead of the chase. `ShootDownObjective` wears out a hull meter by counting
+hits, because the Avenger's own armor is an unknown Online number. Never put `RequireAsset`
+on the aircraft: it dying is how the mission is won. A stage that opens in the same tick a
+scene starts must not move the scene's subject; BM01's lift waits for the takeoff scene to end.
+
+The Osprey is bought and called in through `Core/OspreyHangar`, on the phone's garage page.
+It is the only aircraft the crew can buy, and it keeps no build between calls.

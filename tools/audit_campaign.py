@@ -37,12 +37,14 @@ def story_gates():
     """The central gate table, read from the source so the map cannot drift from it."""
     cs=(ROOT/'src/Bloodlines/Missions/CampaignState.cs').read_text(encoding='utf-8')
     table=cs[cs.index('StoryGates'):]
-    return {gate:re.findall(r'"(SM\d\d)"',solos) for gate,solos in re.findall(r'\{\s*"(M\d\d)",\s*new\[\]\s*\{([^}]*)\}',table)}
+    return {gate:re.findall(r'"(SM\d\d)"',solos) for gate,solos in re.findall(r'\{\s*"(B?M\d\d)",\s*new\[\]\s*\{([^}]*)\}',table)}
 
 def render():
     with (ROOT/'data/missions.tsv').open(encoding='utf-8') as f: infos={r['id']:r for r in csv.DictReader(f,delimiter='\t')}
+    # Authored bonus missions, which the bible never had, live in their own file.
+    with (ROOT/'data/bonus_missions.tsv').open(encoding='utf-8') as f: infos.update({r['id']:r for r in csv.DictReader(f,delimiter='\t')})
     catalog=(ROOT/'src/Bloodlines/Missions/MissionCatalog.cs').read_text(encoding='utf-8')
-    implemented=set(re.findall(r'\{\s*"(S?M\d\d)",\s*\(\)\s*=>\s*new',catalog))
+    implemented=set(re.findall(r'\{\s*"((?:S|B)?M\d\d)",\s*\(\)\s*=>\s*new',catalog))
     out=['# Playable mission flow and retry map','',f'{len(implemented)} scripted missions. Generated from current production stage declarations. These are code-checked flows, not live playthrough results.','',
     'The quoted prompts below are the authored base instructions. Runtime text adds the required character, button, remaining work time, enemy count and passive rules. Yellow marks travel/work; red marks hostiles. E / D-pad Right starts timed work. Leaving its radius resets that work. Vehicle delivery requires the assigned hero aboard the actual vehicle. Aircraft landing also requires low height and speed.','',
     '## Failure and retry contract','',
@@ -63,7 +65,7 @@ def render():
     '| Passive rules | Protect, detection, speed and altitude constrain the active stage. They never count as the action needed to finish it. |','']
     seen=set();gates=story_gates()
     for p in sorted((ROOT/'src/Bloodlines/Missions/Campaign').rglob('*.cs'),key=lambda p:p.name):
-        s=p.read_text(encoding='utf-8');mid=re.search(r'override string Id\s*=>\s*"(S?M\d\d)"',s)
+        s=p.read_text(encoding='utf-8');mid=re.search(r'override string Id\s*=>\s*"((?:S|B)?M\d\d)"',s)
         if not mid:continue
         mid=mid[1];seen.add(mid);info=infos[mid]
         gate=gates.get(mid)
@@ -93,7 +95,7 @@ def render():
                 if not labels:labels=['Follow the current objective; detailed rule is defined by this stage’s objective type.']
                 out += [f'| {n} | {owner} | **{name}** — '+ '<br>'.join(labels).replace('|','/')+' |']
             out += ['','Final gameplay dialogue drains before the pass/aftermath transition.','']
-        keys=sorted(set(re.findall(r'"((?:S?M\d\d|Base)\.[A-Za-z0-9.]+)"',s)))
+        keys=sorted(set(re.findall(r'"((?:(?:S|B)?M\d\d|Base)\.[A-Za-z0-9.]+)"',s)))
         if keys:out += ['Survey references: '+', '.join(keys)+'.','']
     assert seen==implemented,seen^implemented
     out+=['## Boundaries of this audit','',
