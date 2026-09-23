@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -139,6 +140,13 @@ namespace Bloodlines.Missions.Campaign
             // nobody, so the brothers leave him standing. The player shooting him early still
             // fails, below.
             _vance.RelationshipGroup = World.AddRelationshipGroup(VanceGroup);
+            // The group keeps the brothers from choosing him, but it does not stop a bullet
+            // meant for somebody else: his own detail's crossfire, a brother's burst at the
+            // guard beside him, or a grenade could still kill him and fail the mission for
+            // something the player did not do (Ron, September 22). Until the escrow is open
+            // only the player's own fire can hurt him, so the one failure left is the one
+            // the rule is about. Opened() lifts it.
+            Function.Call(Hash.SET_ENTITY_ONLY_DAMAGED_BY_PLAYER, _vance, true);
             Blips.Attach(_vance, BlipColor.Red, "Colonel Vance");
             // No RequireAsset on him. That contract fails the mission the moment the entity is
             // dead, and the last stage is Ice killing him - so it failed at the moment of
@@ -211,6 +219,8 @@ namespace Bloodlines.Missions.Campaign
             {
                 _vance.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
                 Opposition.Add(_vance);
+                // And anyone's fire can hurt him again: a brother taking the shot counts.
+                Function.Call(Hash.SET_ENTITY_ONLY_DAMAGED_BY_PLAYER, _vance, false);
             }
             Ctx.State?.SetEvidence(EscrowEvidence, EvidenceState.CopyHeld);
             Logger.Info(Id + ": the escrow authorizations are Gohan's.");
