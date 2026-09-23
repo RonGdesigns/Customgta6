@@ -1514,3 +1514,20 @@ scene starts must not move the scene's subject; BM01's lift waits for the takeof
 
 The Osprey is bought and called in through `Core/OspreyHangar`, on the phone's garage page.
 It is the only aircraft the crew can buy, and it keeps no build between calls.
+
+## September 22: the act audit and objective-driven brothers
+
+See `docs/ACT-AUDIT-2026-09-22.md`. **A mission that ends inside its own update must not touch
+the crew afterward.** `Fail()` cleans up at once, and the rest of that update still runs, so the
+base classes return on a non-running status. `Mission.Tick` releases the crew again as a
+backstop. Missing this left Gohan held through a free-roam shootout.
+
+**A brother's job comes from the stage.** That means an unfinished objective he owns, a
+deliberate post (a `Station` that is not his start key) or a role under way. A brother with none
+of those rejoins the player through `CompanionController.Rejoin` after `RejoinIdleMs`, and any
+new mission order takes him back. Mark a deliberate post with `Station` or `Post`, never with a
+bare `GuardCurrentPosition`, or he will leave it. Send brothers anywhere with
+`CrewBoarding.RunAboard` or `RunTo`, never with a walk.
+
+A passenger returning fire uses `TASK_DRIVE_BY`. Only a turret seat uses the vehicle-weapon
+task.
