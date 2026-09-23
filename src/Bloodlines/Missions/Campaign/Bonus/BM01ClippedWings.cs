@@ -56,10 +56,34 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How close the aircraft has to be before a brother who is not being played shoots at it.</summary>
         public const float SupportRange = 160f;
         public const int FlightPoints = 17;
+        /// <summary>
+        /// How far the parked aircraft's lowest point may sit from the surface probed under it
+        /// and still count as standing on its gear.
+        /// </summary>
+        public const float GroundTolerance = 1.5f;
+        /// <summary>How often the parked aircraft and the guard posts are checked while the ground streams in.</summary>
+        public const int SettleProbeMs = 500;
+        /// <summary>
+        /// With the player this close and the aircraft still not verified on its gear for
+        /// <see cref="SettleGraceMs"/>, it is parked at the measured ground height instead.
+        /// </summary>
+        public const float SettleForceMeters = FarPlacement.Meters;
+        public const int SettleGraceMs = 4000;
+        /// <summary>A guard probe starts this far above his post and searches this far below it.</summary>
+        public const float PostHeadroom = 3f, PostDepth = 12f;
+        /// <summary>Open sky a guard needs over him: anything closer is a roof, a ramp or a deck.</summary>
+        public const float PostClearance = 2.5f;
+        /// <summary>A guard farther than this from where he was created has left his post and is not moved.</summary>
+        public const float PostDrift = 3f;
+        /// <summary>Probes with collision loaded before a post that never answers is left where it is.</summary>
+        public const int PostProbeTries = 6;
+        /// <summary>How far out from a covered post the search for open ground goes.</summary>
+        public static readonly float[] PostRings = { 3f, 6f, 9f };
 
         private static readonly string[] GuardKeys = { "BM01.Guard1", "BM01.Guard2", "BM01.Guard3", "BM01.Guard4", "BM01.Guard5", "BM01.Yard1", "BM01.Yard2", "BM01.Yard3" };
 
         private readonly List<Ped> _guards = new List<Ped>();
+        private readonly List<GuardPost> _posts = new List<GuardPost>();
         private readonly CrewBoarding _boarding = new CrewBoarding();
         private ScriptedMap _bunker;
         private Vehicle _truck, _osprey;
@@ -70,6 +94,21 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _pad;
         private bool _liftPending, _hovering, _hunting;
         private int _farSince = -1, _nextSupport;
+        /// <summary>Where the aircraft is held while the ground under it streams in: the measured ground plus its own origin height.</summary>
+        private Vector3 _held;
+        private float? _originHeight;
+        private bool _parked, _parkVerified, _reportedUnverified;
+        private int _nextOspreyProbe, _nearSince = -1, _nextPostProbe;
+
+        /// <summary>A guard, where he was created, and whether his footing has been checked.</summary>
+        private sealed class GuardPost
+        {
+            public string Key;
+            public Ped Ped;
+            public Vector3 Spawned;
+            public bool Settled;
+            public int Tries;
+        }
 
         public override string Id => "BM01";
         public override string Title => "Clipped Wings";
@@ -84,6 +123,14 @@ namespace Bloodlines.Missions.Campaign
         public bool Hunting => _hunting;
         /// <summary>True while every brother is out of range and the escape clock is running.</summary>
         public bool Escaping => _farSince >= 0;
+        /// <summary>The aircraft has been set down and frozen for the rest of the parked beat.</summary>
+        public bool OspreyParked => _parked;
+        /// <summary>It was parked on a probe that found it standing on its gear, not on the measured fallback.</summary>
+        public bool OspreyVerified => _parkVerified;
+        /// <summary>Where the takeoff lifts from: the aircraft's parked position.</summary>
+        public Vector3 Pad => _pad;
+        /// <summary>Guard posts whose footing has been checked, or given up on and logged.</summary>
+        public int SettledPosts => _posts.Count(p => p.Settled);
 
         /// <summary>
         /// The flight line is corrected onto lanes at runtime, so ground preparation must not
@@ -119,19 +166,39 @@ namespace Bloodlines.Missions.Campaign
             foreach (var key in GuardKeys)
             {
                 var guard = Enemy(key);
-                if (guard != null) _guards.Add(guard);
+                if (guard == null) continue;
+                _guards.Add(guard);
+                // Setup runs with the crew 800 m away, where nothing under these posts has
+                // streamed: every one of them logged "no navmesh" and was stood at the authored
+                // height. Each is checked again once the ground around him has loaded.
+                _posts.Add(new GuardPost { Key = key, Ped = guard, Spawned = guard.Position });
             }
             if (_guards.Count == 0) { GameUtils.Notify("~r~BM01: nobody could be placed at the gate. See Bloodlines.log."); return false; }
 
-            _osprey = Car(OspreyModel, At("BM01.Osprey") + new Vector3(0f, 0f, 2f), Ctx.Locations.Heading("BM01.Osprey"), false);
+            // The key's height is the terrain under it, measured from the archives, so the
+            // aircraft is held with its gear on that ground rather than above it. Ron found it
+            // floating (September 22): it used to be raised 2 m, asked onto the ground before
+            // any collision had streamed, and frozen wherever that left it.
+            var pad = At("BM01.Osprey");
+            _osprey = Car(OspreyModel, pad, Ctx.Locations.Heading("BM01.Osprey"), false);
             if (!RequireAssets(_osprey)) { GameUtils.Notify("~r~BM01: the Osprey would not load."); return false; }
-            // Down onto its gear, then held there: an aircraft's origin is not its wheels.
-            Function.Call<bool>(Hash.SET_VEHICLE_ON_GROUND_PROPERLY, _osprey, 5f);
-            _pad = _osprey.Position;
-            // Parked, cold, and not the gate fight's to destroy: it is the next beat.
+            _originHeight = OriginHeight(OspreyModel);
+            if (!_originHeight.HasValue)
+                Logger.Warn(Id + ": the Osprey's dimensions did not answer; holding it with its origin on the measured ground until it can be set down.");
+            _held = pad + new Vector3(0f, 0f, _originHeight ?? 0f);
+            _osprey.Position = _held;
+            _pad = _held;
+            // Held while the ground streams in, as GameUtils.HoldUntilGrounded holds a car, but
+            // for as long as the drive north takes rather than three seconds. It is parked, and
+            // frozen for good, only once a probe finds it standing on its gear.
             _osprey.IsPositionFrozen = true;
+            // Parked, cold, and not the gate fight's to destroy: it is the next beat.
             _osprey.IsInvincible = true;
             _osprey.IsEngineRunning = false;
+            // The engine's own answer for a mission entity nobody is standing near: stream the
+            // world around it, so it can be set down before the crew arrives.
+            Function.Call(Hash.SET_ENTITY_LOAD_COLLISION_FLAG, _osprey, true);
+            SettleOsprey(false);
             // No RequireAsset here: that fails the mission when the entity dies, and this one
             // dying is how the mission is won. The hull objective fails if it goes missing.
 
@@ -143,6 +210,180 @@ namespace Bloodlines.Missions.Campaign
             _pilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             _pilot.Task.StandStill(-1);
             return true;
+        }
+
+        /// <summary>How far the model's lowest point sits below its origin, or null when the model will not say.</summary>
+        private static float? OriginHeight(string modelName)
+        {
+            var model = new Model(modelName);
+            try
+            {
+                // Asked with the model requested: dimensions read after a spawn helper has
+                // released it can come back as zero.
+                if (!GameUtils.RequestModel(model)) return null;
+                float below = -model.Dimensions.Item1.Z;
+                return below > .05f ? below : (float?)null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("BM01: the Osprey's dimensions could not be read: " + ex.Message);
+                return null;
+            }
+            finally { model.MarkAsNoLongerNeeded(); }
+        }
+
+        /// <summary>
+        /// The parked aircraft, set down on its gear once the ground under it has streamed in.
+        ///
+        /// A ground call made before collision exists finds nothing, and freezing after it is
+        /// how the Osprey was left floating. So the call waits for
+        /// <c>HAS_COLLISION_LOADED_AROUND_ENTITY</c>, and its result is checked rather than
+        /// trusted: a downward probe has to find the surface, and the model's lowest point has
+        /// to be within <see cref="GroundTolerance"/> of it. A probe that finds nothing is not
+        /// a pass. Until then it stays held at the measured height. Once the player is close
+        /// and it still has not verified, it is parked there and the log says so. The takeoff
+        /// forces the decision, because the scene is about to show it.
+        /// </summary>
+        private void SettleOsprey(bool force)
+        {
+            if (_parked || _osprey == null || !_osprey.Exists()) return;
+            if (!force && Game.GameTime < _nextOspreyProbe) return;
+            _nextOspreyProbe = Game.GameTime + SettleProbeMs;
+            Function.Call(Hash.REQUEST_COLLISION_AT_COORD, _held.X, _held.Y, _held.Z);
+            if (Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, _osprey))
+            {
+                _osprey.IsPositionFrozen = false;
+                bool placed = Function.Call<bool>(Hash.SET_VEHICLE_ON_GROUND_PROPERLY, _osprey, 5f);
+                float? gap = placed ? GearGap() : null;
+                if (gap.HasValue && OnItsGear(gap.Value))
+                {
+                    Park(true, "set down on its gear " + gap.Value.ToString("0.00") + " m from the ground under it");
+                    return;
+                }
+                // Not verified: back where it was held, frozen again, and asked again.
+                _osprey.Position = _held;
+                _osprey.IsPositionFrozen = true;
+                if (!_reportedUnverified)
+                {
+                    _reportedUnverified = true;
+                    Logger.Warn(Id + ": the Osprey could not be verified on its gear yet (" +
+                        (!placed ? "the ground call failed" : gap.HasValue ? "its gear is " + gap.Value.ToString("0.00") + " m from the ground" : "nothing answered under it") +
+                        "); holding it at the measured height and trying again.");
+                }
+            }
+            var player = Game.Player.Character;
+            bool near = player != null && player.Exists() && player.Position.DistanceTo(_held) <= SettleForceMeters;
+            if (!near) _nearSince = -1;
+            else if (_nearSince < 0) _nearSince = Game.GameTime;
+            if (force || (near && Game.GameTime - _nearSince >= SettleGraceMs))
+            {
+                _osprey.Position = _held;
+                Park(false, "never verified on its gear, so it is parked at the measured ground height; survey BM01.Osprey");
+            }
+        }
+
+        /// <summary>
+        /// With known dimensions the gear has to be on the surface. Without them the gap is the
+        /// origin's own height, so all that can be said is that it is not below the ground and
+        /// not an aircraft's height above it.
+        /// </summary>
+        private bool OnItsGear(float gap) =>
+            _originHeight.HasValue ? Math.Abs(gap) <= GroundTolerance : gap >= -GroundTolerance && gap <= GroundTolerance + 6f;
+
+        /// <summary>
+        /// How far the aircraft's lowest point is above the surface under its origin, or null
+        /// when the probe found nothing.
+        /// </summary>
+        private float? GearGap()
+        {
+            var p = _osprey.Position;
+            float? ground = MissionSites.SurfaceHeight(p, p.Z + 2f, p.Z - 25f);
+            if (!ground.HasValue) return null;
+            return p.Z - (_originHeight ?? 0f) - ground.Value;
+        }
+
+        private void Park(bool verified, string how)
+        {
+            _osprey.IsPositionFrozen = true;
+            _pad = _osprey.Position;
+            _parked = true;
+            _parkVerified = verified;
+            if (verified) Logger.Info(Id + ": the Osprey is " + how + ", at " + _pad + ".");
+            else Logger.Warn(Id + ": the Osprey was " + how + ", at " + _pad + ".");
+        }
+
+        /// <summary>
+        /// Every guard post checked once the ground around the man has loaded. He is moved onto
+        /// the surface under his post when he is inside it or hanging over it, and never left
+        /// under a roof: a post with something over it is walked outward in rings until open sky
+        /// is found, and the gate road is the last resort. A post nothing answers under is left
+        /// where it is after <see cref="PostProbeTries"/> and reported, because not measured is
+        /// not the same as measured and found wrong.
+        /// </summary>
+        private void SettlePosts()
+        {
+            if (_posts.Count == 0 || Game.GameTime < _nextPostProbe) return;
+            _nextPostProbe = Game.GameTime + SettleProbeMs;
+            foreach (var post in _posts)
+            {
+                if (post.Settled) continue;
+                var ped = post.Ped;
+                if (ped == null || !ped.Exists() || ped.IsDead) { post.Settled = true; continue; }
+                // A man who has left his post is in the fight; moving him now is a teleport.
+                if (!GameUtils.IsWithinFlat(ped.Position, post.Spawned, PostDrift)) { post.Settled = true; continue; }
+                if (!Function.Call<bool>(Hash.HAS_COLLISION_LOADED_AROUND_ENTITY, ped)) continue;
+
+                var stand = OpenGround(post.Spawned, out bool answered);
+                if (!stand.HasValue && answered)
+                {
+                    stand = OpenGround(At("BM01.Gate"), out _);
+                    if (stand.HasValue)
+                        Logger.Warn(Id + ": " + post.Key + " is covered for " + PostRings[PostRings.Length - 1] + " m around; standing him on the gate road.");
+                }
+                if (!stand.HasValue)
+                {
+                    if (++post.Tries < PostProbeTries) continue;
+                    post.Settled = true;
+                    Logger.Warn(Id + ": nothing answered under " + post.Key + " at " + post.Spawned + "; he stays at the authored point. Survey that key.");
+                    continue;
+                }
+                post.Settled = true;
+                var at = ped.Position;
+                bool moved = !GameUtils.IsWithinFlat(at, stand.Value, .5f);
+                // Below the surface is inside the ground or the structure; well above it is hanging.
+                if (moved || at.Z < stand.Value.Z - .1f || at.Z > stand.Value.Z + 2.5f)
+                {
+                    ped.Position = stand.Value;
+                    Logger.Info(Id + ": " + post.Key + " stood on the surface at " + stand.Value + " (was " + at + ").");
+                    // Posted again where he now stands. Once the fight is on, awareness owns his orders.
+                    if (!Fighting) ped.Task.GuardCurrentPosition();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The surface under a point with open sky over it, or the nearest such point in rings
+        /// around it. <paramref name="answered"/> says whether any probe found a surface at all.
+        /// </summary>
+        private static Vector3? OpenGround(Vector3 at, out bool answered)
+        {
+            answered = false;
+            var candidates = new List<Vector3> { at };
+            foreach (float ring in PostRings)
+                for (int i = 0; i < 8; i++)
+                {
+                    double angle = i * Math.PI / 4.0;
+                    candidates.Add(at + new Vector3((float)Math.Cos(angle) * ring, (float)Math.Sin(angle) * ring, 0f));
+                }
+            foreach (var c in candidates)
+            {
+                float? surface = MissionSites.SurfaceHeight(c, at.Z + PostHeadroom, at.Z - PostDepth);
+                if (!surface.HasValue) continue;
+                answered = true;
+                var point = new Vector3(c.X, c.Y, surface.Value);
+                if (MissionSites.OpenAbove(point, PostClearance)) return point;
+            }
+            return null;
         }
 
         /// <summary>The road under a seed, or the seed itself, reported, when no lane is near.</summary>
@@ -242,6 +483,8 @@ namespace Bloodlines.Missions.Campaign
         private void PlayTakeoff()
         {
             if (_pilot == null || !_pilot.Exists() || _osprey == null || !_osprey.Exists()) return;
+            // The shot is of the aircraft on the apron, so it is set down before it is shown.
+            SettleOsprey(true);
             var blocking = new SceneBlocking()
                 .Then(new EnterVehicleStep(_pilot, _osprey, VehicleSeat.Driver) { TimeoutMs = 9000 })
                 .Then(new ShotStep(4000, _osprey, new Vector3(-24f, 16f, 7f), _osprey, new Vector3(0f, 0f, 2f), 2f));
@@ -266,6 +509,8 @@ namespace Bloodlines.Missions.Campaign
         private void Lift()
         {
             if (_osprey == null || !_osprey.Exists()) return;
+            // The lift is measured from where it was parked.
+            SettleOsprey(true);
             if (_pilot != null && _pilot.Exists() && !_pilot.IsInVehicle(_osprey))
             {
                 _pilot.SetIntoVehicle(_osprey, VehicleSeat.Driver);
@@ -308,6 +553,8 @@ namespace Bloodlines.Missions.Campaign
         {
             if (!Ctx.Cutscenes.IsActive)
             {
+                SettleOsprey(false);
+                SettlePosts();
                 if (_liftPending) { _liftPending = false; Lift(); }
                 if (_hovering && !Aboard) _boarding.Update(Ctx.Crew, _truck, SeatPlan().Where(s => s.Key != Ctx.Crew.ActiveSlot && !Taken(s.Value)), Id);
                 if (_hovering) Hover();
@@ -373,6 +620,8 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             _hunting = false; _hovering = false; _liftPending = false;
+            _parked = false; _parkVerified = false; _reportedUnverified = false; _nearSince = -1;
+            _posts.Clear();
             _flight?.Release();
             if (_pilot != null && _pilot.Exists()) _pilot.IsInvincible = false;
             DrivingDestination = null;

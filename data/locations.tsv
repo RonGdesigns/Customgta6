@@ -860,10 +860,10 @@ BM01.Guard2	-702.0	5938.0	15.5	90	land	estimate	Paleto Forest
 BM01.Guard3	-716.0	5953.0	16.5	90	land	estimate	Paleto Forest
 BM01.Guard4	-713.0	5934.0	16.5	90	land	estimate	Paleto Forest
 BM01.Guard5	-690.0	5941.0	15.0	90	land	estimate	Paleto Forest
-BM01.Yard1	-760.0	5944.0	19.2	90	land	estimate	Paleto Forest
+BM01.Yard1	-764.0	5952.0	19.0	90	land	estimate	Paleto Forest, north of the bunker entrance ramp; the old point (-760, 5944) was inside the ramp's collision (gr_prop_gr_bunkeddoor_f, top 19.89), and terrain here is 18.99 in the archives
 BM01.Yard2	-770.0	5930.0	19.9	90	land	estimate	Paleto Forest
 BM01.Yard3	-751.0	5930.0	18.5	90	land	estimate	Paleto Forest
-BM01.Osprey	-738.0	5942.0	18.0	90	land	estimate	Paleto Forest
+BM01.Osprey	-738.0	5942.0	16.7	90	land	estimate	Paleto Forest, z is the terrain collision under the point in the archives (16.72, cs1_08_32.ybn)
 BM01.Pilot	-755.0	5951.0	19.0	120	land	estimate	Paleto Forest
 BM01.Flight01	-684.0	5925.0	14.0	0	land	estimate	Paleto Bay
 BM01.Flight02	-509.3	5850.6	32.0	0	land	estimate	Paleto Bay

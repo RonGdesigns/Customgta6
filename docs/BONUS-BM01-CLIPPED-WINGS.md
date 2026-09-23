@@ -57,6 +57,38 @@ than 450 m from it for 15 seconds. You get a warning in the feed first.
   start is on the coast highway about 850 m south-west of the bunker. Move `BM01.Start` and
   `BM01.Truck` further south for a longer drive.
 
+## Placement after Ron's first run (September 22)
+
+Ron reported one guard spawned in the bunker and the Osprey floating. Both came from the same
+cause: `Setup` runs with the crew about 800 m south, before any collision around the bunker
+has streamed. Every guard post logged "no navmesh" and was stood at its authored height, and
+the Osprey's ground call found nothing and was frozen where it was.
+
+* **The guard in the bunker was `BM01.Yard1`.** The placed entrance model,
+  `gr_prop_gr_bunkeddoor_f`, carries a collision box that runs along the entrance ramp from
+  10 m behind the door to 28 m in front of it, at heading 17.4. The old point (-760, 5944, 19.2)
+  sat inside it, 0.7 m under the ramp's top at 19.89. It now stands north of the ramp at
+  (-764, 5952, 19.0), on terrain the archives put at 18.99, 5.6 m from the bunker signs. No
+  other BM01 key is within 1.5 m of the ramp; a story check holds that.
+* **The Osprey's height is measured.** The terrain collision under `BM01.Osprey` is 16.72 in
+  `cs1_08_32.ybn`, so the key is 16.7 rather than 18.0. The aircraft is held with its gear on
+  that height, using the model's own dimensions, instead of 2 m above an estimate.
+* **It is set down once the ground exists.** Collision is streamed around it
+  (`SET_ENTITY_LOAD_COLLISION_FLAG`). When `HAS_COLLISION_LOADED_AROUND_ENTITY` answers, the
+  ground call runs and its result is checked: a downward probe must find the surface, and the
+  model's lowest point must be within 1.5 m of it. Only then is it parked and frozen for the
+  beat. A probe that finds nothing is not a pass. If the player is within 150 m for 4 seconds
+  and it still has not verified, it is parked at the measured height and the log says so. The
+  takeoff scene forces that decision before it shows the aircraft, and the lift rises from
+  wherever it was parked.
+* **Each guard post is checked again once the ground around him has loaded.** A man below the
+  surface under his post, or more than 2.5 m above it, is stood on it. A post with anything
+  within 2.5 m over it is walked outward in rings of 3, 6 and 9 m to open sky, with the gate
+  road as the last resort. A post nothing answers under is left alone and reported. A man who
+  has already moved 3 m from his post is never teleported.
+
+`tests/story/BM01PlacementTests.cs` drives these paths. None of it has been seen in game.
+
 ## When it opens
 
 * **Prerequisite:** M70.
