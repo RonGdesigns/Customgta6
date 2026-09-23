@@ -80,7 +80,7 @@ namespace Bloodlines.Missions.Campaign
                 Roles.For(pair.Item1).Stop();
                 Ctx.Crew.CompanionAI.TakeControl(pair.Item1);
                 if(brother.IsInVehicle()&&!brother.IsInVehicle(CrewCar))brother.Task.LeaveVehicle();
-                brother.Task.EnterVehicle(CrewCar,pair.Item2);
+                CrewBoarding.RunAboard(brother,CrewCar,pair.Item2);
             }
         }
 

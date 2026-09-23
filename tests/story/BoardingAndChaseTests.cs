@@ -44,9 +44,15 @@ public static partial class StoryTests
         // repeated on its own cadence and not every frame.
         boarding.Update(crew, boat, seats, "TEST");
         Check(ice.Task.Enters == 1, "The order is not reissued every frame");
+        ice.Position = new Vector3(2f, 0f, 0f);
+        Game.GameTime += CrewBoarding.OrderIntervalMs + 1;
+        boarding.Update(crew, boat, seats, "TEST");
+        Check(ice.Task.Enters == 1, "A man already opening the door is left to finish rather than started over");
+        ice.Entering = false;
         Game.GameTime += CrewBoarding.OrderIntervalMs + 1;
         boarding.Update(crew, boat, seats, "TEST");
         Check(ice.Task.Enters == 2, "It is repeated on a cadence, so a cleared task recovers");
+        Check(ice.Task.LastEnterSpeed >= 2f, "and he runs for the seat rather than walking (Ron, September 22)");
 
         // The player boards himself: ordering the active character would take the
         // controls out of his hands mid-swim.

@@ -65,8 +65,8 @@ namespace Bloodlines.Missions
                         ped.Position.DistanceTo(position) <= WalkToStationMeters;
             if (walk)
             {
-                Logger.Info(Id + ": " + slot + " walks to his post rather than being moved to it.");
-                ped.Task.GoTo(position);
+                Logger.Info(Id + ": " + slot + " runs to his post rather than being moved to it.");
+                Core.CrewBoarding.RunTo(ped, position);
             }
             else
             {
@@ -112,7 +112,12 @@ namespace Bloodlines.Missions
                     }
                     else if (vehicle.Speed < 2f && !vehicle.IsInAir && vehicle.HeightAboveGround < 3f) ped.Task.LeaveVehicle();
                 }
-                else if (ped.Position.DistanceTo(target) > 3f) ped.Task.GoTo(target);
+                else if (ped.Position.DistanceTo(target) > 3f)
+                {
+                    // Once, and again only if he has stopped short: renewing a move every five
+                    // seconds restarts it, and at a walk it read as a man in no hurry.
+                    if (ped.Velocity.Length() < 0.5f || !_assignmentTasks.ContainsKey(slot)) Core.CrewBoarding.RunTo(ped, target);
+                }
                 else ped.Task.GuardCurrentPosition();
                 _assignmentTasks[slot] = GTA.Game.GameTime + 5000;
             }
@@ -229,6 +234,9 @@ namespace Bloodlines.Missions
             if (!stage.IsComplete) return;
 
             ExitStage(stage);
+            // A stage exit may fail the mission. The next stage is not opened on a mission
+            // that has already been torn down (the September 22 audit).
+            if (Status != MissionStatus.Running) return;
 
             if (Stage + 1 >= _stages.Count)
             {

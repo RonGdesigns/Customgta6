@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Bloodlines.Crew;
 using GTA;
+using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Core
 {
@@ -38,6 +40,29 @@ namespace Bloodlines.Core
         public const int DirectAfterMs = 20000;
         /// <summary>Close enough that boarding is a thing he can actually be doing.</summary>
         public const float BoardRange = 30f;
+        /// <summary>Further from the door than this and he sprints rather than runs.</summary>
+        public const float SprintBeyond = 25f;
+        /// <summary>Close enough that a man getting in is at the door rather than on his way.</summary>
+        public const float AtTheDoor = 6f;
+
+        /// <summary>
+        /// Every brother a mission sends to a seat goes there like he means it. The engine's
+        /// default is a walk, and Ron watched them stroll to the car in the middle of a job
+        /// "as if they're not in a rush" (September 22). Run, or sprint from a distance.
+        /// </summary>
+        public static void RunAboard(Ped brother, Vehicle vehicle, VehicleSeat seat, int timeoutMs = -1)
+        {
+            if (brother == null || !brother.Exists() || vehicle == null || !vehicle.Exists()) return;
+            float speed = brother.Position.DistanceTo(vehicle.Position) > SprintBeyond ? 3f : 2f;
+            brother.Task.EnterVehicle(vehicle, seat, timeoutMs, speed, EnterVehicleFlags.None);
+        }
+
+        /// <summary>Somewhere on foot, at a run, along the navmesh.</summary>
+        public static void RunTo(Ped brother, Vector3 point)
+        {
+            if (brother == null || !brother.Exists()) return;
+            brother.Task.RunTo(point, false, -1);
+        }
 
         private sealed class Attempt { public int Since; public int NextOrder; }
 
@@ -116,7 +141,10 @@ namespace Bloodlines.Core
                 crew.CompanionAI.TakeControl(pair.Key);
                 // Already in something else — he has to get out before he can get in.
                 if (brother.IsInVehicle()) brother.Task.LeaveVehicle();
-                else brother.Task.EnterVehicle(vehicle, seat);
+                // Already at the door and getting in: a fresh order would start him over. A man
+                // still on his way keeps being ordered, so a cleared task recovers.
+                else if (brother.Position.DistanceTo(vehicle.Position) < AtTheDoor && Function.Call<bool>(Hash.IS_PED_GETTING_INTO_A_VEHICLE, brother)) continue;
+                else RunAboard(brother, vehicle, seat);
             }
             return all;
         }

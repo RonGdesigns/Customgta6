@@ -56,7 +56,7 @@ namespace Bloodlines.Core
             if (passenger == null || !passenger.Exists() || truck == null || !truck.Exists()) return;
             OpenDoors(truck);
             if (passenger.IsInVehicle()) ExitVehicleStep.ForceOut(passenger);
-            passenger.Task.GoTo(RearOf(truck, fallback));
+            passenger.Task.RunTo(RearOf(truck, fallback), false, -1);
         }
 
         /// <summary>

@@ -149,7 +149,8 @@ namespace Bloodlines.Missions
             switch (State)
             {
                 case RoleState.Approaching:
-                    task.ClearAll(); task.GoTo(_point); break;
+                    // At a run: a brother on his way to his job is not out for a walk.
+                    task.ClearAll(); task.RunTo(_point, false, -1); break;
                 case RoleState.Observing:
                     task.ClearAll(); Ped.Heading = DriveUpStep.HeadingBetween(Ped.Position, _cover == Vector3.Zero ? _point : _cover); task.GuardCurrentPosition(); break;
                 case RoleState.Working:

@@ -651,7 +651,7 @@ namespace Bloodlines.Missions.Campaign
             if (gohan.IsInVehicle()) ExitVehicleStep.ForceOut(gohan);
             OpenDoors();
             gohan.Task.ClearAll();
-            gohan.Task.GoTo(RearOfHauler());
+            gohan.Task.RunTo(RearOfHauler(), false, -1);
         }
 
         /// <summary>Gohan in the back: at the rear doors he is fixed inside the box and the doors close; past the boarding window he is put there directly.</summary>

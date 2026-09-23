@@ -159,14 +159,14 @@ namespace Bloodlines.Missions.Campaign
             if (occupant != null && occupant.Exists() && occupant == Game.Player.Character) seat = OtherFreeSeat(vehicle, seat);
             if (vehicle.Speed > 1.5f) { _boardingStarted.Remove(actor); return false; }
             if (actor.Position.DistanceTo(vehicle.Position) > 25f)
-            { _boardingStarted.Remove(actor); if (!_boarding.TryGetValue(actor,out int walked) || Game.GameTime-walked>6000) { actor.Task.GoTo(vehicle.Position); _boarding[actor] = Game.GameTime; } return false; }
+            { _boardingStarted.Remove(actor); if (!_boarding.TryGetValue(actor,out int walked) || Game.GameTime-walked>6000) { CrewBoarding.RunTo(actor, vehicle.Position); _boarding[actor] = Game.GameTime; } return false; }
             if (!_boardingStarted.TryGetValue(actor, out int started)) _boardingStarted[actor] = Game.GameTime;
             else if (Game.GameTime - started > 45000)
             { Fail("A passenger could not reach the extraction seat. Retry with the vehicle stopped clear of obstacles."); return false; }
             if (!_boarding.TryGetValue(actor, out int when) || Game.GameTime - when > 8000)
             {
                 if (!vehicle.IsSeatFree(seat)) { Fail("An extraction seat is occupied. Clear the required seats and retry."); return false; }
-                actor.Task.EnterVehicle(vehicle, seat); _boarding[actor] = Game.GameTime;
+                CrewBoarding.RunAboard(actor, vehicle, seat); _boarding[actor] = Game.GameTime;
             }
             return actor.IsInVehicle(vehicle);
         }

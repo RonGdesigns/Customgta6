@@ -37,7 +37,7 @@ namespace Bloodlines.Missions.Objectives
             {
                 if (ped.IsInVehicle()) ped.Task.LeaveVehicle();
                 else if (working) ped.Task.StartScenario("WORLD_HUMAN_WELDING", ped.Position, ped.Heading);
-                else ped.Task.GoTo(target);
+                else ped.Task.RunTo(target, false, -1);
                 _nextTask = Game.GameTime + 10000;
             }
             if (working && _wasWorking) _worked += delta;

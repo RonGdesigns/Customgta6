@@ -27,9 +27,9 @@ public static partial class StoryTests
  static CrewRoster Roster(){var c=new CrewRoster();c.Peds[CrewSlot.Ice]=Game.Player.Character;c.Peds[CrewSlot.Gohan]=new Ped{Position=new Vector3(10,0,0)};c.Peds[CrewSlot.Guess]=new Ped{Position=new Vector3(500,0,0)};return c;}
  static void AssignmentAndRouteChecks(){
   Reset();var crew=Roster();var c=Context(crew);var mission=new SplitProbe();Check(mission.Begin(c),"Composed split mission starts");
-  Check(crew.CompanionAI.Controlled.Contains(CrewSlot.Gohan)&&crew.PedFor(CrewSlot.Gohan).Task.Gotos==1,"Character-owned objective sends inactive Gohan to his own location");
+  Check(crew.CompanionAI.Controlled.Contains(CrewSlot.Gohan)&&crew.PedFor(CrewSlot.Gohan).Task.Runs==1,"Character-owned objective sends inactive Gohan running to his own location");
   crew.SetActive(CrewSlot.Gohan);mission.Tick();crew.SetActive(CrewSlot.Ice);mission.Tick();
-  Check(crew.PedFor(CrewSlot.Gohan).Task.Gotos==2,"Switching to a worker and back resumes his assignment");mission.Abort();
+  Check(crew.PedFor(CrewSlot.Gohan).Task.Runs==2,"Switching to a worker and back resumes his assignment");mission.Abort();
   Check(crew.CompanionAI.Controlled.Count==0,"Aborting releases character-specific task ownership");
   ObjectiveMarkers.Clear();ObjectiveMarkers.ActiveSlot=CrewSlot.Gohan;ObjectiveMarkers.BeginFrame(true);
   ObjectiveMarkers.Navigation(new Vector3(100,0,0),CrewSlot.Ice);ObjectiveMarkers.Navigation(new Vector3(200,0,0),CrewSlot.Gohan);ObjectiveMarkers.EndFrame();var route=World.LastBlip;
@@ -50,7 +50,7 @@ public static partial class StoryTests
   Check(World.Created.Count==created&&crew.Peds.Values.All(p=>p.IsInVehicle(car)),"Briefing preserves all seats and creates no replacement group");
   c.Cutscenes.Stop();Check(crew.Peds.Values.Select(p=>p.Position).SequenceEqual(positions)&&!car.IsPositionFrozen,"Scene exit restores vehicle state without relocating the cast");
   Reset();crew=Roster();c=Context(crew);var work=new Bloodlines.Missions.Objectives.AssignedWorkObjective("Servers",CrewSlot.Gohan,()=>new Vector3(100,0,0),2);work.Enter(c);work.Update(c);
-  Check(crew.CompanionAI.Controlled.Contains(CrewSlot.Gohan)&&crew.PedFor(CrewSlot.Gohan).Task.Gotos==1,"Assigned worker goes to his own objective while another hero is active");
+  Check(crew.CompanionAI.Controlled.Contains(CrewSlot.Gohan)&&crew.PedFor(CrewSlot.Gohan).Task.Runs==1,"Assigned worker runs to his own objective while another hero is active");
   Game.GameTime+=3000;work.Update(c);Check(!work.IsFinished,"Assigned work cannot finish from across the map");
   crew.PedFor(CrewSlot.Gohan).Position=new Vector3(100,0,0);work.Update(c);Game.GameTime+=1000;work.Update(c);Game.GameTime+=1000;work.Update(c);
   Check(work.Status==Bloodlines.Missions.Objectives.ObjectiveStatus.Complete,"NPC completes work at the assigned site while player handles another job");work.Exit(c);
