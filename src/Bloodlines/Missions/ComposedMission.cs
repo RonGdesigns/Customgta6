@@ -202,6 +202,8 @@ namespace Bloodlines.Missions
                 ObjectiveMarkers.Suppressed = !mine;
                 try { objective.Update(Ctx); }
                 finally { ObjectiveMarkers.Suppressed = false; }
+                // An objective can end the mission; nothing after that is this mission's.
+                if (Status != MissionStatus.Running) return;
             }
 
             var failure = stage.FirstFailure;

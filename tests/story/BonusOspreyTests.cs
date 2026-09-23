@@ -178,6 +178,11 @@ public static partial class StoryTests
         Check(m.Status == MissionStatus.Running && m.Escaping, "Losing it is a warning first, with the escape clock running");
         Game.GameTime += BM01ClippedWings.EscapeGraceMs + 100; m.Tick();
         Check(m.Status == MissionStatus.Failed && (m.FailReason ?? "").Contains("got away"), "and a failure if the truck never gets back under it");
+        // The failure lands inside the mission's own update, and the rest of that update used
+        // to take the brothers back after the release: Gohan then stood through a police
+        // shootout in free roam (Ron, September 22).
+        Check(Protagonist.All.All(h => !crew.CompanionAI.IsHeld(h.Slot)),
+            "A mission that fails in the middle of its update leaves no brother held, so free roam has all three back");
 
         m = StartClippedWings(out crew, out c, bunkerAbsent: true);
         Function.IplReady = true;

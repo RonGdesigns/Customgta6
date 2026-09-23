@@ -348,7 +348,15 @@ namespace Bloodlines.Missions.Campaign
                 if (actor.IsInVehicle()) DriveBy(actor, threat); else actor.Task.FightAgainst(threat);
             }
         }
-        protected override void OnUpdate() { TickSupport(); base.OnUpdate(); }
+        protected override void OnUpdate()
+        {
+            // A subclass that failed the mission earlier in this tick calls down here anyway.
+            // Support takes control of every brother, so running it after the release is how
+            // Gohan was left held in free roam (BM01, September 22).
+            if (Status != MissionStatus.Running) return;
+            TickSupport();
+            base.OnUpdate();
+        }
         protected override void OnCleanup() { _driveOrderAt = 0; _driveRemaining = -1f; _responseOrders.Clear(); _supportTargets.Clear(); _supportOrderedAt.Clear(); Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
     }
 }

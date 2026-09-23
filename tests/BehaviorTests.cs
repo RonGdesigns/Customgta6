@@ -18,7 +18,14 @@ public static partial class RegressionTests
   Game.Player.WantedLevel=2;Game.GameTime+=1000;ai.Update(CrewSlot.Guess,driver,passenger);
   Check(driver.Task.DriveSpeed==60&&driver.Task.Shots==0,"Wanted shared car triggers escape pace without making driver shoot");
   var attacker=new Ped{RelationshipGroup=2,CombatTarget=passenger,IsInCombat=true};World.Nearby=new[]{attacker};Game.GameTime+=1000;
-  ai.Update(CrewSlot.Ice,other,passenger);Check(other.Task.Shots>0&&other.CurrentVehicle==car,"Passenger returns fire with a drive-by task and retains their seat");
+  int driveBys=Function.DriveBys;
+  ai.Update(CrewSlot.Ice,other,passenger);Check(Function.DriveBys==driveBys+1&&other.Task.Shots==0&&other.CurrentVehicle==car,"Passenger returns fire with a drive-by task and retains their seat");
+  // Ron, September 22: a brother riding along sat through the police shooting at them. The
+  // order was renewed every second, which restarts a drive-by before it fires.
+  Game.GameTime+=1500;ai.Update(CrewSlot.Ice,other,passenger);Game.GameTime+=1500;ai.Update(CrewSlot.Ice,other,passenger);
+  Check(Function.DriveBys==driveBys+1,"The same attacker is not re-ordered every second, so the drive-by gets its shots off");
+  Game.GameTime+=CompanionController.SeatShotRenewMs;ai.Update(CrewSlot.Ice,other,passenger);
+  Check(Function.DriveBys==driveBys+2,"A standing drive-by is renewed after a while in case it lapsed");
   ai.Update(CrewSlot.Guess,driver,passenger);Check(driver.Task.Shots==0&&driver.CurrentVehicle==car,"Driver remains driving through the same attack");
   World.Nearby=new Ped[0];Game.Player.WantedLevel=0;var leader=new Ped{Position=new Vector3(400,0,0)};Game.Player.Character=leader;
   ai.IndependentFreeRoam=false;ai.Driver.IsRendezvous=v=>true;ai.Driver.FollowDestination=v=>leader.Position;

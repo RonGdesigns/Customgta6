@@ -313,6 +313,7 @@ namespace Bloodlines.Missions.Campaign
                 if (_hovering) Hover();
                 if (_hunting) Hunt();
             }
+            if (Status != MissionStatus.Running) return;
             base.OnUpdate();
         }
 
