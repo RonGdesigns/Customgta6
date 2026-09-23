@@ -91,16 +91,32 @@ namespace Bloodlines.Missions.Campaign
                     .Then(ShotStep.Low(1800, _receiver, 3, 2, 1.5f))
                     .Then(new VerifySceneStep("Attached tanker delivered", () => RigAtDelivery() && _receiver.Exists() && !_receiver.IsDead, () => _unloaded = true)));
         }
+        /// <summary>
+        /// The hijackers. Each bike used to get one rider who was told to chase and then, in
+        /// the same frame, told to shoot, and a ped holds one task: the shoot order replaced
+        /// the chase, so the bikes never followed the rig (the September 22 audit). The
+        /// rider now only drives the chase, and a man on the back seat does the shooting.
+        /// Both are seated outright, the way anyone going straight into a seat is made.
+        /// </summary>
         private void StartBikes()
         {
+            var target = Game.Player.Character;
             for (int i = 0; i < 3; i++)
             {
                 var behind = _truck.Position - _truck.ForwardVector * (80 + i * 18);
                 if (!GameUtils.NearestRoadNode(behind, 60, out var point, out float heading)) continue;
-                var bike = Car("sanchez", point, heading, false); var rider = Guard(point, WeaponHash.MicroSMG);
-                if (!RequireAssets(bike, rider)) { GameUtils.SafeDelete(bike); GameUtils.SafeDelete(rider); continue; }
-                rider.SetIntoVehicle(bike, VehicleSeat.Driver);
-                rider.Task.VehicleChase(Game.Player.Character); rider.Task.VehicleShootAtPed(Game.Player.Character); _riders.Add(rider);
+                var bike = Car("sanchez", point, heading, false);
+                var rider = Occupant(bike, VehicleSeat.Driver, WeaponHash.MicroSMG);
+                if (!RequireAssets(bike, rider)) { GameUtils.SafeDelete(rider); GameUtils.SafeDelete(bike); continue; }
+                bike.IsEngineRunning = true;
+                rider.Task.VehicleChase(target); _riders.Add(rider);
+                var gunner = Occupant(bike, VehicleSeat.Passenger, WeaponHash.MicroSMG);
+                if (gunner != null)
+                {
+                    Function.Call(Hash.TASK_DRIVE_BY, gunner, target, 0, 0f, 0f, 0f, 100f, 30, false,
+                        Game.GenerateHash("FIRING_PATTERN_BURST_FIRE_DRIVEBY"));
+                    _riders.Add(gunner);
+                }
                 var blip = Track(bike.AddBlip()); if (blip != null) { blip.Color = BlipColor.Red; blip.Name = "Fuel hijacker"; }
             }
             if (_riders.Count > 0) Say("SM06_S1_02_GUESS");

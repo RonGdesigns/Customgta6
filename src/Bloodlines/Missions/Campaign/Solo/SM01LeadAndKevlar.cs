@@ -47,6 +47,16 @@ namespace Bloodlines.Missions.Campaign
         private bool _codesGiven, _loaded;
         private int _loadingSequence;
         private bool _loadingStarted;
+        /// <summary>
+        /// Sergei's men have been sent into the fight. They used to be sent only when Ice
+        /// walked into the loading lane, so a player who opened up from the street shot
+        /// men who stood at their posts and took it (the September 22 audit). Being hit,
+        /// seeing one of their own go down, or a shot near them now sends them too - once.
+        /// </summary>
+        private bool _guardsEngaged;
+        /// <summary>How far a shot carries to Sergei's men.</summary>
+        public const float ShotHeardRange = 90f;
+        public bool GuardsEngaged => _guardsEngaged;
         public IReadOnlyList<Ped> Guards => _guards;
 
         public override string Id => "SM01";
@@ -103,13 +113,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Breach",
                     new ReachZoneObjective("Ice: enter the open loading lane and confront Sergei's men.", () => _office, 17f, flat: true))
                 .PlayedBy(CrewSlot.Ice)
-                .OnExit(context =>
-                {
-                    foreach (var guard in _guards)
-                    {
-                        if (guard != null && guard.Exists()) guard.Task.FightAgainstHatedTargets(80f);
-                    }
-                })
+                .OnExit(context => EngageGuards())
                 .WithCues("SM01_S1_01_ICE");
 
             yield return new MissionStage("Clear the loading lane",
@@ -255,8 +259,42 @@ namespace Bloodlines.Missions.Campaign
             }
         }
 
+        /// <summary>Sergei's men into the fight, once.</summary>
+        private void EngageGuards()
+        {
+            if (_guardsEngaged) return;
+            _guardsEngaged = true;
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            foreach (var guard in _guards)
+            {
+                if (guard == null || !guard.Exists() || guard.IsDead) continue;
+                // A man with permanent events blocked does not react to anything on his own.
+                guard.BlockPermanentEvents = false;
+                // At him by name when he is out of the lane: a search radius around the
+                // guard does not reach a man shooting from across the street.
+                if (ice != null && ice.Exists() && guard.Position.DistanceTo(ice.Position) > 80f) guard.Task.FightAgainst(ice);
+                else guard.Task.FightAgainstHatedTargets(80f);
+            }
+        }
+
+        /// <summary>Whether the lane has been hit from outside: a guard shot, down, or a shot fired near them.</summary>
+        private bool LaneUnderFire()
+        {
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            if (ice == null || !ice.Exists()) return false;
+            foreach (var guard in _guards)
+            {
+                if (guard == null || !guard.Exists()) continue;
+                if (guard.IsDead) return true;
+                if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, guard, ice, true)) return true;
+                if (ice.IsShooting && guard.Position.DistanceTo(ice.Position) <= ShotHeardRange) return true;
+            }
+            return false;
+        }
+
         protected override void OnUpdate()
         {
+            if (!_guardsEngaged && !Ctx.Cutscenes.IsActive && LaneUnderFire()) EngageGuards();
             if (_loadingStarted && !_loaded && !Ctx.Cutscenes.IsActive && Ctx.Cutscenes.FinishedSequence != _loadingSequence)
             {
                 // The scene ended before its verified step: canceled, or a walk or

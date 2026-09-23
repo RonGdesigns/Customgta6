@@ -90,6 +90,12 @@ namespace Bloodlines.Missions.Campaign
         private bool _landed;
         private bool _aboard;
         private int _deckOrderAt;
+        /// <summary>
+        /// The deck detail has been woken: Ice is down and the fight is on. This is what the
+        /// stage-index constants used to stand for, and a stage inserted before the deck
+        /// would have silently moved them (the September 22 audit).
+        /// </summary>
+        private bool _deckWoken;
 
         public override string Id => "M45";
         public override string Title => "Paleto Deep-Sea: Breach";
@@ -322,6 +328,12 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void WakeDeck()
         {
+            _deckWoken = true;
+            if (_guards.Count == 0)
+            {
+                Logger.Warn(Id + ": no deck guard could be placed on the upper deck; the deck is clear. Survey M45.Deck.");
+                Ctx.Doctor?.Warn("placement", "M45.Deck", "every deck post was under cover or could not be created, so the upper deck has no detail.");
+            }
             int woken = 0;
             foreach (var guard in _guards)
             {
@@ -365,8 +377,15 @@ namespace Bloodlines.Missions.Campaign
                 new ConditionObjective("Ice: step off onto the upper deck", () => IceOnDeck) { Marker = () => _deck })
                 .OwnedBy(CrewSlot.Ice);
 
+            // Every post can legitimately come out empty: a post with a deckhead over its
+            // whole line is left out on purpose. A kill objective over an empty list fails
+            // the sitting as "a required hostile failed to load", so an empty detail is a
+            // clear deck instead. Setup has run by the time stages are built, so the list
+            // is already what it will be (the September 22 audit).
             yield return new MissionStage("Clear the upper deck",
-                new KillTargetsObjective("Ice: clear the deck detail", () => _guards))
+                _guards.Count > 0
+                    ? (Missions.Objectives.Objective)new KillTargetsObjective("Ice: clear the deck detail", () => _guards)
+                    : new ConditionObjective("Ice: the deck detail is not on the upper deck; hold the stair head", () => IceOnDeck))
                 .OwnedBy(CrewSlot.Ice)
                 .OnEnter(c => WakeDeck())
                 .OnExit(c =>
@@ -408,18 +427,13 @@ namespace Bloodlines.Missions.Campaign
             Paleto.EnsureInside(Ctx);
             // Ten men who will not shoot are not a fight. Ordered on a cadence once the deck
             // stage has woken them; before that they are standing at their posts.
-            if (Stage >= DeckFightStage && !GuardsDown) PressTheDeck();
-            if (Stage <= InsertionStage && !IceOnDeck)
+            if (_deckWoken && !GuardsDown) PressTheDeck();
+            if (!_deckWoken && !IceOnDeck)
                 _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, Insertion, (int)Insertion.Z, true);
             else
                 _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, At("M45.Hold"), (int)At("M45.Hold").Z);
             base.OnUpdate();
         }
-
-        /// <summary>The step-off stage: the last one that needs the helicopter held on a spot.</summary>
-        private const int InsertionStage = 1;
-        /// <summary>The stage the deck detail becomes reactive on.</summary>
-        private const int DeckFightStage = 2;
 
         protected override void OnPassed()
         {

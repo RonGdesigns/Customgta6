@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Bloodlines.Core;
 using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
@@ -20,6 +21,16 @@ namespace Bloodlines.Missions.Campaign
         // squads arrive on guard and engage only when they actually see the crew,
         // instead of being sent straight at the yard's defenders.
         private bool _responseAlerted = true;
+        /// <summary>
+        /// What an unalerted response squad knows. With the yard cameras cut first they
+        /// used to arrive on a guard post with permanent events blocked and no order ever
+        /// coming, so they never reacted to anything, including Ice shooting them. The
+        /// shared awareness model gives them sight, hearing and taking fire, and issues a
+        /// combat order once, when one of them actually finds the crew (the September 22
+        /// audit). Alerted squads are sent in directly and are not tracked here.
+        /// </summary>
+        private GuardAwareness _searching;
+        private string _fault;
         private TechnicalChoiceObjective _choice;
         private Prop _desk, _panel, _surge;
         private RoleTracks _roles;
@@ -29,6 +40,7 @@ namespace Bloodlines.Missions.Campaign
         protected override MissionEndpoint Endpoint => MissionEndpoint.SafehouseArrival;
         protected override bool Setup()
         {
+            _fault = null; _searching = null;
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
             if (!Ctx.Crew.Deploy(CrewSlot.Gohan, At("M28.Approach"), 0)) return false;
             ProtectCrew();
@@ -70,7 +82,9 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Read the cabinet", _choice).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>_roles.For(CrewSlot.Ice).Observe(At("M28.Cover"),At("M28.Cover")));
             yield return new MissionStage("Connect the surge unit", new MissionInteraction("Gohan: connect the case to the laptop on the relay worktable", ()=>At("M28.Relay"), 5, animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
-                .OnExit(c=>{if(!StowPropStep.Stow(_surge,_desk,new Vector3(.55f,0,_desk.Model.Dimensions.Item2.Z-_surge.Model.Dimensions.Item1.Z+.01f)))throw new System.InvalidOperationException("The surge unit could not connect.");})
+                // A failed connection used to throw here, which is a "Script error"; the
+                // reason is kept and the attempt fails with it on the next frame.
+                .OnExit(c=>{if(!StowPropStep.Stow(_surge,_desk,new Vector3(.55f,0,_desk.Model.Dimensions.Item2.Z-_surge.Model.Dimensions.Item1.Z+.01f)))_fault="The surge unit could not connect to the relay table. Retry the splice.";})
                 .AfterCues("M28_S1_01_GOHAN");
             yield return new MissionStage("Cover the splice",
                 new AssignedWorkObjective("Gohan continues the splice. Ice: defeat the responding squads.", CrewSlot.Gohan, ()=>At("M28.Relay"), 18),
@@ -90,15 +104,37 @@ namespace Bloodlines.Missions.Campaign
         {
             var p=Squad(At("M28.Response"),_responseSize+wave); _guards.AddRange(p);
             if(_responseAlerted)Attack(p);
+            else
+            {
+                if(_searching==null)_searching=new GuardAwareness(()=>Protagonist.All.Select(h=>Ctx.Crew.PedFor(h.Slot)).Where(x=>x!=null&&x.Exists()&&!x.IsDead));
+                _searching.TrackAll(p);
+            }
             Radio("ICE",_responseAlerted ? "Response on the road: " + p.Count + " coming straight at the yard. Your cut changed their dispatch." :
                 "Road team is searching. Cameras are down; they haven't been directed onto our cover.","M28_RESPONSE_"+wave);
             return p;
         }
-        protected override void OnUpdate() { if(Ctx.Cutscenes.IsActive)return; _roles?.Update(); base.OnUpdate(); }
+        protected override void OnUpdate()
+        {
+            if(_fault!=null){Fail(_fault);return;}
+            if(Ctx.Cutscenes.IsActive)return;
+            _roles?.Update();
+            if(_searching!=null)
+            {
+                // A shot is not addressed to anyone: the model decides who is close
+                // enough to hear it.
+                foreach(var hero in Protagonist.All)
+                {
+                    var ped=Ctx.Crew.PedFor(hero.Slot);
+                    if(ped!=null&&ped.Exists()&&!ped.IsDead&&ped.IsShooting)_searching.ReportToAll(Stimulus.GunshotHeard,ped.Position);
+                }
+                _searching.Update();
+            }
+            base.OnUpdate();
+        }
         protected override void OnPassed()
         {
             if(!_spliced)throw new System.InvalidOperationException("The relay splice was not verified.");
         }
-        protected override void OnCleanup() { _roles?.Release(); Ctx.Crew.CompanionsHoldPosition=false; }
+        protected override void OnCleanup() { _roles?.Release(); _searching?.Clear(); _searching=null; Ctx.Crew.CompanionsHoldPosition=false; }
     }
 }

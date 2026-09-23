@@ -32,6 +32,16 @@ namespace Bloodlines.Missions.Campaign
         private Prop _bonds;
         private bool _opened;
         private bool _armed;
+        /// <summary>
+        /// Guess is still flying the Annihilator while Gohan and Ice are inside. M45 held it
+        /// in a circuit every frame and nothing carried that over, so the moment this
+        /// chapter began nobody was flying it (the September 22 audit). Same hold, same
+        /// circuit, released the instant the player takes it back.
+        /// </summary>
+        private readonly AircraftHold _hold = new AircraftHold();
+        private Vehicle _chopper;
+        /// <summary>Whether the vessel's interior has answered as loaded; asked every frame until it does.</summary>
+        private bool _inside;
 
         public override string Id => "M46";
         public override string Title => "Paleto Deep-Sea: Vault Crack";
@@ -53,15 +63,32 @@ namespace Bloodlines.Missions.Campaign
             // Bradley's card is what opens this door. M43 will not sign the staging
             // off without it, so a real run always has it; a chapter opened alone in
             // QA is allowed to proceed and say so rather than refusing to load.
+            //
+            // The operation itself now refuses to start without the card (PaletoOperation),
+            // so a sitting can no longer play two chapters and then stop here. This remains
+            // as the backstop, and says why rather than throwing (the September 22 audit).
             if (Ctx.State != null && Ctx.State.EvidenceOf("bradleyKeycard") != EvidenceState.CopyHeld)
             {
-                if (world != null) throw new InvalidOperationException("The vault needs Bradley's card. Complete the preparation that takes it.");
+                if (world != null)
+                {
+                    GameUtils.Notify("~r~The vault needs Bradley's card. Complete The General's Wire first.");
+                    Logger.Error("M46 reached inside the operation without Bradley's card.");
+                    return false;
+                }
                 Logger.Warn("M46 opened on its own without Bradley's card; the reader step will not represent a real entry.");
             }
             if (!Paleto.IsContinuing(Ctx) && !Ctx.Crew.Deploy(CrewSlot.Gohan, At("M46.Stairs"), Ctx.Locations.Heading("M46.Stairs"))) return false;
 
-            // Opened alone in QA there is no M45 before this to have asked for it.
-            Paleto.EnsureInside(Ctx);
+            // Opened alone in QA there is no M45 before this to have asked for it. The
+            // answer used to be ignored; it is asked again every frame until the interior
+            // is in, and a sitting that arrives without it says so (the September 22 audit).
+            _inside = Paleto.EnsureInside(Ctx);
+            if (!_inside && world != null)
+            {
+                Logger.Warn(Id + ": the vessel interior is not ready as the vault chapter begins; asking again every frame.");
+                Ctx.Doctor?.Warn("interior", "Paleto vessel", "the vessel's interior was not loaded when the vault chapter began.");
+            }
+            _chopper = world?.Get<Vehicle>("chopper");
             _ledger = Track(Equipment(LedgerModel, "M46.Ledger"));
             _bonds = Track(Equipment(BondsModel, "M46.Bonds"));
             if (!RequireAssets(_ledger, _bonds)) return false;
@@ -132,6 +159,16 @@ namespace Bloodlines.Missions.Campaign
                     Logger.Info("Paleto: charges armed from the command console. The structure is on a clock from here.");
                 })
                 .AfterCues("M46_S1_02_ICE", "M46_S1_03_GUESS");
+        }
+
+        protected override void OnUpdate()
+        {
+            if (!_inside) _inside = Paleto.EnsureInside(Ctx);
+            // Every frame, the way M45 does it: the hold keeps its own cadence and does
+            // nothing while the player is flying the aircraft himself.
+            if (_chopper != null && _chopper.Exists())
+                _hold.Update(Ctx.Crew, CrewSlot.Guess, _chopper, At("M45.Hold"), (int)At("M45.Hold").Z);
+            base.OnUpdate();
         }
 
         protected override void OnPassed()

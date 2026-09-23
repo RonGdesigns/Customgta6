@@ -39,6 +39,11 @@ namespace Bloodlines.Missions.Campaign
         private bool _escapeShown, _talkedDown, _departing;
         private Vector3 _departureOrigin, _boatEscape;
         private int _departureStarted, _nextBoatOrder;
+        /// <summary>Whether Guess currently holds the run-out order; the order is given on a change, not on a clock.</summary>
+        private bool _boatOrdered;
+        private int _boatOrderedAt;
+        /// <summary>How long the boat may sit still under a standing order before it is treated as lost.</summary>
+        public const int BoatStallMs = 5000;
         public const float DepartureDistance = 100f;
         public bool Departing => _departing;
         public Vector3 DepartureOrigin => _departureOrigin;
@@ -151,13 +156,31 @@ namespace Bloodlines.Missions.Campaign
                 var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
                 // Hold for a passenger who falls out; do not drive off and then
                 // satisfy distance using an empty boat. Never task the active hero.
-                if (guess != null && guess.Exists() && Ctx.Crew.ActiveSlot != CrewSlot.Guess && Game.GameTime >= _nextBoatOrder)
+                //
+                // The run-out used to be handed over again every three seconds whatever the
+                // boat was doing, which restarts the boat mission each time. It is given once
+                // when Ice is aboard, taken back once when he is not, and only repeated if
+                // the boat has plainly stopped under it (the September 22 audit).
+                if (Ctx.Crew.ActiveSlot == CrewSlot.Guess) _boatOrdered = false;
+                else if (guess != null && guess.Exists())
                 {
-                    _nextBoatOrder = Game.GameTime + 3000;
-                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
-                    if (ice.IsInVehicle(_boat) && _boat.GetPedOnSeat(VehicleSeat.Driver) == guess)
+                    bool ready = ice != null && ice.IsInVehicle(_boat) && _boat.GetPedOnSeat(VehicleSeat.Driver) == guess;
+                    bool stalled = _boatOrdered && ready && _boat.Speed < 1f && Game.GameTime - _boatOrderedAt > BoatStallMs;
+                    if (ready && (!_boatOrdered || stalled))
+                    {
+                        Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
                         guess.Task.StartBoatMission(_boat, _boatEscape, VehicleMissionType.GoTo, 12f, VehicleDrivingFlags.None, 8f, (BoatMissionFlags)0);
-                    else guess.Task.ClearAll();
+                        _boatOrdered = true; _boatOrderedAt = Game.GameTime;
+                        if (stalled) Logger.Info(Id + ": the boat had stopped under its run-out order; reissued it.");
+                    }
+                    else if (!ready && (_boatOrdered || Game.GameTime >= _nextBoatOrder))
+                    {
+                        // Hold: one clear on the change, and the control reclaimed on a slow
+                        // cadence so the companion AI does not drive off with the boat.
+                        Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Guess);
+                        if (_boatOrdered) guess.Task.ClearAll();
+                        _boatOrdered = false; _nextBoatOrder = Game.GameTime + 3000;
+                    }
                 }
             }
             base.OnUpdate();

@@ -35,7 +35,7 @@ namespace Bloodlines.Missions.Campaign
         /// working wherever either key is surveyed to next.
         /// </summary>
         public const float CordonStandoff = 70f;
-        /// <summary>How often the gun in the bed is told what to shoot at.</summary>
+        /// <summary>How often the gun in the bed is checked for a new target. The order itself is only given again when the target changes.</summary>
         public const int GunOrderMs = 1500;
         /// <summary>How far the bed gun will reach.</summary>
         public const float GunRange = 90f;
@@ -65,6 +65,14 @@ namespace Bloodlines.Missions.Campaign
         private bool _ashore;
         private int _gunOrderAt;
         private bool _broken;
+        /// <summary>
+        /// The cordon has been made hostile. The gun used to wait for <see cref="_broken"/>,
+        /// which is set when the last man at the roadblock is down, so it was only ever
+        /// switched on with nothing left to shoot at (the September 22 audit).
+        /// </summary>
+        private bool _cordonAwake;
+        /// <summary>Which cordon guard each gunner was last told to shoot, by ped handle.</summary>
+        private readonly Dictionary<int, int> _gunTargets = new Dictionary<int, int>();
 
         public override string Id => "M48";
         public override string Title => "The Road Back South";
@@ -201,6 +209,7 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void WakeCordon()
         {
+            _cordonAwake = true;
             var aegis = World.AddRelationshipGroup("BLOODLINES_AEGIS");
             int woken = 0;
             foreach (var guard in _cordon)
@@ -238,9 +247,12 @@ namespace Bloodlines.Missions.Campaign
             {
                 var ped = Ctx.Crew.PedFor(hero.Slot);
                 if (ped == null || !ped.Exists() || ped.IsDead) continue;
-                if (ped == Game.Player.Character) continue;          // he aims for himself
-                if (!ped.IsInVehicle(_technical)) continue;
-                if (ped.SeatIndex == VehicleSeat.Driver) continue;   // the driver drives
+                if (ped == Game.Player.Character) { _gunTargets.Remove(ped.Handle); continue; } // he aims for himself; re-order him when he is AI again
+                if (!ped.IsInVehicle(_technical) || ped.SeatIndex == VehicleSeat.Driver) // the driver drives
+                { _gunTargets.Remove(ped.Handle); continue; }
+                // Once per target: re-ordering the same shot restarts it before it fires.
+                if (_gunTargets.TryGetValue(ped.Handle, out int aimed) && aimed == target.Handle) continue;
+                _gunTargets[ped.Handle] = target.Handle;
                 Function.Call(Hash.TASK_VEHICLE_SHOOT_AT_PED, ped, target, GunRange);
             }
         }
@@ -290,7 +302,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             int stage = Stage;
-            if (_broken || stage >= SouthStage) WorkTheGun();
+            if (_cordonAwake) WorkTheGun();
             if (stage == LoadStage || stage == SouthStage)
             {
                 // Each boarding gets its own patience clock; the cordon fight in between
