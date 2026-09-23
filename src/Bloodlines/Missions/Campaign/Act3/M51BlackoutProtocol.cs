@@ -198,7 +198,7 @@ namespace Bloodlines.Missions.Campaign
         {
             // Whoever is not being played walks to the car rather than being left in the
             // yard; the objective above only ever asked whether they were already in it.
-            if (_armed && !Aboard) _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Passengers(CrewSlot.Guess), Id);
+            if (_armed && !Aboard) _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Crew(CrewSlot.Guess), Id);
             base.OnUpdate();
         }
 

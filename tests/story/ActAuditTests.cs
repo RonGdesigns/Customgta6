@@ -106,6 +106,14 @@ public static partial class StoryTests
             "Brothers and response cars are ordered once per target, not every cycle");
         string hull = Source("src/Bloodlines/Missions/Objectives/ShootDownObjective.cs");
         Check(hull.Contains("Function.Call(Hash.CLEAR_ENTITY_LAST_WEAPON_DAMAGE, target);"), "One rocket counts once on the hull meter");
+        // M51's log: a Guess who was not the player was never told to get in, and the crew
+        // waited for him until the mission was aborted.
+        foreach (var file in new[] { "M49ReturnToTheConcrete", "M50TheRedactedVault", "M51BlackoutProtocol" })
+        {
+            string text = Source("src/Bloodlines/Missions/Campaign/Act3/" + file + ".cs");
+            Check(text.Contains("_boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Crew(CrewSlot.Guess), Id)") && !text.Contains("CrewBoarding.Passengers("),
+                file + " boards the whole crew, the driver included, when Guess is not the one being played");
+        }
     }
 
     /// <summary>M03's depot: a raised yard at z 42 to 43, and a lower level past its north railing at z 37 to 38.</summary>

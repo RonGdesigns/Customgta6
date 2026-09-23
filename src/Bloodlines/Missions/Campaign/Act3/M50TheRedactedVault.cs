@@ -194,7 +194,7 @@ namespace Bloodlines.Missions.Campaign
         {
             _contained?.Update();
             if (_invalidated && !Aboard)
-                _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Passengers(CrewSlot.Guess), Id);
+                _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Crew(CrewSlot.Guess), Id);
             base.OnUpdate();
         }
 

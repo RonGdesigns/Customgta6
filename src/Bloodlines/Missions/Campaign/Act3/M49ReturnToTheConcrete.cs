@@ -256,7 +256,7 @@ namespace Bloodlines.Missions.Campaign
             // Ice comes down off the shoulder rather than being left at his firing position,
             // which is the bug M47 and M48 both had before CrewBoarding existed.
             if (_towersDown && !_through && !Aboard)
-                _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Passengers(CrewSlot.Guess), Id);
+                _boarding.Update(Ctx.Crew, CrewCar, CrewBoarding.Crew(CrewSlot.Guess), Id);
             base.OnUpdate();
         }
 
