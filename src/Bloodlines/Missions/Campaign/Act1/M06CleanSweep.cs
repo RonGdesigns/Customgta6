@@ -33,7 +33,17 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _swat = new List<Ped>();
         private readonly List<HeliInsertion> _insertions = new List<HeliInsertion>();
         /// <summary>A SWAT foot squad entering through one alley mouth.</summary>
-        private sealed class Convoy { public Vector3 Destination; public List<Ped> Crew = new List<Ped>(); public int NextOrders, UnloadedAt;  }
+        private sealed class Convoy
+        {
+            public Vector3 Destination; public List<Ped> Crew = new List<Ped>(); public int NextOrders, UnloadedAt;
+            /// <summary>Who each trooper was last ordered to fight, by handle; absent while he is still running in.</summary>
+            public readonly Dictionary<int, Ped> FightingAgainst = new Dictionary<int, Ped>();
+            /// <summary>Where each running trooper stood at the last review, to tell a stalled run from a moving one.</summary>
+            public readonly Dictionary<int, Vector3> LastSeen = new Dictionary<int, Vector3>();
+        }
+        /// <summary>How far a running trooper has to have moved between reviews for his run to count as under way.</summary>
+        public const float RunStallMeters = 1f;
+        private bool _boardingOpen;
         private readonly List<Convoy> _convoys = new List<Convoy>();
         public IReadOnlyList<Vehicle> Convoys => new Vehicle[0];
         private bool _airMomentPlayed, _pickupCalled;
@@ -141,6 +151,7 @@ namespace Bloodlines.Missions.Campaign
                 .AnyBrother()
                 .OnEnter(context =>
                 {
+                    _boardingOpen = true;
                     // The truck is the crew's from here: it can be lost again.
                     if (_granger != null && _granger.Exists()) _granger.IsInvincible = false;
                     _roles.Release();
@@ -276,7 +287,9 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             base.OnUpdate();
-            if(CurrentStage>=4&&AllAboard()){RequiredSwitch=null;Ctx.Switching.SetUnlocked();}
+            // Tied to the boarding stage's own entry rather than its index, so a stage
+            // inserted earlier cannot silently move the unlock.
+            if(_boardingOpen&&AllAboard()){RequiredSwitch=null;Ctx.Switching.SetUnlocked();}
             _roles?.Update();
             foreach (var insertion in _insertions) insertion.Update();
             _insertions.RemoveAll(insertion => insertion.Current == HeliInsertion.Phase.Done);
@@ -387,6 +400,14 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info("M06: SWAT approaching both alley mouths on foot.");
         }
 
+        /// <summary>
+        /// The foot approaches, reviewed every three seconds but ordered only on a change.
+        /// Ron, September 22: every trooper inside 24 m was handed a fresh fight order on
+        /// every review, and every runner a fresh run, which restarts the task before the
+        /// ped can act on it. A trooper is ordered to fight once, and again only when he has
+        /// dropped out of combat or Ice is a different man; once fighting he is never sent
+        /// back to his run. A runner is re-sent only when his run has stalled.
+        /// </summary>
         private void MaintainConvoys()
         {
             foreach (var approach in _convoys)
@@ -398,15 +419,27 @@ namespace Bloodlines.Missions.Campaign
                     if (trooper == null || !trooper.Exists() || trooper.IsDead) continue;
                     var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
                     if (ice == null || !ice.Exists() || ice.IsDead) continue;
-                    if (GameUtils.IsWithinFlat(trooper.Position, _alley, 24f))
-                        trooper.Task.FightAgainst(ice);
-                    else
+                    int handle = trooper.Handle;
+                    bool ordered = approach.FightingAgainst.TryGetValue(handle, out var target);
+                    if (ordered || GameUtils.IsWithinFlat(trooper.Position, _alley, 24f))
                     {
-                        var entry = approach.Destination;
-                        if (Game.GameTime - approach.UnloadedAt > 25000 && !trooper.IsOnScreen &&
-                            !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, entry.X, entry.Y, entry.Z, 3f)) trooper.Position = entry;
-                        trooper.Task.RunTo(entry, false, 20000);
+                        if (ordered && target == ice && trooper.IsInCombat) continue;
+                        trooper.Task.FightAgainst(ice);
+                        approach.FightingAgainst[handle] = ice;
+                        approach.LastSeen.Remove(handle);
+                        continue;
                     }
+                    var entry = approach.Destination;
+                    bool moved = !approach.LastSeen.TryGetValue(handle, out var seen) || !GameUtils.IsWithinFlat(trooper.Position, seen, RunStallMeters);
+                    approach.LastSeen[handle] = trooper.Position;
+                    if (Game.GameTime - approach.UnloadedAt > 25000 && !trooper.IsOnScreen &&
+                        !Function.Call<bool>(Hash.IS_SPHERE_VISIBLE, entry.X, entry.Y, entry.Z, 3f))
+                    {
+                        trooper.Position = entry;
+                        approach.LastSeen[handle] = entry;
+                        moved = false;
+                    }
+                    if (!moved) trooper.Task.RunTo(entry, false, 20000);
                 }
             }
         }
@@ -451,6 +484,7 @@ namespace Bloodlines.Missions.Campaign
             _rackCases.Clear();
             _insertions.Clear();
             _convoys.Clear();
+            _boardingOpen = false;
         }
     }
 }

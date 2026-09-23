@@ -44,6 +44,18 @@ namespace Bloodlines.Missions.Campaign
         private Vector3 _pickup;
         private bool _patrolsReduced, _gateAccess, _harborReported, _split, _transferred;
         private LiveHandoff _liveTransfer;
+        /// <summary>How long AI Ice keeps shooting at one boat before the order is renewed.</summary>
+        public const int IceShotCooldownMs = 6000;
+        /// <summary>How long the played brother can be in the water at the landing before he is put on the road.</summary>
+        public const int StrandedInWaterMs = 8000;
+        /// <summary>How far apart two hostile launches have to spawn.</summary>
+        public const float LaunchSeparation = 18f;
+        private bool _speedboats;
+        private Ped _iceTarget;
+        private int _iceShotAt, _inWaterSince;
+        public bool IceShooting => _iceTarget != null;
+        public IReadOnlyList<Vehicle> HostileBoats => _hostileBoats;
+        private readonly List<Vehicle> _hostileBoats = new List<Vehicle>();
 
         public override string Id => "M21";
         public override string Title => "The Port Heist: Open Water";
@@ -145,10 +157,16 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(context => { ReleaseLift(); StartCargobob(); SpawnHostileBoats(); ReportHarbor(); })
                 .WithCues("M21_S1_01_GOHAN");
 
+            // Any brother: Ice is the gun on the launch, and this stage used to inherit
+            // Gohan at the helm, so switching to Ice locked him out of his own fight while
+            // AI Ice sat with his hands in his lap (Ron, September 22).
             yield return new MissionStage("Kill the speedboats",
                     new KillTargetsObjective("Clear the Aegis boats before they close.",
                         () => _hostileCrews),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down with the bullion."))
+                .AnyBrother()
+                .OnEnter(context => _speedboats = true)
+                .OnExit(context => { _speedboats = false; _iceTarget = null; })
                 .AfterCues("M21_S1_02_ICE");
 
             // The breakwater is where the operation splits: the lift goes north by air,
@@ -208,8 +226,61 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info("M21: the road pickup boards live; no cut at the join.");
         }
 
+        /// <summary>
+        /// Ice in the launch's other seat works the gun when the player is Gohan: a
+        /// drive-by on the nearest Aegis crewman, renewed when that man goes down or on a
+        /// cooldown, never every frame.
+        /// </summary>
+        private void MaintainIceShooting()
+        {
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var player = Game.Player.Character;
+            if (ice == null || !ice.Exists() || ice.IsDead || _launch == null || !_launch.Exists() ||
+                (player != null && ice.Handle == player.Handle) || !ice.IsInVehicle(_launch))
+            { _iceTarget = null; return; }
+            bool current = _iceTarget != null && _iceTarget.Exists() && !_iceTarget.IsDead && _iceTarget.Position.DistanceTo(ice.Position) <= 150f;
+            if (current && Game.GameTime - _iceShotAt < IceShotCooldownMs) return;
+            Ped best = null; float bestDistance = 150f;
+            foreach (var crew in _hostileCrews)
+            {
+                if (crew == null || !crew.Exists() || crew.IsDead) continue;
+                float distance = crew.Position.DistanceTo(ice.Position);
+                if (distance < bestDistance) { best = crew; bestDistance = distance; }
+            }
+            if (best == null) { _iceTarget = null; return; }
+            Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, ice, 2, true);
+            ice.Task.VehicleShootAtPed(best);
+            _iceTarget = best;
+            _iceShotAt = Game.GameTime;
+        }
+
+        /// <summary>
+        /// The road north leaves the played brother's part to the player, and from the
+        /// shore landing that part is a climb out of the water onto a quay the survey says
+        /// has no dependable way up. After a bounded wait in the water at the landing he is
+        /// put on the road beside the Granger, where the walk would have ended.
+        /// </summary>
+        private void RecoverFromWater()
+        {
+            var player = Game.Player.Character;
+            if (_liveTransfer == null || _transferred || _granger == null || !_granger.Exists() ||
+                player == null || !player.Exists() || player.IsDead || player.IsInVehicle() || !player.IsInWater ||
+                !GameUtils.IsWithinFlat(player.Position, _shore, 60f))
+            { _inWaterSince = 0; return; }
+            if (_inWaterSince == 0) { _inWaterSince = Game.GameTime; return; }
+            if (Game.GameTime - _inWaterSince < StrandedInWaterMs) return;
+            _inWaterSince = 0;
+            var side = _granger.Position + new Vector3(Ctx.Crew.ActiveSlot == CrewSlot.Ice ? 2.5f : -2.5f, 0f, 0f);
+            var ground = World.GetSafeCoordForPed(side, false, 0);
+            player.Position = ground != Vector3.Zero && GameUtils.IsWithinFlat(ground, side, 8f) ? ground : side;
+            Logger.Warn("M21: " + Ctx.Crew.Active.DisplayName + " was still in the water at the shore landing after " + StrandedInWaterMs / 1000 +
+                        " s; put him on the road beside the Granger at " + player.Position + ". Survey M21.ShoreLanding / M21.RoadPickup.");
+        }
+
         protected override void OnUpdate()
         {
+            if (_speedboats && !Ctx.Cutscenes.IsActive) MaintainIceShooting();
+            if (!Ctx.Cutscenes.IsActive) RecoverFromWater();
             _liveTransfer?.Update();
             if (_liveTransfer != null && (_liveTransfer.Failed || _liveTransfer.Canceled))
             { Fail("The shore crew could not board the Granger. Retry the Port Heist; see Bloodlines.log."); return; }
@@ -296,7 +367,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M21 transfer scene did not play; the seats are taken directly.");
-                PortHeist.RequireFallback(blocking, "Boarding the road pickup");
+                if (!PortHeist.RequireFallback(blocking, "Boarding the road pickup", this)) return;
             }
             GameUtils.Subtitle("~g~Ice and Gohan on the road north in the Granger. The lift is over the mountains; the Alamo is next.", 6000);
         }
@@ -456,9 +527,22 @@ namespace Bloodlines.Missions.Campaign
 
             for (int i = 0; i < count; i++)
             {
-                var boat = Track(World.CreateVehicle(boatModel,
-                    _breakwater + new Vector3(-40f + i * 40f, standoff, 0f), 200f));
+                // The offset from the breakwater is where a launch is wanted, not a
+                // promise that there is water there: it could be the breakwater itself.
+                // Each hull is checked as water with room around it, the way the
+                // authored marine keys are, and an offset that is not water is moved to
+                // the nearest one that is.
+                var wanted = _breakwater + new Vector3(-40f + i * 40f, standoff, 0f);
+                if (!MarineSites.TryResolve(wanted, 3f, 3f, 6f, 200f, 60f, out var water, out var reason, null, 15f,
+                        candidate => !_hostileBoats.Exists(other => other != null && other.Exists() && GameUtils.IsWithinFlat(other.Position, candidate, LaunchSeparation))))
+                {
+                    Logger.Warn("M21: no open water for Aegis launch " + (i + 1) + " near " + wanted + " (" + reason + "); it does not launch.");
+                    continue;
+                }
+                if (!GameUtils.IsWithinFlat(water, wanted, 1f)) Logger.Info("M21: Aegis launch " + (i + 1) + " moved from " + wanted + " to open water at " + water + ".");
+                var boat = Track(World.CreateVehicle(boatModel, water, 200f));
                 if (boat == null || !boat.Exists()) continue;
+                _hostileBoats.Add(boat);
                 boat.IsPersistent = true;
 
                 var crew = Track(World.CreatePed(crewModel, boat.Position, 0f));
@@ -489,7 +573,8 @@ namespace Bloodlines.Missions.Campaign
                 blip.Color = BlipColor.Red;
                 blip.Name = "Aegis launch";
             }
-            Logger.Info("M21: " + count + " Aegis launches" + (_patrolsReduced ? " (thinned by M13)" : "") + (_gateAccess ? ", held beyond the gate M15 opened." : " at the breakwater."));
+            if (_hostileBoats.Count == 0) Logger.Error("M21: none of the " + count + " Aegis launches found open water near " + _breakwater + "; the speedboat fight is empty. Survey M21.Breakwater.");
+            Logger.Info("M21: " + _hostileBoats.Count + " of " + count + " Aegis launches" + (_patrolsReduced ? " (thinned by M13)" : "") + (_gateAccess ? ", held beyond the gate M15 opened." : " at the breakwater."));
 
             boatModel.MarkAsNoLongerNeeded();
             crewModel.MarkAsNoLongerNeeded();
@@ -502,6 +587,9 @@ namespace Bloodlines.Missions.Campaign
             ReleaseLift();
             if (Status != MissionStatus.Passed && _container != null && _container.Exists()) Function.Call(Hash.DETACH_ENTITY, _container, true, true);
             _hostileCrews.Clear();
+            _hostileBoats.Clear();
+            _speedboats = false;
+            _iceTarget = null;
         }
     }
 }

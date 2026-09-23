@@ -192,7 +192,7 @@ Prerequisite: M09. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Check the load** — MissionInteraction: Guess: check the crates on the flatbed |
 | 2 | Guess | **Roll out** — EnterVehicleObjective: Guess — take the flatbed. Ice rides beside you. |
-| 3 | Guess | **The run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
+| 3 | any brother | **The run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
 | 4 | Guess | **The firing window** — DeliverVehicleObjective: Guess: get the flatbed to the tunnel mouth. That is Ice's firing window. |
 | 5 | Ice | **Gunship** — DestroyVehicleObjective: Ice: out of the cab, launcher on the marked Buzzard from the tunnel mouth. |
 | 6 | Guess | **Burro Heights** — DeliverVehicleObjective: Guess: get back in the flatbed and deliver the engines to the shop.<br>LoseWantedObjective: Lose the police before the shop. |
@@ -371,10 +371,10 @@ Prerequisite: M20. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Get on the water** — EnterVehicleObjective: Gohan — take the armed launch. |
 | 2 | Gohan | **Draw the locks** — ShadowTargetObjective: Stay on the Cargobob's wing. |
-| 3 | Gohan | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
-| 4 | Gohan | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
-| 5 | Gohan | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
-| 6 | Gohan | **The road north** — ConditionObjective: Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel. |
+| 3 | any brother | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
+| 4 | any brother | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
+| 5 | any brother | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
+| 6 | any brother | **The road north** — ConditionObjective: Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 

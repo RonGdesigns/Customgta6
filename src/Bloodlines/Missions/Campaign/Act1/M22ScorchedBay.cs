@@ -105,7 +105,7 @@ namespace Bloodlines.Missions.Campaign
                 Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
                 _roadStarted = Game.GameTime;
                 _roadOrder = Game.GameTime;
-                OrderRoadTeam();
+                OrderRoadTeam(evenForPlayer: true);
                 HoldLift();
                 Radio("GOHAN", "We have the road north. You fly the bullion over the ridge; we'll meet you on the beach.", "M22_OPERATION_ROAD");
                 return true;
@@ -126,14 +126,60 @@ namespace Bloodlines.Missions.Campaign
             return true;
         }
 
-        private void OrderRoadTeam()
+        /// <summary>How long the Granger has to sit still on the road leg before Gohan is sent on again.</summary>
+        public const int RoadStallMs = 6000;
+        private int _roadSlowSince;
+        /// <summary>The standing drive order was given while Gohan was the player, so it has to be given again once he is not.</summary>
+        private bool _orderedWhilePlayer;
+        /// <summary>How many drive orders the road leg has given, for the harness.</summary>
+        public int RoadOrders { get; private set; }
+
+        /// <summary>
+        /// Gohan's drive to the Alamo. Ron, September 22: this threw when he was not in the
+        /// driver's seat, which is a script error that ends all four chapters of the heist,
+        /// and it was given again every fifteen seconds whether or not he was making way,
+        /// which restarts the drive. A Gohan out of the seat is put back at the wheel when
+        /// the seat is his to take, and the attempt fails with a reason when it is not.
+        /// A Gohan the player is driving is left to him, except for the chapter's opening
+        /// order, which stands for when control of him passes back.
+        /// </summary>
+        private bool OrderRoadTeam(bool evenForPlayer = false)
         {
             var driver = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var player = Game.Player.Character;
+            if (driver == null || !driver.Exists() || driver.IsDead || _granger == null || !_granger.Exists())
+            { Fail("The road team lost its driver. Restart the entire Port Heist."); return false; }
+            bool isPlayer = player != null && driver.Handle == player.Handle;
+            if (isPlayer && !evenForPlayer) { _orderedWhilePlayer = true; return true; }
             if (!PortHeistWorld.Seated(driver, _granger, VehicleSeat.Driver))
-                throw new System.InvalidOperationException("Gohan must remain at the wheel of the road pickup.");
+            {
+                if (_granger.IsSeatFree(VehicleSeat.Driver) && GameUtils.IsWithin(driver.Position, _granger.Position, 30f))
+                    driver.SetIntoVehicle(_granger, VehicleSeat.Driver);
+                if (!PortHeistWorld.Seated(driver, _granger, VehicleSeat.Driver))
+                { Fail("Gohan lost the wheel of the road pickup. Restart the entire Port Heist."); return false; }
+                Logger.Warn("M22: Gohan was out of the Granger's driver's seat; put back at the wheel.");
+            }
             _granger.IsEngineRunning = true;
             driver.Task.DriveTo(_granger, _road, 10f, 27f, DrivingStyle.Rushed);
             _roadOrder = Game.GameTime;
+            _roadSlowSince = 0;
+            _orderedWhilePlayer = isPlayer;
+            RoadOrders++;
+            return true;
+        }
+
+        /// <summary>The road leg's review: a driver out of his seat, or a Granger that has stopped making way, is ordered again; one on the move is left to drive.</summary>
+        private bool MaintainRoadTeam()
+        {
+            var driver = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var player = Game.Player.Character;
+            if (driver != null && player != null && driver.Handle == player.Handle) { _roadSlowSince = 0; _orderedWhilePlayer = true; return true; }
+            if (_orderedWhilePlayer || driver == null || !driver.Exists() || !PortHeistWorld.Seated(driver, _granger, VehicleSeat.Driver)) return OrderRoadTeam();
+            if (_granger.Speed >= 2f) { _roadSlowSince = 0; return true; }
+            if (_roadSlowSince == 0) _roadSlowSince = Game.GameTime;
+            if (Game.GameTime - _roadSlowSince < RoadStallMs || Game.GameTime - _roadOrder < 10000) return true;
+            Logger.Warn("M22: the road team stalled; sending Gohan on to the Alamo again.");
+            return OrderRoadTeam();
         }
 
         protected override void OnUpdate()
@@ -146,7 +192,7 @@ namespace Bloodlines.Missions.Campaign
                 { StartLiveArrival(); return; }
                 if (Game.GameTime - _roadStarted > 600000)
                 { Fail("The road team could not reach the Alamo. Restart the entire Port Heist."); return; }
-                if (Game.GameTime - _roadOrder > 15000) OrderRoadTeam();
+                if (!MaintainRoadTeam()) return;
             }
             if (_liveArrival != null && !_arrived)
             {
@@ -289,8 +335,10 @@ namespace Bloodlines.Missions.Campaign
         private void PlayDrop()
         {
             ReleaseContainer();
+            // A stage exit must not throw: in the continuous heist that is a script error
+            // that ends all four chapters, not a failed attempt.
             if (_container == null || !_container.Exists() || PortHeistWorld.Attached(_container, _cargobob) || _container.Position.DistanceTo(PortHeist.HiddenContainerPoint(_drop)) > 1f)
-                throw new System.InvalidOperationException("The bullion drop did not reach the shallows.");
+            { Fail("The bullion drop did not reach the shallows. Restart the entire Port Heist."); return; }
             _dropped = true;
             var blocking = new SceneBlocking();
             if (_container != null && _container.Exists()) blocking.Then(new ShotStep(3800, _container, new Vector3(-12f, 8f, 5f), _container, new Vector3(0f, 0f, 0.5f), 0.8f));
@@ -356,7 +404,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M22 strike scene did not play; the strike and the lines play directly.");
-                PortHeist.RequireFallback(blocking, "The foundry aftermath");
+                if (!PortHeist.RequireFallback(blocking, "The foundry aftermath", this)) return;
                 Say("M22_S1_02_ICE"); Say("M22_S1_03_GOHAN"); Say("M22_S1_04_GUESS"); Say("M22_S1_05_ICE");
             }
         }

@@ -58,6 +58,10 @@ namespace Bloodlines.Missions.Campaign
         public bool PodCalled => _podCalled;
         public bool Hooked => _hooked;
         public bool Transferred => _transferred;
+        /// <summary>Whether the quayside gunners have been told to fight.</summary>
+        public bool DeckAwake => _deckAwake;
+        public IReadOnlyList<Ped> Gunners => _gunners;
+        private bool _deckAwake;
 
         protected override bool Setup()
         {
@@ -163,6 +167,7 @@ namespace Bloodlines.Missions.Campaign
                         () => _gunners),
                     new ProtectObjective("", () => _cargobob, "The Cargobob went down."))
                 .OwnedBy(CrewSlot.Ice)
+                .OnEnter(context => WakeDeck("Ice is on the rifle"))
                 .AfterCues("M20_S1_02_ICE");
 
             // The pilot aligns the aircraft; the hook is an insert the hover earns.
@@ -218,8 +223,29 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info("M20: the escort boards live; no cut at the join.");
         }
 
+        /// <summary>
+        /// The quayside gunners open up when the fight is theirs to have: when Ice is sent
+        /// to suppress them, when the lift leaves the apron, or when one of them is hit.
+        /// They used to fight from the moment they were created, thirty meters from a lift
+        /// Guess had not reached yet; in the continuous heist there is no scene in front of
+        /// that, and losing the lift ends the whole sitting (Ron, September 22).
+        /// </summary>
+        private void WakeDeck(string reason)
+        {
+            if (_deckAwake) return;
+            _deckAwake = true;
+            foreach (var gunner in _gunners)
+                if (gunner != null && gunner.Exists() && !gunner.IsDead) gunner.Task.FightAgainstHatedTargets(200f);
+            Logger.Info("M20: the quayside gunners open fire (" + reason + ").");
+        }
+
         protected override void OnUpdate()
         {
+            if (!_deckAwake)
+            {
+                if (_cargobob != null && _cargobob.Exists() && (_cargobob.IsInAir || _cargobob.HeightAboveGround > 3f)) WakeDeck("the lift is off the apron");
+                else if (_gunners.Exists(g => g == null || !g.Exists() || g.IsDead || g.Health < g.MaxHealth)) WakeDeck("a gunner was hit");
+            }
             _liveTransfer?.Update();
             if (_liveTransfer != null && (_liveTransfer.Failed || _liveTransfer.Canceled))
             { Fail("The escort could not board the launch. Retry the Port Heist; see Bloodlines.log."); return; }
@@ -280,7 +306,9 @@ namespace Bloodlines.Missions.Campaign
         private void PlayHook()
         {
             AttachContainer();
-            if (!PortHeistWorld.Attached(_container, _cargobob)) throw new System.InvalidOperationException("The cable did not secure the bullion.");
+            // A stage exit must not throw: in the continuous heist that is a script error
+            // that ends all four chapters, not a failed attempt.
+            if (!PortHeistWorld.Attached(_container, _cargobob)) { Fail("The cable did not secure the bullion. Retry the Port Heist; see Bloodlines.log."); return; }
             _hooked = true;
             var blocking = new SceneBlocking();
             if (_cargobob != null && _cargobob.Exists() && _container != null && _container.Exists())
@@ -341,7 +369,7 @@ namespace Bloodlines.Missions.Campaign
             if (!Ctx.Cutscenes.PlayStaged(spec, lines))
             {
                 Logger.Warn("M20 transfer scene did not play; the seats are taken directly.");
-                PortHeist.RequireFallback(blocking, "Boarding the escort launch");
+                if (!PortHeist.RequireFallback(blocking, "Boarding the escort launch", this)) return;
                 Say("M20_S1_03_GUESS");
             }
             GameUtils.Subtitle("~g~Thirty tons airborne. Gohan and Ice are on the launch; the Kraken stays at the pier.", 5000);
@@ -425,7 +453,8 @@ namespace Bloodlines.Missions.Campaign
                 gunner.Accuracy = 40;
                 gunner.Armor = 60;
                 gunner.Weapons.Give(WeaponHash.MG, 300, true, true);
-                gunner.Task.FightAgainstHatedTargets(200f);
+                // Posted, not fighting: WakeDeck turns them on when the fight is theirs.
+                gunner.Task.GuardCurrentPosition();
 
                 _gunners.Add(Track(gunner));
             }
@@ -457,6 +486,7 @@ namespace Bloodlines.Missions.Campaign
             }
 
             _gunners.Clear();
+            _deckAwake = false;
         }
     }
 }
