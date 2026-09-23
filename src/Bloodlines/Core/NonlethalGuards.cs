@@ -14,6 +14,8 @@ namespace Bloodlines.Core
         private readonly HashSet<int> _down = new HashSet<int>();
         public int DownCount => _down.Count;
         public bool IsDown(Ped ped) => ped != null && ped.Exists() && !ped.IsDead && _down.Contains(ped.Handle);
+        /// <summary>Whether this man is one of the guards nobody may kill.</summary>
+        public bool Contains(Ped ped) => ped != null && _guards.Exists(g => g != null && g.Handle == ped.Handle);
 
         public void Add(Ped guard)
         {

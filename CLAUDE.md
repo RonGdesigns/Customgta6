@@ -1531,3 +1531,22 @@ bare `GuardCurrentPosition`, or he will leave it. Send brothers anywhere with
 
 A passenger returning fire uses `TASK_DRIVE_BY`. Only a turret seat uses the vehicle-weapon
 task.
+
+## Nonlethal jobs: a stun gun in every hand
+
+Ron on M50, September 22: a dead watchman ended the mission, "but they automatically shot.
+They didn't start with stun guns." Only Ice had been issued one, nobody had it in hand, and a
+brother the player is not holding fights with whatever he picks, which is his carbine.
+
+`Core/NonlethalCrew` is the crew's half of a job where nobody may be killed; `NonlethalGuards`
+is the guards' half. M50 and M15 use both. `Begin` in Setup issues every brother a stun gun
+inside the weapon loan, so `EndLoan` returns it. The first mission tick (gameplay start, after
+the scenes) puts it in every hand, and a switch puts it in the new player's hand. The brothers
+the player is not holding get `CanSwitchWeapons = false`, and any other gun in their hands is
+swapped back each tick. The player can still draw anything, and a watchman he kills still fails
+the mission. `CompanionController.StunGunOnly` stops a seated brother getting a drive-by (a Micro
+SMG) or a mounted gun. `PreparationOperation.Spared` keeps support orders off such a man.
+`End` runs in its own `try` in `OnCleanup`, and `ReleaseAll` clears the flag as a backstop.
+Never strip a brother's lethal weapons to do this: `WeaponProgression.Update` gives owned
+weapons back on its own cycle. SM02 is solo, so there is no AI brother, and it already equips
+the stun gun.

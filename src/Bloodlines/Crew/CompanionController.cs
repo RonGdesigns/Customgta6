@@ -317,6 +317,13 @@ namespace Bloodlines.Crew
 
         /// <summary>Companions hold position instead of following (split-approach missions).</summary>
         public bool HoldPosition { get; set; }
+        /// <summary>
+        /// A job where nobody may be killed (M15, M50). A brother fights with the stun gun
+        /// <c>Core.NonlethalCrew</c> keeps in his hand or not at all: on foot he is sent
+        /// at the man as usual, and in a seat he is given nothing, because the drive-by hands him
+        /// a Micro SMG and a mounted gun is worse. Cleared by <see cref="ReleaseAll"/>.
+        /// </summary>
+        public bool StunGunOnly { get; set; }
         // Identity survives the engine changing relationship groups on player handover.
         public Func<Ped, bool> IsCrewMember { get; set; }
 
@@ -374,6 +381,7 @@ namespace Bloodlines.Crew
 
         public void ReleaseAll()
         {
+            StunGunOnly = false;
             _rejoin.Clear();
             _scripted.Clear();
             Presence.Clear();
@@ -666,6 +674,9 @@ namespace Bloodlines.Crew
             if (!_threats.TryGetValue(slot, out var target) || IsFriendly(target, companion, leader)) return;
             if (companion.IsInVehicle())
             {
+                // Nothing a seat can fire is a stun gun. A watchman in M50 was one drive-by away
+                // from being the Micro SMG below (Ron, September 22).
+                if (StunGunOnly) return;
                 var ride = companion.CurrentVehicle;
                 if (ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle) return;
                 Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, companion, 2, true);
