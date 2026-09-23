@@ -144,12 +144,50 @@ namespace Bloodlines.Core
             }
         }
 
+        /// <summary>How long another mod's menu counts as open after its last d-pad or button press.</summary>
+        public const int ForeignMenuIdleMs = 8000;
+        private static bool _foreignMenu;
+        private static int _foreignInputAt;
+
+        /// <summary>
+        /// Whether another mod's menu is probably up. Ron runs TrainerV, whose menu opens on
+        /// RB + X (its trainerv.ini defaults) and scrolls on the d-pad; the phone opened on the
+        /// same d-pad up and took the whole pad over the trainer (September 22). Nothing lets
+        /// one script ask whether another has a menu showing, so this watches the combo: it
+        /// toggles the trainer, any menu press keeps it counted as open, and it lapses after
+        /// <see cref="ForeignMenuIdleMs"/> without one. The keyboard key still opens the phone.
+        /// </summary>
+        public static bool ForeignMenuOpen => _foreignMenu;
+
+        private static void TrackForeignMenu()
+        {
+            int now = Game.GameTime;
+            if (Held(Control.FrontendRb) && Hit(Control.FrontendX))
+            {
+                _foreignMenu = !_foreignMenu; _foreignInputAt = now;
+                Logger.Debug(_foreignMenu ? "Trainer menu combo: leaving the d-pad to it." : "Trainer menu combo again: the d-pad is the phone's.");
+                return;
+            }
+            if (!_foreignMenu) return;
+            if (Held(Control.FrontendUp) || Held(Control.FrontendDown) || Held(Control.FrontendLeft) || Held(Control.FrontendRight) ||
+                Held(Control.FrontendAccept) || Held(Control.FrontendCancel))
+                _foreignInputAt = now;
+            else if (now - _foreignInputAt > ForeignMenuIdleMs) _foreignMenu = false;
+        }
+
+        /// <summary>Forget any foreign menu, for tests and a fresh session.</summary>
+        public static void ForgetForeignMenu() { _foreignMenu = false; _foreignInputAt = 0; }
+
         // Run before mission/shop input. Drawing and route actions run after mission updates.
         public void Input(bool enabled, bool deployed, bool available, CrewSlot owner)
         {
+            TrackForeignMenu();
             if (!enabled || !deployed || !available || (IsOpen && _owner != owner)) Close();
+            // The trainer opened over the phone: the pad is the trainer's now.
+            if (IsOpen && ForeignMenuOpen && Game.LastInputMethod == InputMethod.GamePad) Close();
             if (enabled && deployed) Game.DisableControlThisFrame(Control.Phone);
-            if (enabled && deployed && available && !IsOpen && !BlocksGameplayInput && !ScopeOwnsTheDpad && Hit(Control.Phone))
+            bool padOwnedElsewhere = ForeignMenuOpen && Game.LastInputMethod == InputMethod.GamePad;
+            if (enabled && deployed && available && !IsOpen && !BlocksGameplayInput && !ScopeOwnsTheDpad && !padOwnedElsewhere && Hit(Control.Phone))
                 Open(owner);
             if (BlocksGameplayInput)
                 foreach (var control in ReservedControls)

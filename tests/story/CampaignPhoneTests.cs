@@ -51,6 +51,18 @@ public static partial class StoryTests
    Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
    Check(!phone.IsOpen&&CampaignPhone.ScopeOwnsTheDpad,"A sniper scope keeps the d-pad, so the phone stays shut mid-shot");
    Game.Player.Character.IsAiming=false;Function.WeaponGroup=0;Game.Pressed.Clear();
+   // Ron, September 22: TrainerV's menu opens on RB + X and scrolls on the d-pad, and d-pad Up
+   // opened the phone over it.
+   var method=Game.LastInputMethod;Game.LastInputMethod=InputMethod.GamePad;CampaignPhone.ForgetForeignMenu();
+   Function.Held[Control.FrontendRb]=true;Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendRb]=false;
+   Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
+   Check(CampaignPhone.ForeignMenuOpen&&!phone.IsOpen,"With the trainer's menu up, d-pad Up is left to the trainer and the phone stays shut");
+   Function.Held[Control.FrontendUp]=true;Game.GameTime+=CampaignPhone.ForeignMenuIdleMs-1000;phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendUp]=false;
+   Game.GameTime+=CampaignPhone.ForeignMenuIdleMs-1000;phone.Input(true,true,true,CrewSlot.Guess);
+   Check(CampaignPhone.ForeignMenuOpen,"Scrolling the trainer keeps it counted as open");
+   Game.GameTime+=2000;phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Clear();
+   Check(!CampaignPhone.ForeignMenuOpen,"and once the trainer has sat unused for a while the d-pad is the phone's again");
+   Game.LastInputMethod=method;
    Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
    Check(phone.IsOpen&&phone.Page==CampaignPhone.App.Home,"D-pad Up opens the campaign phone on its home screen");
    Check(CampaignPhone.BlocksGameplayInput&&Game.Disabled.Contains(Control.Phone),"Custom phone takes input focus and suppresses the vanilla phone");
