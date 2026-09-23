@@ -139,9 +139,9 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Run him down",
                     new PursueTargetObjective("Guess: chase the red marker. Disable Miller's car or stop Miller, then collect his drive.", () => _miller,
                         "Miller reached his handler and the forensics went with him."),
-                    new ReactionTrigger(() => !_gohanOffered && GohanRidingAlong(), OfferCarHack))
+                    new ReactionTrigger(() => !_gohanOffered && GohanRidingAlong() && MillerInReach(), OfferCarHack))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(context => { _pursuit = true; var guess = Ctx.Crew.PedFor(CrewSlot.Guess); if (guess != null && guess.Exists() && guess.Handle == Game.Player.Character.Handle) guess.Task.ClearAll(); Say("M04_S2_04_ICE"); })
+                .OnEnter(context => { _pursuit = true; var guess = Ctx.Crew.PedFor(CrewSlot.Guess); if (guess != null && guess.Exists() && guess.Handle == Game.Player.Character.Handle) guess.Task.ClearAll(); SeatGohanForChase(); Say("M04_S2_04_ICE"); })
                 .OnExit(context => _pursuit = false);
 
             yield return new MissionStage("Recover the drive",
@@ -234,6 +234,40 @@ namespace Bloodlines.Missions.Campaign
             return _van != null && _van.Exists() && gohan != null && gohan.Exists() && !gohan.IsDead && gohan.IsInVehicle(_van) &&
                 _van.GetPedOnSeat(VehicleSeat.Driver) != gohan && player != null && player.IsInVehicle(_van);
         }
+
+        /// <summary>
+        /// Gohan rides the chase in the van's passenger seat, so his optional hack on
+        /// Miller's car is there to be offered. Left to the free-roam controller he
+        /// flipped between boarding the van and fighting the last of the escort every
+        /// few seconds and never got in (Ron, September 22). Seated outright and held
+        /// by the mission; his cover order is stood down so nothing runs him back to
+        /// the breaker from the seat.
+        /// </summary>
+        private void SeatGohanForChase()
+        {
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            var player = Game.Player.Character;
+            if (gohan == null || !gohan.Exists() || gohan.IsDead || _van == null || !_van.Exists()) return;
+            if (player != null && gohan.Handle == player.Handle) return;
+            if (!gohan.IsInVehicle(_van))
+            {
+                if (!_van.IsSeatFree(VehicleSeat.Passenger)) { Logger.Warn("M04: the van's passenger seat is taken; Gohan's car hack is not available this chase."); return; }
+                gohan.SetIntoVehicle(_van, VehicleSeat.Passenger);
+                if (!gohan.IsInVehicle(_van)) { Logger.Warn("M04: Gohan could not be seated in the van for the chase."); return; }
+            }
+            _roles.For(CrewSlot.Gohan).Stop();
+            Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            Logger.Info("M04: Gohan is riding the chase in the van's passenger seat.");
+        }
+
+        /// <summary>How close the van has to be to Miller's car before Gohan offers the hack; he is seated from the start of the chase, and the offer belongs to the moment it can be used.</summary>
+        public const float CarHackOfferRange = 100f;
+
+        /// <summary>Whether Gohan has offered the hack on Miller's car this chase.</summary>
+        public bool CarHackOffered => _gohanOffered;
+
+        private bool MillerInReach() =>
+            _van != null && _van.Exists() && _millerCar != null && _millerCar.Exists() && _van.Position.DistanceTo(_millerCar.Position) <= CarHackOfferRange;
 
         private void OfferCarHack()
         {
@@ -342,7 +376,11 @@ namespace Bloodlines.Missions.Campaign
         private void Regroup()
         {
             _roles.For(CrewSlot.Ice).Extract(_exit);
-            _roles.For(CrewSlot.Gohan).Extract(_exit);
+            // A Gohan riding in the van stays in it; running him back to the lot from
+            // the passenger seat would put him on foot in the middle of the chase.
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            if (gohan == null || !gohan.Exists() || _van == null || !_van.Exists() || !gohan.IsInVehicle(_van))
+                _roles.For(CrewSlot.Gohan).Extract(_exit);
             Ctx.Crew.CompanionsHoldPosition = true;
         }
 
