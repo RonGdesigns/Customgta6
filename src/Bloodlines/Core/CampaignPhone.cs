@@ -144,39 +144,71 @@ namespace Bloodlines.Core
             }
         }
 
-        /// <summary>How long another mod's menu counts as open after its last d-pad or button press.</summary>
-        public const int ForeignMenuIdleMs = 8000;
-        private static bool _foreignMenu;
-        private static int _foreignInputAt;
+        /// <summary>
+        /// A backstop only: this long with no menu press at all and the trainer is taken to be
+        /// closed. It used to be eight seconds, and a trainer left open and read for longer than
+        /// that got the phone opened over it (Ron, September 22).
+        /// </summary>
+        public const int ForeignMenuIdleMs = 120000;
+        /// <summary>How long the trainer's hold on the phone button has to be gone before it counts as closed.</summary>
+        public const int ForeignReleaseMs = 750;
+        private static bool _foreignMenu, _foreignHoldsPhone;
+        private static int _foreignInputAt, _foreignHeldAt, _foreignDepth;
 
         /// <summary>
         /// Whether another mod's menu is probably up. Ron runs TrainerV, whose menu opens on
         /// RB + X (its trainerv.ini defaults) and scrolls on the d-pad; the phone opened on the
-        /// same d-pad up and took the whole pad over the trainer (September 22). Nothing lets
-        /// one script ask whether another has a menu showing, so this watches the combo: it
-        /// toggles the trainer, any menu press keeps it counted as open, and it lapses after
-        /// <see cref="ForeignMenuIdleMs"/> without one. The keyboard key still opens the phone.
+        /// same d-pad up and took the whole pad over the trainer (September 22). No script can
+        /// ask another whether it has a menu showing, so this reads the signs, best first:
+        ///  * The combo toggles it, both ways.
+        ///  * A trainer menu usually disables the game's phone button while it is up. Nothing in
+        ///    this mod disables it before the phone reads it, so a disabled phone button here is
+        ///    the trainer's; once that has been seen, the menu is closed when it stops.
+        ///  * Otherwise the menu's own buttons are counted: A goes a page deeper, B comes back
+        ///    out, and B at the top closes it.
+        ///  * <see cref="ForeignMenuIdleMs"/> with nothing pressed, as a last resort.
+        /// The keyboard key still opens the phone.
         /// </summary>
         public static bool ForeignMenuOpen => _foreignMenu;
 
         private static void TrackForeignMenu()
         {
             int now = Game.GameTime;
+            // Read before this class disables the button itself further down the tick.
+            bool heldByOther = !Function.Call<bool>(Hash.IS_CONTROL_ENABLED, 0, (int)Control.Phone);
             if (Held(Control.FrontendRb) && Hit(Control.FrontendX))
             {
-                _foreignMenu = !_foreignMenu; _foreignInputAt = now;
+                _foreignMenu = !_foreignMenu; _foreignInputAt = now; _foreignDepth = 0; _foreignHoldsPhone = false;
                 Logger.Debug(_foreignMenu ? "Trainer menu combo: leaving the d-pad to it." : "Trainer menu combo again: the d-pad is the phone's.");
                 return;
             }
             if (!_foreignMenu) return;
-            if (Held(Control.FrontendUp) || Held(Control.FrontendDown) || Held(Control.FrontendLeft) || Held(Control.FrontendRight) ||
-                Held(Control.FrontendAccept) || Held(Control.FrontendCancel))
+            if (heldByOther) { _foreignHoldsPhone = true; _foreignHeldAt = now; }
+            if (_foreignHoldsPhone)
+            {
+                if (now - _foreignHeldAt > ForeignReleaseMs) CloseForeignMenu("the trainer let go of the phone button");
+                return;
+            }
+            bool accept = Hit(Control.FrontendAccept), back = Hit(Control.FrontendCancel);
+            if (accept || back || Held(Control.FrontendUp) || Held(Control.FrontendDown) || Held(Control.FrontendLeft) || Held(Control.FrontendRight))
                 _foreignInputAt = now;
-            else if (now - _foreignInputAt > ForeignMenuIdleMs) _foreignMenu = false;
+            if (accept) _foreignDepth++;
+            if (back)
+            {
+                if (_foreignDepth == 0) { CloseForeignMenu("B at the trainer's top page"); return; }
+                _foreignDepth--;
+            }
+            if (now - _foreignInputAt > ForeignMenuIdleMs) CloseForeignMenu("nothing pressed for two minutes");
+        }
+
+        private static void CloseForeignMenu(string why)
+        {
+            _foreignMenu = false; _foreignHoldsPhone = false; _foreignDepth = 0;
+            Logger.Debug("Trainer menu closed (" + why + "): the d-pad is the phone's.");
         }
 
         /// <summary>Forget any foreign menu, for tests and a fresh session.</summary>
-        public static void ForgetForeignMenu() { _foreignMenu = false; _foreignInputAt = 0; }
+        public static void ForgetForeignMenu() { _foreignMenu = false; _foreignHoldsPhone = false; _foreignInputAt = 0; _foreignHeldAt = 0; _foreignDepth = 0; }
 
         // Run before mission/shop input. Drawing and route actions run after mission updates.
         public void Input(bool enabled, bool deployed, bool available, CrewSlot owner)
