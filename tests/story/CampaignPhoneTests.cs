@@ -57,11 +57,29 @@ public static partial class StoryTests
    Function.Held[Control.FrontendRb]=true;Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendRb]=false;
    Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
    Check(CampaignPhone.ForeignMenuOpen&&!phone.IsOpen,"With the trainer's menu up, d-pad Up is left to the trainer and the phone stays shut");
-   Function.Held[Control.FrontendUp]=true;Game.GameTime+=CampaignPhone.ForeignMenuIdleMs-1000;phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendUp]=false;
-   Game.GameTime+=CampaignPhone.ForeignMenuIdleMs-1000;phone.Input(true,true,true,CrewSlot.Guess);
-   Check(CampaignPhone.ForeignMenuOpen,"Scrolling the trainer keeps it counted as open");
-   Game.GameTime+=2000;phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Clear();
-   Check(!CampaignPhone.ForeignMenuOpen,"and once the trainer has sat unused for a while the d-pad is the phone's again");
+   // Ron, September 22 again: the phone still came up "after a while". Reading a trainer page
+   // for half a minute without pressing anything is not closing it.
+   Game.GameTime+=30000;phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Clear();
+   Check(CampaignPhone.ForeignMenuOpen&&!phone.IsOpen,"A trainer left open and read for half a minute keeps the d-pad");
+   // Without any sign from the trainer, its pages are counted: A in, B out, B at the top closes it.
+   Game.Pressed.Add(Control.FrontendAccept);phone.Input(true,true,true,CrewSlot.Guess);
+   Game.Pressed.Add(Control.FrontendCancel);phone.Input(true,true,true,CrewSlot.Guess);
+   Check(CampaignPhone.ForeignMenuOpen,"Backing out of a trainer page is not closing the trainer");
+   Game.Pressed.Add(Control.FrontendCancel);phone.Input(true,true,true,CrewSlot.Guess);
+   Check(!CampaignPhone.ForeignMenuOpen,"B at the trainer's top page closes it and the d-pad is the phone's again");
+   // A trainer that disables the phone button while its menu is up is believed over the count.
+   Function.Held[Control.FrontendRb]=true;Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendRb]=false;
+   Function.DisabledByOther.Add(Control.Phone);Game.GameTime+=100;phone.Input(true,true,true,CrewSlot.Guess);
+   Game.Pressed.Add(Control.FrontendCancel);Game.GameTime+=100;phone.Input(true,true,true,CrewSlot.Guess);
+   Check(CampaignPhone.ForeignMenuOpen,"While the trainer holds the phone button, a stray B does not hand the d-pad back");
+   Function.DisabledByOther.Clear();Game.GameTime+=CampaignPhone.ForeignReleaseMs+100;phone.Input(true,true,true,CrewSlot.Guess);
+   Check(!CampaignPhone.ForeignMenuOpen,"and once the trainer lets go of it, the menu is closed");
+   // The combo is a toggle both ways, and the long backstop still lets go in the end.
+   Function.Held[Control.FrontendRb]=true;Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendRb]=false;
+   Check(!CampaignPhone.ForeignMenuOpen,"RB + X again gives the d-pad back");
+   Function.Held[Control.FrontendRb]=true;Game.Pressed.Add(Control.FrontendX);phone.Input(true,true,true,CrewSlot.Guess);Function.Held[Control.FrontendRb]=false;
+   Game.GameTime+=CampaignPhone.ForeignMenuIdleMs+1000;phone.Input(true,true,true,CrewSlot.Guess);Game.Pressed.Clear();
+   Check(!CampaignPhone.ForeignMenuOpen,"Two minutes with nothing pressed lets go as a last resort");
    Game.LastInputMethod=method;
    Game.Pressed.Add(Control.Phone);phone.Input(true,true,true,CrewSlot.Guess);
    Check(phone.IsOpen&&phone.Page==CampaignPhone.App.Home,"D-pad Up opens the campaign phone on its home screen");
