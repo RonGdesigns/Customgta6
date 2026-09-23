@@ -126,7 +126,18 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Wire both banks", west, east, interlocks)
                 .OnExit(c =>
                 {
-                    if (_west < 3 || _east < 3) throw new InvalidOperationException("Six limpets have to be seated before the sequence is armed.");
+                    // A stage exit must not throw: a throw here is "Script error" and the end
+                    // of the attempt, not a failure the player can read. Both banks' objectives
+                    // only complete once every one of their sites has been held, and each hold
+                    // is counted as it lands, so a short count can only mean a QA force-complete,
+                    // which declares the work done. Record it as done and say so in the log.
+                    if (_west < 3 || _east < 3)
+                    {
+                        Logger.Warn(Id + ": the banks closed with " + _west + " west and " + _east +
+                            " east limpets counted; treating the rest as seated (QA completion).");
+                        _west = Math.Max(_west, 3);
+                        _east = Math.Max(_east, 3);
+                    }
                     _lockedOut = true;
                 })
                 .AfterCues("M51_S1_01_ICE", "M51_S1_02_GUESS");
@@ -141,11 +152,18 @@ namespace Bloodlines.Missions.Campaign
                 new EnterVehicleObjective("All three: get back in the car", () => CrewCar, VehicleSeat.Driver, true),
                 new ConditionObjective("Nobody is left in the switchyard", () => Aboard))
                 .AnyOf()
+                // Whoever the player is holding. It inherited Gohan from the arming stage, so
+                // the HUD said "Switch to Gohan" to get into a car (Ron, September 22).
+                .AnyBrother()
                 .OnEnter(c => _boarding.Reset());
 
             yield return new MissionStage("Clear the station",
                 new TravelObjective("Drive clear of Palmer-Taylor", () => At("M51.Exit"), 20f, () => CrewCar))
                 .AnyOf()
+                // Whoever is in the car, and Guess drives it when the player is riding: this
+                // inherited Gohan too, and nothing gave the wheel a destination.
+                .AnyBrother()
+                .OnEnter(c => DrivingDestination = () => At("M51.Exit"))
                 // M51_S1_03_GOHAN is deliberately not fired. The authored line counts the
                 // charges down and calls the blackout, and nothing here detonates: Ron chose
                 // to hold the outage for the downtown offensive. Playing it would tell the

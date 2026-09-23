@@ -18,10 +18,11 @@ namespace Bloodlines.Missions.Campaign
     /// The Stinger pods are not a thing. A stock Seashark has no mounted weapon, and
     /// CAMPAIGN-REMAINDER says so outright: "a weaponized Seashark with a Stinger is not a
     /// stock guarantee. Use an armed boat until a mounted system is implemented and tested."
-    /// So the skis are stock and the crew is issued a homing launcher each, fired from the
-    /// seat. The authored lines call it a Stinger and lock onto a Maverick, and both of
-    /// those survive intact — a homing launcher from a jet ski is the same beat, and it is
-    /// one the game can actually do.
+    /// So the skis are stock and the crew is issued a homing launcher each. The authored
+    /// lines call it a Stinger and lock onto a Maverick, and both survive intact from the
+    /// sand and the shallows. They do not survive from the seat: the game lets a rider on a
+    /// bike or a jet ski fire one-handed weapons only, so each rider also carries a micro
+    /// SMG, which is the gun that actually works from a Seashark (Ron, September 22).
     ///
     /// Both riders are playable. Ice and Guess are on separate skis with the same job, so
     /// the stage names neither of them and the player spends the switch as he likes.
@@ -39,6 +40,16 @@ namespace Bloodlines.Missions.Campaign
         public const int Gunships = 3;
         /// <summary>Rounds each rider gets. Three gunships, and misses are allowed.</summary>
         public const int Missiles = 8;
+        /// <summary>
+        /// A one-handed gun for the seat. GTA lets a rider on a bike or a jet ski fire only
+        /// one-handed weapons, so the homing launcher this mission issued could never be fired
+        /// from the Seashark it was issued for - the gunships were unreachable from the water
+        /// (Ron, September 22). The launcher still works from the sand and the shallows, which
+        /// is where the Stinger lines can be played straight; the SMG is what a rider can
+        /// actually shoot from the seat.
+        /// </summary>
+        public const WeaponHash SeatWeapon = WeaponHash.MicroSMG;
+        public const int SeatRounds = 600;
         /// <summary>How wide the gunships sweep, and how fast.</summary>
         public const float SweepRadius = 120f;
         public const float SweepSpeed = 28f;
@@ -91,7 +102,9 @@ namespace Bloodlines.Missions.Campaign
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Ice })
             {
                 var ped = Ctx.Crew.PedFor(slot);
-                if (ped != null && ped.Exists()) ped.Weapons.Give(WeaponHash.HomingLauncher, Missiles, false, true);
+                if (ped == null || !ped.Exists()) continue;
+                ped.Weapons.Give(WeaponHash.HomingLauncher, Missiles, false, true);
+                ped.Weapons.Give(SeatWeapon, SeatRounds, false, true);
             }
 
             Establish("approach", "Three of them, low over the surf",
@@ -174,6 +187,7 @@ namespace Bloodlines.Missions.Campaign
             // "all three have to be down" - which is a script error and the end of the
             // attempt, not a failed mission.
             yield return new MissionStage("Put them in the water", kills.ToArray())
+                .OnEnter(c => GameUtils.Notify("~y~The launcher only fires on foot - use it from the sand or the shallows. From the ski, use the SMG."))
                 .AfterCues("M57_S1_02_ICE");
 
             yield return new MissionStage("Back to the sand",
