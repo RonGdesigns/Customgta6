@@ -40,9 +40,9 @@ public static partial class StoryTests
   mgr.Start(d);state.SetCargo("probe","uncommitted");mgr.Abort();Check(!state.AttemptActive&&state.CargoAt("probe")==null,"Aborting the opening briefing releases its story transaction");
   mgr.Start(d);c.Cutscenes.Skip();mgr.Update();state.SetCargo("probe","pending");mgr.ResetCampaignContext();Check(!mgr.IsRunning&&!mgr.RetryAvailable&&mgr.LastAttempted==null&&state.CargoAt("probe")==null,"Reset stops the running mission and clears retry/continuation context before the save is wiped");
 
-  Reset();crew=Roster();var roles=new RoleTracks(crew,()=>new Ped[0]);var worker=crew.PedFor(CrewSlot.Gohan);var track=roles.For(CrewSlot.Gohan);track.Approach(new Vector3(200,0,0),new Vector3(210,0,0));roles.Update();int go=worker.Task.Gotos;
-  crew.SetActive(CrewSlot.Gohan);worker.Task.ClearAllImmediately();roles.Update();Check(worker.Task.Gotos==go,"Player-controlled mission role receives no new AI walk task");
-  crew.SetActive(CrewSlot.Ice);roles.Update();roles.Update();Check(worker.Task.Gotos==go+1,"Handback reissues the cleared approach exactly once");roles.Release();
+  Reset();crew=Roster();var roles=new RoleTracks(crew,()=>new Ped[0]);var worker=crew.PedFor(CrewSlot.Gohan);var track=roles.For(CrewSlot.Gohan);track.Approach(new Vector3(200,0,0),new Vector3(210,0,0));roles.Update();int go=worker.Task.Runs;
+  crew.SetActive(CrewSlot.Gohan);worker.Task.ClearAllImmediately();roles.Update();Check(worker.Task.Runs==go,"Player-controlled mission role receives no new AI move task");
+  crew.SetActive(CrewSlot.Ice);roles.Update();roles.Update();Check(worker.Task.Runs==go+1,"Handback reissues the cleared approach exactly once");roles.Release();
 
   Reset();Function.Calls.Clear();var config=new ModConfig();var visuals=new VisualAtmosphere(config);visuals.Update(false,false);var first=new Vehicle();Game.Player.Character.SetIntoVehicle(first,VehicleSeat.Driver);visuals.Update(false,false);
   foreach(var h in new[]{Hash.SET_PED_LOD_MULTIPLIER,Hash.SET_VEHICLE_LOD_MULTIPLIER,Hash.SET_VEHICLE_HEADLIGHT_SHADOWS})Check(Function.Calls.Where(x=>x.Item1==h).All(x=>x.Item2.Length==2&&x.Item2[0] is Entity),"Visual native has an entity plus its setting: "+h);

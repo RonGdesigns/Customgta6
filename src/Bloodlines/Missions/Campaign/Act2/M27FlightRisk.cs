@@ -94,6 +94,12 @@ namespace Bloodlines.Missions.Campaign
         private bool _transferred, _ledgerTaken, _ronReturned, _aboard, _diving, _ashore, _delivered, _pickupPlaced;
         private readonly Core.CrewBoarding _pickup = new Core.CrewBoarding();
         private readonly Core.CrewBoarding _ride = new Core.CrewBoarding();
+        /// <summary>
+        /// Why a stage exit could not finish, failed on the next frame. Throwing from the
+        /// exit was a "Script error" that told Ron nothing, and failing from inside it lets
+        /// the next stage be entered after cleanup (the September 22 audit).
+        /// </summary>
+        private string _fault;
         private bool _offered;
         private int _nextOffer;
         private Vehicle _roadCar;
@@ -120,6 +126,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            _fault = null;
             if (!MissionSites.Water(Ctx.Locations, "M27.SeaPickup")) return false;
             _formUp = Ctx.Locations.Position("M27.FormUp");
             _jetTrack = Ctx.Locations.Position("M27.JetTrack");
@@ -212,7 +219,7 @@ namespace Bloodlines.Missions.Campaign
                 {
                     _ashore = true;
                     _roadCar = StageRoadCar();
-                    if (_roadCar == null) throw new InvalidOperationException("No vehicle could be staged at the shore for the ledger run.");
+                    if (_roadCar == null) { _fault = "No vehicle could be staged at the shore for the ledger run. Retry the jump."; return; }
                     RequireAsset(_roadCar, "The car waiting at the shore was destroyed.");
                     if (_ledger != null && _ledger.Exists()) StowPropStep.Stow(_ledger, _roadCar, new Vector3(0f, -0.9f, 0.6f));
                 });
@@ -356,6 +363,7 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected override void OnUpdate()
         {
+            if (_fault != null) { Fail(_fault); return; }
             RunPickup();
             // Gohan came ashore too; he is not left standing on the rocks while Ice drives
             // off with the ledger. Ordered, not required: the job is the ledger reaching the
@@ -628,10 +636,11 @@ namespace Bloodlines.Missions.Campaign
             if (_shamal == null || !_shamal.Exists()) return;
 
             _shamal.IsPersistent = true;
-            _shamal.IsEngineRunning = true;
             // Created at seven hundred meters, so it has to arrive with flying speed on
-            // it. The AI cannot recover a jet handed to it already sinking.
-            _shamal.ForwardSpeed = ShamalLaunchSpeed;
+            // it. The AI cannot recover a jet handed to it already sinking. The shared
+            // launch runs the engine and sets the airspeed together, the way every other
+            // aircraft made in the air is started (the September 22 audit).
+            AircraftHold.LaunchAirborne(_shamal, ShamalLaunchSpeed);
 
             _shamalPilot = Track(World.CreatePed(pilotModel, _shamal.Position, 0f));
             model.MarkAsNoLongerNeeded();
@@ -648,7 +657,14 @@ namespace Bloodlines.Missions.Campaign
             _shamalPilot.SetIntoVehicle(_shamal, VehicleSeat.Driver);
             if (_shamal.GetPedOnSeat(VehicleSeat.Driver) != _shamalPilot)
             {
+                // Logging and carrying on left both of them in the world, so the asset check
+                // passed and Ron was sent after a jet with nobody flying it. No pilot, no
+                // target: remove both and let the start refuse (the September 22 audit).
                 Logger.Error("M27: the Shamal pilot could not be seated; there is nothing to intercept.");
+                GameUtils.SafeDelete(_shamalPilot);
+                GameUtils.SafeDelete(_shamal);
+                _shamalPilot = null;
+                _shamal = null;
                 return;
             }
 

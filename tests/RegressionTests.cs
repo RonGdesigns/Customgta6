@@ -110,6 +110,11 @@ public static partial class RegressionTests {
   Check(passenger.Task.Guards==0&&passenger.Task.Clears==0&&passenger.IsInVehicle(heldRide),"Holding a seated companion never applies an on-foot guard or clear task");
   ai.Refresh(CrewSlot.Ice);ai.Update(CrewSlot.Ice,passenger,leader);
   Check(passenger.Task.Guards==0&&passenger.Task.Clears==0&&passenger.IsInVehicle(heldRide),"A fresh AI decision after switching still preserves the held passenger seat");
+  // Ron, September 22: a brother with nothing left to do comes to the player even while the
+  // mission holds the rest of the crew where they are.
+  var idle=new Ped{Position=new Vector3(20,0,0)};ai.TakeControl(CrewSlot.Guess);ai.Rejoin(CrewSlot.Guess);ai.Update(CrewSlot.Guess,idle,leader);
+  Check(ai.IsRejoining(CrewSlot.Guess)&&ai.StateOf(CrewSlot.Guess)!=CompanionState.Hold&&ai.StateOf(CrewSlot.Guess)!=CompanionState.Scripted,"A brother let go by the mission rejoins the player through a hold");
+  ai.TakeControl(CrewSlot.Guess);Check(!ai.IsRejoining(CrewSlot.Guess),"and the next thing the mission gives him takes him back");
   ai.HoldPosition=false;ai.Update(CrewSlot.Gohan,c,leader);Check(ai.StateOf(CrewSlot.Gohan)==CompanionState.Vehicle,"Releasing Hold restores vehicle behavior for the getaway");
  }
  static void ObjectiveTests(){

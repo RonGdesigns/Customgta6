@@ -82,6 +82,7 @@ public static partial class StoryTests
   Reset();roster=Roster();ctx=Context(roster);var missingBoat=new SM05BlackBoxEstuary();missingBoat.Begin(ctx);ctx.Cutscenes.Skip();PackageCall(missingBoat,"Moor");missingBoat.Boat.IsDead=true;missingBoat.Tick();
   Check(missingBoat.Status==MissionStatus.Failed&&!missingBoat.Moored&&!Game.Player.Character.IsPositionFrozen,"Losing a moored boat fails clearly and releases its temporary hold");
   Reset();roster=Roster();ctx=Context(roster);GameUtils.RoadAvailable=true;var pursuit=new SM06CanyonRunner();pursuit.Begin(ctx);ctx.Cutscenes.Skip();Game.Player.Character.SetIntoVehicle(pursuit.Truck,VehicleSeat.Driver);pursuit.Tick();
-  Check(World.Vehicles.Count(v=>v.Model.Name=="sanchez")==3&&World.Created.Count(p=>p.CurrentVehicle!=null)==3,"A valid road approach launches three occupied pursuit bikes");pursuit.Abort();GameUtils.RoadAvailable=false;
+  // Two to a bike since the September 22 audit: the rider chases, the man behind him shoots.
+  Check(World.Vehicles.Count(v=>v.Model.Name=="sanchez")==3&&World.Created.Count(p=>p.CurrentVehicle!=null)==6,"A valid road approach launches three occupied pursuit bikes");pursuit.Abort();GameUtils.RoadAvailable=false;
  }
 }

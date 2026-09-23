@@ -45,9 +45,21 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where the campaign records the escrow is open.</summary>
         public const string EscrowEvidence = "aegisEscrowOpen";
 
+        /// <summary>How long calling the lift takes, and how near the entrance counts.</summary>
+        public const int LiftCallSeconds = 2;
+        public const float DoorsRadius = 3.5f;
+        /// <summary>
+        /// Vance's own relationship group until the escrow is open. In the Aegis group the
+        /// brothers' combat logic, which takes the nearest hated man within a hundred and ten
+        /// meters, shot him before Gohan reached the terminal and failed the mission for the
+        /// player (Ron, September 22).
+        /// </summary>
+        public const string VanceGroup = "BLOODLINES_VANCE";
+
         private readonly List<Ped> _detail = new List<Ped>();
+        private readonly FloorEntry _entry = new FloorEntry();
         private Ped _vance;
-        private Vector3 _arrival, _terminal;
+        private Vector3 _arrival, _terminal, _doors;
         private bool _inside, _detailDown, _escrow, _vanceDown;
 
         public override string Id => "M65";
@@ -72,19 +84,36 @@ namespace Bloodlines.Missions.Campaign
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Ice)) return false;
+            // The entrance is on the raised plaza deck; one probe puts the lift call on the slab.
+            _doors = MissionSites.OnSurface(At("M65.Doors"), MazeBank.PlazaHeadroom, MazeBank.PlazaFloor, Id + " tower entrance", 3);
             Establish("approach", "The man who signed the contracts",
                 "Vance is on the executive floor with what is left of his detail. Gohan needs him at his own terminal before anyone shoots him: the escrow opens on his biometrics and on nothing else.");
             return true;
         }
 
+        private Vector3 DoorsPoint() => _doors == Vector3.Zero ? At("M65.Doors") : _doors;
+
+        /// <summary>
+        /// The lift. This only asks the access service for the floor; the boardroom is laid out
+        /// in <see cref="OnUpdate"/> once the service reports the player standing in it. Reading
+        /// his position in this same call gave the plaza, and Vance, his detail and the terminal
+        /// were all placed out there while Ice was in the office (Ron, September 22).
+        /// </summary>
+        private void GoUp() => _entry.Request(Ctx, MazeBank.Office, MazeBank.OfficeIpl);
+
         /// <summary>Into the boardroom, and the room's layout found rather than written down.</summary>
-        private void GoUp()
+        private void OnTheFloor()
         {
-            string failure;
-            if (!MazeBank.Enter(Ctx, MazeBank.Office, MazeBank.OfficeIpl, out failure)) { Fail(failure); return; }
-            _inside = true;
-            _arrival = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot)?.Position ?? MazeBank.Office;
+            _arrival = _entry.Arrival;
             _terminal = MazeBank.Nearby(_arrival, 0.0, RoomSpread, Id + " escrow terminal");
+            // Gohan's biometrics and Ice's shot both happen up here, so both brothers come up.
+            int n = 0;
+            foreach (var hero in Protagonist.All)
+            {
+                if (hero.Slot == Ctx.Crew.ActiveSlot) continue;
+                var spot = MazeBank.BringAlongside(Ctx, hero.Slot, _arrival, 300.0 + 60.0 * n++, Id + " lift");
+                if (spot.HasValue) Roles?.For(hero.Slot).Observe(spot.Value, spot.Value);
+            }
 
             var model = new Model(VanceModel);
             if (GameUtils.RequestModel(model))
@@ -103,8 +132,13 @@ namespace Bloodlines.Missions.Campaign
             _vance.BlockPermanentEvents = true;
             _vance.MaxHealth = VanceHealth;
             _vance.Health = VanceHealth;
-            _vance.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
-            Opposition.Add(_vance);
+            // Not Opposition and not Aegis until the escrow is open. Opposition is what the
+            // brothers pick targets from and what guard awareness orders into combat, and the
+            // Aegis group is what they hate: either one had the AI shoot him before Gohan
+            // reached the terminal. A group nobody has set a relationship with is hated by
+            // nobody, so the brothers leave him standing. The player shooting him early still
+            // fails, below.
+            _vance.RelationshipGroup = World.AddRelationshipGroup(VanceGroup);
             Blips.Attach(_vance, BlipColor.Red, "Colonel Vance");
             // No RequireAsset on him. That contract fails the mission the moment the entity is
             // dead, and the last stage is Ice killing him - so it failed at the moment of
@@ -123,6 +157,7 @@ namespace Bloodlines.Missions.Campaign
                 Fail("The boardroom did not load its detail. Retry the mission.");
                 return;
             }
+            _inside = true;
             Fighting = true;
             Logger.Info(Id + ": the boardroom is at " + _arrival + "; Vance at " + _vance.Position +
                 ", terminal at " + _terminal + ", " + _detail.Count + " on the detail.");
@@ -133,11 +168,16 @@ namespace Bloodlines.Missions.Campaign
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            yield return new MissionStage("To the executive lift",
+                new MissionInteraction("Call the lift to the executive floor", DoorsPoint, LiftCallSeconds, DoorsRadius))
+                .AnyBrother()
+                .OnExit(c => GoUp());
+
+            // The ride is the access service's fade and load; the room is laid out only once
+            // it reports the player standing in it.
             yield return new MissionStage("Reach the executive floor",
-                new ConditionObjective("Take the lift to the executive floor", () => _inside)
-                { Marker = () => At("M65.Doors"), MarkerRadius = 4f })
-                .AnyOf()
-                .OnEnter(c => GoUp())
+                new ConditionObjective("Riding the lift to the executive floor", () => _inside))
+                .AnyBrother()
                 .AfterCues("M65_S1_01_ENEMY");
 
             yield return new MissionStage("Break the detail",
@@ -165,12 +205,28 @@ namespace Bloodlines.Missions.Campaign
         private void Opened()
         {
             _escrow = true;
+            // Now he is fair game: back in the Aegis group and on the target list, so the
+            // brothers' combat logic and guard awareness both treat him as the fight.
+            if (_vance != null && _vance.Exists() && !_vance.IsDead)
+            {
+                _vance.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_AEGIS");
+                Opposition.Add(_vance);
+            }
             Ctx.State?.SetEvidence(EscrowEvidence, EvidenceState.CopyHeld);
             Logger.Info(Id + ": the escrow authorizations are Gohan's.");
         }
 
+        protected override void OnCleanup()
+        {
+            _entry.Release(Ctx, Protagonist.All.Select(h => Ctx.Crew.PedFor(h.Slot)));
+            base.OnCleanup();
+        }
+
         protected override void OnUpdate()
         {
+            if (_entry.Update(Ctx)) OnTheFloor();
+            if (_entry.Refused) { Fail(_entry.Failure); return; }
+            if (Status != MissionStatus.Running) return;
             // The one rule this fight has. Vance dead before the biometrics is a mission that
             // cannot be finished, so it fails now with a reason rather than hanging later.
             if (_inside && !_escrow && _vance != null && _vance.Exists() && _vance.IsDead)

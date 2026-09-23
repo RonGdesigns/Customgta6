@@ -44,10 +44,21 @@ namespace Bloodlines.Missions.Campaign
         public const int WalkPatienceMs = 60000;
         /// <summary>How long he gets to reach cover once he knows.</summary>
         public const int EscapeMs = 45000;
+        /// <summary>
+        /// How far from the steps the ride takes them, away from the plaza on the side the bike
+        /// waited. The getaway was a lone LoseWantedObjective, which passes the instant Ice is
+        /// on the bike when nobody has called it in, and when somebody had, Ice was a passenger
+        /// on a bike whose rider had no order to go anywhere (Ron, September 22).
+        /// </summary>
+        public const float EscapeMeters = 450f;
+        public const float EscapeRadius = 40f;
+        /// <summary>How far from the derived escape point a real road node is accepted.</summary>
+        public const float EscapeRoadSearch = 120f;
 
         public Ped Harrison { get; private set; }
         private Vehicle _bike;
         private bool _identified, _clear, _struck;
+        private Vector3 _escape;
         private int _alarmAt = -1, _walkAt, _orderAt;
 
         public override string Id => "M52";
@@ -105,8 +116,21 @@ namespace Bloodlines.Missions.Campaign
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            // The way up first. Ron's only attempt ended 54 m west of the roost with nothing
+            // telling him how to get there: a GPS route to a point on a roof follows the
+            // streets, and the ladder under the roost does not start at the street. The
+            // archives put bh1_16_ladder_mission_fizz on the roof itself, climbing from the
+            // slab at about 50.3 (roof vents and air handlers stand round it at that height),
+            // and the only way onto that roof they show is bh1_16_scaff on the block's south
+            // corner: tool boxes and paint benches at 40.7, 41.5, 44.1, 46.8 and 49.3, which
+            // is a scaffold with working platforms from the street to the roof. M52.Scaffold
+            // is the sidewalk at its foot. An estimate: nobody has climbed it yet.
+            yield return new MissionStage("Find the way up",
+                new ReachZoneObjective("Ice: get to the scaffolding on the south corner of the roost's block", () => At("M52.Scaffold"), 4f))
+                .OwnedBy(CrewSlot.Ice);
+
             yield return new MissionStage("Get on the roof",
-                new ReachZoneObjective("Ice: take the service ladder to the roof across the plaza", () => _roost, 6f))
+                new ReachZoneObjective("Ice: climb the scaffolding, cross the roof north-west and take the service ladder up to the roost", () => _roost, 6f))
                 .OwnedBy(CrewSlot.Ice);
 
             yield return new MissionStage("Identify Harrison",
@@ -140,12 +164,40 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Ice)
                 .AfterCues("M52_S1_03_GUESS");
 
-            // No chase coordinate. An assassination ends when the response loses you, and
-            // that is a state rather than a place.
+            // An assassination ends when the response loses you, and that is still the rule:
+            // the stage does not close while anyone is after them. But losing heat nobody
+            // raised is not a getaway, so they also have to be clear of the plaza, and Guess
+            // has somewhere to ride while the player sits pillion as Ice. The point is derived
+            // from the steps and the bike, never authored, and snapped to a real road.
             yield return new MissionStage("Lose the response",
+                new TravelObjective("Guess: ride Ice clear of the plaza", Escape, EscapeRadius, () => _bike),
                 new LoseWantedObjective("Ride clear of Downtown and lose the Aegis cruisers"),
                 new ProtectObjective("", () => _bike, "The bike was destroyed before they got clear."))
-                .AnyOf();
+                .AnyBrother()
+                .OnEnter(c => DrivingDestination = Escape)
+                .OnExit(c => DrivingDestination = null);
+        }
+
+        /// <summary>
+        /// Where the ride ends: <see cref="EscapeMeters"/> from the steps, on the far side of
+        /// the bike from them, moved onto the nearest road node when the game has one there.
+        /// Worked out once, the first time it is asked for.
+        /// </summary>
+        private Vector3 Escape()
+        {
+            if (_escape != Vector3.Zero) return _escape;
+            var steps = At("M52.Harrison");
+            var away = At("M52.Bike") - steps;
+            away = new Vector3(away.X, away.Y, 0f);
+            if (away.Length() < 1f) away = new Vector3(-1f, 0f, 0f);
+            var seed = steps + away * (EscapeMeters / away.Length());
+            if (GameUtils.NearestRoadNode(seed, EscapeRoadSearch, out var node, out float _)) _escape = node;
+            else
+            {
+                _escape = GameUtils.OnGround(seed);
+                Logger.Warn(Id + ": no road node near the escape point " + seed + "; riding for the point itself.");
+            }
+            return _escape;
         }
 
         protected override void OnUpdate()

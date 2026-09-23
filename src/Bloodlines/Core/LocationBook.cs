@@ -231,6 +231,9 @@ namespace Bloodlines.Core
             return _locations.TryGetValue(key, out var location) ? location : null;
         }
 
+        /// <summary>A key's location without recording it as one the mission stands on.</summary>
+        public MissionLocation Peek(string key) => _locations.TryGetValue(key, out var location) ? location : null;
+
         internal void AddEditable(string key, string anchorKey, Vector3 offset, string label)
         {
             var anchor = Get(anchorKey);

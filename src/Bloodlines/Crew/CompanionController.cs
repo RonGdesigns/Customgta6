@@ -134,6 +134,10 @@ namespace Bloodlines.Crew
 
         private readonly Dictionary<CrewSlot, Ped> _threats = new Dictionary<CrewSlot, Ped>();
         private readonly Dictionary<CrewSlot, int> _lastScan = new Dictionary<CrewSlot, int>();
+        /// <summary>Who each brother firing from a seat was last told to shoot, and when.</summary>
+        private readonly Dictionary<CrewSlot, Tuple<int, int>> _seatShots = new Dictionary<CrewSlot, Tuple<int, int>>();
+        /// <summary>How long a shot order from a seat stands before it is renewed at the same man.</summary>
+        public const int SeatShotRenewMs = 6000;
         private readonly Dictionary<CrewSlot, Boarding> _boarding = new Dictionary<CrewSlot, Boarding>();
         private sealed class Boarding { public Vehicle Vehicle; public VehicleSeat Seat; }
 
@@ -332,6 +336,7 @@ namespace Bloodlines.Crew
         /// <summary>A mission takes direct control of one companion until it releases it.</summary>
         public void TakeControl(CrewSlot slot)
         {
+            _rejoin.Remove(slot);
             Life.Suspend(slot);
             Presence.Release(slot);
             Driver.Forget(slot);
@@ -341,8 +346,27 @@ namespace Bloodlines.Crew
             SetState(slot, CompanionState.Scripted);
         }
 
+        /// <summary>Whether a mission or service is holding this brother.</summary>
+        public bool IsHeld(CrewSlot slot) => _scripted.Contains(slot);
+
+        /// <summary>
+        /// A mission has nothing for this brother right now: he comes back to the player -
+        /// follows him, fights with him, gets in his vehicle - even while the mission holds
+        /// the rest of the crew in place. The next thing the mission gives him takes him back
+        /// through <see cref="TakeControl"/>.
+        /// </summary>
+        public void Rejoin(CrewSlot slot)
+        {
+            _scripted.Remove(slot);
+            _rejoin.Add(slot);
+            Presence.Release(slot);
+        }
+        public bool IsRejoining(CrewSlot slot) => _rejoin.Contains(slot);
+        private readonly HashSet<CrewSlot> _rejoin = new HashSet<CrewSlot>();
+
         public void ReleaseControl(CrewSlot slot)
         {
+            _rejoin.Remove(slot);
             _scripted.Remove(slot);
             Presence.Release(slot);
             SetState(slot, CompanionState.Follow);
@@ -350,6 +374,7 @@ namespace Bloodlines.Crew
 
         public void ReleaseAll()
         {
+            _rejoin.Clear();
             _scripted.Clear();
             Presence.Clear();
             ClearOrders();
@@ -416,7 +441,8 @@ namespace Bloodlines.Crew
                     break;
                 case CompanionState.Combat:
                     if (StateAge(slot) >= 1000 && _threats.TryGetValue(slot, out var desired) &&
-                        (!companion.IsInCombat || combatTarget == null || !combatTarget.Exists() || combatTarget.Handle != desired.Handle))
+                        (companion.IsInVehicle() ? SeatShotStale(slot, desired)
+                            : (!companion.IsInCombat || combatTarget == null || !combatTarget.Exists() || combatTarget.Handle != desired.Handle)))
                     {
                         Engage(slot, companion, leader);
                         _stateSince[slot] = Game.GameTime;
@@ -456,7 +482,7 @@ namespace Bloodlines.Crew
             if (_scripted.Contains(slot)) return CompanionState.Scripted;
             // Separate approach actors must not board the leader's car or abandon
             // their assignment because another character starts a fight.
-            if (HoldPosition) return CompanionState.Hold;
+            if (HoldPosition && !_rejoin.Contains(slot)) return CompanionState.Hold;
             var ordered = DecideOrdered(slot, companion, leader);
             if (ordered.HasValue) return ordered.Value;
             // An individually dismissed or separate-car companion leaves only after a safe stop.
@@ -640,10 +666,22 @@ namespace Bloodlines.Crew
             if (!_threats.TryGetValue(slot, out var target) || IsFriendly(target, companion, leader)) return;
             if (companion.IsInVehicle())
             {
-                if (companion.CurrentVehicle.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle) return;
+                var ride = companion.CurrentVehicle;
+                if (ride.GetPedOnSeat(VehicleSeat.Driver)?.Handle == companion.Handle) return;
                 Function.Call(Hash.SET_PED_COMBAT_ATTRIBUTES, companion, 2, true);
-                companion.Weapons.Give(WeaponHash.MicroSMG, 300, true, true);
-                companion.Task.VehicleShootAtPed(target);
+                // A mounted gun is worked with the vehicle-weapon task; anybody else in a seat
+                // leans out and fires. The vehicle-weapon task from a plain passenger seat has
+                // no gun to use, which is why a brother riding with Ron sat through the police
+                // shooting at them (September 22).
+                if (Function.Call<bool>(Hash.IS_TURRET_SEAT, ride, (int)companion.SeatIndex))
+                    companion.Task.VehicleShootAtPed(target);
+                else
+                {
+                    companion.Weapons.Give(WeaponHash.MicroSMG, 300, true, true);
+                    Function.Call(Hash.TASK_DRIVE_BY, companion, target, 0, 0f, 0f, 0f, 100f, 100, false,
+                        Game.GenerateHash("FIRING_PATTERN_BURST_FIRE_DRIVEBY"));
+                }
+                _seatShots[slot] = Tuple.Create(target.Handle, Game.GameTime);
             }
             else
             {
@@ -653,6 +691,13 @@ namespace Bloodlines.Crew
             }
             Logger.Debug(Protagonist.Of(slot).Handle + " engaging hostile " + target.Handle);
         }
+
+        /// <summary>
+        /// A shot order from a seat is renewed only for a new man or after a while. Renewing it
+        /// every second restarted the drive-by before a round left the window.
+        /// </summary>
+        private bool SeatShotStale(CrewSlot slot, Ped desired) =>
+            !_seatShots.TryGetValue(slot, out var last) || last.Item1 != desired.Handle || Game.GameTime - last.Item2 > SeatShotRenewMs;
 
         private void BoardVehicle(CrewSlot slot, Ped companion, Ped leader)
         {

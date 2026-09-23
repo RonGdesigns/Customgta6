@@ -625,7 +625,7 @@ M51.Charge5	2779.180	1438.650	23.480	270	land	estimate	Palmer-Taylor Power Stati
 M51.Charge6	2780.640	1444.090	23.500	270	land	estimate	Palmer-Taylor Power Station / a real plant unit in the east bank, its own placed height from the archives; the bible's six 500kV transformers are not props on this site, these six are
 M51.Control	2750.080	1465.180	23.480	0	land	estimate	Palmer-Taylor Power Station / placed plant machinery between the two banks, its own archive height; the failover interlocks
 M51.Guard1	2668.000	1395.000	23.600	0	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (15 m clear)
-M51.Guard2	2748.000	1403.000	23.700	180	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (19 m clear)
+M51.Guard2	2776.000	1420.000	23.500	180	land	estimate	Palmer-Taylor Power Station / inside the transformer yard by the east bank, 42 m from the surveyed crew car; the old post stood 11 m from it, so walking back to the car started a firefight (Ron, September 22); archives show open ground at yard level beside a placed skip at 23.41, live survey pending
 M51.Guard3	2756.000	1443.000	23.600	180	land	estimate	Palmer-Taylor Power Station / inside the transformer yard; archives show open ground at yard level, live survey pending (14 m clear)
 M51.Exit	2620.000	1320.000	25.500	200	land	estimate	Palmer-Taylor Power Station / open ground south of the yard by the placed cabinet at 25.11; 31 m clear, live survey pending
 M52.Start	-644.000	-269.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
@@ -633,6 +633,7 @@ M52.IceStart	-650.000	-269.000	38.000	45	land	estimate	Rockford Hills / the serv
 M52.GuessStart	-650.000	-263.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, live survey pending
 M52.GohanStart	-650.000	-275.000	38.000	45	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 28 m clear, live survey pending
 M52.Bike	-644.000	-275.000	38.000	200	land	estimate	Rockford Hills / the service street west of the City Hall plaza, below the roof the mission ladder serves; archives show 23 m clear, the superbike waits here, live survey pending
+M52.Scaffold	-601.500	-295.500	35.300	320	land	estimate	Rockford Hills / the sidewalk at the foot of bh1_16_scaff, the scaffold on the south corner of the roost's block; archives show working platforms on it at 40.7 to 49.3 and the roof at about 50.3, which is the only way up to the service ladder they show; nobody has climbed it, live survey pending
 M52.Roost	-615.900	-240.800	53.300	60	land	estimate	Rockford Hills / the top of bh1_16_ladder_mission_fizz, the ladder Rockstar placed for a mission; the standing height is probed down onto the roof slab at runtime because a prop origin is not a floor
 M52.Harrison	-537.000	-186.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 12 m from the hall; where he comes out, live survey pending
 M52.Walk	-521.000	-226.000	38.000	200	land	estimate	Burton / City Hall plaza at its own level; archives show 13 m clear, 55 m from the roost; where he is clear of his detail, live survey pending
@@ -645,7 +646,7 @@ M50.GohanStart	-922.000	352.000	74.500	120	land	estimate	Rockford Hills / the re
 M50.GuessStart	-910.000	346.000	74.500	120	land	estimate	Rockford Hills / the residential street above the conduit run; archives show 16 m clear
 M50.Van	-910.000	352.000	74.500	120	land	estimate	Rockford Hills / where the surveillance van waits; archives show 14 m clear
 M50.Conduit	-898.120	334.870	74.610	30	land	estimate	Rockford Hills / the street cabinet Gohan splices, a placed prop_elecbox_11 at its own archive height; 88 things within 40 m, so this is a built-up street rather than open ground
-M50.Guard1	-913.000	349.000	74.500	200	land	estimate	Rockford Hills / private security post, 21 m from the cabinet; archives show 18 m clear
+M50.Guard1	-905.000	300.000	70.500	20	land	estimate	Rockford Hills / private security post down the street south of the cabinet, 35 m from it and 46 m from the nearest crew start; the old post stood 4 m from the crew and the van, so the brothers opened fire on a watchman at spawn (Ron, September 22); archives put the sidewalk here at 70.4 by a placed prop_elecbox_16
 M50.Guard2	-901.000	319.000	74.500	0	land	estimate	Rockford Hills / private security post, 16 m from the cabinet; archives show 12 m clear
 M50.Guard3	-859.000	331.000	74.500	270	land	estimate	Rockford Hills / private security post, 39 m from the cabinet; archives show 13 m clear
 M50.Exit	-1075.000	290.000	63.000	200	land	estimate	Rockford Hills / clear of the block, beside a placed cabinet at 62.9 so the height is grounded; live survey pending

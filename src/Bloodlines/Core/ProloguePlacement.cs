@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using GTA;
 using GTA.Math;
 using GTA.Native;
@@ -15,10 +16,47 @@ namespace Bloodlines.Core
         /// </summary>
         private const float IceApproachMinimum = 12f;
 
+        /// <summary>How far the service terminal has to stay from Mateo, so Gohan's hack is not done in front of him.</summary>
+        private const float TerminalMateoMinimum = 30f;
+
+        // One attempt asks for the dock twice: the cold open resolves it before its
+        // first shot, and the mission's own start asks again. The second pass used to
+        // snap the already-snapped points, each up to 30 m further, and on Ron's
+        // September 22 run that walked the terminal inside 30 m of Mateo and refused
+        // M01 three times. The dock is now resolved once, from the authored points,
+        // and every later call in the same attempt reuses that answer.
+        private static LocationBook _book;
+        private static readonly Dictionary<MissionLocation, Vector3> Authored = new Dictionary<MissionLocation, Vector3>();
+        private static readonly Dictionary<MissionLocation, Vector3> Applied = new Dictionary<MissionLocation, Vector3>();
+
+        /// <summary>
+        /// Puts every key this placement moved back where the author left it, so one
+        /// attempt's correction is never the next attempt's starting point. A key
+        /// somebody has edited since (a survey capture) is his, and is left alone.
+        /// </summary>
+        public static void Restore()
+        {
+            foreach (var pair in Applied)
+                if (pair.Key.Position == pair.Value && Authored.TryGetValue(pair.Key, out var authored))
+                    pair.Key.Position = authored;
+            Applied.Clear();
+            Authored.Clear();
+            _book = null;
+        }
+
         public static bool Prepare(LocationBook book)
         {
+            if (book == null) return false;
+            if (!ReferenceEquals(book, _book)) { Applied.Clear(); Authored.Clear(); _book = book; }
+            // Already resolved this attempt, and nothing has moved a key since.
+            if (Applied.Count > 0 && Applied.All(pair => pair.Key.Position == pair.Value))
+            {
+                Logger.Info("M01 dock placement already resolved for this attempt; reusing it.");
+                return true;
+            }
             // Validate all placements before moving anyone or changing any live keys.
             var resolved = new Dictionary<MissionLocation, Vector3>();
+            var sources = new Dictionary<MissionLocation, Vector3>();
             try
             {
                 // The exit is not here: it is a drive-to marker at the far gate, reached
@@ -29,7 +67,13 @@ namespace Bloodlines.Core
                 foreach (string key in new[] { "M01.IceApproach", "M01.GuessApproach", "M01.GohanApproach", "M01.CraneNest", "M01.ServiceTerminal", "M01.PrototypeCar", "M01.CapoSpawn", "M01.RegroupPoint" })
                 {
                     var location = book.Get(key);
-                    if (location == null || !TryLand(location.Position, out var point))
+                    if (location == null) { Logger.Error("M01 could not find a loaded walkable surface for " + key); return false; }
+                    // Resolve from what the author wrote, never from an earlier pass's
+                    // correction; a key edited since that pass is taken as it now reads.
+                    var source = Applied.TryGetValue(location, out var applied) && location.Position == applied &&
+                                 Authored.TryGetValue(location, out var authored) ? authored : location.Position;
+                    sources[location] = source;
+                    if (!TryLand(source, out var point))
                     {
                         Logger.Error("M01 could not find a loaded walkable surface for " + key);
                         return false;
@@ -68,16 +112,35 @@ namespace Bloodlines.Core
                 }
                 // Ground snapping and saved overrides must never put the hacker
                 // beside Mateo. Check after resolving both positions, before spawning.
-                if (GameUtils.IsWithinFlat(resolved[book.Get("M01.ServiceTerminal")], resolved[book.Get("M01.CapoSpawn")], 30f))
+                // Snapping closing the gap is the same geometry problem as the
+                // lookout's, so the terminal is pushed away from Mateo along the line
+                // between them; only a terminal sitting on Mateo himself, or a push
+                // that lands on Gohan's own start, still refuses.
+                var terminal = book.Get("M01.ServiceTerminal");
+                var mateo = book.Get("M01.CapoSpawn");
+                if (GameUtils.IsWithinFlat(resolved[terminal], resolved[mateo], TerminalMateoMinimum))
                 {
-                    Logger.Error("M01 service terminal resolved too close to Mateo.");
-                    GameUtils.Notify("M01 terminal is too close to Mateo. Re-survey M01.ServiceTerminal at least 30m away, then retry.");
-                    return false;
+                    var bearing = Flat(resolved[mateo], resolved[terminal]);
+                    if (bearing == Vector3.Zero || !TryLand(resolved[mateo] + bearing * (TerminalMateoMinimum + 4f), out var pushed) ||
+                        GameUtils.IsWithinFlat(pushed, resolved[mateo], TerminalMateoMinimum) ||
+                        GameUtils.IsWithinFlat(resolved[book.Get("M01.GohanApproach")], pushed, 40f))
+                    {
+                        Logger.Error("M01 service terminal resolved too close to Mateo: terminal " + resolved[terminal] +
+                                     ", Mateo " + resolved[mateo] + ", and no free ground further out along that line.");
+                        GameUtils.Notify("M01 terminal is too close to Mateo. Re-survey M01.ServiceTerminal at least 30m away, then retry.");
+                        return false;
+                    }
+                    Logger.Warn("M01 service terminal resolved at " + resolved[terminal] + ", too close to Mateo at " +
+                                resolved[mateo] + "; pushed it out to " + pushed + ".");
+                    resolved[terminal] = pushed;
                 }
                 foreach (var pair in resolved)
                 {
-                    Logger.Info("M01 surface " + pair.Key.Key + ": " + pair.Key.Position + " -> " + pair.Value);
+                    Logger.Info("M01 surface " + pair.Key.Key + ": " + sources[pair.Key] + " -> " + pair.Value);
+                    if (!Authored.ContainsKey(pair.Key) || !Applied.TryGetValue(pair.Key, out var was) || pair.Key.Position != was)
+                        Authored[pair.Key] = sources[pair.Key];
                     pair.Key.Position = pair.Value; // Session adjustment, not a claimed manual survey.
+                    Applied[pair.Key] = pair.Value;
                 }
                 return true;
             }

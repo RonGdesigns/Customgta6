@@ -78,6 +78,23 @@ namespace Bloodlines.Missions.Campaign
         public const float SuiteSpread = 7f;
         /// <summary>Where the campaign records the escrow nodes are compromised.</summary>
         public const string NodesEvidence = "aegisEscrowNodes";
+        /// <summary>
+        /// How far from his arrival point a guard is stood when the walkable query answers
+        /// nothing, nearest last. MazeBank.Nearby hands back the arrival point itself in that
+        /// case, and in a blimp interior - or a tower 450 m from the player whose navmesh is
+        /// not loaded - that stacked every guard on the brother he was guarding (Ron,
+        /// September 22). Each distance is only taken if the game has the interior there.
+        /// </summary>
+        private static readonly float[] FallbackReach = { 4.5f, 3.5f, 2.5f };
+        /// <summary>Closer than this to the arrival point and a post counts as stacked.</summary>
+        public const float StackedMeters = 1.5f;
+        /// <summary>
+        /// A suite's security joins the fight when the player is that brother or comes this
+        /// close to it. Until then nobody there knows anything is happening.
+        /// </summary>
+        public const float LiveMeters = 120f;
+        /// <summary>Near enough to the regroup that the street under it is streamed and can be asked for.</summary>
+        public const float RegroupSettleMeters = 120f;
 
         private static readonly Dictionary<CrewSlot, string> Suites = new Dictionary<CrewSlot, string>
         {
@@ -89,8 +106,10 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Ped> _suiteGuards = new List<Ped>();
         private readonly List<Ped> _terminalGuards = new List<Ped>();
         private readonly List<Ped> _vaultGuards = new List<Ped>();
-        private Vector3 _terminal, _vault;
-        private bool _placed, _suiteClear, _terminalDone, _vaultDone;
+        private Vector3 _terminal, _vault, _regroup;
+        private bool _placed, _suiteClear, _terminalDone, _vaultDone, _regroupSettled;
+        /// <summary>Security at a suite the player is not at, kept out of the fight until he is.</summary>
+        private readonly Dictionary<CrewSlot, List<Ped>> _held = new Dictionary<CrewSlot, List<Ped>>();
 
         public override string Id => "M55";
         public override string Title => "Skyline Descent";
@@ -110,13 +129,22 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where each brother came out at the bottom of his tower, once the elevator has run.</summary>
         public readonly Dictionary<CrewSlot, Vector3> StreetExits = new Dictionary<CrewSlot, Vector3>();
 
+        /// <summary>Suites whose security is still being held out of the fight.</summary>
+        public IEnumerable<CrewSlot> HeldSuites => _held.Keys;
+
         /// <summary>
         /// Every penthouse key is seventy to ninety meters up inside a building, so the
-        /// engine's walkable query would answer with the street. The regroup on the ground is
-        /// deliberately not in this list.
+        /// engine's walkable query would answer with the street.
+        ///
+        /// The regroup is on the street, and it is here anyway. It is about 290 m from the
+        /// first penthouse, and ground preparation runs in Setup: an estimate with no walkable
+        /// answer within twelve meters refuses the whole mission, and navmesh that far from the
+        /// player may simply not be loaded yet. It is put on the street when the player gets
+        /// near it instead (<see cref="Regroup"/>), and the zone is flat, so its height only
+        /// moves the marker.
         /// </summary>
         protected override string[] FixedSurfaces =>
-            new[] { "M55.IceStart", "M55.GohanStart", "M55.GuessStart" };
+            new[] { "M55.IceStart", "M55.GohanStart", "M55.GuessStart", "M55.Regroup" };
 
         protected override bool Setup()
         {
@@ -147,6 +175,14 @@ namespace Bloodlines.Missions.Campaign
 
             _terminal = MazeBank.Nearby(At("M55.GohanStart"), 0.0, SuiteSpread, Id + " escrow terminal");
             _vault = MazeBank.Nearby(At("M55.GuessStart"), 0.0, SuiteSpread, Id + " ledger vault");
+
+            // The fight starts where the player is. Declaring it for all three towers at once
+            // radioed every guard in the city onto whichever brother stood nearest, which in a
+            // tower the player had never been to was the AI brother he could not help.
+            Hold(CrewSlot.Ice, _suiteGuards);
+            Hold(CrewSlot.Gohan, _terminalGuards);
+            Hold(CrewSlot.Guess, _vaultGuards);
+            WakeSuites();
             Fighting = true;
 
             Establish("approach", "Five minutes, three towers",
@@ -159,10 +195,88 @@ namespace Bloodlines.Missions.Campaign
         {
             for (int i = 0; i < count; i++)
             {
-                var post = MazeBank.Nearby(around, 45.0 + i * (360.0 / count), SuiteSpread, Id + " " + where + " guard " + (i + 1));
+                double degrees = 45.0 + i * (360.0 / count);
+                string what = Id + " " + where + " guard " + (i + 1);
+                var post = MazeBank.Nearby(around, degrees, SuiteSpread, what);
+                if (GameUtils.IsWithinFlat(post, around, StackedMeters)) post = OffTheArrival(around, degrees, what);
                 var ped = EnemyAt(post, "M55 " + where + " post " + (i + 1));
                 if (ped != null) into.Add(ped);
             }
+        }
+
+        /// <summary>
+        /// A post on the guard's own compass bearing, a few meters out from the arrival point,
+        /// when the walkable query gave back the arrival point itself. The farthest distance the
+        /// game says is still inside an interior wins; if it will not say, the shortest one is
+        /// used, because a guard 2.5 m across a room is a fight and one standing inside the
+        /// brother is a point-blank firefight.
+        /// </summary>
+        private static Vector3 OffTheArrival(Vector3 arrival, double degrees, string what)
+        {
+            double radians = degrees * Math.PI / 180.0;
+            var bearing = new Vector3((float)Math.Cos(radians), (float)Math.Sin(radians), 0f);
+            foreach (float reach in FallbackReach)
+            {
+                var candidate = arrival + bearing * reach;
+                if (!MissionSites.InteriorAt(candidate)) continue;
+                Logger.Info(what + ": no walkable floor answered; standing him " + reach + " m out from the arrival instead.");
+                return candidate;
+            }
+            float shortest = FallbackReach[FallbackReach.Length - 1];
+            Logger.Warn(what + ": no interior answered around the arrival; standing him " + shortest + " m out, unverified.");
+            return arrival + bearing * shortest;
+        }
+
+        /// <summary>Keep a suite's security out of the fight - no awareness, no role-track threat - until it is live.</summary>
+        private void Hold(CrewSlot slot, List<Ped> guards)
+        {
+            _held[slot] = guards;
+            foreach (var guard in guards) Opposition.Remove(guard);
+        }
+
+        /// <summary>
+        /// Bring a held suite into the fight: the player is that brother now, or he has come
+        /// within <see cref="LiveMeters"/> of it. Called every frame; each suite wakes once.
+        /// </summary>
+        private void WakeSuites()
+        {
+            if (_held.Count == 0) return;
+            var player = Game.Player.Character;
+            foreach (var slot in _held.Keys.ToList())
+            {
+                bool live = Ctx.Crew.ActiveSlot == slot ||
+                    (player != null && player.Exists() && player.Position.DistanceTo(At(Suites[slot])) < LiveMeters);
+                if (!live) continue;
+                foreach (var guard in _held[slot])
+                    if (guard != null && guard.Exists() && !Opposition.Contains(guard)) Opposition.Add(guard);
+                _held.Remove(slot);
+                Logger.Info(Id + ": the " + slot + " suite's security is in the fight now.");
+            }
+        }
+
+        /// <summary>
+        /// The regroup, on the street once the player is near enough for the street to be
+        /// streamed; the authored estimate until then. Settled once.
+        /// </summary>
+        private Vector3 Regroup()
+        {
+            var authored = At("M55.Regroup");
+            if (_regroupSettled) return _regroup;
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists() || !GameUtils.IsWithinFlat(player.Position, authored, RegroupSettleMeters)) return authored;
+            var street = World.GetSafeCoordForPed(authored, true, 0);
+            bool usable = street != Vector3.Zero && GameUtils.IsWithinFlat(street, authored, MissionSites.EstimateDrift) &&
+                          Math.Abs(street.Z - authored.Z) < MissionSites.EstimateDrop;
+            _regroup = usable ? street : authored;
+            _regroupSettled = true;
+            Logger.Info(Id + ": the regroup is " + (usable ? "on the street at " + street : "kept at its estimate " + authored) + ".");
+            return _regroup;
+        }
+
+        protected override void OnUpdate()
+        {
+            WakeSuites();
+            base.OnUpdate();
         }
 
         /// <summary>
@@ -241,7 +355,7 @@ namespace Bloodlines.Missions.Campaign
             // M55_S1_04_ICE calls a parachute descent to the canal. The nearest canal is eight
             // hundred meters from a ninety-meter roof, so it is not fired; they regroup instead.
             yield return new MissionStage("Off the towers",
-                new TravelObjective("Get out of the towers and regroup", () => At("M55.Regroup"), 20f))
+                new TravelObjective("Get out of the towers and regroup", Regroup, 20f))
                 .AnyBrother();
         }
 

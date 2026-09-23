@@ -80,6 +80,10 @@ namespace Bloodlines.Missions.Objectives
                 Hull = Math.Max(0f, Hull - (heavy ? HeavyHit : BulletHit));
                 if (heavy) HeavyHits++; else Hits++;
                 Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY, target);
+                // The weapon record is separate and is not cleared by the line above. Left
+                // set, one rocket read as a rocket every frame and emptied the meter in seven
+                // (the September 22 audit).
+                Function.Call(Hash.CLEAR_ENTITY_LAST_WEAPON_DAMAGE, target);
             }
 
             if (Hull > 0f)

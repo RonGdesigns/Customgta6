@@ -39,7 +39,8 @@ namespace Bloodlines.Missions.Campaign
         private int _nextPursuit;
         private Vector3 _launch;
         private Vector3 _slipway;
-        private bool _alarmShown, _blown;
+        private bool _alarmShown, _blown, _planted;
+        private readonly HashSet<int> _fired = new HashSet<int>();
 
         public override string Id => "M13";
         public override string Title => "Smuggler's Cut";
@@ -54,6 +55,7 @@ namespace Bloodlines.Missions.Campaign
         protected override bool Setup()
         {
             if (!MissionSites.Prepare(Ctx.Locations, Id)) return false;
+            _fired.Clear();
             _launch = Ctx.Locations.Position("M13.KayakLaunch");
             _slipway = Ctx.Locations.Position("M13.CanalSlipway");
             _barges.Add(Ctx.Locations.Position("M13.BargeOne"));
@@ -92,7 +94,7 @@ namespace Bloodlines.Missions.Campaign
                     new AvoidDetectionObjective(() => _watchmen,
                         "A dock watchman called it in before the charges were set.", 40f, 4))
                 .OwnedBy(CrewSlot.Ice)
-                .OnExit(context => SpawnAlarmBoat())
+                .OnExit(context => { _planted = true; SpawnAlarmBoat(); })
                 .AfterCues("M13_S1_01_ICE");
 
             // The alarm is the reason to leave: a launch turning into the basin,
@@ -186,27 +188,49 @@ namespace Bloodlines.Missions.Campaign
             else Radio("GOHAN", line, "M13_RADIO_01_GOHAN");
         }
 
+        /// <summary>How long apart the three charges go off.</summary>
+        public const int ChargeIntervalMs = 450;
+
         /// <summary>
-        /// The payoff. Explosions at each barge in sequence rather than at once —
-        /// simultaneous blasts read as one bug rather than three charges.
+        /// The payoff. The boats come off their anchors here; the charges themselves go
+        /// off in the result scene, one per shot, so they still read as three charges
+        /// rather than one bug. They used to be spaced with Script.Wait inside this stage
+        /// exit, which stalled every subsystem for a second and a half; a skipped or
+        /// unplayed scene fires all three, the same as watching it.
         /// </summary>
         private void Detonate()
         {
             _blown = true;
             foreach(var boat in _fuelBoats) if(boat!=null&&boat.Exists()) { boat.IsPositionFrozen=false; GTA.Native.Function.Call(GTA.Native.Hash.SET_BOAT_ANCHOR,boat,false); }
-            for (int i = 0; i < _barges.Count; i++)
-            {
-                World.AddExplosion(_fuelBoats[i].Position, ExplosionType.Tanker, 12f, 1.6f,
-                    Game.Player.Character, true, false);
-                Script.Wait(450);
-            }
         }
+
+        /// <summary>One charge: the explosion at that fuel boat, once, if the boat is still there to hold it.</summary>
+        private void FireCharge(int index)
+        {
+            if (index < 0 || index >= _fuelBoats.Count || _fired.Contains(index)) return;
+            _fired.Add(index);
+            var boat = _fuelBoats[index];
+            if (boat == null || !boat.Exists()) return;
+            World.AddExplosion(boat.Position, ExplosionType.Tanker, 12f, 1.6f, Game.Player.Character, true, false);
+        }
+
+        /// <summary>How many charges have gone off, for the harness.</summary>
+        public int ChargesFired => _fired.Count;
 
         /// <summary>The result, seen from the slipway: the basin burning, Ice's own line over it.</summary>
         private void PlayResult()
         {
-            var blocking = new SceneBlocking()
-                .Then(ShotStep.Wide(4200, _barges[1] + new Vector3(0f, 0f, 2f), 50f, 20f, 14f));
+            // The wide shot of the basin, cut into one still shot per charge so each goes
+            // off on its own beat without the camera moving.
+            var basin = _barges[1] + new Vector3(0f, 0f, 2f);
+            var blocking = new SceneBlocking();
+            int charges = _fuelBoats.Count;
+            for (int i = 0; i < charges; i++)
+            {
+                int charge = i;
+                int ms = i < charges - 1 ? ChargeIntervalMs : 4200 - ChargeIntervalMs * (charges - 1);
+                blocking.Then(new ShotStep(ms, null, basin + new Vector3(14f, -50f, 20f), null, basin + new Vector3(0f, 0f, 1f), 0f, () => FireCharge(charge)));
+            }
             if (_granger != null && _granger.Exists()) blocking.Then(new ShotStep(3000, _granger, new Vector3(-5f, 2.5f, 1.6f), null, _barges[1] + new Vector3(0f, 0f, 4f), 0.5f));
             var spec = new SceneSpec
             {
@@ -262,7 +286,7 @@ namespace Bloodlines.Missions.Campaign
                 catch
                 {
                     // A later failed site must not ratchet an earlier estimate
-                    // another thirty metres away on every startup retry.
+                    // another thirty meters away on every startup retry.
                     for (int i = 0; i < keys.Length; i++) Ctx.Locations.Get(keys[i]).Position = originals[i];
                     throw;
                 }
@@ -357,7 +381,10 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
-            if (!_blown && _fuelBoats.Exists(v=>v==null||!v.Exists()||v.IsDead))
+            // A boat lost before the charges are on it is a job that cannot be done. Once
+            // all three are planted, one going up early (a stray round from the pursuit)
+            // is the basin burning a little sooner, not a failure.
+            if (!_blown && !_planted && _fuelBoats.Exists(v=>v==null||!v.Exists()||v.IsDead))
             { Fail("A fuel boat was destroyed before the charges were ready. Restart the mission.");return; }
             if(!Ctx.Cutscenes.IsActive)Pursuit();
             base.OnUpdate();
@@ -365,6 +392,7 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnCleanup()
         {
+            _planted = false;
             _watchmen.Clear();
         }
     }

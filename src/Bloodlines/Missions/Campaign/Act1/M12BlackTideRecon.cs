@@ -39,6 +39,17 @@ namespace Bloodlines.Missions.Campaign
         private bool _surveyed, _patrolsShown, _hunting;
         private int _nextHunt;
         private readonly List<Ped> _gunners = new List<Ped>();
+        /// <summary>How long a hunting order stands with nothing changed before it is given again.</summary>
+        public const int HuntRefreshMs = 12000;
+        /// <summary>How far the ROV has to move before the launches are sent after it again.</summary>
+        public const float HuntRetargetMeters = 25f;
+        private readonly Dictionary<int, Vector3> _routedTo = new Dictionary<int, Vector3>();
+        private readonly Dictionary<int, int> _orderedAt = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _shootingAt = new Dictionary<int, int>();
+        private Ped _iceTarget;
+        private CrewSlot? _heldFor;
+        /// <summary>How many hunting orders have been given, for the harness.</summary>
+        public int HuntOrders { get; private set; }
 
         public override string Id => "M12";
         public override string Title => "Black Tide Recon";
@@ -239,28 +250,64 @@ namespace Bloodlines.Missions.Campaign
             if(_hunting&&!Ctx.Cutscenes.IsActive&&Game.GameTime>=_nextHunt)
             {
                 _nextHunt=Game.GameTime+2000;
-                var gohan=Ctx.Crew.PedFor(CrewSlot.Gohan);
-                foreach(var boat in _launches)
-                {
-                    if(boat==null||!boat.Exists()||boat.IsDead)continue;
-                    var driver=boat.GetPedOnSeat(VehicleSeat.Driver);
-                    if(driver!=null&&driver.Exists()&&!driver.IsDead&&_rov!=null&&_rov.Exists())
-                        driver.Task.StartBoatMission(boat,new Vector3(_rov.Position.X,_rov.Position.Y,0f),VehicleMissionType.GoTo,18f,(VehicleDrivingFlags)786603,18f,(BoatMissionFlags)7);
-                }
-                foreach(var gunner in _gunners)if(gunner.Exists()&&!gunner.IsDead)gunner.Task.VehicleShootAtPed(Game.Player.Character);
-                var ice=Ctx.Crew.PedFor(CrewSlot.Ice);
-                if(Ctx.Crew.ActiveSlot!=CrewSlot.Ice&&ice!=null&&ice.Exists())
-                {
-                    Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
-                    foreach(var enemy in _patrols)if(enemy.Exists()&&!enemy.IsDead){ice.Task.FightAgainst(enemy);break;}
-                }
-                if(Ctx.Crew.ActiveSlot!=CrewSlot.Gohan&&gohan!=null&&gohan.Exists()&&gohan.IsInVehicle(_rov))Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+                Hunt();
             }
             base.OnUpdate();
         }
 
+        /// <summary>
+        /// The hunt, reviewed every two seconds and ordered only on a change. Ron, September
+        /// 22: every review handed each launch a fresh route, each gunner a fresh shot and
+        /// Ice a fresh fight, which restarts all three before any of them can act. A launch
+        /// is sent again when the ROV has moved on, when it has stalled or on a slow refresh;
+        /// a gunner when the player is somebody else; Ice when his man is down or he has
+        /// dropped out of the fight.
+        /// </summary>
+        private void Hunt()
+        {
+            var player = Game.Player.Character;
+            foreach(var boat in _launches)
+            {
+                if(boat==null||!boat.Exists()||boat.IsDead||_rov==null||!_rov.Exists())continue;
+                var driver=boat.GetPedOnSeat(VehicleSeat.Driver);
+                if(driver==null||!driver.Exists()||driver.IsDead)continue;
+                var target=new Vector3(_rov.Position.X,_rov.Position.Y,0f);
+                bool routed=_routedTo.TryGetValue(driver.Handle,out var last);
+                bool moved=!routed||!GameUtils.IsWithinFlat(last,target,HuntRetargetMeters);
+                bool stale=!_orderedAt.TryGetValue(driver.Handle,out var at)||Game.GameTime-at>=HuntRefreshMs;
+                bool stalled=routed&&boat.Speed<1.5f&&Game.GameTime-at>6000&&!GameUtils.IsWithinFlat(boat.Position,target,20f);
+                if(!moved&&!stale&&!stalled)continue;
+                driver.Task.StartBoatMission(boat,target,VehicleMissionType.GoTo,18f,(VehicleDrivingFlags)786603,18f,(BoatMissionFlags)7);
+                _routedTo[driver.Handle]=target;_orderedAt[driver.Handle]=Game.GameTime;HuntOrders++;
+            }
+            foreach(var gunner in _gunners)
+            {
+                if(gunner==null||!gunner.Exists()||gunner.IsDead||player==null)continue;
+                if(_shootingAt.TryGetValue(gunner.Handle,out var aimed)&&aimed==player.Handle&&
+                   _orderedAt.TryGetValue(gunner.Handle,out var shot)&&Game.GameTime-shot<HuntRefreshMs)continue;
+                gunner.Task.VehicleShootAtPed(player);
+                _shootingAt[gunner.Handle]=player.Handle;_orderedAt[gunner.Handle]=Game.GameTime;HuntOrders++;
+            }
+            // A brother the player is not holding is the mission's while the hunt is on;
+            // taken once per change of who the player is, not on every review.
+            if(_heldFor!=Ctx.Crew.ActiveSlot)
+            {
+                _heldFor=Ctx.Crew.ActiveSlot;_iceTarget=null;
+                var gohan=Ctx.Crew.PedFor(CrewSlot.Gohan);
+                if(Ctx.Crew.ActiveSlot!=CrewSlot.Ice)Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Ice);
+                if(Ctx.Crew.ActiveSlot!=CrewSlot.Gohan&&gohan!=null&&gohan.Exists()&&gohan.IsInVehicle(_rov))Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+            }
+            var ice=Ctx.Crew.PedFor(CrewSlot.Ice);
+            if(Ctx.Crew.ActiveSlot==CrewSlot.Ice||ice==null||!ice.Exists()||ice.IsDead)return;
+            bool engaged=_iceTarget!=null&&_iceTarget.Exists()&&!_iceTarget.IsDead&&ice.IsInCombat;
+            if(engaged)return;
+            foreach(var enemy in _patrols)
+                if(enemy.Exists()&&!enemy.IsDead){ice.Task.FightAgainst(enemy);_iceTarget=enemy;HuntOrders++;break;}
+        }
+
         protected override void OnCleanup()
         {
+            _routedTo.Clear();_orderedAt.Clear();_shootingAt.Clear();_iceTarget=null;_heldFor=null;
             Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Ice); Ctx.Crew.CompanionAI.ReleaseControl(CrewSlot.Gohan);
             _gunners.Clear(); _patrols.Clear();
             _launches.Clear();

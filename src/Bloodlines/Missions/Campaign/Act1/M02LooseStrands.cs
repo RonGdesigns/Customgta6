@@ -534,12 +534,16 @@ namespace Bloodlines.Missions.Campaign
                     _technician.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_TRAFFIC");
                     _technician.IsPersistent = true;
                     _technician.BlockPermanentEvents = true;
-                    _technician.Task.WarpIntoVehicle(_van, VehicleSeat.Driver);
+                    // Seated outright, not by a queued warp: the route this driver is
+                    // given later would replace a warp still waiting to run and leave
+                    // him standing beside the van.
+                    _technician.SetIntoVehicle(_van, VehicleSeat.Driver);
                     // The route mission starts when the stash beat ends and the clock with it.
                 }
             }
 
             if (_technician == null || !_technician.Exists()) return false;
+            if (!_technician.IsInVehicle(_van)) { Logger.Error("M02 comm-van driver did not take the driver's seat."); return false; }
             var gunnerModel = new Model("s_m_y_blackops_01");
             if (!GameUtils.RequestModel(gunnerModel)) return false;
             for (int i=0; i<2; i++)

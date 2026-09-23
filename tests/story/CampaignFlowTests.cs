@@ -35,6 +35,9 @@ public static partial class StoryTests
    c.Interior=new ApartmentAccess(crew);
    if(m.Id=="M07")GTA.Native.Function.Seabed=55f; // M07 refuses a world with no roof over the street at its key; this world has one.
    if(m.Id=="M23")World.CollisionReady=true;
+   // The tower and suite floors are opened through the access service, which releases the
+   // player only onto loaded collision; this world has it.
+   if(m.Id=="M64"||m.Id=="M65"||m.Id=="SM07"||m.Id=="SM08")World.CollisionReady=true;
    if(m.Id=="M10")GameUtils.RoadAvailable=true; if(m.Id=="SM02")World.CollisionReady=true;
    if(m.Id=="SM03")
    {
@@ -153,6 +156,12 @@ public static partial class StoryTests
      {
       var vance=((Bloodlines.Missions.Campaign.M65ExecutivePrivilege)m).Vance;
       if(vance!=null)vance.IsDead=true;
+     }
+     // M70 ends when the plane is in the sea, which is a state the harness produces.
+     if(name=="ConditionObjective"&&m.Id=="M70")
+     {
+      var titan=((Bloodlines.Missions.Campaign.M70BloodBrothersGroundedTitan)m).Plane;
+      if(titan!=null)titan.IsInWater=true;
      }
      if(name=="ConditionObjective"&&m.Id=="M66")
       Game.Player.Character.Position=Bloodlines.Missions.Campaign.MazeBank.Roof

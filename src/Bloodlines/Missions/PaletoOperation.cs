@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Bloodlines.Core;
 using Bloodlines.Missions.Campaign;
 
 namespace Bloodlines.Missions
@@ -28,6 +29,25 @@ namespace Bloodlines.Missions
         public static bool Contains(string id) => Spec.Contains(id);
 
         protected override OperationWorld CreateWorld() => new PaletoWorld(Ctx);
+
+        /// <summary>
+        /// The vault in M46 opens with Bradley's card and nothing else. A run without it
+        /// used to play the dive and the whole deck fight and then stop at the vault with a
+        /// thrown exception, which is two chapters of a five-chapter sitting thrown away. It
+        /// is checked here, before anything is staged, and refused with the reason
+        /// (the September 22 audit). A real run always has it: M43 will not sign the staging
+        /// off without it.
+        /// </summary>
+        protected override bool OnStart()
+        {
+            if (_state.EvidenceOf("bradleyKeycard") != EvidenceState.CopyHeld)
+            {
+                GameUtils.Notify("~r~" + Spec.Title + " needs Bradley's access card for the vault. Complete The General's Wire first.");
+                Logger.Warn(Spec.Title + " refused to start: Bradley's card is not held.");
+                return false;
+            }
+            return base.OnStart();
+        }
 
         protected override Mission CreatePhase(string phaseId)
         {

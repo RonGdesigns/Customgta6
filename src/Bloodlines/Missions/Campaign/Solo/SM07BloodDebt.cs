@@ -48,11 +48,19 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where the campaign records the debt is settled.</summary>
         public const string DebtEvidence = "sterlingSettled";
 
+        /// <summary>How long the service elevator takes to call, and how near its door counts.</summary>
+        public const int ElevatorSeconds = 2;
+        public const float ElevatorRadius = 3.5f;
+        /// <summary>How often a guard who has dropped out of the fight is checked and re-ordered. Never every frame.</summary>
+        public const int FightReviewMs = 3000;
+
         private readonly TargetBlips _blips = new TargetBlips();
         private readonly List<Ped> _detail = new List<Ped>();
+        private readonly FloorEntry _entry = new FloorEntry();
         private Ped _sterling;
         private Vector3 _arrival;
-        private bool _upstairs, _foyerClear, _settled;
+        private int _fightReviewAt;
+        private bool _upstairs, _engaged, _foyerClear, _settled;
 
         public override string Id => "SM07";
         public override string Title => "Blood Debt";
@@ -82,12 +90,44 @@ namespace Bloodlines.Missions.Campaign
                 return false;
             }
 
+            // Ice on the street below the tower, alone, the way SM05 and SM06 put their man
+            // down. Nothing deployed anybody here, so with the crew stood down there was no
+            // Ice to send up and the mission refused itself (Ron's log, September 22).
+            if (!MissionSites.Prepare(Ctx.Locations, Id) ||
+                !Ctx.Crew.DeploySolo(CrewSlot.Ice, At("SM07.Start"), Ctx.Locations.Heading("SM07.Start")))
+            {
+                Logger.Error(Id + ": Ice could not be put down at SM07.Start.");
+                GameUtils.Notify("~r~Ice could not be placed below the tower. See Bloodlines.log.");
+                return false;
+            }
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice == null || !ice.Exists()) { Logger.Error(Id + ": Ice is not available for his own solo."); return false; }
-            ice.Position = suite;
-            _arrival = ice.Position;
-            _upstairs = true;
+            if (ice == null || !ice.Exists())
+            {
+                Logger.Error(Id + ": Ice is not available for his own solo.");
+                GameUtils.Notify("~r~Ice is not available for this solo. See Bloodlines.log.");
+                return false;
+            }
 
+            // A suppressed rifle, because SM07_S1_02_ICE breaches the foyer with one.
+            ice.Weapons.Give(WeaponHash.CarbineRifle, 250, false, true);
+            RequireSurvivor(ice, "Ice is down. Restart this solo mission.");
+            return true;
+        }
+
+        /// <summary>
+        /// Up to the suite through the access service, the way every interior in this campaign
+        /// is opened: it owns the fade, pins the room and waits for its collision. Placing
+        /// Sterling waits for it to say Ice is standing in the suite.
+        /// </summary>
+        private void GoUp() => _entry.Request(Ctx, At("SM07.Suite"), null);
+
+        /// <summary>
+        /// Sterling and his detail, from where Ice actually landed. Returns false when the
+        /// suite could not be laid out, having failed the mission with the reason.
+        /// </summary>
+        private bool LayOutSuite()
+        {
+            _arrival = _entry.Arrival;
             var model = new Model(SterlingModel);
             if (GameUtils.RequestModel(model))
             {
@@ -126,27 +166,38 @@ namespace Bloodlines.Missions.Campaign
                 return false;
             }
 
-            // A suppressed rifle, because SM07_S1_02_ICE breaches the foyer with one.
-            ice.Weapons.Give(WeaponHash.CarbineRifle, 250, false, true);
+            _upstairs = true;
 
             // Establish belongs to PreparationOperation, which owns a crew; a solo plays its
-            // own scene the way SM05 and SM06 do.
+            // own scene the way SM05 and SM06 do. It plays here rather than in Setup because
+            // this is the first moment Sterling exists to be shown.
             Ctx.Cutscenes.Play(new SceneSpec
             {
                 MissionId = Id, Phase = "approach", Title = "Fifteen years, one name",
                 Reason = "Show Sterling and his detail before Ice moves. Nobody else is in this one; the crew is not here.",
                 Blocking = new SceneBlocking().Then(ShotStep.Low(2200, _sterling, 5, 3, 2))
             });
-            RequireSurvivor(ice, "Ice is down. Restart this solo mission.");
             return true;
         }
 
         protected override IEnumerable<MissionStage> BuildStages()
         {
+            yield return new MissionStage("Up to the suite",
+                new MissionInteraction("Ice: take the service elevator up to Sterling's floor",
+                    () => At("SM07.Start"), ElevatorSeconds, ElevatorRadius)
+                { RequiredCharacter = CrewSlot.Ice })
+                .OnExit(c => GoUp());
+
+            // The ride is the access service's fade and load. Nothing is placed until it
+            // reports Ice standing in the suite.
+            yield return new MissionStage("Riding up",
+                new ConditionObjective("Ice: riding up to Sterling's floor", () => _upstairs))
+                .OwnedBy(CrewSlot.Ice);
+
             yield return new MissionStage("Take the foyer",
                 new KillTargetsObjective("Ice: take the executive detail in the foyer", () => _detail))
                 .OwnedBy(CrewSlot.Ice)
-                .OnEnter(c => Fighting())
+                .OnEnter(c => _engaged = true)
                 .WithCues("SM07_S1_01_ICE")
                 .AfterCues("SM07_S1_02_ICE");
 
@@ -159,12 +210,23 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("SM07_S2_04_ICE", "SM07_S2_05_ICE");
         }
 
-        /// <summary>The detail knows the moment the door goes.</summary>
-        private void Fighting()
+        /// <summary>
+        /// The detail knows the moment the door goes. The only order used to be one
+        /// FightAgainstHatedTargets on stage entry, given while the approach scene was still
+        /// playing and to men whose permanent events were blocked, so a guard whose task
+        /// lapsed simply stood there. Orders go out once the scene is over, and again only to
+        /// a man who has dropped out of combat - a state change, never a timer on everybody.
+        /// </summary>
+        private void KeepFighting()
         {
+            if (!_engaged || Ctx.Cutscenes.IsActive || Game.GameTime < _fightReviewAt) return;
+            _fightReviewAt = Game.GameTime + FightReviewMs;
             foreach (var ped in _detail.Concat(new[] { _sterling }))
-                if (ped != null && ped.Exists() && !ped.IsDead)
-                    ped.Task.FightAgainstHatedTargets(60f);
+            {
+                if (ped == null || !ped.Exists() || ped.IsDead || ped.IsInCombat) continue;
+                ped.BlockPermanentEvents = false;
+                ped.Task.FightAgainstHatedTargets(60f);
+            }
         }
 
         private void Done()
@@ -177,13 +239,23 @@ namespace Bloodlines.Missions.Campaign
 
         protected override void OnUpdate()
         {
+            if (_entry.Update(Ctx) && !LayOutSuite())
+            {
+                Fail("The suite could not be laid out. Restart this solo mission.");
+                return;
+            }
+            if (_entry.Refused) { Fail(_entry.Failure); return; }
             _blips.Update();
+            KeepFighting();
             base.OnUpdate();
         }
 
         protected override void OnCleanup()
         {
             _blips.Dispose();
+            // A blimp interior has no door (M55's lesson). Whatever way this ends, Ice goes
+            // back to the street he came up from rather than being left in the suite.
+            _entry.Release(Ctx, null);
             base.OnCleanup();
         }
 

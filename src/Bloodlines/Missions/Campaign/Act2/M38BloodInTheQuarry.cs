@@ -22,6 +22,7 @@ namespace Bloodlines.Missions.Campaign
         public int Loaded => _loaded;
         protected override bool Setup()
         {
+            _fault=null;
             if(!BeginCrew(CrewSlot.Guess))return false;
             CrewCar=Car("benson",At("M38.Hauler"),Ctx.Locations.Heading("M38.Hauler"));if(!RequireAssets(CrewCar))return false;
             RequireAsset(CrewCar,"The explosive carrier was destroyed.");Station(CrewSlot.Guess,CrewCar,VehicleSeat.Driver);Roles.For(CrewSlot.Guess).Stop();
@@ -33,7 +34,10 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Bring moving cover",new TravelObjective("Guess: drive the Benson into the yellow loading lane under fire. Ice covers the approach; keep the truck moving until you reach the marker",()=>At("M38.Load"),8,()=>CrewCar)).OwnedBy(CrewSlot.Guess).OnEnter(c=>{Fighting=true;Roles.For(CrewSlot.Ice).TakeCover(At("M38.IceStart"));Roles.For(CrewSlot.Gohan).TakeCover(At("M38.GohanStart"));}).WithCues("M38_S1_01_ICE");
-            yield return new MissionStage("Clear the loading yard",new KillTargetsObjective("Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact",()=>Opposition));
+            // Any brother, as the label has always said. Unowned, it inherited Guess from
+            // the drive in, and a kill objective only completes while its owner is in play,
+            // so "use Ice" could never finish the yard (the September 22 audit).
+            yield return new MissionStage("Clear the loading yard",new KillTargetsObjective("Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact",()=>Opposition)).AnyBrother();
             yield return new MissionStage("Release blasting stock",new MissionInteraction("Gohan: unlock the marked stock-control cabinet beside the crates",()=>At("M38.CabinetWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_cabinet.Position)).OwnedBy(CrewSlot.Gohan).OnEnter(c=>Fighting=false);
             for(int i=0;i<4;i++)
             {
@@ -49,7 +53,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Deliver seismic stock",new TravelObjective("Stop the same loaded Benson at the bunker delivery marker",()=>At("M38.Senora.Delivery"),12,()=>CrewCar)).OnEnter(c=>DrivingDestination=()=>At("M38.Senora.Delivery"));
             yield return new MissionStage("Verify the load",new MissionInteraction("Gohan: inspect all four packages at the back of the stopped truck",()=>CrewCar.Position-CrewCar.ForwardVector*5.5f,4,3.5f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 // Out of the box first: he cannot walk to the doors while attached inside them.
-                .OnEnter(c=>{DrivingDestination=null;CargoRide.OpenDoors(CrewCar);CargoRide.Unload(c.Crew.PedFor(CrewSlot.Gohan),CrewCar,At("M38.Senora.Delivery"));}).OnExit(c=>{_delivered=_loaded==4&&_crates.All(p=>Attached(p,CrewCar));if(!_delivered)throw new InvalidOperationException("Explosives delivery is incomplete.");Establish("delivery","Four accounted for","Gohan verifies each package in the arrived truck. The crew now has measured demolition stock, but the mainland cable remains connected.",CrewCar);});
+                .OnEnter(c=>{DrivingDestination=null;CargoRide.OpenDoors(CrewCar);CargoRide.Unload(c.Crew.PedFor(CrewSlot.Gohan),CrewCar,At("M38.Senora.Delivery"));}).OnExit(c=>VerifyDelivery());
         }
         /// <summary>
         /// Ice takes the cab seat; Gohan rides in the cargo box. The Benson has two
@@ -67,7 +71,20 @@ namespace Bloodlines.Missions.Campaign
             bool aboard = CargoRide.Load(gohan, CrewCar, At("M38.Load"), Game.GameTime >= _boardBy, Id);
             return ice && aboard;
         }
-        protected override void OnUpdate(){for(int i=0;i<_loaded;i++)if(!Attached(_crates[i],CrewCar)){Fail("A charge package came loose from the truck.");return;}base.OnUpdate();}
+        /// <summary>
+        /// The count at the tailgate. An incomplete load used to throw from the stage exit,
+        /// which is a "Script error"; the reason is kept and the attempt fails with it on the
+        /// next frame instead (the September 22 audit).
+        /// </summary>
+        private void VerifyDelivery()
+        {
+            _delivered=_loaded==4&&_crates.All(p=>Attached(p,CrewCar));
+            if(!_delivered){_fault="Explosives delivery is incomplete: all four packages have to arrive in the truck.";return;}
+            try{Establish("delivery","Four accounted for","Gohan verifies each package in the arrived truck. The crew now has measured demolition stock, but the mainland cable remains connected.",CrewCar);}
+            catch(Exception ex){Logger.Error(Id+" delivery scene",ex);_delivered=false;_fault="The delivery check could not complete. Retry the quarry run.";}
+        }
+        private string _fault;
+        protected override void OnUpdate(){if(_fault!=null){Fail(_fault);return;}for(int i=0;i<_loaded;i++)if(!Attached(_crates[i],CrewCar)){Fail("A charge package came loose from the truck.");return;}base.OnUpdate();}
         protected override void OnPassed(){if(!_delivered)throw new InvalidOperationException("No delivered charge stock.");Ctx.State?.SetCargo("seismicCharges","M38.Senora.Delivery");Release(CrewCar);foreach(var crate in _crates)Release(crate);}
     }
 }

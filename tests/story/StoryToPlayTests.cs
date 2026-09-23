@@ -41,7 +41,7 @@ public static partial class StoryTests
   // ---- Role tracks: a brother approaches, holds, reacts to a threat, and resumes.
   Reset();crew=Roster();var hostile=new List<Ped>();var tracks=new RoleTracks(crew,()=>hostile);var ice=crew.PedFor(CrewSlot.Ice);Use(crew,CrewSlot.Guess);
   var watch=new Vector3(100,100,10);var cover=new Vector3(96,104,10);tracks.For(CrewSlot.Ice).Approach(watch,cover);tracks.Update();
-  Check(crew.CompanionAI.StateOf(CrewSlot.Ice)==CompanionState.Scripted&&ice.Task.Gotos==1&&tracks.For(CrewSlot.Ice).State==RoleState.Approaching,"Approaching takes the ped under mission ownership and walks him to the point");
+  Check(crew.CompanionAI.StateOf(CrewSlot.Ice)==CompanionState.Scripted&&ice.Task.Runs==1&&tracks.For(CrewSlot.Ice).State==RoleState.Approaching,"Approaching takes the ped under mission ownership and walks him to the point");
   ice.Position=watch;tracks.Update();Check(tracks.For(CrewSlot.Ice).State==RoleState.Observing&&tracks.AllIn(RoleState.Observing,CrewSlot.Ice),"At the point he holds and observes");
   var enemy=new Ped{Position=watch+new Vector3(20,0,0)};hostile.Add(enemy);tracks.Update();
   Check(tracks.For(CrewSlot.Ice).State==RoleState.Threatened&&ice.Task.HatedFights==1,"An enemy inside the threat radius sends him to cover, fighting");

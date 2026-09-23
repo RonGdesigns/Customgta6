@@ -84,8 +84,11 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Drive to the approach",
                     new DeliverVehicleObjective("Guess: drive the crew to the marked bunker approach and stop. Ice takes point once you arrive.",
                         () => _granger, () => _approach, 10f),
-                    new ConditionObjective("Stop the crew car with Ice and Gohan aboard.", () => _granger.Speed < 1.5f &&
-                        Ctx.Crew.PedFor(CrewSlot.Ice).IsInVehicle(_granger) && Ctx.Crew.PedFor(CrewSlot.Gohan).IsInVehicle(_granger)))
+                    // Asked at the approach, not anywhere. A condition completes the first time
+                    // it is true, and a parked car with both brothers in it is true on the very
+                    // first frame, so this used to be satisfied before Guess had driven a meter
+                    // and enforced nothing at the marker (the September 22 audit).
+                    new ConditionObjective("Stop the crew car with Ice and Gohan aboard.", StoppedAtApproach))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => { _granger.IsEngineRunning = false; PlayApproach(); });
 
@@ -155,6 +158,16 @@ namespace Bloodlines.Missions.Campaign
                     new ReachZoneObjective("Gohan: rejoin the crew at the bunker entrance.", () => _door, 4f))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => GameUtils.Subtitle("~g~Senora bunker secured. Return to its home marker between jobs to enter, rest and plan.", 6500));
+        }
+
+        /// <summary>The Granger stopped at the approach marker with Ice and Gohan still in it.</summary>
+        private bool StoppedAtApproach()
+        {
+            if (_granger == null || !_granger.Exists()) return false;
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
+            return _granger.Speed < 1.5f && GameUtils.IsWithinFlat(_granger.Position, _approach, 10f) &&
+                ice != null && ice.IsInVehicle(_granger) && gohan != null && gohan.IsInVehicle(_granger);
         }
 
         // ---------- beats ----------
@@ -239,7 +252,10 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnUpdate()
         {
             if (_interior != null && _interior.Busy) { _interior.Update(); return; }
-            if (!Ctx.Cutscenes.IsActive && CurrentStage <= 3 && Game.GameTime >= _nextCombat)
+            // While any squatter is still standing, not while the stage number is low
+            // enough: a stage inserted before the yard would silently have moved this
+            // (the September 22 audit).
+            if (!Ctx.Cutscenes.IsActive && _squatters.Any(p => p != null && p.Exists() && p.IsAlive) && Game.GameTime >= _nextCombat)
             {
                 _nextCombat = Game.GameTime + 2000;
                 if (_engaged || Game.Player.Character.IsShooting || _squatters.Any(p => p.Exists() && (p.IsDead || p.IsInCombat)))

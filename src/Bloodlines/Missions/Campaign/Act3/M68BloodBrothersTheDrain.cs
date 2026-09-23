@@ -53,6 +53,8 @@ namespace Bloodlines.Missions.Campaign
         public const string DrainCargo = "drainRunClear";
 
         private readonly List<Vehicle> _chasers = new List<Vehicle>();
+        /// <summary>The men in the gun-trucks. The chase orders them, never guard awareness.</summary>
+        private readonly List<Ped> _chaseCrews = new List<Ped>();
         private Vehicle _rig, _trailer;
         private float _floorOffset;
         private int _orderAt;
@@ -108,7 +110,7 @@ namespace Bloodlines.Missions.Campaign
                 var driver = Occupant(truck, VehicleSeat.Driver);
                 var gunner = Occupant(truck, VehicleSeat.Passenger);
                 if (driver == null) { GameUtils.SafeDelete(truck); continue; }
-                foreach (var ped in new[] { driver, gunner }) if (ped != null) Opposition.Add(ped);
+                foreach (var ped in new[] { driver, gunner }) if (ped != null) { Opposition.Add(ped); _chaseCrews.Add(ped); }
                 var blip = Track(truck.AddBlip());
                 if (blip != null) { blip.Color = BlipColor.Red; blip.Name = "PMC gun-truck"; }
                 _chasers.Add(truck);
@@ -125,9 +127,25 @@ namespace Bloodlines.Missions.Campaign
             var gohan = Ctx.Crew.PedFor(CrewSlot.Gohan);
             if (gohan != null && gohan.Exists()) gohan.Weapons.Give(WeaponHash.ProximityMine, Mines, false, true);
             var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
-            if (ice != null && ice.Exists()) ice.Weapons.Give(WeaponHash.MG, 500, false, true);
+            if (ice != null && ice.Exists())
+            {
+                ice.Weapons.Give(WeaponHash.MG, 500, false, true);
+                // Something he can fire from where he is sitting. A passenger's drive-by takes
+                // one-handed weapons only, so the MG the line gives him is for when the rig
+                // stops; from the cab it is the SMG (Ron, September 22).
+                ice.Weapons.Give(WeaponHash.MicroSMG, 600, true, true);
+            }
 
-            Fighting = true;
+            // Gohan rides with the rig. The cab has two seats and he used to be left standing
+            // at his start point when it drove off; he rides in the trailer box instead, the
+            // way M03 and M38 carry a third man.
+            if (gohan != null && gohan.Exists())
+            {
+                Roles?.For(CrewSlot.Gohan).Stop();
+                CargoRide.Load(gohan, _trailer, Floor("M68.GohanStart"), true, Id);
+            }
+
+            // The fight begins when the rig rolls, not in Setup: see StartRolling() below.
             Establish("approach", "Eighteen wheels through the drain",
                 "Everything the three of them own is in that trailer and the only road out of the city that Aegis has not closed is a concrete ditch. Guess drives it; Ice has the gun; Gohan puts mines behind them.",
                 _rig);
@@ -141,12 +159,18 @@ namespace Bloodlines.Missions.Campaign
                     () => _rig != null && _rig.Exists() && _rig.Speed > 6f)
                 { Marker = () => _rig != null && _rig.Exists() ? _rig.Position : Floor("M68.Rig"), MarkerRadius = 8f })
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(c => { _rolling = true; DrivingDestination = () => Floor("M68.Mouth"); })
+                .OnExit(c => StartRolling())
                 .AfterCues("M68_S1_01_GUESS");
 
+            // One objective per authored truck, each reading the list when it runs: BuildStages
+            // runs before Setup, so the count cannot be taken from what spawned. A truck that
+            // did not spawn used to be a null target, and a null target fails with "the target
+            // vehicle failed to load" - the mission ended the moment the chase began. A missing
+            // slot now follows the last truck that did spawn, so the stage asks for exactly the
+            // trucks that are really there.
             var kills = Enumerable.Range(0, ChaserCount).Select(i => (Objective)new DestroyVehicleObjective(
                 "Break the pursuit — PMC gun-trucks in the channel",
-                () => i < _chasers.Count ? _chasers[i] : null)).ToArray();
+                () => _chasers.Count == 0 ? null : _chasers[Math.Min(i, _chasers.Count - 1)])).ToArray();
 
             yield return new MissionStage("Break the pursuit",
                 kills.Concat(new Objective[]
@@ -193,13 +217,34 @@ namespace Bloodlines.Missions.Campaign
             Logger.Info(Id + ": the rig is out of the channel and pointed at the airport.");
         }
 
+        /// <summary>
+        /// The rig is moving: the drive has somewhere to go and the fight starts. Declaring the
+        /// fight in Setup had the gun-trucks' crews radioed into combat by guard awareness while
+        /// the chase was ordering the same drivers to ram, so two systems took turns replacing
+        /// each other's task on one man (Ron, September 22).
+        /// </summary>
+        private void StartRolling()
+        {
+            _rolling = true;
+            DrivingDestination = () => Floor("M68.Mouth");
+            Fighting = true;
+        }
+
         protected override void OnUpdate()
         {
             if (_rolling && !_chaseBroken) PressTheChase();
             base.OnUpdate();
+            // The chase owns the men in the trucks. They stay on the target list, so the
+            // brothers shoot at them, but awareness never gives them an order of its own.
+            if (Awareness != null) foreach (var ped in _chaseCrews) Awareness.Release(ped);
         }
 
-        protected override void OnCleanup() { _orderAt = 0; base.OnCleanup(); }
+        protected override void OnCleanup()
+        {
+            _orderAt = 0;
+            CargoRide.Unload(Ctx.Crew.PedFor(CrewSlot.Gohan), _trailer, Floor("M68.GohanStart"));
+            base.OnCleanup();
+        }
 
         protected override void OnPassed()
         {

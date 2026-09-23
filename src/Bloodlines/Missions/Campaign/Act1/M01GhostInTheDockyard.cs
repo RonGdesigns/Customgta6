@@ -743,6 +743,10 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.CompanionAI.RequireSharedVehicle = false;
             GameUtils.SafeDelete(_objectiveBlip);
             _guards.Clear();
+            // The dock's ground corrections belong to this attempt. Left in place they
+            // became the next attempt's starting point and walked Guess's start from
+            // 1175 to 1190 across four tries (Ron, September 22).
+            ProloguePlacement.Restore();
 
             if (GameUtils.IsScreenFadedOut()) GameUtils.FadeIn(600);
         }

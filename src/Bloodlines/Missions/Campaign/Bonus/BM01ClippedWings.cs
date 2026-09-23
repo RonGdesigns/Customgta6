@@ -195,8 +195,11 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Up the coast",
                 new TravelObjective("Guess: drive the gun truck north up the coast highway to the Paleto Forest bunker", () => At("BM01.Approach"), 35f, () => _truck))
                 .OwnedBy(CrewSlot.Guess)
-                .OnEnter(c => Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's on the apron and the gate is manned.", "BM01_RADIO_01_GOHAN"))
-                .OnExit(c => { Fighting = true; Radio("ICE", "Gate and guard post. Take them, and keep an eye on that aircraft.", "BM01_RADIO_02_ICE"); });
+                // Guess drives it whoever is being played. Ron switched to Ice on the way north
+                // and the truck sat where it was, because nothing told Guess where to go until
+                // the chase (September 22).
+                .OnEnter(c => { DrivingDestination = () => At("BM01.Approach"); Radio("GOHAN", "Paleto Forest, off the coast road. Aegis never cleared the site. The Osprey's on the apron and the gate is manned.", "BM01_RADIO_01_GOHAN"); })
+                .OnExit(c => { DrivingDestination = null; Fighting = true; Radio("ICE", "Gate and guard post. Take them, and keep an eye on that aircraft.", "BM01_RADIO_02_ICE"); });
 
             yield return new MissionStage("The gate",
                 new KillTargetsObjective("Take out the men at the gate and the guard post", () => _guards))
@@ -242,8 +245,18 @@ namespace Bloodlines.Missions.Campaign
             var blocking = new SceneBlocking()
                 .Then(new EnterVehicleStep(_pilot, _osprey, VehicleSeat.Driver) { TimeoutMs = 9000 })
                 .Then(new ShotStep(4000, _osprey, new Vector3(-24f, 16f, 7f), _osprey, new Vector3(0f, 0f, 2f), 2f));
-            RequiredScene("takeoff", "The Osprey",
-                "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.", blocking);
+            // This runs inside a stage exit, and a throw there is a script error rather than a
+            // failure. If the scene cannot finish, the pilot is seated anyway and the chase goes on.
+            try
+            {
+                RequiredScene("takeoff", "The Osprey",
+                    "The gate is down and the pilot reaches the Osprey; gameplay resumes with it already lifting off.", blocking);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(Id + ": the takeoff scene could not complete (" + ex.Message + "); seating the pilot directly.");
+                if (!_pilot.IsInVehicle(_osprey)) _pilot.SetIntoVehicle(_osprey, VehicleSeat.Driver);
+            }
         }
 
         /// <summary>
@@ -300,6 +313,7 @@ namespace Bloodlines.Missions.Campaign
                 if (_hovering) Hover();
                 if (_hunting) Hunt();
             }
+            if (Status != MissionStatus.Running) return;
             base.OnUpdate();
         }
 

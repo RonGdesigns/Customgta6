@@ -60,6 +60,8 @@ namespace Bloodlines.Core
         /// character. The toolkit calls this the companion leash.
         /// </summary>
         public float CompanionLeashDistance { get; private set; } = 180f;
+        /// <summary>In a mission, a brother with nothing left to do comes back to the player rather than standing still.</summary>
+        public bool CrewRejoinsWhenIdle { get; private set; } = true;
         /// <summary>
         /// Route the game's own character-select controls to the crew, so a
         /// controller switches without any binding: they are already on the
@@ -179,6 +181,7 @@ namespace Bloodlines.Core
             config.CompanionsInvincible = settings.GetValue<bool>("Crew", "CompanionsInvincible", config.CompanionsInvincible);
             config.CompanionsRespawnOnDeath = settings.GetValue<bool>("Crew", "RespawnOnDeath", config.CompanionsRespawnOnDeath);
             config.CompanionLeashDistance = settings.GetValue<float>("Crew", "CompanionLeashDistance", config.CompanionLeashDistance);
+            config.CrewRejoinsWhenIdle = settings.GetValue<bool>("Crew", "RejoinWhenIdle", config.CrewRejoinsWhenIdle);
 
             config.DeathHandlingEnabled = settings.GetValue<bool>("Death", "Enabled", config.DeathHandlingEnabled);
             config.RestoreCheckpointOnDeath = settings.GetValue<bool>("Death", "RestoreCheckpoint", config.RestoreCheckpointOnDeath);

@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -61,7 +62,7 @@ namespace Bloodlines.Missions.Campaign
         private Vehicle _plane;
         private Vector3 _water;
         private int _wavesSeen;
-        private bool _held, _away;
+        private bool _held, _ditching, _away;
 
         public override string Id => "M70";
         public override string Title => "Blood Brothers: Grounded Titan";
@@ -91,12 +92,18 @@ namespace Bloodlines.Missions.Campaign
             _plane = Car(PlaneModel, At("M70.Plane"), Ctx.Locations.Heading("M70.Plane"), true);
             if (!RequireAssets(_plane)) return false;
             _plane.IsPersistent = true;
+            // Car() settles only cars onto their wheels; a plane created at the authored height
+            // is left with its gear sunk into the apron.
+            _plane.PlaceOnGround();
             // Grounded, not destroyed. The RPG strike happened before the mission opened: a
             // scripted hit on one gear leg is not something that can be aimed, and the state
             // the synopsis needs is a plane that will not take off, which this is.
             _plane.IsEngineRunning = false;
             _plane.EngineHealth = Math.Min(_plane.EngineHealth, 400f);
-            RequireAsset(_plane, "The cargo plane burned on the apron. There is no way off this runway.");
+            // No RequireAsset. That contract lasts the whole mission and fails it the moment the
+            // plane is not driveable - and a plane in the sea is not driveable, so the ending
+            // failed the mission at the moment it happened (Ron, September 22). Each stage
+            // protects the plane for as long as losing it means something.
 
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
             {
@@ -195,19 +202,50 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Start all four",
                 new EnterVehicleObjective("Guess: get into the C-130 and start all four turboprops",
-                    () => _plane, VehicleSeat.Driver))
+                    () => _plane, VehicleSeat.Driver),
+                new ProtectObjective("", () => _plane, "The cargo plane burned on the apron. There is no way off this runway."))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(c => { if (_plane != null && _plane.Exists()) _plane.IsEngineRunning = true; })
                 .AfterCues("M70_S1_03_GUESS");
 
             // Off the end of it. The one place in this campaign where the authored set piece
-            // and the engine want exactly the same thing.
+            // and the engine want exactly the same thing - so the stage ends when the plane is
+            // in the water, which is the moment it stops being driveable. A delivery objective
+            // fails a vehicle that is not driveable, and needed the plane within forty meters of
+            // a point it could only reach by driving on through the sea.
             yield return new MissionStage("Off the seawall",
-                new DeliverVehicleObjective("Guess: take the plane off the end of the runway into the water",
-                    () => _plane, () => _water, SplashRadius))
+                new ConditionObjective("Guess: take the plane off the end of the runway into the water", Ditched)
+                { Marker = () => _water, MarkerRadius = SplashRadius * 0.3f })
                 .OwnedBy(CrewSlot.Guess)
+                .OnEnter(c => _ditching = true)
                 .OnExit(c => Gone())
                 .AfterCues("M70_S1_04_ICE", "M70_S1_05_GOHAN", "M70_S1_06_GUESS", "M70_S1_07_ICE");
+        }
+
+        /// <summary>The plane is in the sea: in the water by the engine's own report, or at the ditching point.</summary>
+        private bool Ditched() =>
+            _plane != null && _plane.Exists() &&
+            (Function.Call<bool>(Hash.IS_ENTITY_IN_WATER, _plane) || GameUtils.IsWithinFlat(_plane.Position, _water, SplashRadius));
+
+        /// <summary>
+        /// The run to the water still has a way to fail. A plane that burns, or dies on the
+        /// runway short of the sea, is a mission with no ending, so it says so rather than
+        /// waiting forever for a splash that cannot come.
+        /// </summary>
+        private void WatchTheRun()
+        {
+            if (!_ditching || _away || Ditched()) return;
+            if (_plane == null || !_plane.Exists() || _plane.IsDead)
+            { Fail("The cargo plane burned before it reached the water."); return; }
+            if (!_plane.IsDriveable && _plane.Speed < 1f)
+                Fail("The cargo plane died on the runway short of the water.");
+        }
+
+        protected override void OnUpdate()
+        {
+            WatchTheRun();
+            if (Status != MissionStatus.Running) return;
+            base.OnUpdate();
         }
 
         private void Gone()

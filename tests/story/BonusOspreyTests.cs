@@ -111,6 +111,16 @@ public static partial class StoryTests
         Check(Function.Calls.Any(x => x.Item1 == Hash.REQUEST_IPL && (string)x.Item2[0] == BM01ClippedWings.BunkerMap),
             "The Paleto Forest bunker's exterior is loaded for the attempt");
 
+        // Switch off Guess on the way north and he drives on to the bunker (Ron, September 22:
+        // the truck sat where it was).
+        var guessPed = crew.PedFor(CrewSlot.Guess);
+        crew.SetActive(CrewSlot.Ice); Game.Player.Character = crew.PedFor(CrewSlot.Ice);
+        int drives = guessPed.Task.Drives;
+        Game.GameTime += 3000; m.Tick();
+        Check(guessPed.Task.Drives > drives && guessPed.Task.LastDrivePoint.DistanceTo(c.Locations.Position("BM01.Approach")) < 1f,
+            "Played as Ice on the way north, Guess drives the truck on to the bunker");
+        crew.SetActive(CrewSlot.Guess);
+
         // Up the coast, then the gate.
         Game.Player.Character = crew.PedFor(CrewSlot.Guess); truck.Position = c.Locations.Position("BM01.Approach"); Game.Player.Character.Position = truck.Position;
         m.Tick(); m.Tick();
@@ -143,7 +153,8 @@ public static partial class StoryTests
 
         // Bring it down.
         for (int i = 0; i < 20 && m.Hull.Hull > 0f; i++) { Function.ExplosiveDamage.Add(m.Osprey.Handle); m.Tick(); Function.ExplosiveDamage.Remove(m.Osprey.Handle); }
-        m.Tick();
+        // Then the crew's closing radio, which every mission from M07 on finishes with.
+        for (int i = 0; i < 40 && m.Status == MissionStatus.Running; i++) { Game.GameTime += 500; c.Dialogue.Update(); m.Tick(); }
         Check(m.Status == MissionStatus.Passed && m.Osprey.IsDead, "An empty hull meter brings it down and passes the mission");
         Check(Function.Calls.Any(x => x.Item1 == Hash.SET_ENTITY_HAS_GRAVITY && x.Item2[0] == m.Osprey && (bool)x.Item2[1]), "and it falls");
 
@@ -167,6 +178,11 @@ public static partial class StoryTests
         Check(m.Status == MissionStatus.Running && m.Escaping, "Losing it is a warning first, with the escape clock running");
         Game.GameTime += BM01ClippedWings.EscapeGraceMs + 100; m.Tick();
         Check(m.Status == MissionStatus.Failed && (m.FailReason ?? "").Contains("got away"), "and a failure if the truck never gets back under it");
+        // The failure lands inside the mission's own update, and the rest of that update used
+        // to take the brothers back after the release: Gohan then stood through a police
+        // shootout in free roam (Ron, September 22).
+        Check(Protagonist.All.All(h => !crew.CompanionAI.IsHeld(h.Slot)),
+            "A mission that fails in the middle of its update leaves no brother held, so free roam has all three back");
 
         m = StartClippedWings(out crew, out c, bunkerAbsent: true);
         Function.IplReady = true;

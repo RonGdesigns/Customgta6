@@ -4,6 +4,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -30,6 +31,17 @@ namespace Bloodlines.Missions.Campaign
     {
         private readonly List<Vehicle> _spotters = new List<Vehicle>();
         private readonly List<Ped> _pilots = new List<Ped>();
+        private readonly List<Blip> _spotterBlips = new List<Blip>();
+        /// <summary>
+        /// How many times the second spotter may be put back in the air after going down
+        /// through no fault of the player's. Bounded, so an aircraft that keeps falling out
+        /// of the sky for a reason nobody can see fails with a reason instead of littering
+        /// the lake with wrecks.
+        /// </summary>
+        public const int SpotterRelaunches = 3;
+        /// <summary>How far past the patrol center from Ron a replacement spotter comes in.</summary>
+        public const float RelaunchStandoff = 300f;
+        private int _relaunches;
 
         /// <summary>How long Gohan needs on the second spotter's traffic before it can go down.</summary>
         public const int ListenMs = 12000;
@@ -96,6 +108,8 @@ namespace Bloodlines.Missions.Campaign
         public bool Listening => _listening;
         public bool LeadHeld => _leadHeld;
         public bool Parked => _parked;
+        /// <summary>How many times the second spotter has been put back in the air.</summary>
+        public int Relaunches => _relaunches;
 
         protected override bool Setup()
         {
@@ -141,9 +155,10 @@ namespace Bloodlines.Missions.Campaign
             // The second spotter is calling somebody: what he is calling is the lead.
             // Kill him too early and it goes into the lake with him.
             yield return new MissionStage("The charter",
+                    // Losing the second spotter is watched in WatchSecondSpotter, every frame
+                    // from the scramble on, rather than by a trigger that fired once.
                     new ConditionObjective("Guess: sit on the second spotter's wing while Gohan pulls the charter's call sign.", () => Listened())
-                        { Marker = () => _spotters.Count > 1 && _spotters[1] != null && _spotters[1].Exists() ? _spotters[1].Position : _patrolBox, MarkerRadius = 12f },
-                    new ReactionTrigger(() => _spotters.Count > 1 && (!_spotters[1].Exists() || !_spotters[1].IsDriveable), () => Fail("The second spotter went into the lake before Gohan had the charter's call sign. The lead went with him.")))
+                        { Marker = () => _spotters.Count > 1 && _spotters[1] != null && _spotters[1].Exists() ? _spotters[1].Position : _patrolBox, MarkerRadius = 12f })
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => HoldTheLead());
 
@@ -303,54 +318,132 @@ namespace Bloodlines.Missions.Campaign
             var pilotModel = new Model("g_m_y_mexgoon_02");
             if (!GameUtils.RequestModel(planeModel) || !GameUtils.RequestModel(pilotModel)) return;
 
-            var cartel = World.AddRelationshipGroup("BLOODLINES_CARTEL");
-
             for (int i = 0; i < 2; i++)
-            {
-                var plane = Track(World.CreateVehicle(planeModel,
-                    _patrolBox + new Vector3(i * 120f - 60f, i * 80f, i * 40f), 180f));
-                if (plane == null || !plane.Exists()) continue;
-                plane.IsPersistent = true;
-                AircraftHold.LaunchAirborne(plane, SpotterLaunchSpeed);
-                _spotters.Add(plane);
-
-                var pilot = Track(World.CreatePed(pilotModel, plane.Position, 0f));
-                if (pilot == null || !pilot.Exists()) continue;
-
-                pilot.RelationshipGroup = cartel;
-                pilot.IsPersistent = true;
-                pilot.BlockPermanentEvents = true;
-                // Seat him, do not ask him to board. WarpIntoVehicle is a queued task
-                // and the plane mission below replaces whatever is queued, so the board
-                // never happened: the pilot was left loose in the air at the patrol
-                // altitude and both he and the unmanned plane fell out of the sky within
-                // seconds. That is why these spotters were never there in Ron's run.
-                pilot.SetIntoVehicle(plane, VehicleSeat.Driver);
-                if (plane.GetPedOnSeat(VehicleSeat.Driver) != pilot)
-                {
-                    // No seat, no spotter. Two falling bodies is worse than one absence.
-                    Logger.Error("M26: a spotter pilot could not be seated; removing that aircraft.");
-                    GameUtils.SafeDelete(pilot);
-                    GameUtils.SafeDelete(plane);
-                    _spotters.Remove(plane);
-                    continue;
-                }
-                // Quartering the lake, not hunting the player: they are looking for gold.
-                pilot.Task.StartPlaneMission(plane, _patrolBox, VehicleMissionType.Circle,
-                    PatrolSpeed, PatrolRadius, PatrolHeight, 40, 0f, false);
-                _pilots.Add(pilot);
-
-                var blip = Track(plane.AddBlip());
-                blip.Sprite = BlipSprite.Plane;
-                blip.Color = BlipColor.Red;
-                // The chase happens across the whole lake. A short-range blip drops off
-                // the minimap at exactly the distance he needs it at.
-                blip.IsShortRange = false;
-                blip.Name = "Cartel spotter";
-            }
+                SpawnSpotter(planeModel, pilotModel, _patrolBox + new Vector3(i * 120f - 60f, i * 80f, i * 40f), -1);
 
             planeModel.MarkAsNoLongerNeeded();
             pilotModel.MarkAsNoLongerNeeded();
+        }
+
+        /// <summary>
+        /// One spotter and its pilot, airborne and flying the patrol. With a
+        /// <paramref name="replace"/> index it takes that spotter's place in the lists
+        /// rather than adding a new one, which is how the second spotter is put back.
+        /// </summary>
+        private bool SpawnSpotter(Model planeModel, Model pilotModel, Vector3 at, int replace)
+        {
+            var plane = Track(World.CreateVehicle(planeModel, at, 180f));
+            if (plane == null || !plane.Exists()) return false;
+            plane.IsPersistent = true;
+            AircraftHold.LaunchAirborne(plane, SpotterLaunchSpeed);
+
+            var pilot = Track(World.CreatePed(pilotModel, plane.Position, 0f));
+            if (pilot == null || !pilot.Exists()) { GameUtils.SafeDelete(plane); return false; }
+
+            pilot.RelationshipGroup = World.AddRelationshipGroup("BLOODLINES_CARTEL");
+            pilot.IsPersistent = true;
+            pilot.BlockPermanentEvents = true;
+            // Seat him, do not ask him to board. WarpIntoVehicle is a queued task
+            // and the plane mission below replaces whatever is queued, so the board
+            // never happened: the pilot was left loose in the air at the patrol
+            // altitude and both he and the unmanned plane fell out of the sky within
+            // seconds. That is why these spotters were never there in Ron's run.
+            pilot.SetIntoVehicle(plane, VehicleSeat.Driver);
+            if (plane.GetPedOnSeat(VehicleSeat.Driver) != pilot)
+            {
+                // No seat, no spotter. Two falling bodies is worse than one absence.
+                Logger.Error("M26: a spotter pilot could not be seated; removing that aircraft.");
+                GameUtils.SafeDelete(pilot);
+                GameUtils.SafeDelete(plane);
+                return false;
+            }
+            // Quartering the lake, not hunting the player: they are looking for gold.
+            pilot.Task.StartPlaneMission(plane, _patrolBox, VehicleMissionType.Circle,
+                PatrolSpeed, PatrolRadius, PatrolHeight, 40, 0f, false);
+
+            var blip = Track(plane.AddBlip());
+            blip.Sprite = BlipSprite.Plane;
+            blip.Color = BlipColor.Red;
+            // The chase happens across the whole lake. A short-range blip drops off
+            // the minimap at exactly the distance he needs it at.
+            blip.IsShortRange = false;
+            blip.Name = "Cartel spotter";
+
+            if (replace >= 0 && replace < _spotters.Count)
+            {
+                // The wreck keeps its place in the tracked world for cleanup; only its
+                // dot goes, so the minimap does not point at the lake bed.
+                if (replace < _spotterBlips.Count && _spotterBlips[replace] != null && _spotterBlips[replace].Exists()) _spotterBlips[replace].Delete();
+                _spotters[replace] = plane;
+                if (replace < _pilots.Count) _pilots[replace] = pilot; else _pilots.Add(pilot);
+                if (replace < _spotterBlips.Count) _spotterBlips[replace] = blip; else _spotterBlips.Add(blip);
+            }
+            else { _spotters.Add(plane); _pilots.Add(pilot); _spotterBlips.Add(blip); }
+            return true;
+        }
+
+        /// <summary>
+        /// The second spotter is the one carrying the charter's call sign, and the mission
+        /// used to fail the instant it was not flyable as "The charter" opened. It is a
+        /// light aircraft on a banked circuit: it can stall into the lake by itself, and a
+        /// Lazer missile locked onto the lead in the first stage can take it instead. None
+        /// of that is the player choosing to shoot the man Gohan is listening to, so it is
+        /// put back in the air rather than ending the job (the September 22 audit).
+        ///
+        /// What still fails is the authored beat: Ron shooting it down himself while Gohan
+        /// is mid-call sign. The damage record says whose it was.
+        /// </summary>
+        private void WatchSecondSpotter()
+        {
+            if (_leadHeld || _spotters.Count < 2) return;
+            var spotter = _spotters[1];
+            if (spotter != null && spotter.Exists() && spotter.IsDriveable && !spotter.IsDead) return;
+            if (_listening && ShotDownByRon(spotter))
+            {
+                Fail("The second spotter went into the lake before Gohan had the charter's call sign. The lead went with him.");
+                return;
+            }
+            if (_relaunches >= SpotterRelaunches)
+            {
+                Fail("The second spotter kept going down before Gohan had the charter's call sign. Retry the scramble.");
+                return;
+            }
+            _relaunches++;
+            var planeModel = new Model("mammatus");
+            var pilotModel = new Model("g_m_y_mexgoon_02");
+            bool back = false;
+            try
+            {
+                if (GameUtils.RequestModel(planeModel) && GameUtils.RequestModel(pilotModel))
+                    back = SpawnSpotter(planeModel, pilotModel, RelaunchPoint(), 1);
+            }
+            finally { planeModel.MarkAsNoLongerNeeded(); pilotModel.MarkAsNoLongerNeeded(); }
+            if (!back) { Fail("The second spotter could not be put back in the air. Retry the scramble."); return; }
+            Logger.Info("M26: the second spotter went down before the call sign without Ron firing on it; relaunched it (" + _relaunches + " of " + SpotterRelaunches + ").");
+            GameUtils.Subtitle("~y~The second spotter is back over the lake. Hold fire until Gohan has the call sign.", 4000);
+        }
+
+        /// <summary>Whether the player, or the aircraft he is flying, did the damage.</summary>
+        private static bool ShotDownByRon(Vehicle spotter)
+        {
+            if (spotter == null || !spotter.Exists()) return false;
+            var player = Game.Player.Character;
+            if (player == null || !player.Exists()) return false;
+            if (Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, spotter, player, true)) return true;
+            var flying = player.CurrentVehicle;
+            return flying != null && flying.Exists() && Function.Call<bool>(Hash.HAS_ENTITY_BEEN_DAMAGED_BY_ENTITY, spotter, flying, true);
+        }
+
+        /// <summary>The far side of the patrol circle from Ron, at the height the first ones were made at.</summary>
+        private Vector3 RelaunchPoint()
+        {
+            var player = Game.Player.Character;
+            var away = player != null && player.Exists()
+                ? new Vector3(_patrolBox.X - player.Position.X, _patrolBox.Y - player.Position.Y, 0f)
+                : Vector3.Zero;
+            float length = away.Length();
+            var offset = length > 1f ? away * (RelaunchStandoff / length) : new Vector3(60f, 80f, 0f);
+            return _patrolBox + offset + new Vector3(0f, 0f, 40f);
         }
 
         /// <summary>
@@ -422,6 +515,8 @@ namespace Bloodlines.Missions.Campaign
         {
             KeepInterceptorReady();
             WatchSpotters();
+            WatchSecondSpotter();
+            if (Status != MissionStatus.Running) return;
             base.OnUpdate();
         }
 
@@ -438,6 +533,7 @@ namespace Bloodlines.Missions.Campaign
             Ctx.Crew.CompanionsHoldPosition = false;
             _spotters.Clear();
             _pilots.Clear();
+            _spotterBlips.Clear();
         }
     }
 }

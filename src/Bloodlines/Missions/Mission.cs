@@ -170,6 +170,12 @@ namespace Bloodlines.Missions
                 foreach (var asset in _requiredAssets)
                     if (AssetLost(asset.Key)) { Fail(asset.Value); return; }
                 OnUpdate();
+                // A mission that ended inside its own update has already been cleaned up,
+                // but the rest of that update still ran. Anything it did to the crew after
+                // the release is undone here. BM01 failed in its chase, the remainder of the
+                // tick took Gohan and Guess back, and Gohan then stood through a police
+                // shootout in free roam because nothing ever let him go (September 22).
+                if (Status != MissionStatus.Running && _cleaned && !OperationOwned) ReleaseCrew();
             }
             catch (Exception ex)
             {
@@ -381,13 +387,17 @@ namespace Bloodlines.Missions
             _survivors.Clear();
             _requiredAssets.Clear();
 
-            if (Ctx?.Crew != null)
-            {
-                Ctx.Crew.CompanionAI.ReleaseAll();
-                Ctx.Crew.CompanionsHoldPosition = false;
-                Ctx.Crew.AssignCompanionAI();
-            }
+            ReleaseCrew();
             Ctx?.Switching?.SetUnlocked();
+        }
+
+        /// <summary>Hand every brother back to the companion controller.</summary>
+        private void ReleaseCrew()
+        {
+            if (Ctx?.Crew == null) return;
+            Ctx.Crew.CompanionAI.ReleaseAll();
+            Ctx.Crew.CompanionsHoldPosition = false;
+            Ctx.Crew.AssignCompanionAI();
         }
 
         /// <summary>This mission's entry in the bible, or null if the data is missing.</summary>

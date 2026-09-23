@@ -6,6 +6,7 @@ using Bloodlines.Crew;
 using Bloodlines.Missions.Objectives;
 using GTA;
 using GTA.Math;
+using GTA.Native;
 
 namespace Bloodlines.Missions.Campaign
 {
@@ -56,8 +57,13 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>Where the campaign records the crew is off the tower.</summary>
         public const string ClearCargo = "mazeBankCleared";
 
+        /// <summary>How far above and below the helipad's archive height the roof slab is looked for.</summary>
+        public const float RoofHeadroom = 4f;
+        public const float RoofSearch = 20f;
+
         private readonly List<Vehicle> _gunships = new List<Vehicle>();
         private Vector3 _landing;
+        private float _roofOffset;
         private bool _jumped, _down;
 
         public override string Id => "M66";
@@ -79,9 +85,30 @@ namespace Bloodlines.Missions.Campaign
         protected override string[] FixedSurfaces =>
             new[] { "M66.Start", "M66.IceStart", "M66.GohanStart", "M66.GuessStart", "M66.Edge" };
 
+        /// <summary>An authored roof point, moved onto the slab the probe actually found.</summary>
+        private Vector3 Roof(string key) => At(key) + new Vector3(0f, 0f, _roofOffset);
+
         protected override bool Setup()
         {
             if (!BeginCrew(CrewSlot.Guess)) return false;
+
+            // The roof keys are the helipad model's archive origin, and a prop origin is not a
+            // floor (M52, M54). They were never probed. The crew is standing on the roof now,
+            // so its collision is loaded; one probe finds the slab, and the whole crew and the
+            // jump point move with it.
+            var pad = At("M66.Start");
+            _roofOffset = MissionSites.OffsetToSurface(pad, RoofHeadroom, pad.Z - RoofSearch, Id + " roof slab");
+            if (Math.Abs(_roofOffset) > 0.25f)
+            {
+                foreach (var hero in Protagonist.All)
+                {
+                    var ped = Ctx.Crew.PedFor(hero.Slot);
+                    if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                    ped.Position = Roof("M66." + hero.Slot + "Start");
+                }
+                Logger.Info(Id + ": the roof slab is " + (pad.Z + _roofOffset).ToString("0.00") +
+                    " against the authored " + pad.Z.ToString("0.00") + "; the crew is moved onto it.");
+            }
 
             // A parachute each, because this mission is a jump and nothing else will do. The
             // loan is opened and closed by MissionManager, so they go back at teardown.
@@ -161,10 +188,10 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             // Guess by name: M66_S1_01_GUESS is the man who calls the jump, and only the held
-            // brother actually goes off the roof under canopy — the other two come back through
-            // companion recovery, which is recorded in data/mission_gameplay.tsv.
+            // brother actually goes off the roof under canopy - the other two are put down at
+            // the connector when he jumps, which is recorded in data/mission_gameplay.tsv.
             yield return new MissionStage("Get to the edge",
-                new ReachZoneObjective("Guess: get to the roof edge, past the gunships", () => At("M66.Edge"), 6f))
+                new ReachZoneObjective("Guess: get to the roof edge, past the gunships", () => Roof("M66.Edge"), 6f))
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(c => Fighting = true);
 
@@ -173,7 +200,7 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Go off the tower",
                 new ConditionObjective("Jump. Open the chute on the way down.", Airborne))
                 .AnyBrother()
-                .OnExit(c => _jumped = true)
+                .OnExit(c => { _jumped = true; TheOthersGoToo(); })
                 .AfterCues("M66_S1_01_GUESS", "M66_S1_02_ICE");
 
             yield return new MissionStage("Down on the connector",
@@ -188,6 +215,35 @@ namespace Bloodlines.Missions.Campaign
         {
             var ped = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
             return ped != null && ped.Exists() && !ped.IsDead && ped.Position.Z < MazeBank.Roof.Z - JumpedBelow;
+        }
+
+        /// <summary>
+        /// The other two go off the roof when the player does. Only the held brother is under
+        /// canopy on screen, and the other two used to be left on the roof under three
+        /// gunships while every brother's survival was still required - so the jump itself was
+        /// usually followed by a failure for a man the player could not reach (Ron,
+        /// September 22). They come down beside the landing lane, out of sight of a player
+        /// who is two hundred and sixty meters up, and the world is kept built under them.
+        /// </summary>
+        private void TheOthersGoToo()
+        {
+            var player = Ctx.Crew.PedFor(Ctx.Crew.ActiveSlot);
+            int n = 0;
+            foreach (var hero in Protagonist.All)
+            {
+                if (hero.Slot == Ctx.Crew.ActiveSlot) continue;
+                var ped = Ctx.Crew.PedFor(hero.Slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                n++;
+                var spot = _landing + new Vector3(n * 3f, n % 2 * 3f, 0f);
+                ped.Task.ClearAllImmediately();
+                Function.Call(Hash.REQUEST_COLLISION_AT_COORD, spot.X, spot.Y, spot.Z);
+                ped.Position = spot;
+                if (player != null && player.Exists() && player.Position.DistanceTo(spot) > FarPlacement.Meters)
+                    FarPlacement.Keep(ped, "down at the connector ahead of the player");
+                Roles?.For(hero.Slot).Observe(spot, spot);
+                Logger.Info(Id + ": " + hero.Slot + " is off the roof and down at " + spot + ".");
+            }
         }
 
         private void Landed()

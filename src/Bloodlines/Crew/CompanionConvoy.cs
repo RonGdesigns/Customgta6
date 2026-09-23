@@ -27,7 +27,7 @@ namespace Bloodlines.Crew
             ride.NextShot = Game.GameTime + 2000;
             if (ped.Position.DistanceTo(occupant.Position) <= 50f && Function.Call<bool>(Hash.HAS_ENTITY_CLEAR_LOS_TO_ENTITY, ped, occupant, 17))
                 Function.Call(Hash.TASK_SHOOT_AT_ENTITY, ped, occupant, 1200, Game.GenerateHash("FIRING_PATTERN_BURST_FIRE"));
-            else ped.Task.GoTo(ride.Vehicle.Position);
+            else ped.Task.RunTo(ride.Vehicle.Position, false, -1);
         }
         public void Update(CrewSlot slot, Ped ped, Ped leader, CompanionDriver driver)
         {

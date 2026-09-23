@@ -61,6 +61,58 @@ namespace Bloodlines.Missions.Campaign
         public const int JunctionDogs = 4;
         /// <summary>The street crew that comes out of the houses, and the gunmen and dogs that answer the loading.</summary>
         public const int StreetCrewSize = 6, DepotGuardCount = 10, ReinforcementGunmen = 4, ReinforcementDogs = 0;
+        /// <summary>How far above or below the Benson's yard a spawn may stand and still count as on it.</summary>
+        public const float YardLevelTolerance = 2.5f;
+
+        /// <summary>
+        /// A point on the yard the Benson stands on, as near to <paramref name="wanted"/> as
+        /// the site allows.
+        ///
+        /// Ron, September 22: the depot's men "still spawn on the lower level", which slows the
+        /// fight while they climb up to it. The archives say why. The yard is a raised lot at
+        /// z 42 to 43, and past its north railing is a lower level at z 37 to 38, around an oil
+        /// pump. The reinforcements were placed 26 to 32 m north of the gate and the last three
+        /// guards up to 24 m north of it. The walkable query answered those spots with the
+        /// lower level, and nothing checked the height. Each point is now asked for at the
+        /// yard's height, and one that still lands on another level is pulled back toward the
+        /// Benson until it is on the yard. It never goes more than three quarters of the way,
+        /// so nobody is spawned on top of the truck.
+        /// </summary>
+        public static Vector3 OnYard(Vector3 wanted, Vector3 yard, Func<Vector3, Vector3> snap, float keepClear = TruckClearance + 1f)
+        {
+            // Toward the Benson, a step at a time, but never within keepClear of it.
+            var flat = new Vector3(wanted.X - yard.X, wanted.Y - yard.Y, 0f);
+            float away = flat.Length();
+            var direction = away > .5f ? flat * (1f / away) : new Vector3(0f, 1f, 0f);
+            for (int step = 0; step <= 8; step++)
+            {
+                float reach = Math.Max(keepClear, away * (1f - step / 8f));
+                if (Accept(yard + direction * reach, yard, snap, out var point)) return point;
+            }
+            // A ring round the truck at the clearance, nearest to where he was wanted first.
+            for (int turn = 1; turn <= 8; turn++)
+                foreach (int sign in new[] { 1, -1 })
+                {
+                    double angle = Math.Atan2(direction.Y, direction.X) + sign * turn * Math.PI / 8;
+                    var around = yard + new Vector3((float)Math.Cos(angle), (float)Math.Sin(angle), 0f) * (keepClear + 2f);
+                    if (Accept(around, yard, snap, out var point)) return point;
+                }
+            var last = yard + direction * (keepClear + 2f);
+            return new Vector3(last.X, last.Y, yard.Z);
+        }
+
+        /// <summary>How close to the Benson nobody is spawned (Ron, September 10: a guard spawned in the truck).</summary>
+        public const float TruckClearance = 7f;
+
+        private static bool Accept(Vector3 at, Vector3 yard, Func<Vector3, Vector3> snap, out Vector3 point)
+        {
+            var asked = new Vector3(at.X, at.Y, yard.Z);
+            point = snap != null ? snap(asked) : Vector3.Zero;
+            return point != Vector3.Zero && Math.Abs(point.Z - yard.Z) < YardLevelTolerance && GameUtils.IsWithinFlat(point, asked, 6f);
+        }
+
+        /// <summary>Where the yard is: the Benson, or its key before the Benson exists.</summary>
+        private Vector3 Yard => _hauler != null && _hauler.Exists() ? _hauler.Position : Ctx.Locations.Position("M03.HaulerSpawn");
         /// <summary>The cars that pull up behind Ron when he reaches the lot, and the gunmen in each (Ron, September 12).</summary>
         public const int ArrivalCars = 3, GunmenPerCar = 2;
         private static readonly string[] ArrivalCarModels = { "emperor", "fugitive", "primo" };
@@ -76,6 +128,7 @@ namespace Bloodlines.Missions.Campaign
         public IReadOnlyList<Ped> Dogs => _dogs;
         public IReadOnlyList<Ped> Ambush => _ambush;
         public IReadOnlyList<Ped> Reinforcements => _reinforcements;
+        public IReadOnlyList<Ped> YardGuards => _guards;
         public bool Reinforced => _reinforced;
         public IReadOnlyList<Prop> Crates => _crates;
         public bool EntryFired => _entryFired;
@@ -447,8 +500,8 @@ namespace Bloodlines.Missions.Campaign
                 var model = new Model(i % 2 == 0 ? StreetCrew[i % StreetCrew.Length] : DepotGuards[i % DepotGuards.Length]);
                 if (!GameUtils.RequestModel(model)) continue;
                 var offset = new Vector3(-15f + i * 5f, 26f + (i % 2) * 6f, 0f);
-                var point = World.GetSafeCoordForPed(_depot + offset, false, 0);
-                if (point == Vector3.Zero) point = _depot + offset;
+                // Up on the yard with the truck, not on the level below its north railing.
+                var point = OnYard(_depot + offset, Yard, at => World.GetSafeCoordForPed(at, false, 0));
                 var thug = World.CreatePed(model, point, DriveUpStep.HeadingBetween(point, _hauler != null && _hauler.Exists() ? _hauler.Position : _depot));
                 model.MarkAsNoLongerNeeded();
                 if (thug == null || !thug.Exists()) continue;
@@ -467,8 +520,7 @@ namespace Bloodlines.Missions.Campaign
                 for (int i = 0; i < ReinforcementDogs; i++)
                 {
                     var offset = new Vector3(-8f + i * 8f, 20f, 0f);
-                    var point = World.GetSafeCoordForPed(_depot + offset, false, 0);
-                    if (point == Vector3.Zero) point = _depot + offset;
+                    var point = OnYard(_depot + offset, Yard, at => World.GetSafeCoordForPed(at, false, 0));
                     var dog = World.CreatePed(dogModel, point, 180f);
                     if (dog == null || !dog.Exists()) continue;
                     dog.RelationshipGroup = cartel;
@@ -599,7 +651,7 @@ namespace Bloodlines.Missions.Campaign
             if (gohan.IsInVehicle()) ExitVehicleStep.ForceOut(gohan);
             OpenDoors();
             gohan.Task.ClearAll();
-            gohan.Task.GoTo(RearOfHauler());
+            gohan.Task.RunTo(RearOfHauler(), false, -1);
         }
 
         /// <summary>Gohan in the back: at the rear doors he is fixed inside the box and the doors close; past the boarding window he is put there directly.</summary>
@@ -794,12 +846,18 @@ namespace Bloodlines.Missions.Campaign
                 var anchor = i < 7 ? _hauler.Position : _depot;
                 var post = anchor + offset;
                 var formation = Ctx.Locations.Get("M03.DepotGate");
-                if (MissionPlacement.HasFormation(formation)) { anchor=formation.Position;post=MissionPlacement.GroupPoint(formation,i); }
-                var safe = World.GetSafeCoordForPed(post, false, 0);
-                if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, post, 8f) && Math.Abs(safe.Z - anchor.Z) < 3f) post = safe;
+                if (MissionPlacement.HasFormation(formation))
+                {
+                    // A formation Ron has laid out himself stands where he put it.
+                    anchor=formation.Position;post=MissionPlacement.GroupPoint(formation,i);
+                    var safe = World.GetSafeCoordForPed(post, false, 0);
+                    if (safe != Vector3.Zero && GameUtils.IsWithinFlat(safe, post, 8f) && Math.Abs(safe.Z - anchor.Z) < 3f) post = safe;
+                }
+                else post = OnYard(post, Yard, at => World.GetSafeCoordForPed(at, false, 0));
                 // Never inside the Benson (Ron, September 10: a guard spawned in the truck).
+                // OnYard keeps its own clearance; a surveyed formation is nudged the old way.
                 var truck = _hauler != null && _hauler.Exists() ? _hauler.Position : Ctx.Locations.Position("M03.HaulerSpawn");
-                if (GameUtils.IsWithinFlat(post, truck, 7f))
+                if (GameUtils.IsWithinFlat(post, truck, TruckClearance))
                 {
                     var away = post - truck;
                     float length = (float)System.Math.Sqrt(away.X * away.X + away.Y * away.Y);

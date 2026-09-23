@@ -13,10 +13,21 @@ namespace Bloodlines.Missions.Campaign
         public override string Id => "M34";public override string Title => "Mud & Iron";
         protected override MissionEndpoint Endpoint=>MissionEndpoint.SecuredDelivery;
         private Vehicle _halftrack;private Ped _ramos;private readonly List<Prop> _blocks=new List<Prop>();
-        private readonly HashSet<int> _dropped=new HashSet<int>();private bool _safe;private int _escortOrder;private bool _patientWalking;
+        private readonly HashSet<int> _dropped=new HashSet<int>();private bool _safe;private bool _patientWalking;
+        /// <summary>The half-track has stopped at the shelter and Ramos has been told to get out; what the stage number used to stand for.</summary>
+        private bool _atShelter;
+        /// <summary>
+        /// Whether Gohan holds his follow order. It is a single follow task on the half-track,
+        /// given when he is at the escort car's wheel and not in play, rather than a drive to
+        /// a point behind it handed over again every two and a half seconds, which restarts
+        /// the drive before it can settle (the September 22 audit).
+        /// </summary>
+        private bool _escortFollowing;
+        private string _fault;
         public Vehicle Halftrack=>_halftrack;public Ped Ramos=>_ramos;public int RoadblocksDropped=>_dropped.Count;
         protected override bool Setup()
         {
+            _fault=null;_atShelter=false;_escortFollowing=false;_patientWalking=false;
             if(!BeginCrew(CrewSlot.Guess))return false;
             GameUtils.SetWeather("Dust");
             _halftrack=Car("halftrack",At("M34.Halftrack"),Ctx.Locations.Heading("M34.Halftrack"));
@@ -43,13 +54,19 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Lose the police",new LoseWantedObjective("Lose any police pursuit before arriving at the medical shelter.")).OnEnter(c=>RetreatResponse());
             yield return new MissionStage("Medical shelter",new ConvoyRouteObjective("Stop the half-track at the yellow medical shelter marker with Ramos aboard",()=>_halftrack,()=>CrewCar,()=>At("M34.Senora.Shelter"),12))
                 .OnEnter(c=>DrivingDestination=()=>At("M34.Senora.Shelter"))
-                .OnExit(c=>{DrivingDestination=null;Fighting=false;_ramos.Task.LeaveVehicle();});
+                .OnExit(c=>{DrivingDestination=null;Fighting=false;_atShelter=true;_ramos.Task.LeaveVehicle();});
             yield return new MissionStage("Patient first",new ConditionObjective("Wait for Ramos to leave the stopped half-track",()=>!_ramos.IsInVehicle()&&_ramos.Position.DistanceTo(At("M34.Senora.MedicalWork"))<7f),new MissionInteraction("Gohan: get out and prepare the marked medical kit for Ramos",()=>At("M34.Senora.MedicalWork"),5,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>
                 {
-                    var table=Equipment("prop_table_03","M34.Senora.MedicalKit");
-                    var kit=WorkProp("prop_ld_health_pack",PropPlacement.OnTop(table,table.Model,new Model("prop_ld_health_pack")),false);
-                    if(!RequireAssets(kit))throw new InvalidOperationException("The medical kit failed to load.");
+                    // A kit that will not load used to throw from here, a "Script error";
+                    // the reason is kept and fails the attempt next frame (the September 22 audit).
+                    try
+                    {
+                        var table=Equipment("prop_table_03","M34.Senora.MedicalKit");
+                        var kit=WorkProp("prop_ld_health_pack",PropPlacement.OnTop(table,table.Model,new Model("prop_ld_health_pack")),false);
+                        if(!RequireAssets(kit))_fault="The medical kit failed to load at the shelter. Retry the evacuation.";
+                    }
+                    catch(Exception ex){Logger.Error(Id+" medical kit",ex);_fault="The medical station could not be set up. Retry the evacuation.";}
                 })
                 .OnExit(c=>{_safe=true;Establish("medical","He decides when to talk","The crew reaches a real exterior medical station. Ramos is alive and out of the vehicle. Gohan checks him before accepting the access information.",_ramos,_halftrack);}).AfterCues("M34_S1_05_GUESS");
         }
@@ -64,15 +81,21 @@ namespace Bloodlines.Missions.Campaign
         }
         protected override void OnUpdate()
         {
-            if(CurrentStage==6&&!_patientWalking&&!_ramos.IsInVehicle())
+            if(_fault!=null){Fail(_fault);return;}
+            // What has happened, not which stage number is open: a stage inserted before
+            // the shelter would have silently moved both of these (the September 22 audit).
+            if(_atShelter&&!_safe&&!_patientWalking&&!_ramos.IsInVehicle())
             { _ramos.Task.GoTo(At("M34.Senora.MedicalWork")); _patientWalking=true; }
-            if(!_safe&&CurrentStage<6&&!_ramos.IsInVehicle(_halftrack)){Fail("Ramos is no longer aboard the evacuation half-track.");return;}
-            if(Game.GameTime>=_escortOrder&&CurrentStage<6)
+            if(!_safe&&!_atShelter&&!_ramos.IsInVehicle(_halftrack)){Fail("Ramos is no longer aboard the evacuation half-track.");return;}
+            var gohan=Ctx.Crew.PedFor(CrewSlot.Gohan);
+            bool escorting=!_atShelter&&Ctx.Crew.ActiveSlot!=CrewSlot.Gohan&&gohan!=null&&gohan.Exists()&&!gohan.IsDead&&
+                CrewCar!=null&&CrewCar.Exists()&&gohan.IsInVehicle(CrewCar)&&gohan.SeatIndex==VehicleSeat.Driver&&_halftrack!=null&&_halftrack.Exists();
+            if(!escorting)_escortFollowing=false;
+            else if(!_escortFollowing)
             {
-                _escortOrder=Game.GameTime+2500;
-                var gohan=Ctx.Crew.PedFor(CrewSlot.Gohan);
-                if(Ctx.Crew.ActiveSlot!=CrewSlot.Gohan&&gohan.IsInVehicle(CrewCar))
-                {Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);gohan.Task.DriveTo(CrewCar,_halftrack.Position-_halftrack.ForwardVector*15f,10f,34f,(DrivingStyle)CrewDriving.TrafficFlags);}
+                Ctx.Crew.CompanionAI.TakeControl(CrewSlot.Gohan);
+                Function.Call(Hash.TASK_VEHICLE_FOLLOW,gohan,CrewCar,_halftrack,34f,CrewDriving.TrafficFlags,15);
+                _escortFollowing=true;
             }
             base.OnUpdate();
         }

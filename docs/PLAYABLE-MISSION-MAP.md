@@ -192,7 +192,7 @@ Prerequisite: M09. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Check the load** — MissionInteraction: Guess: check the crates on the flatbed |
 | 2 | Guess | **Roll out** — EnterVehicleObjective: Guess — take the flatbed. Ice rides beside you. |
-| 3 | Guess | **The run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
+| 3 | any brother | **The run** — SpeedFloorObjective: Keep the flatbed above 35 mph; use drive-by weapons on the bikes.<br>KillTargetsObjective: Clear the cartel bikes. |
 | 4 | Guess | **The firing window** — DeliverVehicleObjective: Guess: get the flatbed to the tunnel mouth. That is Ice's firing window. |
 | 5 | Ice | **Gunship** — DestroyVehicleObjective: Ice: out of the cab, launcher on the marked Buzzard from the tunnel mouth. |
 | 6 | Guess | **Burro Heights** — DeliverVehicleObjective: Guess: get back in the flatbed and deliver the engines to the shop.<br>LoseWantedObjective: Lose the police before the shop. |
@@ -371,10 +371,10 @@ Prerequisite: M20. Retry: full mission restart.
 |---|---|---|
 | 1 | Gohan | **Get on the water** — EnterVehicleObjective: Gohan — take the armed launch. |
 | 2 | Gohan | **Draw the locks** — ShadowTargetObjective: Stay on the Cargobob's wing. |
-| 3 | Gohan | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
-| 4 | Gohan | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
-| 5 | Gohan | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
-| 6 | Gohan | **The road north** — ConditionObjective: Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel. |
+| 3 | any brother | **Kill the speedboats** — KillTargetsObjective: Clear the Aegis boats before they close. |
+| 4 | any brother | **The breakwater** — DeliverVehicleObjective: Gohan: take the launch through the yellow breakwater exit. |
+| 5 | any brother | **Shore transfer** — DeliverVehicleObjective: Gohan: bring the launch in to the marked shore landing. |
+| 6 | any brother | **The road north** — ConditionObjective: Gohan and Ice: out of the launch and into the Granger at the road, Gohan at the wheel. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -545,7 +545,7 @@ Prerequisite: M30. Retry: full mission restart.
 | 1 | Ice | **Read the approaches** — MultiHoldObjective: Ice: inspect each yellow approach marker beside the three barriers; press E / D-pad Right |
 | 2 | Gohan | **Arm the perimeter** — MultiHoldObjective: Gohan: arm each marked barrier charge; press E / D-pad Right |
 | 3 | Guess | **Prove the withdrawal road** — TravelObjective: Guess: drive the crew car to the yellow withdrawal marker and stop. Leave the road clear. |
-| 4 | Guess | **Hold the perimeter** — KillTargetsObjective: Defend the generator. Stop the marked probe convoy; planted charges fire only when enemies enter their lane and the crew is clear. |
+| 4 | any brother | **Hold the perimeter** — KillTargetsObjective: Defend the generator. Stop the marked probe convoy; planted charges fire only when enemies enter their lane and the crew is clear. |
 | 5 | Gohan | **Check the damage** — MissionInteraction: Gohan: inspect the surviving generator controls |
 | 6 | Gohan | **Keep the base concealed** — LoseWantedObjective: Lose any police pursuit before returning to the perimeter. |
 
@@ -622,8 +622,8 @@ Prerequisite: M34. Retry: full mission restart.
 | 1 | Ice | **Prepare the trap** — MultiHoldObjective: Ice: plant both marked roadside charges; press E / D-pad Right |
 | 2 | Guess | **Close the far exit** — TravelObjective: Guess: park the crew car across the road at the south end of the pass and stop. That closes the convoy's only way out and keeps you beside the gun truck |
 | 3 | Gohan | **Identify the target** — MissionInteraction: Gohan: use the laptop on the marked field table to identify the convoy's gun truck |
-| 4 | Gohan | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
-| 5 | Gohan | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
+| 4 | any brother | **Watch the pass** — ConditionObjective: Wait in cover for the red lead escort to enter the yellow trap. The orange gun truck must stay intact. |
+| 5 | any brother | **Capture the technical** — KillTargetsObjective: Stop the escort and gun-truck crew. Shoot the occupants, not the orange technical. |
 | 6 | Guess | **Take the driver seat** — EnterVehicleObjective: Guess: take the captured technical's driver seat |
 | 7 | Guess | **Bring both brothers** — ConditionObjective: Stop the technical: Gohan boards the front passenger seat and Ice takes the rear gun seat |
 | 8 | Guess | **Lose pursuit** — LoseWantedObjective: Lose the pursuit. Switch to Ice for the mounted gun or Gohan in the cab while Guess drives; the wheel is yours whenever you want it |
@@ -674,7 +674,7 @@ Prerequisite: M37. Retry: full mission restart.
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
 | 1 | Guess | **Bring moving cover** — TravelObjective: Guess: drive the Benson into the yellow loading lane under fire. Ice covers the approach; keep the truck moving until you reach the marker |
-| 2 | Guess | **Clear the loading yard** — KillTargetsObjective: Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact |
+| 2 | any brother | **Clear the loading yard** — KillTargetsObjective: Use Ice or fight as Guess: stop the four red quarry guards, using the positioned truck as cover. Keep the yellow packages intact |
 | 3 | Gohan | **Release blasting stock** — MissionInteraction: Gohan: unlock the marked stock-control cabinet beside the crates |
 | 4 | Gohan | **Collect package ** — MissionInteraction: Gohan: pick up marked charge package  |
 | 5 | Gohan | **Load package ** — MissionInteraction: Gohan: carry the package to the back of the stopped Benson |
@@ -793,7 +793,7 @@ Prerequisite: M44. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Bring the helicopter over the rail** — TravelObjective: Guess: hold the Annihilator low over the vessel's upper deck |
 | 2 | Ice | **Put Ice on the upper deck** — ConditionObjective: Ice: step off onto the upper deck |
-| 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail |
+| 3 | Ice | **Clear the upper deck** — KillTargetsObjective: Ice: clear the deck detail<br>ConditionObjective: Ice: the deck detail is not on the upper deck; hold the stair head |
 | 4 | Gohan | **Bring the Kraken to the stern** — TravelObjective: Gohan: take the Kraken alongside the stern platform |
 | 5 | Gohan | **Get Gohan aboard** — ConditionObjective: Gohan: get out of the Kraken and climb onto the vessel |
 
@@ -814,7 +814,7 @@ Prerequisite: M45. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M46.Bonds, M46.Bridge, M46.Console, M46.Ledger, M46.Stairs, M46.Vault.
+Survey references: M45.Hold, M46.Bonds, M46.Bridge, M46.Console, M46.Ledger, M46.Stairs, M46.Vault.
 
 ## M47 — PALETO DEEP-SEA: COLLAPSE
 
@@ -824,7 +824,7 @@ Prerequisite: M46. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Put the helicopter down and take the boat** — DeliverVehicleObjective: Guess: land the Annihilator on the cove strip<br>EnterVehicleObjective: Guess: take the Tropic out to the pickup marker |
 | 2 | Gohan | **Trigger the charges** — MissionInteraction: Gohan: trigger the charges from the rail |
-| 3 | Gohan | **Go off the side** — ConditionObjective: Ice and Gohan: get to the edge and go into the water |
+| 3 | any brother | **Go off the side** — ConditionObjective: Ice and Gohan: get to the edge and go into the water |
 | 4 | Guess | **Pick them up** — ConditionObjective: Guess: bring the boat onto both swimmers until all three are aboard |
 | 5 | Guess | **Clear the demolition area** — TravelObjective: Guess: take the boat clear of the burning vessel |
 
@@ -855,13 +855,13 @@ Prerequisite: M48. Retry: full mission restart.
 |---|---|---|
 | 1 | Guess | **Come up on the line** — TravelObjective: Guess: bring the Granger up short of the checkpoint |
 | 2 | Guess | **Take the towers and the radio** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
-| 3 | Guess | **Everyone in the Granger** — EnterVehicleObjective: All three: get into the Granger before the run<br>ConditionObjective: Nobody is left on the shoulder |
+| 3 | any brother | **Everyone in the Granger** — EnterVehicleObjective: All three: get into the Granger before the run<br>ConditionObjective: Nobody is left on the shoulder |
 | 4 | Guess | **Run the seam** — TravelObjective: Guess: take the Granger through the gap in the concrete |
 | 5 | Guess | **Into the county** — TravelObjective: Drive north past the county line |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M49.Checkpoint, M49.Crew, M49.South.
+Survey references: M49.Checkpoint, M49.Crew, M49.South, M49.Start.
 
 ## M50 — THE REDACTED VAULT
 
@@ -871,7 +871,7 @@ Prerequisite: M49. Retry: full mission restart.
 |---|---|---|
 | 1 | as assigned | **Splice the conduit** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Gohan | **Invalidate the feed** — MissionInteraction: Gohan: push the invalidation onto the feed |
-| 3 | Gohan | **Back to the van** — EnterVehicleObjective: All three: get back in the van<br>ConditionObjective: Nobody is left on the street |
+| 3 | any brother | **Back to the van** — EnterVehicleObjective: All three: get back in the van<br>ConditionObjective: Nobody is left on the street |
 | 4 | Guess | **Leave Rockford Hills** — TravelObjective: Guess: drive the crew clear of the block |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
@@ -886,8 +886,8 @@ Prerequisite: M50. Retry: full mission restart.
 |---|---|---|
 | 1 | as assigned | **Wire both banks** — Follow the current objective; detailed rule is defined by this stage’s objective type. |
 | 2 | Gohan | **Arm the sequence** — MissionInteraction: Gohan: arm the sequence and leave it waiting |
-| 3 | Gohan | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
-| 4 | Gohan | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
+| 3 | any brother | **Get out of the yard** — EnterVehicleObjective: All three: get back in the car<br>ConditionObjective: Nobody is left in the switchyard |
+| 4 | any brother | **Clear the station** — TravelObjective: Drive clear of Palmer-Taylor |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -899,16 +899,17 @@ Prerequisite: M51. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Get on the roof** — ReachZoneObjective: Ice: take the service ladder to the roof across the plaza |
-| 2 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
-| 3 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
-| 4 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
-| 5 | Ice | **Get to the bike** — EnterVehicleObjective: Ice: get down off the roof and onto the back of Guess's bike |
-| 6 | Ice | **Lose the response** — LoseWantedObjective: Ride clear of Downtown and lose the Aegis cruisers |
+| 1 | Ice | **Find the way up** — ReachZoneObjective: Ice: get to the scaffolding on the south corner of the roost's block |
+| 2 | Ice | **Get on the roof** — ReachZoneObjective: Ice: climb the scaffolding, cross the roof north-west and take the service ladder up to the roost |
+| 3 | Ice | **Identify Harrison** — MissionInteraction: Ice: glass the steps and let Gohan confirm the man |
+| 4 | Ice | **Wait for a clear shot** — ConditionObjective: Ice: hold until Harrison walks clear of his detail; do not fire into the escort |
+| 5 | Ice | **Take the shot** — ConditionObjective: Ice: take Harrison |
+| 6 | Ice | **Get to the bike** — EnterVehicleObjective: Ice: get down off the roof and onto the back of Guess's bike |
+| 7 | any brother | **Lose the response** — TravelObjective: Guess: ride Ice clear of the plaza<br>LoseWantedObjective: Ride clear of Downtown and lose the Aegis cruisers |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Walk.
+Survey references: M52.Bike, M52.Guard, M52.Harrison, M52.Roost, M52.Scaffold, M52.Walk.
 
 ## M53 — SUBTERRANEAN SWEEP
 
@@ -922,7 +923,7 @@ Prerequisite: M52. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.Start, M53.Train.
+Survey references: M53.Exit, M53.GohanStart, M53.GuessStart, M53.IceStart, M53.Mine1, M53.Mine2, M53.Mine3, M53.SquadA, M53.SquadB, M53.SquadB1, M53.Start, M53.Train.
 
 ## M54 — THE PILLBOX REDOUBT
 
@@ -1031,7 +1032,7 @@ Prerequisite: M60. Retry: full mission restart.
 | 1 | Gohan | **Get down to the wreck** — ReachZoneObjective: Gohan: dive to the flooded bridge |
 | 2 | Gohan | **Cut the server out** — MissionInteraction: Gohan: cut the command server out of the chassis |
 | 3 | any brother | **Deal with their divers** — KillTargetsObjective: Take the Aegis demolition divers |
-| 4 | any brother | **Surface with it** — TravelObjective: Bring the server up to the quay |
+| 4 | any brother | **Surface with it** — TravelObjective: Bring the server up to the surface by the quay |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1049,7 +1050,7 @@ Prerequisite: M61. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Rider.
+Survey references: M62.Boat, M62.Chopper, M62.Consist, M62.Container, M62.Flat, M62.Flat1, M62.Flat2, M62.Rider.
 
 ## M63 — TOWER OF GLASS
 
@@ -1071,9 +1072,10 @@ Prerequisite: M63. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | as assigned | **Get into the tower** — ConditionObjective: Take the freight lift up to the service floor |
-| 2 | any brother | **Clear the service floor** — KillTargetsObjective: Take the executive security holding the floor |
-| 3 | Guess | **Take the executive lift** — MissionInteraction: Guess: blow the executive lift open |
+| 1 | any brother | **Get into the tower** — MissionInteraction: Call the freight lift up to the service floor |
+| 2 | any brother | **Up to the service floor** — ConditionObjective: Riding the freight lift up to the service floor |
+| 3 | any brother | **Clear the service floor** — KillTargetsObjective: Take the executive security holding the floor |
+| 4 | Guess | **Take the executive lift** — MissionInteraction: Guess: blow the executive lift open |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1085,10 +1087,11 @@ Prerequisite: M64. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | as assigned | **Reach the executive floor** — ConditionObjective: Take the lift to the executive floor |
-| 2 | any brother | **Break the detail** — KillTargetsObjective: Take Vance's bodyguard detail |
-| 3 | Gohan | **Open the escrow** — MissionInteraction: Gohan: force Vance's biometrics at the escrow terminal |
-| 4 | Ice | **Finish it** — ConditionObjective: Ice: take Vance |
+| 1 | any brother | **To the executive lift** — MissionInteraction: Call the lift to the executive floor |
+| 2 | any brother | **Reach the executive floor** — ConditionObjective: Riding the lift to the executive floor |
+| 3 | any brother | **Break the detail** — KillTargetsObjective: Take Vance's bodyguard detail |
+| 4 | Gohan | **Open the escrow** — MissionInteraction: Gohan: force Vance's biometrics at the escrow terminal |
+| 5 | Ice | **Finish it** — ConditionObjective: Ice: take Vance |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1158,7 +1161,7 @@ Prerequisite: M69. Retry: full mission restart.
 |---|---|---|
 | 1 | any brother | **Hold the fuselage** — SurviveWavesObjective: Hold the plane. Three waves. |
 | 2 | Guess | **Start all four** — EnterVehicleObjective: Guess: get into the C-130 and start all four turboprops |
-| 3 | Guess | **Off the seawall** — DeliverVehicleObjective: Guess: take the plane off the end of the runway into the water |
+| 3 | Guess | **Off the seawall** — ConditionObjective: Guess: take the plane off the end of the runway into the water |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1186,10 +1189,10 @@ Prerequisite: M03. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Rooftop** — MissionInteraction: Gohan: run to the building's service door, then take the maintenance stairs to the roof. |
+| 1 | Gohan | **Rooftop** — ConditionObjective: Gohan: up the maintenance stairs. |
 | 2 | Gohan | **Server bay** — SubdueTargetsObjective: Gohan: use the stun gun on both marked guards. Keep them alive. |
 | 3 | Gohan | **Root terminal** — MissionInteraction: Inject the worm at the root terminal. |
-| 4 | Gohan | **Fire escape** — MissionInteraction: Gohan: return to the roof access and take the maintenance stairs down before IT traces you. |
+| 4 | Gohan | **Fire escape** — ConditionObjective: Gohan: down the maintenance stairs. |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
@@ -1263,12 +1266,14 @@ Prerequisite: M52. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Ice | **Take the foyer** — KillTargetsObjective: Ice: take the executive detail in the foyer |
-| 2 | Ice | **Settle it** — ConditionObjective: Ice: Sterling |
+| 1 | Ice | **Up to the suite** — MissionInteraction: Ice: take the service elevator up to Sterling's floor |
+| 2 | Ice | **Riding up** — ConditionObjective: Ice: riding up to Sterling's floor |
+| 3 | Ice | **Take the foyer** — KillTargetsObjective: Ice: take the executive detail in the foyer |
+| 4 | Ice | **Settle it** — ConditionObjective: Ice: Sterling |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM07.Suite.
+Survey references: SM07.Start, SM07.Suite.
 
 ## SM08 — BURNER PROTOCOL
 
@@ -1276,13 +1281,17 @@ Prerequisite: M52. Retry: full mission restart.
 
 | Step | Role | Stage and on-screen base instruction |
 |---|---|---|
-| 1 | Gohan | **Take the client files** — MissionInteraction: Gohan: bypass the biometric lock and copy the client files |
-| 2 | Gohan | **Burn the vault** — MissionInteraction: Gohan: run thermite along the filing cabinets |
-| 3 | Gohan | **Get out before it goes** — TravelObjective: Get out of the building |
+| 1 | Gohan | **Up to the firm** — MissionInteraction: Gohan: take the service elevator up to the Vanderbilt and Cole floor |
+| 2 | Gohan | **Riding up** — ConditionObjective: Gohan: riding up to the firm's floor |
+| 3 | Gohan | **Take the client files** — MissionInteraction: Gohan: bypass the biometric lock and copy the client files |
+| 4 | Gohan | **Burn the vault** — MissionInteraction: Gohan: run thermite along the filing cabinets |
+| 5 | Gohan | **Get out before it goes** — MissionInteraction: Gohan: back to the service elevator and down |
+| 6 | Gohan | **Riding down** — ConditionObjective: Gohan: riding down to the street |
+| 7 | Gohan | **Clear of the building** — TravelObjective: Get clear of the building |
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM08.Exit, SM08.Floor.
+Survey references: SM08.Exit, SM08.Floor, SM08.Start.
 
 ## SM09 — THE LONG EXIT
 
@@ -1295,7 +1304,7 @@ Prerequisite: M52. Retry: full mission restart.
 
 Final gameplay dialogue drains before the pass/aftermath transition.
 
-Survey references: SM09.Berth, SM09.Pound.
+Survey references: SM09.Berth, SM09.Pound, SM09.Start.
 
 ## Boundaries of this audit
 

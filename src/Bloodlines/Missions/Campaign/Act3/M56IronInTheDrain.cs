@@ -81,8 +81,15 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>How far above and below the authored channel floor the slab is looked for.</summary>
         public const float FloorHeadroom = 4f;
         public const float FloorSearch = -6f;
-        /// <summary>How near the crew the armor has to be before the fight opens.</summary>
-        public const float ContactMeters = 110f;
+        /// <summary>
+        /// How far short of the first Scarab the half-track comes before the fight opens. The
+        /// half-track starts 108 m from it, and this used to be a 120 m zone around the Scarab
+        /// itself, so the drive down the channel completed on the first frame and the armor
+        /// charged a crew still sitting at the top (Ron, September 22).
+        /// </summary>
+        public const float ContactMeters = 55f;
+        /// <summary>How close to that point counts as arrived.</summary>
+        public const float ContactRadius = 25f;
         /// <summary>How often the armor's orders are refreshed. Never every frame.</summary>
         public const int OrderMs = 5000;
         /// <summary>How fast a Scarab comes up a concrete channel.</summary>
@@ -248,7 +255,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Take the half-track down the drain",
-                new TravelObjective("Guess: drive the half-track down the channel", () => Floor("M56.ApcOne"), 120f, () => _halftrack))
+                new TravelObjective("Guess: drive the half-track down the channel", ShortOfTheArmor, ContactRadius, () => _halftrack))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(c => Engage())
                 .AfterCues("M56_S1_01_GUESS");
@@ -281,6 +288,21 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Clear the channel",
                 new TravelObjective("Bring the half-track back up the channel", () => Floor("M56.Exit"), 25f, () => _halftrack))
                 .AnyBrother();
+        }
+
+        /// <summary>
+        /// A point on the channel floor <see cref="ContactMeters"/> up-channel of the first
+        /// Scarab, on the line from it to where the half-track started: the half-track has to
+        /// actually come down the drain before the armor moves.
+        /// </summary>
+        private Vector3 ShortOfTheArmor()
+        {
+            var armor = Floor("M56.ApcOne");
+            var back = Floor("M56.Halftrack") - armor;
+            back = new Vector3(back.X, back.Y, 0f);
+            float length = back.Length();
+            if (length <= ContactMeters) return Floor("M56.Halftrack");
+            return armor + back * (ContactMeters / length);
         }
 
         /// <summary>The armor comes north. This is the moment the authored line is spoken at.</summary>

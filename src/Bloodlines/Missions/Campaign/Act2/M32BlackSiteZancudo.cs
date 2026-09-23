@@ -12,10 +12,13 @@ namespace Bloodlines.Missions.Campaign
         public override string Id => "M32";public override string Title => "Black Site Zancudo";
         protected override MissionEndpoint Endpoint=>MissionEndpoint.SecuredDelivery;
         private Vehicle _boat; private Prop _panel,_gate,_caseOne,_caseTwo;
-        private int _loaded; private bool _access;
+        private int _loaded; private bool _access, _unloading;
+        /// <summary>Why the unload could not finish, failed on the next frame rather than thrown from the stage exit.</summary>
+        private string _fault;
         public int CasesLoaded=>_loaded; public Vehicle Extraction=>CrewCar;
         protected override bool Setup()
         {
+            _fault=null;_unloading=false;
             if(!BeginCrew(CrewSlot.Gohan))return false;
             _boat=Car("dinghy",MarineSites.ResolveOrThrow(Ctx.Locations,"M32.Boat",2f,2f,4f),Ctx.Locations.Heading("M32.Boat"));
             CrewCar=CrewTransport("M32.CrewCar");if(!RequireAssets(_boat,CrewCar))return false;
@@ -56,13 +59,23 @@ namespace Bloodlines.Missions.Campaign
             yield return new MissionStage("Secure the warheads",new MissionInteraction("Gohan: get out and secure both cases at the marked bunker work area",()=>At("M32.Senora.Workbench"),4,4f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>{DrivingDestination=null;Fighting=false;}).OnExit(c=>Unload()).AfterCues("M32_S1_03_GUESS");
         }
+        /// <summary>
+        /// The cases onto the bunker table. Each of these steps used to throw from the last
+        /// stage's exit, which is a "Script error" at the end of the job; the reason is kept
+        /// and the attempt fails with it on the next frame instead (the September 22 audit).
+        /// </summary>
         private void Unload()
         {
-            if(!_access||_loaded!=2||!Attached(_caseOne,CrewCar)||!Attached(_caseTwo,CrewCar))throw new InvalidOperationException("Both EMP cases must arrive in the extraction car.");
-            var bench=Equipment("prop_table_03","M32.Senora.Workbench");
-            float height=bench.Model.Dimensions.Item2.Z-_caseOne.Model.Dimensions.Item1.Z+.01f;
-            SaveCargo(_caseOne,bench,new Vector3(-.4f,0,height));SaveCargo(_caseTwo,bench,new Vector3(.4f,0,height));
-            Establish("delivery","Hardware secured","Two physical cases are unloaded onto the bunker table. The warheads provide hardware, not rig access codes.",bench);
+            if(!_access||_loaded!=2||!Attached(_caseOne,CrewCar)||!Attached(_caseTwo,CrewCar)){_fault="Both EMP cases must arrive in the extraction car.";return;}
+            _unloading=true;
+            try
+            {
+                var bench=Equipment("prop_table_03","M32.Senora.Workbench");
+                float height=bench.Model.Dimensions.Item2.Z-_caseOne.Model.Dimensions.Item1.Z+.01f;
+                SaveCargo(_caseOne,bench,new Vector3(-.4f,0,height));SaveCargo(_caseTwo,bench,new Vector3(.4f,0,height));
+                Establish("delivery","Hardware secured","Two physical cases are unloaded onto the bunker table. The warheads provide hardware, not rig access codes.",bench);
+            }
+            catch(Exception ex){Logger.Error(Id+" unload",ex);_fault="The EMP cases could not be secured on the bunker table. Retry the delivery.";}
         }
         /// <summary>
         /// Put the other two in Guess's car for the run across the base. Best effort by
@@ -71,7 +84,10 @@ namespace Bloodlines.Missions.Campaign
         private void RideAlong()
         {
             if(CrewCar==null||!CrewCar.Exists())return;
-            foreach(var pair in new[]{Tuple.Create(CrewSlot.Gohan,VehicleSeat.Passenger),Tuple.Create(CrewSlot.Ice,VehicleSeat.LeftRear)})
+            // The same seats the extraction asks for later: BoardBrothers wants Gohan in the
+            // right rear, so riding over in the front seat meant getting out and walking round
+            // to the back door at the extraction (the September 22 audit).
+            foreach(var pair in new[]{Tuple.Create(CrewSlot.Gohan,VehicleSeat.RightRear),Tuple.Create(CrewSlot.Ice,VehicleSeat.LeftRear)})
             {
                 var brother=Ctx.Crew.PedFor(pair.Item1);
                 if(brother==null||!brother.Exists()||brother.IsDead)continue;
@@ -80,13 +96,16 @@ namespace Bloodlines.Missions.Campaign
                 Roles.For(pair.Item1).Stop();
                 Ctx.Crew.CompanionAI.TakeControl(pair.Item1);
                 if(brother.IsInVehicle()&&!brother.IsInVehicle(CrewCar))brother.Task.LeaveVehicle();
-                brother.Task.EnterVehicle(CrewCar,pair.Item2);
+                CrewBoarding.RunAboard(brother,CrewCar,pair.Item2);
             }
         }
 
         protected override void OnUpdate()
         {
-            if(_loaded>0&&CurrentStage<12&&(!Attached(_caseOne,CrewCar)||(_loaded==2&&!Attached(_caseTwo,CrewCar)))){Fail("An EMP case came loose from the extraction car.");return;}
+            if(_fault!=null){Fail(_fault);return;}
+            // Until the unload takes them off, by what has happened rather than by the
+            // stage number (the September 22 audit).
+            if(_loaded>0&&!_unloading&&(!Attached(_caseOne,CrewCar)||(_loaded==2&&!Attached(_caseTwo,CrewCar)))){Fail("An EMP case came loose from the extraction car.");return;}
             base.OnUpdate();
         }
         protected override void OnPassed(){Ctx.State?.SetCargo("empWarheads","M32.Senora.Workbench");}

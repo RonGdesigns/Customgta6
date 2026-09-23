@@ -42,6 +42,8 @@ namespace Bloodlines.Missions.Campaign
         public Prop SecurityCabin => _securityCabin;
         public Prop CameraPanel => _cameraPanel;
         private int _nextDefense;
+        /// <summary>Who each defending brother was last ordered to fight.</summary>
+        private readonly Dictionary<CrewSlot, Ped> _defending = new Dictionary<CrewSlot, Ped>();
         private bool _liftHeld;
         private Vehicle _hauler;
         private Vehicle _forklift;
@@ -218,8 +220,15 @@ namespace Bloodlines.Missions.Campaign
                 var ped = Ctx.Crew.PedFor(hero.Slot);
                 if (ped == null || !ped.Exists() || ped.IsDead || ped.IsInVehicle()) continue;
                 var enemy = threats.Where(p => p.Position.DistanceTo(ped.Position) < 160f).OrderBy(p => p.Position.DistanceTo(ped.Position)).FirstOrDefault();
-                if (enemy != null) { Ctx.Crew.CompanionAI.TakeControl(hero.Slot); ped.Task.FightAgainst(enemy); }
-                else if (ped.IsInCombat) ped.Task.GuardCurrentPosition();
+                // Ordered on a change only: a fresh fight order every two seconds restarts
+                // the task before the brother can act on it. Again when his man is down,
+                // a nearer one is the threat, or he has dropped out of the fight.
+                if (enemy != null)
+                {
+                    if (_defending.TryGetValue(hero.Slot, out var current) && current == enemy && ped.IsInCombat) continue;
+                    Ctx.Crew.CompanionAI.TakeControl(hero.Slot); ped.Task.FightAgainst(enemy); _defending[hero.Slot] = enemy;
+                }
+                else if (ped.IsInCombat) { ped.Task.GuardCurrentPosition(); _defending.Remove(hero.Slot); }
             }
         }
 
@@ -502,6 +511,7 @@ namespace Bloodlines.Missions.Campaign
         protected override void OnCleanup()
         {
             Ctx.Crew.CompanionsHoldPosition = false;
+            _defending.Clear();
             _sentries.Clear();
             _responseCrew.Clear();
             _crates.Clear();

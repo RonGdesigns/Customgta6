@@ -39,6 +39,19 @@ namespace Bloodlines.Missions.Campaign
         }
 
         /// <summary>
+        /// The same fallback for a stage exit, where a throw is not a failed attempt but a
+        /// script error that ends every chapter of the sitting: the mission fails cleanly
+        /// with the reason instead. False when it did.
+        /// </summary>
+        public static bool RequireFallback(SceneBlocking blocking, string action, Mission failing)
+        {
+            blocking.Complete();
+            if (blocking.Succeeded) return true;
+            failing.Fail(action + " failed. Restart the mission.");
+            return false;
+        }
+
+        /// <summary>
         /// A chapter's released asset, taken over by the next chapter instead of a
         /// second copy spawned beside it: the Kraken chapter one left floating, the
         /// lift M18 parked, the launch M20 boarded.
@@ -349,8 +362,9 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         private void PlayFloat()
         {
+            // A stage exit must not throw (see RequireFallback): fail the attempt with the reason.
             if (_container == null || !_container.Exists() || _floats.Count != _clamps.Count)
-                throw new InvalidOperationException("The container and both fitted floats are required for the lift.");
+            { Fail("The container and both fitted floats are required for the lift. Restart the mission."); return; }
             Ctx.PortHeist?.Bind("bullion", _container);
             var blocking = new SceneBlocking()
                 .Then(new ShotStep(2600, null, _breach + new Vector3(0f, 0f, KeelDepth + SubClearance + 6f), null, _breach + new Vector3(0f, 0f, 2f), 0.5f));
@@ -363,7 +377,7 @@ namespace Bloodlines.Missions.Campaign
                 Blocking = blocking
             };
             var cue = Ctx.Data?.Cue("M19_S1_02_ICE");
-            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M19 float scene did not play; the container surfaces directly."); PortHeist.RequireFallback(blocking, "Surfacing the bullion"); Say("M19_S1_02_ICE"); }
+            if (!Ctx.Cutscenes.PlayStaged(spec, new[] { cue })) { Logger.Warn("M19 float scene did not play; the container surfaces directly."); if (PortHeist.RequireFallback(blocking, "Surfacing the bullion", this)) Say("M19_S1_02_ICE"); }
         }
 
         private void SurfaceContainer()

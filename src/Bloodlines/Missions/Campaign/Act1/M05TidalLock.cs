@@ -52,6 +52,20 @@ namespace Bloodlines.Missions.Campaign
         public IReadOnlyList<Vector3> ChaseRoute => _chaseRoute;
         public int ChaseLeg => _leg;
         private readonly List<string> _unverifiedLocations = new List<string>();
+        /// <summary>How close the dinghy has to get before Mateo sees it and runs.</summary>
+        public const float FlushMeters = 85f;
+        /// <summary>How much water the approach covers at the least, when the flare goes up already inside the flush ring.</summary>
+        public const float ApproachMeters = 30f;
+        /// <summary>The flush ring never shrinks below this, so a dinghy already alongside still starts the chase.</summary>
+        public const float MinimumFlushMeters = 25f;
+        /// <summary>How often a generator hand who has dropped out of the fight is looked at again.</summary>
+        public const int CrewReviewMs = 4000;
+        private bool _overwatch, _crewAwake;
+        private int _nextCrewReview;
+        private readonly HashSet<int> _crewOrdered = new HashSet<int>();
+        private CloseTheGap _approach;
+        public float ApproachRadius => _approach?.Radius ?? FlushMeters;
+        public bool LightCrewAwake => _crewAwake;
         private readonly Dictionary<MissionLocation, Vector3> _originalLocations = new Dictionary<MissionLocation, Vector3>();
         private bool _locationNoticeShown;
         public IReadOnlyList<string> UnverifiedLocations => _unverifiedLocations;
@@ -123,6 +137,7 @@ namespace Bloodlines.Missions.Campaign
             Function.Call(Hash.REQUEST_WEAPON_ASSET, (uint)WeaponHash.FlareGun, 31, 0);
             _mateo.IsInvincible = true;
             _roles = new RoleTracks(Ctx.Crew, () => _lightCrew);
+            _overwatch = true;
             PlayShore();
             return true;
         }
@@ -195,6 +210,8 @@ namespace Bloodlines.Missions.Campaign
                     new KillTargetsObjective("Ice — take the generator crew off the cave mouth.",
                         () => _lightCrew))
                 .OwnedBy(CrewSlot.Ice)
+                // The generator crew answers fire only while this is the stage; Setup opens it.
+                .OnExit(context => _overwatch = false)
                 .OnEnter(context => { Say("M05_S1_01_ICE"); ExplainThermal(); });
 
             yield return new MissionStage("Light the cove",
@@ -209,8 +226,14 @@ namespace Bloodlines.Missions.Campaign
                     GameUtils.Subtitle("~y~Flare away. Approach Mateo's boat; he will run when we get close.", 4000);
                 });
 
+            // Ron, September 22: a flare fired already inside the 85 m ring finished this
+            // stage on the same tick, so the approach never happened and Mateo ran the
+            // moment the subtitle told Ron to go after him. The ring still flushes him,
+            // and the approach now always covers some water first.
+            _approach = new CloseTheGap(() => _dinghy, () => _mateoBoat.Position);
             yield return new MissionStage("Breach the grotto",
-                    new OccupiedVehicleDestination("Approach Mateo's boat in the dinghy; close within 85m to flush him out.", () => _dinghy, () => _mateoBoat.Position, 85f))
+                    new OccupiedVehicleDestination("Approach Mateo's boat in the dinghy; close within 85m to flush him out.", () => _dinghy, () => _mateoBoat.Position, FlushMeters),
+                    _approach)
                 .PlayedBy(CrewSlot.Guess)
                 .OnExit(context =>
                 {
@@ -284,6 +307,77 @@ namespace Bloodlines.Missions.Campaign
                 case "Menu": case "LMenu": return "Alt";
                 case "": return "Caps Lock";
                 default: return key;
+            }
+        }
+
+        /// <summary>The flush ring for an approach that starts this far out: never more than <see cref="FlushMeters"/>, and always at least <see cref="ApproachMeters"/> of water to cover.</summary>
+        public static float FlushRadiusFor(float startMeters) =>
+            Math.Min(FlushMeters, Math.Max(MinimumFlushMeters, startMeters - ApproachMeters));
+
+        /// <summary>
+        /// The approach to Mateo's boat, measured from where the dinghy is when the flare
+        /// has gone up. It stands beside the 85 m destination, which keeps its marker and
+        /// its lost-dinghy failure; this only makes sure there is an approach to play.
+        /// </summary>
+        private sealed class CloseTheGap : Objective
+        {
+            private readonly Func<Vehicle> _boat;
+            private readonly Func<Vector3> _target;
+            public float Radius { get; private set; } = FlushMeters;
+            public CloseTheGap(Func<Vehicle> boat, Func<Vector3> target) : base("Close in on Mateo's boat in the dinghy; he will run when we get close.")
+            { _boat = boat; _target = target; }
+            public override void Enter(MissionContext context)
+            {
+                base.Enter(context);
+                var boat = _boat();
+                Radius = boat != null && boat.Exists() ? FlushRadiusFor(Flat(boat.Position, _target())) : FlushMeters;
+                if (Radius < FlushMeters) Logger.Info("M05: the flare went up " + (int)(Radius + ApproachMeters) + " m from Mateo's boat; he runs at " + (int)Radius + " m.");
+            }
+            public override void Update(MissionContext context)
+            {
+                var boat = _boat();
+                var player = Game.Player.Character;
+                if (boat == null || !boat.Exists() || player == null || !IsOwnerActive(context) || !player.IsInVehicle(boat)) return;
+                if (Flat(boat.Position, _target()) <= Radius) Complete();
+            }
+            private static float Flat(Vector3 a, Vector3 b)
+            {
+                float x = a.X - b.X, y = a.Y - b.Y;
+                return (float)Math.Sqrt(x * x + y * y);
+            }
+        }
+
+        /// <summary>
+        /// The generator crew fights back once the shooting starts. They stood at their
+        /// lamps with permanent events blocked and a guard order, so nothing ever told them
+        /// to answer Ice (Ron, September 22). Ordered once when the first shot lands, and a
+        /// man is ordered again only when he has dropped out of combat; defensive movement
+        /// keeps them at the lamps, where the shot from the cliff was set up.
+        /// </summary>
+        private void WakeLightCrew()
+        {
+            var ice = Ctx.Crew.PedFor(CrewSlot.Ice);
+            var player = Game.Player.Character;
+            if (ice == null || !ice.Exists() || ice.IsDead) return;
+            if (!_crewAwake)
+            {
+                bool contact = (player != null && player.IsShooting) ||
+                               _lightCrew.Exists(guard => guard == null || !guard.Exists() || guard.IsDead || guard.Health < guard.MaxHealth);
+                if (!contact) return;
+                _crewAwake = true;
+                _nextCrewReview = 0;
+                Logger.Info("M05: the generator crew is under fire and fights back.");
+            }
+            if (Game.GameTime < _nextCrewReview) return;
+            _nextCrewReview = Game.GameTime + CrewReviewMs;
+            foreach (var guard in _lightCrew)
+            {
+                if (guard == null || !guard.Exists() || guard.IsDead) continue;
+                if (_crewOrdered.Contains(guard.Handle) && guard.IsInCombat) continue;
+                guard.BlockPermanentEvents = false;
+                Function.Call(Hash.SET_PED_COMBAT_MOVEMENT, guard, 1);
+                guard.Task.FightAgainst(ice);
+                _crewOrdered.Add(guard.Handle);
             }
         }
 
@@ -406,7 +500,7 @@ namespace Bloodlines.Missions.Campaign
         {
 
             if(_weatherOwned&&Game.GameTime>=_weatherAt){Function.Call(Hash.SET_DEEP_OCEAN_SCALER,1.65f);_weatherAt=Game.GameTime+2000;}
-            if(!Ctx.Cutscenes.IsActive) { MaintainChase(); KeepAlongside(); }
+            if(!Ctx.Cutscenes.IsActive) { MaintainChase(); KeepAlongside(); if (_overwatch) WakeLightCrew(); }
             base.OnUpdate();
             _roles?.Update();
             ShowLocationNotice();
@@ -562,6 +656,9 @@ namespace Bloodlines.Missions.Campaign
             if (_mateoBoat != null && _mateoBoat.Exists()) Release(_mateoBoat);
             Function.Call(Hash.REMOVE_WEAPON_ASSET,(uint)WeaponHash.FlareGun);
             _lightCrew.Clear();
+            _crewOrdered.Clear();
+            _crewAwake = false;
+            _overwatch = false;
         }
     }
 }

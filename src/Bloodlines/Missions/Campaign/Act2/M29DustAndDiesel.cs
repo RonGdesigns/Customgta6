@@ -34,7 +34,14 @@ namespace Bloodlines.Missions.Campaign
         private readonly List<Blip> _pursuitBlips=new List<Blip>();
         private float _deliveryDistance;
         private bool _roadDistance, _pursuitStarted, _pursuitEnded;
-        private int _nextCar, _nextOrders;
+        private int _nextCar;
+        /// <summary>
+        /// Which cargo driver each pursuit car has been told to chase, by car handle. The
+        /// chase and the gunner's order used to be handed over again every three seconds,
+        /// which restarts both before either can act; now they are given when a car is
+        /// new or the man at the rig's wheel changes (the September 22 audit).
+        /// </summary>
+        private readonly System.Collections.Generic.Dictionary<int,int> _chasing=new System.Collections.Generic.Dictionary<int,int>();
         public bool PursuitEnded => _pursuitEnded;
         public IReadOnlyList<Vehicle> PursuitCars => _pursuitCars;
         internal static bool AtRetreatPoint(float initial,float remaining) =>
@@ -116,7 +123,7 @@ namespace Bloodlines.Missions.Campaign
             _deliveryDistance=Remaining(true);_roadDistance=_deliveryDistance>0f;
             if (!_roadDistance) _deliveryDistance=Remaining(false);
             _deliveryDistance=Math.Max(100f,_deliveryDistance);
-            _nextCar=Game.GameTime+4000;_nextOrders=0;
+            _nextCar=Game.GameTime+4000;_chasing.Clear();
             Radio("ICE","Depot response is coming after the tanker. Keep rolling; they won't follow us all the way into the desert.","M29_PURSUIT_START");
         }
         protected override void OnUpdate()
@@ -124,18 +131,21 @@ namespace Bloodlines.Missions.Campaign
             if(Ctx.Cutscenes.IsActive)return;
             _roles?.Update();
             base.OnUpdate();
-            if (Status!=MissionStatus.Running||!_pursuitStarted||_pursuitEnded||CurrentStage!=4) return;
+            // The pursuit runs from its own start to its own end: EndPursuit is the
+            // delivery stage's exit, so no stage number is needed to know it is over.
+            if (Status!=MissionStatus.Running||!_pursuitStarted||_pursuitEnded) return;
             float remaining=Remaining(_roadDistance);
             // An unavailable route query never counts as zero distance or a retreat.
             if (AtRetreatPoint(_deliveryDistance,remaining)) { EndPursuit();return; }
             int now=Game.GameTime;
             if (_pursuitCars.Count<2&&now>=_nextCar) { SpawnPursuitCar();_nextCar=now+8000; }
-            if (now<_nextOrders) return;_nextOrders=now+3000;
             var target=_truck.GetPedOnSeat(VehicleSeat.Driver);
             if (target==null||!target.Exists()) return;
             for(int i=0;i<_pursuitCars.Count;i++)
             {
                 var car=_pursuitCars[i];if(car==null||!car.Exists()||!car.IsDriveable)continue;
+                if(_chasing.TryGetValue(car.Handle,out int chased)&&chased==target.Handle)continue;
+                _chasing[car.Handle]=target.Handle;
                 var driver=car.GetPedOnSeat(VehicleSeat.Driver);
                 if(driver!=null&&driver.Exists()&&!driver.IsDead) Function.Call(Hash.TASK_VEHICLE_CHASE,driver,target);
                 var gunner=car.GetPedOnSeat(VehicleSeat.Passenger);

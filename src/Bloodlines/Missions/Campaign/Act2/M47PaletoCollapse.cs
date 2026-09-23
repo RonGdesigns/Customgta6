@@ -35,6 +35,26 @@ namespace Bloodlines.Missions.Campaign
         private bool _triggered;
         private bool _jumped;
 
+        /// <summary>
+        /// The brother the player is not playing has to go off the side too. Nothing used to
+        /// tell him to, so as Ice the stage waited on a Gohan standing at the rail forever,
+        /// and as either one the other was left on a burning deck (the September 22 audit).
+        /// He is walked to the rail, goes over it, and if something stops him the stage is not
+        /// left hanging: after <see cref="OverboardFallbackMs"/> he is put in the water beside
+        /// the hull.
+        /// </summary>
+        private sealed class Overboard { public int OrderedAt; public float Remaining = -1f; public int PushedAt; }
+        private readonly Dictionary<CrewSlot, Overboard> _overboard = new Dictionary<CrewSlot, Overboard>();
+        private int _chargesFiredAt;
+        /// <summary>How long a brother may walk toward the rail without closing on it before he is sent again.</summary>
+        public const int OverboardStallMs = 4000;
+        /// <summary>How long after going over he may still be on the structure before he is sent to the rail again.</summary>
+        public const int OverboardRetryMs = 4000;
+        /// <summary>The last resort: this long after the charges, a brother still aboard is put in the water.</summary>
+        public const int OverboardFallbackMs = 25000;
+        /// <summary>How hard he goes over the rail, outward and up.</summary>
+        public const float OverboardSpeed = 5f, OverboardLift = 3f;
+
         public override string Id => "M47";
         public override string Title => "Paleto Deep-Sea: Collapse";
         protected override MissionEndpoint Endpoint => MissionEndpoint.ContinuousNext;
@@ -124,6 +144,8 @@ namespace Bloodlines.Missions.Campaign
         private void FireCharges()
         {
             _triggered = true;
+            _chargesFiredAt = Game.GameTime;
+            _overboard.Clear();
             foreach (var key in new[] { "M44.Clamp1", "M44.Clamp2", "M44.Clamp3" })
             {
                 var point = At(key);
@@ -156,10 +178,13 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(c => FireCharges())
                 .AfterCues("M47_S1_01_GOHAN");
 
+            // Either of them. Unowned, this inherited Gohan from the trigger, so as Ice the
+            // objective read "Switch to Gohan" while Ice was the one standing at the edge.
             yield return new MissionStage("Go off the side",
                 new ConditionObjective("Ice and Gohan: get to the edge and go into the water",
                     () => InWater(CrewSlot.Ice) && InWater(CrewSlot.Gohan)) { Marker = () => _edge, MarkerRadius = 4f })
                 .AnyOf()
+                .AnyBrother()
                 .OnExit(c => _jumped = true)
                 .AfterCues("M47_S1_02_ICE");
 
@@ -182,8 +207,92 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected override void OnUpdate()
         {
+            if (_triggered && !_jumped) SendOverTheSide();
             if (_jumped && !Recovered) _pickup.Update(Ctx.Crew, _boat, Swimmers, Id);
             base.OnUpdate();
+        }
+
+        /// <summary>
+        /// Walk each brother the player is not playing to the rail and put him over it. The
+        /// walk is ordered once and only re-ordered when he has stopped closing on the rail;
+        /// the jump is a push outward from wherever he stopped, which is the rail whether or
+        /// not the hull's extent reaches the marked point.
+        /// </summary>
+        private void SendOverTheSide()
+        {
+            foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan })
+            {
+                if (slot == Ctx.Crew.ActiveSlot) { _overboard.Remove(slot); continue; }
+                if (InWater(slot)) continue;
+                var ped = Ctx.Crew.PedFor(slot);
+                if (ped == null || !ped.Exists() || ped.IsDead) continue;
+                if (!_overboard.TryGetValue(slot, out var state)) { state = new Overboard(); _overboard[slot] = state; }
+                int now = Game.GameTime;
+
+                if (now - _chargesFiredAt > OverboardFallbackMs)
+                {
+                    // Something kept him on the structure: a rail with no way over, a
+                    // navmesh that ends short of it. The stage cannot wait on that.
+                    var water = OutsideTheRail(ped.Position, 4f);
+                    ped.Task.ClearAllImmediately();
+                    ped.Position = new Vector3(water.X, water.Y, 0.5f);
+                    Logger.Warn(Id + ": " + slot + " could not get off the structure in " + (OverboardFallbackMs / 1000) + " s; placed him in the water beside the hull.");
+                    continue;
+                }
+
+                if (state.PushedAt != 0)
+                {
+                    if (now - state.PushedAt < OverboardRetryMs) continue;
+                    // Over the rail and still aboard: landed on a lower deck. Send him again.
+                    state.PushedAt = 0; state.OrderedAt = 0; state.Remaining = -1f;
+                }
+
+                var rail = RailPoint(ped.Position);
+                float remaining = ped.Position.DistanceTo2D(rail);
+                bool closing = state.Remaining < 0f || state.Remaining - remaining > 1f;
+                if (closing) state.Remaining = remaining;
+                bool stopped = state.OrderedAt != 0 && now - state.OrderedAt > OverboardStallMs && !closing;
+                if (remaining > 2f && !stopped)
+                {
+                    if (state.OrderedAt == 0)
+                    {
+                        Ctx.Crew.CompanionAI.TakeControl(slot);
+                        ped.Task.ClearAll();
+                        ped.Task.GoTo(rail);
+                        state.OrderedAt = now;
+                    }
+                    else if (closing) state.OrderedAt = now;
+                    continue;
+                }
+
+                // At the rail, or as close as the deck lets him get: over the side.
+                var outward = OutwardFrom(ped.Position);
+                ped.Task.ClearAllImmediately();
+                Function.Call(Hash.SET_PED_TO_RAGDOLL, ped, 2500, 2500, 0, false, false, false);
+                Function.Call(Hash.SET_ENTITY_VELOCITY, ped, outward.X * OverboardSpeed, outward.Y * OverboardSpeed, OverboardLift);
+                state.PushedAt = now;
+                Logger.Info(Id + ": " + slot + " goes over the side at " + ped.Position + ".");
+            }
+        }
+
+        /// <summary>Flat unit direction off the nearer beam of the hull.</summary>
+        private static Vector3 OutwardFrom(Vector3 at) =>
+            at.Y - PaletoSite.HullMin.Y < PaletoSite.HullMax.Y - at.Y ? new Vector3(0f, -1f, 0f) : new Vector3(0f, 1f, 0f);
+
+        /// <summary>The rail on the nearer beam, a meter inboard, level with where he stands.</summary>
+        private static Vector3 RailPoint(Vector3 at)
+        {
+            var outward = OutwardFrom(at);
+            float y = outward.Y < 0f ? PaletoSite.HullMin.Y + 1f : PaletoSite.HullMax.Y - 1f;
+            float x = Math.Max(PaletoSite.HullMin.X + 1f, Math.Min(PaletoSite.HullMax.X - 1f, at.X));
+            return new Vector3(x, y, at.Z);
+        }
+
+        /// <summary>Open water just off the nearer beam.</summary>
+        private static Vector3 OutsideTheRail(Vector3 at, float clearance)
+        {
+            var rail = RailPoint(at);
+            return rail + OutwardFrom(at) * (1f + clearance);
         }
 
         /// <summary>Guess is driving, so the two who went off the side take the other seats.</summary>

@@ -39,6 +39,29 @@ namespace Bloodlines.Missions.Campaign
         /// </summary>
         protected GuardAwareness Awareness { get; private set; }
         protected Func<Vector3> DrivingDestination;
+        private readonly Dictionary<CrewSlot, Vector3> _startPoints = new Dictionary<CrewSlot, Vector3>();
+
+        protected override bool RejoinsIdleCrew => true;
+
+        /// <summary>
+        /// A role that is on its way, working, taking cover or extracting is his job. So is
+        /// watching from a point the mission sent him to. Watching from where he started is not.
+        /// </summary>
+        protected override bool HasOwnWork(CrewSlot slot)
+        {
+            var track = Roles?.Peek(slot);
+            if (track == null) return false;
+            switch (track.State)
+            {
+                case RoleState.Idle: return false;
+                case RoleState.Working: return !track.ActionComplete;
+                case RoleState.Observing:
+                    return !(_startPoints.TryGetValue(slot, out var start) && track.Point.DistanceTo(start) < 1.5f);
+                default: return true;
+            }
+        }
+
+        protected override void OnRejoin(CrewSlot slot) { Roles?.Peek(slot)?.Stop(); }
         /// <summary>
         /// Keys that sit on built geometry — a pier deck, a platform, a vessel — rather
         /// than on the terrain. The ground preparation asks the engine for walkable ground
@@ -63,7 +86,12 @@ namespace Bloodlines.Missions.Campaign
                 .Select(h => Ctx.Crew.PedFor(h.Slot))
                 .Where(p => p != null && p.Exists() && !p.IsDead));
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
+            {
                 Roles.For(slot).Observe(At(site + "." + slot + "Start"), At(site + "." + slot + "Start"));
+                // Where he starts, not a post: once there is nothing for him, he comes to the player.
+                Unpost(slot);
+                _startPoints[slot] = At(site + "." + slot + "Start");
+            }
             return true;
         }
         protected Vehicle CrewTransport(string key)
@@ -144,20 +172,43 @@ namespace Bloodlines.Missions.Campaign
             { Fail("The extraction vehicle does not have the required seat. Retry with a compatible crew car."); return false; }
             if (actor.IsInVehicle(vehicle) && actor.SeatIndex == seat)
             { _boarding.Remove(actor); _boardingStarted.Remove(actor); return true; }
-            if (actor.IsInVehicle(vehicle) && actor != Game.Player.Character)
+            // The player sits where he chooses. Asking him for one particular seat, and
+            // counting nothing else, soft-locked M41 when Ice took the other rear seat and
+            // failed M54 when he took a brother's (the September 22 audit).
+            if (actor == Game.Player.Character) { if (actor.IsInVehicle(vehicle)) { _boarding.Remove(actor); _boardingStarted.Remove(actor); return true; } return false; }
+            // Told to board, he is the mission's again.
+            if (Ctx?.Crew != null)
+                foreach (var hero in Protagonist.All)
+                    if (Ctx.Crew.PedFor(hero.Slot) == actor && Ctx.Crew.CompanionAI.IsRejoining(hero.Slot)) Ctx.Crew.CompanionAI.TakeControl(hero.Slot);
+            if (actor.IsInVehicle(vehicle))
             { actor.Task.LeaveVehicle(); return false; }
-            if (actor == Game.Player.Character || vehicle.Speed > 1.5f) { _boardingStarted.Remove(actor); return false; }
+            // A man who died in the seat is not a passenger. M35's gunner is killed in the gun
+            // seat Ice is about to take, and the corpse used to fail the mission as an
+            // occupied seat.
+            var occupant = vehicle.GetPedOnSeat(seat);
+            if (occupant != null && occupant.Exists() && occupant.IsDead) { GameUtils.SafeDelete(occupant); }
+            // And the seat the player took is not his brother's any more: take another.
+            if (occupant != null && occupant.Exists() && occupant == Game.Player.Character) seat = OtherFreeSeat(vehicle, seat);
+            if (vehicle.Speed > 1.5f) { _boardingStarted.Remove(actor); return false; }
             if (actor.Position.DistanceTo(vehicle.Position) > 25f)
-            { _boardingStarted.Remove(actor); if (!_boarding.TryGetValue(actor,out int walked) || Game.GameTime-walked>6000) { actor.Task.GoTo(vehicle.Position); _boarding[actor] = Game.GameTime; } return false; }
+            { _boardingStarted.Remove(actor); if (!_boarding.TryGetValue(actor,out int walked) || Game.GameTime-walked>6000) { CrewBoarding.RunTo(actor, vehicle.Position); _boarding[actor] = Game.GameTime; } return false; }
             if (!_boardingStarted.TryGetValue(actor, out int started)) _boardingStarted[actor] = Game.GameTime;
             else if (Game.GameTime - started > 45000)
             { Fail("A passenger could not reach the extraction seat. Retry with the vehicle stopped clear of obstacles."); return false; }
             if (!_boarding.TryGetValue(actor, out int when) || Game.GameTime - when > 8000)
             {
                 if (!vehicle.IsSeatFree(seat)) { Fail("An extraction seat is occupied. Clear the required seats and retry."); return false; }
-                actor.Task.EnterVehicle(vehicle, seat); _boarding[actor] = Game.GameTime;
+                CrewBoarding.RunAboard(actor, vehicle, seat); _boarding[actor] = Game.GameTime;
             }
             return actor.IsInVehicle(vehicle);
+        }
+
+        private static VehicleSeat OtherFreeSeat(Vehicle vehicle, VehicleSeat taken)
+        {
+            int seats = Function.Call<int>(Hash.GET_VEHICLE_MODEL_NUMBER_OF_SEATS, vehicle.Model.Hash);
+            for (int i = 0; i < Math.Max(0, seats - 1); i++)
+                if ((VehicleSeat)i != taken && vehicle.IsSeatFree((VehicleSeat)i)) return (VehicleSeat)i;
+            return vehicle.IsSeatFree(VehicleSeat.Driver) ? VehicleSeat.Driver : taken;
         }
         protected bool BoardBrothers(Vehicle car)
         {
@@ -191,6 +242,19 @@ namespace Bloodlines.Missions.Campaign
         public const int DriveRefreshMs = 9000;
         /// <summary>Cruise the AI aims for on a mission route.</summary>
         public const float DriveCruiseSpeed = 34f;
+        /// <summary>What each response car was last sent at, so it is not re-sent every cycle.</summary>
+        private readonly Dictionary<Vehicle, Tuple<Ped, Vector3>> _responseOrders = new Dictionary<Vehicle, Tuple<Ped, Vector3>>();
+        /// <summary>What each brother was last told to fight, so the order is given once.</summary>
+        private readonly Dictionary<CrewSlot, Ped> _supportTargets = new Dictionary<CrewSlot, Ped>();
+        private readonly Dictionary<CrewSlot, int> _supportOrderedAt = new Dictionary<CrewSlot, int>();
+        /// <summary>
+        /// How long a brother's order against the same man stands before it is given again. A
+        /// drive-by from a seat need not report as combat, so a clock is the only way to tell a
+        /// standing order from a lost one.
+        /// </summary>
+        public const int SupportRefreshMs = 8000;
+        /// <summary>How far a pursued brother may move before a response car is given his new position.</summary>
+        public const float ResponseRerouteMeters = 30f;
         private Vector3 _driveOrder;
         private int _driveOrderAt;
         private float _driveRemaining = -1f;
@@ -247,7 +311,8 @@ namespace Bloodlines.Missions.Campaign
         protected void TickSupport()
         {
             foreach (var slot in new[] { CrewSlot.Ice, CrewSlot.Gohan, CrewSlot.Guess })
-                if (slot != Ctx.Crew.ActiveSlot && Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted)
+                if (slot != Ctx.Crew.ActiveSlot && Ctx.Crew.CompanionAI.StateOf(slot) != CompanionState.Scripted &&
+                    !Ctx.Crew.CompanionAI.IsRejoining(slot))
                     Ctx.Crew.CompanionAI.TakeControl(slot);
             Roles?.Update();
             if (Awareness != null)
@@ -282,28 +347,50 @@ namespace Bloodlines.Missions.Campaign
                 if (!unit.Item1.Exists() || unit.Item1.IsDead) continue;
                 var target = targets.OrderBy(p => p.Position.DistanceTo(unit.Item1.Position)).FirstOrDefault();
                 if (target == null) continue;
+                // Re-issued only when the target changes or has moved on, never every cycle:
+                // handing DriveTo to a driver on a clock restarts the drive before he makes
+                // any way, which is the KeepDriving rule (the September 22 audit).
+                _responseOrders.TryGetValue(unit.Item1, out var last);
+                bool fresh = last == null || last.Item1 != target || last.Item2.DistanceTo(target.Position) > ResponseRerouteMeters;
                 if (unit.Item2.Exists() && !unit.Item2.IsDead && unit.Item2.IsInVehicle(unit.Item1))
                 {
                     if (unit.Item1.Position.DistanceTo(target.Position) < 45f && !target.IsInVehicle()) unit.Item2.Task.LeaveVehicle();
-                    else unit.Item2.Task.DriveTo(unit.Item1, target.Position, 16f, 27f, (DrivingStyle)CrewDriving.TrafficFlags);
+                    else if (fresh) unit.Item2.Task.DriveTo(unit.Item1, target.Position, 16f, 27f, (DrivingStyle)CrewDriving.TrafficFlags);
                 }
                 if (unit.Item3.Exists() && !unit.Item3.IsDead && unit.Item3.IsInVehicle(unit.Item1))
                 {
                     if (unit.Item1.Position.DistanceTo(target.Position) < 50f && !target.IsInVehicle()) unit.Item3.Task.LeaveVehicle();
-                    else DriveBy(unit.Item3, target);
+                    else if (fresh) DriveBy(unit.Item3, target);
                 }
+                if (fresh) _responseOrders[unit.Item1] = Tuple.Create(target, target.Position);
             }
             foreach (var slot in new[] { CrewSlot.Guess, CrewSlot.Gohan, CrewSlot.Ice })
             {
-                if (slot == Ctx.Crew.ActiveSlot) continue;
+                // A brother who has rejoined the player fights under the companion controller.
+                if (slot == Ctx.Crew.ActiveSlot || Ctx.Crew.CompanionAI.IsRejoining(slot)) continue;
                 var actor = Ctx.Crew.PedFor(slot);
                 if (actor == null || !actor.Exists() || actor.IsDead || (actor.IsInVehicle() && actor.SeatIndex == VehicleSeat.Driver)) continue;
                 var threat = Opposition.Where(p => p != null && p.Exists() && !p.IsDead && p.Position.DistanceTo(actor.Position) < 110f)
                     .OrderBy(p => p.Position.DistanceTo(actor.Position)).FirstOrDefault();
-                if (threat != null) { if (actor.IsInVehicle()) DriveBy(actor, threat); else actor.Task.FightAgainst(threat); }
+                if (threat == null) { _supportTargets.Remove(slot); continue; }
+                // Once per target, and again only if he has dropped out of the fight. It was
+                // re-issued every cycle, which restarts the task before he can act on it: the
+                // same fault that left M31's guards standing still (the September 22 audit).
+                if (_supportTargets.TryGetValue(slot, out var current) && current == threat &&
+                    (actor.IsInCombat || Game.GameTime - (_supportOrderedAt.TryGetValue(slot, out int at) ? at : 0) < SupportRefreshMs)) continue;
+                _supportTargets[slot] = threat; _supportOrderedAt[slot] = Game.GameTime;
+                if (actor.IsInVehicle()) DriveBy(actor, threat); else actor.Task.FightAgainst(threat);
             }
         }
-        protected override void OnUpdate() { TickSupport(); base.OnUpdate(); }
-        protected override void OnCleanup() { _driveOrderAt = 0; _driveRemaining = -1f; Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
+        protected override void OnUpdate()
+        {
+            // A subclass that failed the mission earlier in this tick calls down here anyway.
+            // Support takes control of every brother, so running it after the release is how
+            // Gohan was left held in free roam (BM01, September 22).
+            if (Status != MissionStatus.Running) return;
+            TickSupport();
+            base.OnUpdate();
+        }
+        protected override void OnCleanup() { _driveOrderAt = 0; _driveRemaining = -1f; _responseOrders.Clear(); _supportTargets.Clear(); _supportOrderedAt.Clear(); Awareness?.Clear(); Roles?.Release(); _boarding.Clear(); _boardingStarted.Clear(); DrivingDestination = null; base.OnCleanup(); }
     }
 }

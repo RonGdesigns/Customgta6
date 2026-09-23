@@ -23,6 +23,8 @@ namespace Bloodlines.Missions
     {
         public const float ThreatRadius = 35f;
         public const int ClearMs = 6000;
+        /// <summary>A cover point further than this is not cover, it is a run across the map.</summary>
+        public const float CoverReach = 40f;
 
         private readonly Func<IEnumerable<Ped>> _enemies;
         private Vector3 _point, _cover;
@@ -35,6 +37,8 @@ namespace Bloodlines.Missions
         public Ped Ped { get; }
         public RoleState State { get; private set; } = RoleState.Idle;
         public Vector3 Point => _point;
+        /// <summary>Told when this track gives him an order, so a brother who had rejoined the player is taken back first.</summary>
+        public Action<CrewSlot> Claimed { get; set; }
         public Vector3 Cover => _cover;
         public bool Arrived => Ped != null && Ped.Exists() && Ped.Position.DistanceTo(_point) <= 2.5f;
         public RoleAction Action => _action;
@@ -77,6 +81,7 @@ namespace Bloodlines.Missions
 
         private void Enter(RoleState state)
         {
+            if (state != RoleState.Idle) Claimed?.Invoke(Slot);
             State = state; _orderIssued = false; _clearSince = 0;
             if (Ped != null && Ped.Exists()) _lastHealth = Ped.Health;
         }
@@ -85,6 +90,12 @@ namespace Bloodlines.Missions
         public void Update()
         {
             if (Ped == null || !Ped.Exists() || Ped.IsDead || State == RoleState.Idle) return;
+            // A brother in a seat, or being ordered into one, belongs to the vehicle. Every
+            // order below starts with ClearAll, and the threat response then sends him running
+            // for cover: that pulled Ice off M56's gun and Gohan out of its cab when the armor
+            // closed, bailed M49's crew out at the checkpoint, and undid every boarding order in
+            // M49 to M51 (the September 22 audit). He gets a fresh order when he is on his feet.
+            if (Ped.IsInVehicle() || Core.CrewBoarding.IsBoarding(Slot)) { _orderIssued = false; return; }
             if (!_orderIssued) { Order(); _orderIssued = true; }
 
             if (State == RoleState.Approaching && Arrived) { State = RoleState.Observing; Order(); return; }
@@ -101,7 +112,7 @@ namespace Bloodlines.Missions
                     if (State == RoleState.Working) _action?.Suspend(Ped);
                     State = RoleState.Threatened;
                     Order();
-                    Logger.Debug(Slot + " threatened; taking cover at " + _cover);
+                    Logger.Debug(Slot + (NearCover ? " threatened; taking cover at " + _cover : " threatened; fighting where he stands"));
                     return;
                 }
                 if (State == RoleState.Working) _action?.Tick(Ped);
@@ -118,6 +129,8 @@ namespace Bloodlines.Missions
                 Logger.Debug(Slot + " clear; resuming " + State + (State == RoleState.Working && _action != null ? " (" + _action.Name + ")" : ""));
             }
         }
+
+        private bool NearCover => _cover != Vector3.Zero && Ped.Position.DistanceTo(_cover) <= CoverReach;
 
         private bool Threatened()
         {
@@ -139,7 +152,8 @@ namespace Bloodlines.Missions
             switch (State)
             {
                 case RoleState.Approaching:
-                    task.ClearAll(); task.GoTo(_point); break;
+                    // At a run: a brother on his way to his job is not out for a walk.
+                    task.ClearAll(); task.RunTo(_point, false, -1); break;
                 case RoleState.Observing:
                     task.ClearAll(); Ped.Heading = DriveUpStep.HeadingBetween(Ped.Position, _cover == Vector3.Zero ? _point : _cover); task.GuardCurrentPosition(); break;
                 case RoleState.Working:
@@ -149,7 +163,11 @@ namespace Bloodlines.Missions
                     break;
                 case RoleState.Threatened:
                 case RoleState.Covering:
-                    task.ClearAll(); task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
+                    // Most missions give a brother his start point as cover, which by the time a
+                    // fight starts can be hundreds of meters back down the road: BM01 logged Guess
+                    // "taking cover" 800 m away at the gate (September 22). He fights from where he
+                    // is instead of being sent there.
+                    task.ClearAll(); if (NearCover) task.RunTo(_cover, false, 8000); task.FightAgainstHatedTargets(150f); break;
                 case RoleState.Extracting:
                     task.ClearAll(); task.RunTo(_point, false, 20000); break;
             }
@@ -170,8 +188,14 @@ namespace Bloodlines.Missions
             if (_tracks.TryGetValue(slot, out var track)) return track;
             var ped = _crew.PedFor(slot);
             _crew.CompanionAI.TakeControl(slot);
-            return _tracks[slot] = new RoleTrack(slot, ped, _enemies);
+            return _tracks[slot] = new RoleTrack(slot, ped, _enemies)
+            {
+                Claimed = s => { if (_crew.CompanionAI.IsRejoining(s)) _crew.CompanionAI.TakeControl(s); }
+            };
         }
+
+        /// <summary>The track for a brother, if one exists, without taking him.</summary>
+        public RoleTrack Peek(CrewSlot slot) => _tracks.TryGetValue(slot, out var track) ? track : null;
 
         public bool AllIn(RoleState state, params CrewSlot[] slots) =>
             slots.All(slot => _tracks.TryGetValue(slot, out var track) && (track.State == state || (state == RoleState.Observing && track.State == RoleState.Threatened && track.Arrived)));
