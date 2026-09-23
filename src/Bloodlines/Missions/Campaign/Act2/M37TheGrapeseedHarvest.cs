@@ -42,11 +42,11 @@ namespace Bloodlines.Missions.Campaign
             for(int i=0;i<2;i++)
             {
                 int n=i;
-                yield return new MissionStage("Fit smoke kit "+(n+1),new MissionInteraction("Gohan: fit the smoke canisters beside parked aircraft "+(n+1),()=>_planes[n].Position+_planes[n].RightVector*3f,4,3f,animation:MissionInteraction.ReachInside,face:()=>_planes[n].Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>Fit(n));
+                yield return new MissionStage("Fit smoke kit "+(n+1),new MissionInteraction("Gohan: fit the smoke canisters beside parked aircraft "+(n+1),()=>_planes[n].Position+_planes[n].RightVector*3f,4,3f,animation:MissionInteraction.Repair,face:()=>_planes[n].Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>Fit(n));
             }
-            yield return new MissionStage("Check both releases",new MissionInteraction("Gohan: test the smoke release at the first parked aircraft",()=>_planes[0].Position+_planes[0].RightVector*3f,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Check both releases",new MissionInteraction("Gohan: test the smoke release at the first parked aircraft",()=>_planes[0].Position+_planes[0].RightVector*3f,3,3f,animation:MissionInteraction.Operate,face:()=>_planes[0].Position)).OwnedBy(CrewSlot.Gohan)
                 .OnExit(c=>Test(0)).AfterCues("M37_S1_01_GUESS");
-            yield return new MissionStage("Check second release",new MissionInteraction("Gohan: test the second aircraft's smoke release",()=>_planes[1].Position+_planes[1].RightVector*3f,3,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Check second release",new MissionInteraction("Gohan: test the second aircraft's smoke release",()=>_planes[1].Position+_planes[1].RightVector*3f,3,3f,animation:MissionInteraction.Operate,face:()=>_planes[1].Position)).OwnedBy(CrewSlot.Gohan)
                 .OnExit(c=>{Test(1);Establish("payload","A tested screen","Both releases were operated on the parked aircraft and their canisters stay attached. Where a plume was actually seen is recorded per aircraft; an optical screen is no guarantee against radar or thermal detection.",_planes[0],_planes[1]);}).AfterCues("M37_S1_03_GOHAN");
         }
         private void Fit(int n)

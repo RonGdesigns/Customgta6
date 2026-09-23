@@ -299,6 +299,7 @@ namespace Bloodlines.Missions.Objectives
             : base(label)
         {
             _action = label; _vehicle = vehicle;
+            _hold = new HoldAnimation(label);
             _sites = sites.ToList();
             _secondsEach = secondsEach;
             _radius = radius;
@@ -309,18 +310,29 @@ namespace Bloodlines.Missions.Objectives
         public int Total => _sites.Count;
         /// <summary>Called with the site index when a site's hold completes: a part fitted, a charge set.</summary>
         public Action<int> SiteDone { get; set; }
+        /// <summary>The work clip, as a <see cref="MissionInteraction"/> constant. Left unset on foot, it is inferred from the label.</summary>
         public string Animation { get; set; }
-        private Ped _worker;
-        private void StopWork()
+        private readonly HoldAnimation _hold;
+        private bool _inferenceLogged;
+        /// <summary>What each site's hold plays: nothing from a vehicle, the explicit animation, or the inference.</summary>
+        public string ResolvedAnimation
         {
-            if (_worker != null && _worker.Exists() && !string.IsNullOrEmpty(Animation))
+            get
             {
-                var parts = Animation.Split('|');
-                if (parts.Length == 2) GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, parts[0], parts[1], 2f);
+                string resolved = MissionInteraction.Resolve(Animation, _action, _vehicle != null);
+                if (resolved != null && string.IsNullOrEmpty(Animation) && !_inferenceLogged)
+                {
+                    _inferenceLogged = true;
+                    Logger.Info("Multi-site hold \"" + _action + "\" names no animation; inferred " + resolved + " from its text.");
+                }
+                return resolved;
             }
-            _worker = null;
         }
-        public override void Exit(MissionContext context) { StopWork(); base.Exit(context); }
+        /// <summary>The clip playing at the current site, or null.</summary>
+        public string PlayingAnimation => _hold.Playing;
+        private void StopWork() => _hold.Stop();
+        public override void Enter(MissionContext context) { base.Enter(context); _hold.Prepare(ResolvedAnimation); }
+        public override void Exit(MissionContext context) { _hold.Release(); base.Exit(context); }
 
         public override void Update(MissionContext context)
         {
@@ -370,16 +382,8 @@ namespace Bloodlines.Missions.Objectives
                 _activeSite = near;
                 _startedAt = Game.GameTime;
                 StopWork();
-                if (_vehicle == null && !string.IsNullOrEmpty(Animation))
-                {
-                    var parts = Animation.Split('|');
-                    if (parts.Length == 2)
-                    {
-                        player.Heading = DriveUpStep.HeadingBetween(player.Position, _sites[near] + new Vector3(-1f, 0f, 0f));
-                        player.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
-                        _worker = player;
-                    }
-                }
+                var site = _sites[near];
+                if (_vehicle == null) _hold.Start(player, ResolvedAnimation, () => site + new Vector3(-1f, 0f, 0f));
                 return;
             }
 
@@ -394,6 +398,7 @@ namespace Bloodlines.Missions.Objectives
                 return;
             }
 
+            if (_vehicle == null) _hold.Maintain(player, Game.GameTime);
             Label = _workText + " — " + Remaining + " left.";
             GameUtils.DrawProgressBar((Game.GameTime - _startedAt) / (_secondsEach * 1000f));
         }

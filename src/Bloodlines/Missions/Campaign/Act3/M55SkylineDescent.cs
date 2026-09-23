@@ -330,7 +330,7 @@ namespace Bloodlines.Missions.Campaign
             var vaultSecurity = new KillTargetsObjective("Guess: put down the vault security",
                 () => _vaultGuards) { RequiredCharacter = CrewSlot.Guess };
             var terminal = new MissionInteraction("Gohan: bypass the offshore escrow terminal",
-                () => _terminal, TerminalSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                () => _terminal, TerminalSeconds, 2.5f, animation: MissionInteraction.Typing)
             { RequiredCharacter = CrewSlot.Gohan };
             var vault = new MissionInteraction("Guess: crack the vault and pull the secondary ledger",
                 () => _vault, VaultSeconds, 2.5f, animation: MissionInteraction.ReachInside)
@@ -346,9 +346,9 @@ namespace Bloodlines.Missions.Campaign
             // The way down. A blimp interior has no door, so each brother's own arrival point
             // is his service elevator; whichever one runs first takes everybody to the street.
             yield return new MissionStage("Down to the street",
-                new MissionInteraction("Ice: take the service elevator down", () => At("M55.IceStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Ice },
-                new MissionInteraction("Gohan: take the service elevator down", () => At("M55.GohanStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Gohan },
-                new MissionInteraction("Guess: take the service elevator down", () => At("M55.GuessStart"), ElevatorSeconds, 3.5f) { RequiredCharacter = CrewSlot.Guess })
+                new MissionInteraction("Ice: take the service elevator down", () => At("M55.IceStart"), ElevatorSeconds, 3.5f, animation: MissionInteraction.Operate) { RequiredCharacter = CrewSlot.Ice },
+                new MissionInteraction("Gohan: take the service elevator down", () => At("M55.GohanStart"), ElevatorSeconds, 3.5f, animation: MissionInteraction.Operate) { RequiredCharacter = CrewSlot.Gohan },
+                new MissionInteraction("Guess: take the service elevator down", () => At("M55.GuessStart"), ElevatorSeconds, 3.5f, animation: MissionInteraction.Operate) { RequiredCharacter = CrewSlot.Guess })
                 .AnyOf()
                 .OnExit(c => Descend());
 

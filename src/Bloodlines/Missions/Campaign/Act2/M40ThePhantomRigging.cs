@@ -47,13 +47,13 @@ namespace Bloodlines.Missions.Campaign
             for(int i=0;i<2;i++)
             {
                 int n=i;
-                yield return new MissionStage("Prepare hull kit "+(n+1),new MissionInteraction("Guess: prepare and fit the sealed reinforcement kit for boat "+(n+1)+" at its yellow shore marker",()=>_kits[n].Position,5,3f,animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Guess)
+                yield return new MissionStage("Prepare hull kit "+(n+1),new MissionInteraction("Guess: prepare and fit the sealed reinforcement kit for boat "+(n+1)+" at its yellow shore marker",()=>_kits[n].Position,5,3f,animation:MissionInteraction.Repair)).OwnedBy(CrewSlot.Guess)
                     .OnExit(c=>{SaveCargo(_kits[n],_boats[n],new Vector3(0,-1.4f,.6f));_boats[n].MaxHealth+=200;_boats[n].Health+=200;_boats[n].BodyHealth+=200;_fitted++;});
             }
             yield return new MissionStage("Test boarding weapons",new ConditionObjective("Ice: use your firearm to hit both yellow floating practice barrels; these are passenger weapons, not mounted boat guns",()=>TargetsHit())).OwnedBy(CrewSlot.Ice)
                 .OnEnter(c=>{Ctx.Crew.PedFor(CrewSlot.Ice).Weapons.Give(WeaponHash.CombatMG,100,true,true);foreach(var t in _targets){t.IsInvincible=false;Function.Call(Hash.CLEAR_ENTITY_LAST_DAMAGE_ENTITY,t);}})
                 .WithCues("M40_S1_01_GUESS").AfterCues("M40_S1_02_ICE");
-            yield return new MissionStage("Verify navigation",new MissionInteraction("Gohan: use the laptop on the shore table to verify both sea-trial routes",()=>At("M40.NavWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_nav.Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>_checked=true);
+            yield return new MissionStage("Verify navigation",new MissionInteraction("Gohan: use the laptop on the shore table to verify both sea-trial routes",()=>At("M40.NavWork"),4,3f,animation:MissionInteraction.Typing,face:()=>_nav.Position)).OwnedBy(CrewSlot.Gohan).OnExit(c=>_checked=true);
             for(int i=0;i<2;i++)
             {
                 int n=i;var slot=n==0?CrewSlot.Guess:CrewSlot.Ice;

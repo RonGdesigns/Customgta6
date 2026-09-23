@@ -126,12 +126,12 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Use Bradley's card on the vault",
                 new MissionInteraction("Gohan: hold Bradley's card against the vault reader", () => At("M46.Vault"), CardSeconds, 3f,
-                    animation: MissionInteraction.ReachInside))
+                    animation: MissionInteraction.Operate))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => _opened = true);
 
             yield return new MissionStage("Take the ledger and the bonds",
-                new MultiHoldObjective("Ice and Gohan: clear the vault shelves", new[] { At("M46.Ledger"), At("M46.Bonds") }, 3, 2.5f, "Packing"))
+                new MultiHoldObjective("Ice and Gohan: clear the vault shelves", new[] { At("M46.Ledger"), At("M46.Bonds") }, 3, 2.5f, "Packing") { Animation = MissionInteraction.ReachInside })
                 .AnyOf()
                 .OnExit(c =>
                 {
@@ -149,7 +149,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Arm the charges",
                 new MissionInteraction("Gohan: arm the seismic charges from the command console", () => At("M46.Console"), TimerSeconds, 3f,
-                    animation: MissionInteraction.ReachInside))
+                    animation: MissionInteraction.Typing))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c =>
                 {

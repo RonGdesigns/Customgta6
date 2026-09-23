@@ -220,7 +220,7 @@ namespace Bloodlines.Missions.Campaign
 
             // Loading is seen: Gohan opens the Benson and carries the crates into it.
             yield return new MissionStage("Load the Benson",
-                    new MissionInteraction("Gohan: open the Benson and load the crates", () => RearOfHauler(), 1, 3.5f))
+                    new MissionInteraction("Gohan: open the Benson and load the crates", () => RearOfHauler(), 1, 3.5f, animation: MissionInteraction.ReachInside, face: () => _hauler != null && _hauler.Exists() ? _hauler.Position : RearOfHauler()))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context => _roles.For(CrewSlot.Gohan).Work(_gohanWait, _gohanCover))
                 .OnExit(context => PlayLoading());

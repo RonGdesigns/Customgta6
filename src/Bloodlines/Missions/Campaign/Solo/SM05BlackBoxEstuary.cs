@@ -46,7 +46,7 @@ namespace Bloodlines.Missions.Campaign
                 .PlayedBy(CrewSlot.Gohan).AfterCues("SM05_S1_01_GOHAN");
             yield return new MissionStage("Moor beside the buoy", new DeliverVehicleObjective("Gohan: stop within 8m of the yellow buoy. Your dinghy will wait while you fit the interceptor.", () => _boat, () => _buoy.Position, 8), new ProtectObjective("", () => _boat, "The pickup dinghy was destroyed."))
                 .PlayedBy(CrewSlot.Gohan).OnExit(c => Moor());
-            yield return new MissionStage("Fit the interceptor", new MissionInteraction("Gohan: exit and swim beside the buoy; fit the interceptor to its marked service point", () => _interceptor.Position, 6, 3), new ProtectObjective("", () => _boat, "The dinghy was lost during installation."), new ProtectObjective("", () => _buoy, "The monitoring buoy was destroyed."))
+            yield return new MissionStage("Fit the interceptor", new MissionInteraction("Gohan: exit and swim beside the buoy; fit the interceptor to its marked service point", () => _interceptor.Position, 6, 3, animation: MissionInteraction.InWater), new ProtectObjective("", () => _boat, "The dinghy was lost during installation."), new ProtectObjective("", () => _buoy, "The monitoring buoy was destroyed."))
                 .PlayedBy(CrewSlot.Gohan).WithCues("SM05_S1_02_GOHAN").OnExit(c => FitInterceptor());
             yield return new MissionStage("Verify telemetry", new ConditionObjective("Verify the fitted interceptor and wait for telemetry confirmation.", () => _installed && !Ctx.Cutscenes.IsActive))
                 .PlayedBy(CrewSlot.Gohan).AfterCues("SM05_S2_03_GOHAN");

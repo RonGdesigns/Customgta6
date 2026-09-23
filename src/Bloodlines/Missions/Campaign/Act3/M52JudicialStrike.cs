@@ -166,7 +166,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Identify Harrison",
                 new MissionInteraction("Ice: glass the steps and let Gohan confirm the man", () => _roost,
-                    IdentifySeconds, 6f, face: () => Harrison.Position))
+                    IdentifySeconds, 6f, animation: MissionInteraction.Watch, face: () => Harrison.Position))
                 .OwnedBy(CrewSlot.Ice)
                 .OnExit(c =>
                 {

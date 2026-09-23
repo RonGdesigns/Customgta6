@@ -34,7 +34,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Reach the coastal landing",new TravelObjective("Gohan: pilot the dinghy to the yellow coastal landing and stop near shore",()=>At("M32.LandingWater"),15,()=>_boat)).OwnedBy(CrewSlot.Gohan);
-            yield return new MissionStage("Open exterior access",new MissionInteraction("Gohan: leave the dinghy, walk up the bank and use the marked exterior electrical cabinet",()=>At("M32.PanelWork"),5,3f,animation:MissionInteraction.ReachInside,face:()=>_panel.Position)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Open exterior access",new MissionInteraction("Gohan: leave the dinghy, walk up the bank and use the marked exterior electrical cabinet",()=>At("M32.PanelWork"),5,3f,animation:MissionInteraction.Operate,face:()=>_panel.Position)).OwnedBy(CrewSlot.Gohan)
                 .OnExit(c=>{_access=true;_gate.Heading+=90f;Establish("access","An open service route","The barrier turns aside at the exterior service access. Ice can approach the visible cases; there is no underground bunker or numbered door.",_gate,_caseOne);}).AfterCues("M32_S1_01_GOHAN");
             yield return new MissionStage("Secure the ordnance yard",new KillTargetsObjective("Ice: stop the four marked yard guards. Keep both yellow EMP cases intact.",()=>Opposition)).OwnedBy(CrewSlot.Ice)
                 .OnEnter(c=>{Fighting=true;Roles.For(CrewSlot.Gohan).Observe(At("M32.PanelWork"),At("M32.PanelWork"));});

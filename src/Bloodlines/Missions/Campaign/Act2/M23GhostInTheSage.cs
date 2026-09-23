@@ -115,7 +115,7 @@ namespace Bloodlines.Missions.Campaign
             // limits of the place are learned bay by bay, not announced.
             yield return new MissionStage("Secure the bays",
                     new MultiHoldObjective("Guess: inspect the marked workbench, empty fuel drum, and vehicle storage bay.", _bays, 5, 4f,
-                        "Checking the bay") { SiteDone = BayChecked })
+                        "Checking the bay") { SiteDone = BayChecked, Animation = MissionInteraction.Inspect })
                 .OwnedBy(CrewSlot.Guess)
                 .OnEnter(context =>
                 {
@@ -125,7 +125,7 @@ namespace Bloodlines.Missions.Campaign
                 .AfterCues("M23_S1_02_GUESS");
 
             yield return new MissionStage("Power up",
-                    new MissionInteraction("Gohan: use the control side of the visible generator to restore bunker access.", () => _generator, 6, 2.5f, animation: MissionInteraction.ReachInside))
+                    new MissionInteraction("Gohan: use the control side of the visible generator to restore bunker access.", () => _generator, 6, 2.5f, animation: MissionInteraction.Operate))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnEnter(context =>
                 {
@@ -145,7 +145,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Check the interior",
                     new MissionInteraction("Gohan: inspect the bunker entry room at the yellow marker. Stay here while checking the lights and shelter; the crew waits outside.",
-                        () => Ctx.Locations.Position(BunkerSite.InspectKey), 4, 2f))
+                        () => Ctx.Locations.Position(BunkerSite.InspectKey), 4, 2f, animation: MissionInteraction.Inspect))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => Ctx.Dialogue.Play(new DialogueCue { CueId = "M23_INTERIOR_REPORT", MissionId = Id,
                     Speaker = "GOHAN", Line = "Interior's dry. Lights work. This gives us shelter, but we still need fuel, tools and money." }));

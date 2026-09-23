@@ -34,8 +34,8 @@ namespace Bloodlines.Missions.Campaign
         }
         protected override IEnumerable<MissionStage> BuildStages()
         {
-            yield return new MissionStage("Read the approaches", new MultiHoldObjective("Ice: inspect each yellow approach marker beside the three barriers; press E / D-pad Right", Enumerable.Range(1,3).Select(i=>At("M31.Senora.Work"+i)),2,3f,"Checking the approach")).OwnedBy(CrewSlot.Ice);
-            yield return new MissionStage("Arm the perimeter", new MultiHoldObjective("Gohan: arm each marked barrier charge; press E / D-pad Right",Enumerable.Range(1,3).Select(i=>At("M31.Senora.Work"+i)),4,3f,"Arming charge") { Animation=MissionInteraction.ReachInside, SiteDone=i=>Arm(i) }).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Read the approaches", new MultiHoldObjective("Ice: inspect each yellow approach marker beside the three barriers; press E / D-pad Right", Enumerable.Range(1,3).Select(i=>At("M31.Senora.Work"+i)),2,3f,"Checking the approach") { Animation = MissionInteraction.Inspect }).OwnedBy(CrewSlot.Ice);
+            yield return new MissionStage("Arm the perimeter", new MultiHoldObjective("Gohan: arm each marked barrier charge; press E / D-pad Right",Enumerable.Range(1,3).Select(i=>At("M31.Senora.Work"+i)),4,3f,"Arming charge") { Animation=MissionInteraction.Kneel, SiteDone=i=>Arm(i) }).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>Roles.For(CrewSlot.Ice).Observe(At("M31.Senora.IceStart"),At("M31.Senora.IceStart"))).AfterCues("M31_S1_01_ICE");
             yield return new MissionStage("Prove the withdrawal road",new TravelObjective("Guess: drive the crew car to the yellow withdrawal marker and stop. Leave the road clear.",()=>At("M31.Senora.Retreat"),12,()=>CrewCar)).OwnedBy(CrewSlot.Guess)
                 .OnExit(c=>StartProbe());
@@ -47,7 +47,7 @@ namespace Bloodlines.Missions.Campaign
                 .AnyBrother()
                 .WithCues("M31_S1_02_GOHAN").OnEnter(c=>{Roles.For(CrewSlot.Guess).Stop();Roles.For(CrewSlot.Ice).TakeCover(At("M31.Senora.IceStart"));Roles.For(CrewSlot.Gohan).TakeCover(At("M31.Senora.GohanStart"));})
                 .AfterCues("M31_S1_03_ICE");
-            yield return new MissionStage("Check the damage",new MissionInteraction("Gohan: inspect the surviving generator controls",()=>At("M31.Senora.GeneratorWork"),4,3f,animation:MissionInteraction.ReachInside,face:()=>_generator.Position)).OwnedBy(CrewSlot.Gohan).OnEnter(c=>Fighting=false);
+            yield return new MissionStage("Check the damage",new MissionInteraction("Gohan: inspect the surviving generator controls",()=>At("M31.Senora.GeneratorWork"),4,3f,animation:MissionInteraction.Inspect,face:()=>_generator.Position)).OwnedBy(CrewSlot.Gohan).OnEnter(c=>Fighting=false);
             yield return new MissionStage("Keep the base concealed",new LoseWantedObjective("Lose any police pursuit before returning to the perimeter."));
         }
         private void Arm(int i)

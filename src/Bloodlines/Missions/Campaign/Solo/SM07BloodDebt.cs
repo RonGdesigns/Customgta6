@@ -184,7 +184,7 @@ namespace Bloodlines.Missions.Campaign
         {
             yield return new MissionStage("Up to the suite",
                 new MissionInteraction("Ice: take the service elevator up to Sterling's floor",
-                    () => At("SM07.Start"), ElevatorSeconds, ElevatorRadius)
+                    () => At("SM07.Start"), ElevatorSeconds, ElevatorRadius, animation: MissionInteraction.Operate)
                 { RequiredCharacter = CrewSlot.Ice })
                 .OnExit(c => GoUp());
 
