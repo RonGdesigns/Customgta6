@@ -95,10 +95,15 @@ namespace Bloodlines.Missions.Campaign
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(c => { _rolling = true; DrivingDestination = () => At("M67.Airport"); });
 
+            // The work is done from his seat in the moving cab, so the interaction is attached
+            // to the rig: seated in it counts. As an on-foot interaction it asked Gohan to be
+            // standing within six meters of a truck he was riding in and could never start
+            // (Ron, September 22). The rig is not asked to stop - the whole point is that it
+            // does not.
             yield return new MissionStage("Move the money",
                 new MissionInteraction("Gohan: route the escrow into the offshore accounts",
                     () => _semi != null && _semi.Exists() ? _semi.Position : At("M67.Semi"),
-                    TransferSeconds, 6f, animation: MissionInteraction.ReachInside)
+                    TransferSeconds, 6f, vehicle: () => _semi)
                 { RequiredCharacter = CrewSlot.Gohan },
                 new ProtectObjective("", () => _semi, "The rig was wrecked with the money still in escrow."))
                 .OnExit(c => Moved())

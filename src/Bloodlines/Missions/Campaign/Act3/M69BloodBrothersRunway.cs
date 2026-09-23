@@ -43,7 +43,14 @@ namespace Bloodlines.Missions.Campaign
         /// <summary>SWAT holding the barricade.</summary>
         public const int SwatPosts = 5;
         /// <summary>How near the ramp counts as aboard.</summary>
-        public const float RampRadius = 14f;
+        public const float RampRadius = 10f;
+        /// <summary>
+        /// How far behind the Titan's center its cargo ramp is. The delivery used to target the
+        /// plane's own spawn point, so "up the ramp" meant within fourteen meters of the middle
+        /// of the fuselage - reachable only by driving the rig under the wing into the one
+        /// vehicle the mission could not afford to lose (Ron, September 22).
+        /// </summary>
+        public const float RampBehind = 22f;
         /// <summary>Where the campaign records the rig is on the plane.</summary>
         public const string AboardCargo = "rigAboardTitan";
 
@@ -86,6 +93,9 @@ namespace Bloodlines.Missions.Campaign
             if (!RequireAssets(_plane)) return false;
             _plane.IsPersistent = true;
             _plane.IsEngineRunning = false;
+            // Car() settles only cars onto their wheels; a plane created at the authored height
+            // is left with its gear sunk into the apron.
+            _plane.PlaceOnGround();
             var planeBlip = Track(_plane.AddBlip());
             if (planeBlip != null) { planeBlip.Color = BlipColor.Green; planeBlip.Name = "C-130 cargo ramp"; }
             RequireAsset(_plane, "The cargo plane was destroyed. There is nothing left to leave on.");
@@ -124,7 +134,7 @@ namespace Bloodlines.Missions.Campaign
                 new TravelObjective("Guess: take the rig through the perimeter and onto the runway",
                     () => At("M69.Runway"), 30f, () => _rig))
                 .OwnedBy(CrewSlot.Guess)
-                .OnExit(c => { _onTheRunway = true; DrivingDestination = () => At("M69.Ramp"); });
+                .OnExit(c => { _onTheRunway = true; DrivingDestination = RampPoint; });
 
             yield return new MissionStage("Break the taxiway line",
                 new DestroyVehicleObjective("Put the fuel bowser into the Aegis line", () => _bowser),
@@ -136,11 +146,17 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Up the ramp",
                 new DeliverVehicleObjective("Guess: drive the rig up into the C-130's cargo hold",
-                    () => _rig, () => At("M69.Ramp"), RampRadius))
+                    () => _rig, RampPoint, RampRadius))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(c => Boarded())
                 .AfterCues("M69_S1_03_GOHAN");
         }
+
+        /// <summary>The foot of the Titan's cargo ramp, behind its tail, wherever the plane actually is.</summary>
+        private Vector3 RampPoint() =>
+            _plane != null && _plane.Exists()
+                ? _plane.Position - _plane.ForwardVector * RampBehind
+                : At("M69.Ramp");
 
         private void Boarded()
         {

@@ -56,6 +56,8 @@ namespace Bloodlines.Missions.Campaign
         public const float WaveSpread = 5f;
         /// <summary>Where the campaign records Davis held.</summary>
         public const string HeldCargo = "davisHeld";
+        /// <summary>How far a neighbor holding the alley will reach for a contractor.</summary>
+        public const float AllyReach = 90f;
 
         private readonly List<Ped> _allies = new List<Ped>();
         private readonly List<Ped> _raiders = new List<Ped>();
@@ -130,10 +132,36 @@ namespace Bloodlines.Missions.Campaign
                 Blips.Attach(ped, BlipColor.Red, "Aegis contractor");
                 _raiders.Add(ped);
                 wave.Add(ped);
+                // A wave arrives knowing what it came for. The fight's one radio call goes out
+                // when the siege begins, to whoever is on the street then; waves two and three
+                // were created after it and walked onto the block unaware (Ron, September 22).
+                if (Awareness != null)
+                {
+                    Awareness.Track(ped);
+                    Awareness.Report(ped, Stimulus.RadioCall, At("M60.Hold"));
+                }
             }
             if (wave.Count == 0) Logger.Error(Id + ": wave " + index + " could not be placed at " + post + ".");
             Logger.Info(Id + ": wave " + index + " is on the street with " + wave.Count + " men.");
+            RallyTheBlock();
             return wave;
+        }
+
+        /// <summary>
+        /// The neighbors join each wave's fight. They were created with their permanent events
+        /// blocked and given one guard order, and nothing ever told them to shoot: the people
+        /// the siege is named for stood in the alley while the block was burned. One order per
+        /// wave, which is the change of state that matters to them; between waves the order
+        /// runs out with nobody left to fight.
+        /// </summary>
+        private void RallyTheBlock()
+        {
+            foreach (var ally in _allies)
+            {
+                if (ally == null || !ally.Exists() || ally.IsDead) continue;
+                ally.BlockPermanentEvents = false;
+                ally.Task.FightAgainstHatedTargets(AllyReach);
+            }
         }
 
         protected override IEnumerable<MissionStage> BuildStages()

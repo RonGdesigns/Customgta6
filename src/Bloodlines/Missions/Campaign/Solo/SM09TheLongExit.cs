@@ -66,14 +66,29 @@ namespace Bloodlines.Missions.Campaign
 
         protected override bool Setup()
         {
+            // Guess at the pound, alone, the way SM05 and SM06 put their man down. Nothing
+            // deployed anybody here, so with the crew stood down there was no Guess to steal
+            // anything - SM07's fault, found in the log on September 22.
+            if (!MissionSites.Prepare(Ctx.Locations, Id) ||
+                !Ctx.Crew.DeploySolo(CrewSlot.Guess, At("SM09.Start"), Ctx.Locations.Heading("SM09.Start")))
+            {
+                Logger.Error(Id + ": Guess could not be put down at SM09.Start.");
+                GameUtils.Notify("~r~Guess could not be placed at the pound. See Bloodlines.log.");
+                return false;
+            }
+            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
+            if (guess == null || !guess.Exists())
+            {
+                Logger.Error(Id + ": Guess is not available for his own solo.");
+                GameUtils.Notify("~r~Guess is not available for this solo. See Bloodlines.log.");
+                return false;
+            }
+
             _hyper = Car(HyperModel, At("SM09.Pound"), Ctx.Locations.Heading("SM09.Pound"), true);
             if (!RequireAssets(_hyper)) return false;
             _hyper.IsPersistent = true;
             _hyper.IsEngineRunning = false;
             RequireAsset(_hyper, "The prototype was destroyed. There is no passage without it.");
-
-            var guess = Ctx.Crew.PedFor(CrewSlot.Guess);
-            if (guess == null || !guess.Exists()) { Logger.Error(Id + ": Guess is not available for his own solo."); return false; }
 
             Ctx.Cutscenes.Play(new SceneSpec
             {
