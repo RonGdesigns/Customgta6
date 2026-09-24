@@ -98,15 +98,17 @@ namespace Bloodlines.Core
         {
             if (vehicle == null || !vehicle.Exists()) return;
             var p = vehicle.Position;
-            var z = new OutputArgument();
-            if (Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, p.X, p.Y, p.Z + 40f, z, false, false))
+            // Nearest surface above the point first, so a roof or bridge overhead is never
+            // taken for the ground (VehicleGround).
+            var found = VehicleGround.Choose(p.Z, from =>
             {
-                float ground = z.GetResult<float>();
-                if (Math.Abs(ground - p.Z) > 0.75f)
-                {
-                    vehicle.Position = new Vector3(p.X, p.Y, ground + 0.5f);
-                    Logger.Info("Lifted a fresh " + vehicle.DisplayName + " from Z " + p.Z.ToString("0.0") + " to the ground at " + ground.ToString("0.0") + ".");
-                }
+                var z = new OutputArgument();
+                return Function.Call<bool>(Hash.GET_GROUND_Z_FOR_3D_COORD, p.X, p.Y, from, z, false, false) ? z.GetResult<float>() : (float?)null;
+            });
+            if (found.HasValue && Math.Abs(found.Value - p.Z) > 0.75f)
+            {
+                vehicle.Position = new Vector3(p.X, p.Y, found.Value + 0.5f);
+                Logger.Info("Lifted a fresh " + vehicle.DisplayName + " from Z " + p.Z.ToString("0.0") + " to the ground at " + found.Value.ToString("0.0") + ".");
             }
             vehicle.PlaceOnGround();
         }

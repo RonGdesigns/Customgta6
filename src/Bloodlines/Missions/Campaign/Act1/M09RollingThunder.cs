@@ -133,7 +133,7 @@ namespace Bloodlines.Missions.Campaign
             // The colonel's vehicles pull away while the escort sits dead: seen once,
             // so the player knows why nobody chases the more important passenger.
             yield return new MissionStage("Rip the transponder",
-                    new MissionInteraction("Ice: get out, approach the stopped escort cab, and take its IFF transponder.", () => EscortPosition(), 6, 5f),
+                    new MissionInteraction("Ice: get out, approach the stopped escort cab, and take its IFF transponder.", () => EscortPosition(), 6, 5f, animation: MissionInteraction.ReachInside),
                     EscortIntact(),
                     new ReactionTrigger(() => _withdrawn && !_withdrawalShown && !Ctx.Cutscenes.IsActive, ShowWithdrawal))
                 .OwnedBy(CrewSlot.Ice)

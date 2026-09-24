@@ -222,7 +222,7 @@ namespace Bloodlines.Missions.Campaign
                 MarkerRadius = 4f
             };
             var jam = new MissionInteraction("Gohan: point the scrambler at the checkpoint and hold it",
-                () => _lane - _forward * HoldBack, JamSeconds, 22f, animation: MissionInteraction.ReachInside)
+                () => _lane - _forward * HoldBack, JamSeconds, 22f, animation: MissionInteraction.Phone)
             { RequiredCharacter = CrewSlot.Gohan };
 
             yield return new MissionStage("Take the towers and the radio", towers, jam)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using Bloodlines.Core;
 using GTA;
@@ -62,35 +63,153 @@ namespace Bloodlines.Missions.Objectives
         private readonly bool _stopVehicle;
         private readonly string _animation;
         private readonly Func<Vector3> _face;
-        private bool _animating;
-        private Ped _worker;
+        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null, Func<Vector3> face = null) : base(action)
+        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; _face = face; _hold = new HoldAnimation(action); }
+
+        // ---- What he does with his hands while the bar fills --------------------------------
+        //
+        // A hold with no animation is a man standing still while a bar fills, which in play
+        // reads as nothing happening at all (SM02's root terminal, Ron, September 23). Every
+        // pair below is either already played by this mod or belongs to one of the game's own
+        // ambient scenarios, and each is checked when it is played: a dictionary the game does
+        // not have, one that will not load, or a clip that does not take falls back once to
+        // ReachInside, which this mod has played since Act One, and says so in the log.
+
         /// <summary>Bent over, both hands inside something at waist height: a car window, a bin, a crate.</summary>
         public const string ReachInside = "amb@prop_human_bum_bin@idle_a|idle_a";
-        public MissionInteraction(string action, Func<Vector3> position, int seconds, float radius = 3f, Func<Vehicle> vehicle = null, bool stopVehicle = false, string animation = null, Func<Vector3> face = null) : base(action)
-        { _action = action; _position = position; _duration = seconds * 1000; _radius = radius; _vehicle = vehicle; _stopVehicle = stopVehicle; _animation = animation; _face = face; }
-        private void StopAnimation(Ped ped)
+        /// <summary>Typing at a keypad, terminal or laptop. The clip M01's shipping terminal and M07's relay already play.</summary>
+        public const string Typing = "anim@heists@humane_labs@emp@hack_door|hack_loop";
+        /// <summary>Down on one knee with the hands at the ground: planting, placing, setting something low.</summary>
+        public const string Kneel = "amb@medic@standing@kneel@idle_a|idle_a";
+        /// <summary>A torch held to the work: welding, cutting, burning through.</summary>
+        public const string Welding = "amb@world_human_welding@male@base|base";
+        /// <summary>Swinging at something at chest height: bracing, nailing, knocking loose.</summary>
+        public const string Hammering = "amb@world_human_hammering@male@base|base";
+        /// <summary>Bent over an open engine bay: repairs, hotwiring, splicing a harness.</summary>
+        public const string Repair = "mini@repair|fixing_a_ped";
+        /// <summary>Standing and checking, as the clipboard scenario does: inspecting, counting, verifying.</summary>
+        public const string Inspect = "amb@world_human_clipboard@male@base|base";
+        /// <summary>Head down over a phone: texting, dialing, reading.</summary>
+        public const string Phone = "cellphone@|cellphone_text_read_base";
+        /// <summary>A hand on a wall panel at chest height: a lift call, a door release, a breaker, a valve.</summary>
+        public const string Operate = "amb@prop_human_parking_meter@male@idle_a|idle_a";
+        /// <summary>Glasses raised to the eyes: observing, spotting, identifying at range.</summary>
+        public const string Watch = "amb@world_human_binoculars@male@base|base";
+        /// <summary>A hand held out to be given something, or to give it.</summary>
+        public const string Handover = "mp_common|givetake1_a";
+        /// <summary>
+        /// The work is done swimming, so nothing is played. Every clip above is a standing pose,
+        /// and played on a swimmer it takes him out of the swim (M61's cut at the bottom of the
+        /// basin). A swimmer is never given one whatever was asked for; this says it on purpose.
+        /// </summary>
+        public const string InWater = "none";
+        /// <summary>What a hold falls back to when the text names nothing the inference knows.</summary>
+        public const string Generic = Operate;
+        /// <summary>How long a dictionary may take to load after the press before the fallback is used.</summary>
+        public const int LoadTimeoutMs = HoldAnimation.LoadTimeoutMs;
+        /// <summary>How long after the clip is started it is checked for actually playing.</summary>
+        public const int VerifyAfterMs = HoldAnimation.VerifyAfterMs;
+
+        private sealed class Rule
         {
-            if (!_animating) return;
-            _animating = false;
-            if (_worker != null && _worker.Exists() && !string.IsNullOrEmpty(_animation))
+            public readonly string Animation; public readonly string[] Words;
+            public Rule(string animation, params string[] words) { Animation = animation; Words = words; }
+        }
+
+        // First rule with a matching word wins, so the order is the judgment: a lift is called,
+        // not phoned; codes are demanded of a man before they are typed; a server is cut out
+        // before it is typed on. A trailing * matches any word that starts with the stem.
+        private static readonly Rule[] Rules =
+        {
+            new Rule(InWater, "swim*", "dive", "diving", "underwater"),
+            new Rule(Watch, "observ*", "glass", "binocular*", "spot", "scout*", "identify", "watch"),
+            new Rule(Operate, "elevator*", "lift", "lifts", "door", "doors", "doorway", "gate", "gates", "stair*", "access", "button*", "intercom"),
+            new Rule(Handover, "demand*", "interrogat*", "question*", "ask", "bribe*", "pay", "hand", "hands", "handover", "give", "receive"),
+            new Rule(Welding, "weld*", "cut", "cuts", "cutting", "cutter*", "torch*", "thermite", "burn*"),
+            new Rule(Typing, "laptop*", "terminal*", "hack*", "keypad*", "console*", "computer*", "type", "typing", "upload*", "download*", "inject*", "worm", "password*", "code", "codes", "server*", "bypass*", "reprogram*", "firmware", "files", "copy", "override*", "network*", "feed", "encrypt*", "decrypt*"),
+            new Rule(Kneel, "plant*", "charge", "charges", "limpet*", "mine", "mines", "explosive*", "bomb*", "tripwire*", "place", "bury"),
+            new Rule(Hammering, "hammer*", "nail*", "brace*", "barricade*", "reinforce*", "pry", "prise", "crowbar"),
+            new Rule(Repair, "repair*", "fix*", "engine*", "hood", "hotwir*", "wire", "wires", "wiring", "splice*", "rewire*", "tune*", "mechanic*"),
+            new Rule(Phone, "phone*", "text", "texts", "dial*", "call", "radio"),
+            new Rule(Inspect, "inspect*", "check*", "examine*", "verify*", "count*", "survey*", "photograph*", "document*", "read", "review*"),
+            new Rule(ReachInside, "search*", "grab*", "collect*", "take", "takes", "pick*", "load*", "unload*", "retriev*", "recover*", "open", "crate*", "case", "cases", "box*", "bag*", "locker*", "trunk*", "stow*", "carry*", "package*", "loot*", "steal*", "fit", "fits", "attach*", "install*", "connect*", "plug*"),
+            new Rule(Operate, "panel*", "valve*", "breaker*", "switch*", "lever*", "cabinet*", "fuse*", "generator*", "control*", "power", "pump*"),
+        };
+
+        /// <summary>
+        /// The animation an on-foot hold with no explicit one plays, read from its action text:
+        /// the first rule with a matching word, or <see cref="Generic"/> when nothing matches,
+        /// so no hold is ever a man standing still.
+        /// </summary>
+        public static string Infer(string action)
+        {
+            var words = new List<string>();
+            var word = new System.Text.StringBuilder();
+            foreach (char ch in (action ?? "").ToLowerInvariant() + " ")
             {
-                var parts = _animation.Split('|');
-                if (parts.Length == 2) GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, parts[0], parts[1], 2f);
+                if (char.IsLetterOrDigit(ch)) { word.Append(ch); continue; }
+                if (word.Length > 0) { words.Add(word.ToString()); word.Clear(); }
             }
-            _worker = null;
+            foreach (var rule in Rules)
+                foreach (var key in rule.Words)
+                {
+                    bool stem = key.EndsWith("*", StringComparison.Ordinal);
+                    string text = stem ? key.Substring(0, key.Length - 1) : key;
+                    foreach (var w in words)
+                        if (stem ? w.StartsWith(text, StringComparison.Ordinal) : w == text) return rule.Animation;
+                }
+            return Generic;
         }
-        private void StartAnimation(Ped ped, Vector3 point)
+
+        /// <summary>
+        /// What a hold will play: nothing from a vehicle, nothing for <see cref="InWater"/>, the
+        /// explicit animation when one was given (it always wins), and otherwise the inference.
+        /// </summary>
+        public static string Resolve(string animation, string action, bool fromVehicle)
         {
-            if (string.IsNullOrEmpty(_animation) || ped == null || !ped.Exists()) return;
-            var parts = _animation.Split('|');
-            if (parts.Length != 2) return;
-            ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, _face?.Invoke() ?? point);
-            ped.Task.PlayAnimation(parts[0], parts[1], 4f, -4f, -1, AnimationFlags.Loop, 0f);
-            _animating = true; _worker = ped;
+            if (fromVehicle) return null;
+            string chosen = string.IsNullOrEmpty(animation) ? Infer(action) : animation;
+            return chosen == InWater ? null : chosen;
         }
-        public override void Exit(MissionContext c) { StopAnimation(Game.Player.Character); base.Exit(c); }
+
+        private bool _inferenceLogged;
+        private readonly HoldAnimation _hold;
+
+        /// <summary>The animation this hold plays on foot, explicit or inferred; null from a vehicle or in the water.</summary>
+        public string Animation
+        {
+            get
+            {
+                string resolved = Resolve(_animation, _action, _vehicle != null);
+                if (resolved != null && string.IsNullOrEmpty(_animation) && !_inferenceLogged)
+                {
+                    _inferenceLogged = true;
+                    Logger.Info("Mission interaction \"" + _action + "\" names no animation; inferred " + resolved + " from its text.");
+                }
+                return resolved;
+            }
+        }
+        /// <summary>Whether the animation was read from the action text rather than given.</summary>
+        public bool AnimationInferred => _vehicle == null && string.IsNullOrEmpty(_animation);
+        /// <summary>The clip actually playing on the worker now, or null.</summary>
+        public string PlayingAnimation => _hold.Playing;
+        /// <summary>The clip this hold fell back from, when its own did not play.</summary>
+        public string FellBackFrom => _hold.FellBackFrom;
+        private void StopAnimation(Ped ped) => _hold.Stop();
+        private void StartAnimation(Ped ped, Vector3 point) => _hold.Start(ped, Animation, () => _face?.Invoke() ?? point);
+        private void MaintainAnimation(Ped ped, int now) => _hold.Maintain(ped, now);
+        public override void Exit(MissionContext c)
+        {
+            _hold.Release();
+            base.Exit(c);
+        }
         public override Vector3? AssignmentPosition => _vehicle == null ? (Vector3?)_position() : null;
-        public override void Enter(MissionContext c) { base.Enter(c); _started = -1; _lastTick = -1; _lastSteady = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right."; }
+        public override void Enter(MissionContext c)
+        {
+            base.Enter(c); _started = -1; _lastTick = -1; _lastSteady = -1; Label = _action + " — go to the yellow marker; press E / D-pad Right.";
+            // Asked for on the way to the marker so the clip is resident by the press.
+            _hold.Prepare(Animation);
+        }
         public override void Update(MissionContext c)
         {
             int now = Game.GameTime;
@@ -132,11 +251,140 @@ namespace Bloodlines.Missions.Objectives
                 _started = now;
                 if (_vehicle == null) StartAnimation(ped, point);
             }
+            if (_vehicle == null) MaintainAnimation(ped, now);
             int elapsed = now - _started;
             Label = _action;
             GameUtils.DrawProgressBar(elapsed / (float)_duration);
             if (elapsed >= _duration) { StopAnimation(ped); Complete(); }
         }
+    }
+
+    /// <summary>
+    /// A hold's work clip, played without ever waiting on the script thread. The dictionary is
+    /// requested up front (<see cref="Prepare"/>) and the clip issued through the native task,
+    /// not <c>ped.Task.PlayAnimation</c>: SHVDN's wrapper requests the dictionary itself and
+    /// yields the script for up to a second waiting on it. A moment after the press the clip is
+    /// checked for actually playing; a dictionary the game does not have, one that has not
+    /// loaded inside <see cref="LoadTimeoutMs"/>, or a clip that does not take falls back once
+    /// to <see cref="MissionInteraction.ReachInside"/> and says so in the log. A swimmer is
+    /// never given a standing pose. Shared by <see cref="MissionInteraction"/> and
+    /// <see cref="MultiHoldObjective"/>, so the two cannot drift apart.
+    /// </summary>
+    public sealed class HoldAnimation
+    {
+        /// <summary>How long a dictionary may take to load after the press before the fallback is used.</summary>
+        public const int LoadTimeoutMs = 2000;
+        /// <summary>How long after the clip is started it is checked for actually playing.</summary>
+        public const int VerifyAfterMs = 750;
+
+        private readonly string _owner;
+        private readonly HashSet<string> _requested = new HashSet<string>();
+        private string _playing, _fallbackFrom;
+        private bool _fellBack, _want, _animating, _verified, _swimLogged;
+        private int _requestedAt, _playedAt;
+        private Ped _worker;
+        private Func<Vector3> _face;
+
+        public HoldAnimation(string owner) { _owner = owner; }
+
+        /// <summary>The clip actually issued on the worker now, or null.</summary>
+        public string Playing => _animating ? _playing : null;
+        /// <summary>The clip this hold fell back from, when its own did not play.</summary>
+        public string FellBackFrom => _fallbackFrom;
+
+        private static bool Split(string animation, out string dict, out string clip)
+        {
+            dict = clip = null;
+            if (string.IsNullOrEmpty(animation)) return false;
+            var parts = animation.Split('|');
+            if (parts.Length != 2 || parts[0].Length == 0 || parts[1].Length == 0) return false;
+            dict = parts[0]; clip = parts[1];
+            return true;
+        }
+        private void Request(string animation)
+        {
+            if (!Split(animation, out var dict, out _)) return;
+            GTA.Native.Function.Call(GTA.Native.Hash.REQUEST_ANIM_DICT, dict);
+            _requested.Add(dict);
+        }
+        /// <summary>Ask for the dictionary ahead of the press, so the clip is resident when it comes.</summary>
+        public void Prepare(string animation) => Request(_playing ?? animation);
+        /// <summary>The press: issue the clip now, facing what <paramref name="face"/> names. A null animation plays nothing.</summary>
+        public void Start(Ped ped, string animation, Func<Vector3> face)
+        {
+            _playing = _playing ?? animation;
+            if (_playing == null) return;
+            _want = true; _requestedAt = Game.GameTime; _face = face;
+            Maintain(ped, Game.GameTime);
+        }
+        public void Stop()
+        {
+            _want = false;
+            if (!_animating) return;
+            _animating = false;
+            if (_worker != null && _worker.Exists() && Split(_playing, out var dict, out var clip))
+                GTA.Native.Function.Call(GTA.Native.Hash.STOP_ANIM_TASK, _worker, dict, clip, 2f);
+            _worker = null;
+        }
+        /// <summary>Stop, and let go of every dictionary this hold asked for.</summary>
+        public void Release()
+        {
+            Stop();
+            foreach (var dict in _requested) GTA.Native.Function.Call(GTA.Native.Hash.REMOVE_ANIM_DICT, dict);
+            _requested.Clear();
+        }
+        private void FallBack(string reason)
+        {
+            if (_fellBack || _playing == MissionInteraction.ReachInside)
+            {
+                Logger.Warn("Hold \"" + _owner + "\": " + _playing + " " + reason + "; no animation this hold.");
+                _want = false;
+                return;
+            }
+            Logger.Warn("Hold \"" + _owner + "\": " + _playing + " " + reason + "; falling back to " + MissionInteraction.ReachInside + ".");
+            _fellBack = true; _fallbackFrom = _playing; _playing = MissionInteraction.ReachInside; _requestedAt = Game.GameTime;
+            Request(_playing);
+        }
+        /// <summary>Every frame of a hold in progress: start, confirm, issue again, or fall back.</summary>
+        public void Maintain(Ped ped, int now)
+        {
+            if (ped == null || !ped.Exists()) return;
+            if (_animating)
+            {
+                if (_verified || now - _playedAt < VerifyAfterMs) return;
+                if (!Split(_playing, out var playingDict, out var playingClip)) return;
+                if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.IS_ENTITY_PLAYING_ANIM, _worker, playingDict, playingClip, 3))
+                { _verified = true; return; }
+                if (now - _requestedAt <= LoadTimeoutMs)
+                {
+                    // Still inside the load window: the dictionary may have arrived since the
+                    // press, and a clip asked for before it did simply never started.
+                    if (GTA.Native.Function.Call<bool>(GTA.Native.Hash.HAS_ANIM_DICT_LOADED, playingDict)) { Play(_worker, playingDict, playingClip); _playedAt = now; }
+                    return;
+                }
+                Stop();
+                _want = true;
+                FallBack("did not play within " + LoadTimeoutMs + " ms of the press");
+                return;
+            }
+            if (!_want) return;
+            // A standing pose played on a swimmer takes him out of the swim.
+            if (ped.IsSwimming || ped.IsSwimmingUnderWater)
+            {
+                if (!_swimLogged) { _swimLogged = true; Logger.Info("Hold \"" + _owner + "\": he is swimming, so no animation is played."); }
+                _want = false;
+                return;
+            }
+            if (!Split(_playing, out var dict, out var clip)) { FallBack("is not a dictionary|clip pair"); return; }
+            if (!GTA.Native.Function.Call<bool>(GTA.Native.Hash.DOES_ANIM_DICT_EXIST, dict)) { FallBack("names a dictionary the game does not have"); return; }
+            Request(_playing);
+            var target = _face?.Invoke();
+            if (target.HasValue) ped.Heading = Core.DriveUpStep.HeadingBetween(ped.Position, target.Value);
+            Play(ped, dict, clip);
+            _animating = true; _worker = ped; _playedAt = now; _verified = false;
+        }
+        private static void Play(Ped ped, string dict, string clip)
+            => GTA.Native.Function.Call(GTA.Native.Hash.TASK_PLAY_ANIM, ped, dict, clip, 4f, -4f, -1, (int)AnimationFlags.Loop, 0f, false, false, false);
     }
 
     public sealed class OccupiedVehicleDestination : Objective

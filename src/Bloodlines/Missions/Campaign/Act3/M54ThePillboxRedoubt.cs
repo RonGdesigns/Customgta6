@@ -186,13 +186,13 @@ namespace Bloodlines.Missions.Campaign
             // These read their positions every frame, and being parallel they let the player
             // move between Ice and Gohan as he likes.
             var north = new MissionInteraction("Ice: set the north roost on the parapet", () => Roost(0),
-                RoostSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                RoostSeconds, 2.5f, animation: MissionInteraction.Kneel)
             { RequiredCharacter = CrewSlot.Ice };
             var south = new MissionInteraction("Ice: set the south roost, facing Maze Bank", () => Roost(1),
-                RoostSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                RoostSeconds, 2.5f, animation: MissionInteraction.Kneel)
             { RequiredCharacter = CrewSlot.Ice };
             var antenna = new MissionInteraction("Gohan: wire the antenna into the roof's feed", AntennaPoint,
-                AntennaSeconds, 2.5f, animation: MissionInteraction.ReachInside)
+                AntennaSeconds, 2.5f, animation: MissionInteraction.Repair)
             { RequiredCharacter = CrewSlot.Gohan };
 
             yield return new MissionStage("Fortify the nest", north, south, antenna)

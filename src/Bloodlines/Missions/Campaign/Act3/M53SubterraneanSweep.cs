@@ -217,7 +217,7 @@ namespace Bloodlines.Missions.Campaign
         /// construction: the floor offset is not known until Setup has probed for it.</summary>
         private Objective Wire(string label, string key, CrewSlot owner) =>
             new MissionInteraction(label, () => Down(key), TripwireSeconds, 2.5f,
-                animation: MissionInteraction.ReachInside) { RequiredCharacter = owner };
+                animation: MissionInteraction.Kneel) { RequiredCharacter = owner };
 
         private Vector3 TrainPoint() =>
             _train != null && _train.Exists() ? _train.Position : Down("M53.Train");

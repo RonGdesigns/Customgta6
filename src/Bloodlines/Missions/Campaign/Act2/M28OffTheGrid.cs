@@ -81,7 +81,7 @@ namespace Bloodlines.Missions.Campaign
             });
             yield return new MissionStage("Read the cabinet", _choice).OwnedBy(CrewSlot.Gohan)
                 .OnEnter(c=>_roles.For(CrewSlot.Ice).Observe(At("M28.Cover"),At("M28.Cover")));
-            yield return new MissionStage("Connect the surge unit", new MissionInteraction("Gohan: connect the case to the laptop on the relay worktable", ()=>At("M28.Relay"), 5, animation:MissionInteraction.ReachInside)).OwnedBy(CrewSlot.Gohan)
+            yield return new MissionStage("Connect the surge unit", new MissionInteraction("Gohan: connect the case to the laptop on the relay worktable", ()=>At("M28.Relay"), 5, animation:MissionInteraction.Typing)).OwnedBy(CrewSlot.Gohan)
                 // A failed connection used to throw here, which is a "Script error"; the
                 // reason is kept and the attempt fails with it on the next frame.
                 .OnExit(c=>{if(!StowPropStep.Stow(_surge,_desk,new Vector3(.55f,0,_desk.Model.Dimensions.Item2.Z-_surge.Model.Dimensions.Item1.Z+.01f)))_fault="The surge unit could not connect to the relay table. Retry the splice.";})

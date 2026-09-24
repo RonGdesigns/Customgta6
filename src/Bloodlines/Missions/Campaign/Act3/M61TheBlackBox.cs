@@ -153,12 +153,12 @@ namespace Bloodlines.Missions.Campaign
                 .OnEnter(c => DiveGear(true))
                 .OnExit(c => _down = true);
 
-            // No reach-inside animation: it is a standing pose, and played on a swimmer it
-            // takes him out of the swim at the bottom of the basin.
+            // No animation, on purpose (InWater): every work clip is a standing pose, and played
+            // on a swimmer it takes him out of the swim at the bottom of the basin.
             yield return new MissionStage("Cut the server out",
                 new MissionInteraction("Gohan: cut the command server out of the chassis",
                     () => _wreck != null && _wreck.Exists() ? _wreck.Position : At("M61.Wreck"),
-                    CutSeconds, CutRadius)
+                    CutSeconds, CutRadius, animation: MissionInteraction.InWater)
                 { RequiredCharacter = CrewSlot.Gohan })
                 .OnEnter(c => Fighting = true)
                 .OnExit(c => Cutting())

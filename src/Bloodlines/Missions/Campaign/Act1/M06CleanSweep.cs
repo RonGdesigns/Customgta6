@@ -112,7 +112,7 @@ namespace Bloodlines.Missions.Campaign
         protected override IEnumerable<MissionStage> BuildStages()
         {
             yield return new MissionStage("Cut the power",
-                    new MissionInteraction("Gohan: cut the marked power feeder", () => _feeder, 6, 3f, animation: MissionInteraction.ReachInside))
+                    new MissionInteraction("Gohan: cut the marked power feeder", () => _feeder, 6, 3f, animation: MissionInteraction.Welding))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(context => Say("M06_S1_01_GOHAN"));
 

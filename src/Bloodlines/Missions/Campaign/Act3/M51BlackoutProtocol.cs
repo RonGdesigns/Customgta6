@@ -108,16 +108,16 @@ namespace Bloodlines.Missions.Campaign
         {
             var west = new MultiHoldObjective("Ice: seat a limpet on each of the three west units",
                 Bank(1), LimpetSeconds, LimpetRadius, "Seating limpet")
-            { RequiredCharacter = CrewSlot.Ice, Animation = MissionInteraction.ReachInside };
+            { RequiredCharacter = CrewSlot.Ice, Animation = MissionInteraction.Kneel };
             west.SiteDone = _ => _west++;
 
             var east = new MultiHoldObjective("Guess: seat a limpet on each of the three east units",
                 Bank(4), LimpetSeconds, LimpetRadius, "Seating limpet")
-            { RequiredCharacter = CrewSlot.Guess, Animation = MissionInteraction.ReachInside };
+            { RequiredCharacter = CrewSlot.Guess, Animation = MissionInteraction.Kneel };
             east.SiteDone = _ => _east++;
 
             var interlocks = new MissionInteraction("Gohan: lock the automatic failovers out at the interlock cabinet",
-                () => At("M51.Control"), LockoutSeconds, 3.5f, animation: MissionInteraction.ReachInside)
+                () => At("M51.Control"), LockoutSeconds, 3.5f, animation: MissionInteraction.Operate)
             { RequiredCharacter = CrewSlot.Gohan };
 
             // One stage, three parallel jobs. The dispatcher only demands a switch when the
@@ -144,7 +144,7 @@ namespace Bloodlines.Missions.Campaign
 
             yield return new MissionStage("Arm the sequence",
                 new MissionInteraction("Gohan: arm the sequence and leave it waiting", () => At("M51.Control"), ArmSeconds, 3.5f,
-                    animation: MissionInteraction.ReachInside))
+                    animation: MissionInteraction.Typing))
                 .OwnedBy(CrewSlot.Gohan)
                 .OnExit(c => Arm());
 

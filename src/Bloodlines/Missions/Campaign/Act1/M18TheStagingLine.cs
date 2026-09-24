@@ -93,7 +93,7 @@ namespace Bloodlines.Missions.Campaign
                 .OnExit(context => { _pod.IsVisible = false; GameUtils.Subtitle("Jammer collected. Carry it to the rear of the landed Cargobob.", 5000); });
 
             yield return new MissionStage("Fit the jammer to the lift",
-                    new MissionInteraction("Guess: fit the jammer at the rear of the Cargobob.", () => RearWork(_cargobob), 5, 2.5f, animation: MissionInteraction.ReachInside, face: () => _cargobob.Position))
+                    new MissionInteraction("Guess: fit the jammer at the rear of the Cargobob.", () => RearWork(_cargobob), 5, 2.5f, animation: MissionInteraction.Repair, face: () => _cargobob.Position))
                 .OwnedBy(CrewSlot.Guess)
                 .OnExit(context => FitPod());
 
