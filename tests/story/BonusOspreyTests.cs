@@ -36,6 +36,7 @@ public static partial class StoryTests
             "and never flies outside its bounds, so a truck that keeps up always has a shot");
 
         Reset();
+        ScriptedFlight.GroundBelow = p => 0f; ScriptedFlight.Blocked = (a, b, e) => false;
         var craft = new Vehicle { Model = new Model("avenger"), Position = new Vector3(0, 0, 32) };
         var flight = new ScriptedFlight(craft, new[] { new Vector3(0, 100, 0), new Vector3(0, 200, 0) });
         Check(flight.Points.All(p => p.Z == ScriptedFlight.Altitude), "It flies a fixed height over each road point");
@@ -51,6 +52,57 @@ public static partial class StoryTests
         flight.Release();
         Check(Function.Calls.Any(x => x.Item1 == Hash.SET_ENTITY_HAS_GRAVITY && x.Item2[0] == craft && (bool)x.Item2[1]),
             "Released, it falls like anything else, which is what a downed aircraft has to do");
+        LookAheadChecks();
+    }
+
+    /// <summary>
+    /// Ron, September 24: the Osprey "ended up flying into the trees; make sure they fly the
+    /// right direction."
+    /// </summary>
+    static void LookAheadChecks()
+    {
+        // A hill between two road points: it climbs to clear the ground ahead, not just the road.
+        Reset();
+        ScriptedFlight.GroundBelow = p => p.Y > 60f ? 70f : 0f; ScriptedFlight.Blocked = (a, b, e) => false;
+        var craft = new Vehicle { Model = new Model("avenger"), Position = new Vector3(0, 0, 32) };
+        var flight = new ScriptedFlight(craft, new[] { new Vector3(0, 200, 0), new Vector3(0, 400, 0) });
+        flight.Begin();
+        Game.GameTime += 250; flight.Update(new Vector3(0, -80, 0));
+        Check(flight.FloorAhead >= 70f + ScriptedFlight.GroundClearance - .01f && craft.Velocity.Z > 0f,
+            "Rising ground ahead is cleared by its own margin, not flown into at road height");
+
+        // Something solid in a wingtip ray: it slows and climbs until the way is clear.
+        Reset();
+        bool tree = true;
+        ScriptedFlight.GroundBelow = p => 0f; ScriptedFlight.Blocked = (a, b, e) => tree && a.X > 5f;
+        craft = new Vehicle { Model = new Model("avenger"), Position = new Vector3(0, 0, 32) };
+        flight = new ScriptedFlight(craft, new[] { new Vector3(0, 200, 0), new Vector3(0, 400, 0) });
+        flight.Begin();
+        for (int i = 0; i < 6; i++) { Game.GameTime += 250; flight.Update(new Vector3(0, -80, 0)); }
+        Check(flight.Climbing && craft.Velocity.Z > 3f && craft.Velocity.Y < ScriptedFlight.PacedSpeed(ScriptedFlight.LeadMeters),
+            "A tree in a wingtip's path makes it slow down and climb");
+        tree = false;
+        Game.GameTime += ScriptedFlight.ObstacleHoldMs + 300; flight.Update(new Vector3(0, -80, 0));
+        Check(!flight.Climbing, "and once the way is clear it goes back to the line");
+
+        // Starting past the first point: it does not turn back through the trees to reach it.
+        Reset();
+        ScriptedFlight.GroundBelow = p => 0f; ScriptedFlight.Blocked = (a, b, e) => false;
+        craft = new Vehicle { Model = new Model("avenger"), Position = new Vector3(0, 150, 32) };
+        flight = new ScriptedFlight(craft, new[] { new Vector3(0, 100, 0), new Vector3(0, 300, 0), new Vector3(0, 500, 0) });
+        flight.Begin();
+        Game.GameTime += 250; flight.Update(new Vector3(0, 60, 0));
+        Check(flight.Next == 1 && craft.Velocity.Y > 0f, "A point already behind it is skipped, so it never flies back the way it came");
+
+        // A point is reached on the map even when the ground has it flying higher than the line.
+        Reset();
+        ScriptedFlight.GroundBelow = p => 50f; ScriptedFlight.Blocked = (a, b, e) => false;
+        craft = new Vehicle { Model = new Model("avenger"), Position = new Vector3(0, 195, 95) };
+        flight = new ScriptedFlight(craft, new[] { new Vector3(0, 200, 0), new Vector3(0, 400, 0) });
+        flight.Begin();
+        Game.GameTime += 250; flight.Update(new Vector3(0, 100, 0));
+        Check(flight.Next == 1, "A point passed high overhead still counts, so it never circles one it has cleared");
+        ScriptedFlight.ResetProbes();
     }
 
     static void HullMeterChecks()
